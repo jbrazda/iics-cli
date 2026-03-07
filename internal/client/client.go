@@ -1,0 +1,289 @@
+package client
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	sessionHeader = "INFA-SESSION-ID"
+	apiBasePath   = "public/core/v3"
+)
+
+// Client is the IICS v3 API client with automatic session management.
+type Client struct {
+	httpClient *http.Client
+	loginURL   string
+	baseAPIURL string
+	sessionID  string
+	username   string
+	password   string
+	verbose    bool
+	mu         sync.RWMutex
+}
+
+// ClientOption is a functional option for Client construction.
+type ClientOption func(*Client)
+
+// WithHTTPClient sets a custom HTTP client.
+func WithHTTPClient(hc *http.Client) ClientOption {
+	return func(c *Client) {
+		c.httpClient = hc
+	}
+}
+
+// WithVerbose enables verbose logging.
+func WithVerbose(v bool) ClientOption {
+	return func(c *Client) {
+		c.verbose = v
+	}
+}
+
+// NewClient creates a new IICS API client.
+func NewClient(loginURL, username, password string, opts ...ClientOption) *Client {
+	c := &Client{
+		httpClient: &http.Client{Timeout: 60 * time.Second},
+		loginURL:   loginURL,
+		username:   username,
+		password:   password,
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
+// SetSession sets the session ID and base API URL directly (e.g., from cache).
+func (c *Client) SetSession(sessionID, baseAPIURL string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.sessionID = sessionID
+	c.baseAPIURL = baseAPIURL
+}
+
+// SessionID returns the current session ID.
+func (c *Client) SessionID() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.sessionID
+}
+
+// BaseAPIURL returns the current base API URL.
+func (c *Client) BaseAPIURL() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.baseAPIURL
+}
+
+// apiURL constructs a full API URL from a resource path.
+func (c *Client) apiURL(resourcePath string) string {
+	c.mu.RLock()
+	base := c.baseAPIURL
+	c.mu.RUnlock()
+
+	base = strings.TrimRight(base, "/")
+	return fmt.Sprintf("%s/%s/%s", base, apiBasePath, resourcePath)
+}
+
+// doWithSession executes an HTTP request with the session header injected.
+func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Response, error) {
+	c.mu.RLock()
+	sessionID := c.sessionID
+	c.mu.RUnlock()
+
+	req.Header.Set(sessionHeader, sessionID)
+	req.Header.Set("Accept", "application/json")
+	if req.Header.Get("Content-Type") == "" && req.Body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	return c.httpClient.Do(req)
+}
+
+// do executes an HTTP request with session header injection.
+// On 401 response, it re-authenticates and retries once.
+func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	// Ensure we have a session
+	c.mu.RLock()
+	hasSession := c.sessionID != ""
+	c.mu.RUnlock()
+
+	if !hasSession {
+		if _, err := c.Login(ctx); err != nil {
+			return nil, fmt.Errorf("auto-login failed: %w", err)
+		}
+	}
+
+	// Save request body for potential retry
+	var bodyBytes []byte
+	if req.Body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading request body: %w", err)
+		}
+		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	}
+
+	resp, err := c.doWithSession(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// On 401, re-authenticate and retry once
+	if resp.StatusCode == http.StatusUnauthorized {
+		resp.Body.Close()
+
+		if _, err := c.Login(ctx); err != nil {
+			return nil, &SessionExpiredError{Wrapped: err}
+		}
+
+		// Rebuild the request with fresh body
+		if bodyBytes != nil {
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		return c.doWithSession(ctx, req)
+	}
+
+	return resp, nil
+}
+
+// doJSON is a convenience method that sends a JSON request and decodes the response.
+func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	var body io.Reader
+	if reqBody != nil {
+		data, err := json.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("marshaling request: %w", err)
+		}
+		body = bytes.NewReader(data)
+	}
+
+	url := c.apiURL(path)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := c.do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		apiErr := &APIError{StatusCode: resp.StatusCode}
+		if json.Unmarshal(respData, apiErr) != nil {
+			apiErr.Message = string(respData)
+		}
+		return apiErr
+	}
+
+	if respBody != nil && len(respData) > 0 {
+		if err := json.Unmarshal(respData, respBody); err != nil {
+			return fmt.Errorf("parsing response: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// doJSONWithQuery is like doJSON but with query parameters.
+func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query map[string]string, reqBody, respBody interface{}) error {
+	var body io.Reader
+	if reqBody != nil {
+		data, err := json.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("marshaling request: %w", err)
+		}
+		body = bytes.NewReader(data)
+	}
+
+	url := c.apiURL(path)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	if len(query) > 0 {
+		q := req.URL.Query()
+		for k, v := range query {
+			q.Set(k, v)
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	resp, err := c.do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		apiErr := &APIError{StatusCode: resp.StatusCode}
+		if json.Unmarshal(respData, apiErr) != nil {
+			apiErr.Message = string(respData)
+		}
+		return apiErr
+	}
+
+	if respBody != nil && len(respData) > 0 {
+		if err := json.Unmarshal(respData, respBody); err != nil {
+			return fmt.Errorf("parsing response: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// doRaw performs an HTTP request and returns the raw response body reader.
+// The caller is responsible for closing the reader.
+func (c *Client) doRaw(ctx context.Context, method, path string, query map[string]string) (io.ReadCloser, error) {
+	url := c.apiURL(path)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	if len(query) > 0 {
+		q := req.URL.Query()
+		for k, v := range query {
+			q.Set(k, v)
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	resp, err := c.do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		defer resp.Body.Close()
+		respData, _ := io.ReadAll(resp.Body)
+		apiErr := &APIError{StatusCode: resp.StatusCode}
+		if json.Unmarshal(respData, apiErr) != nil {
+			apiErr.Message = string(respData)
+		}
+		return nil, apiErr
+	}
+
+	return resp.Body, nil
+}

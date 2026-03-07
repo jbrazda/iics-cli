@@ -1,0 +1,22 @@
+# Sample IICS CLI Configuration
+# Copy to ~/.iics/config.yaml and update with your credentials
+defaultProfile: dev
+
+profiles:
+  dev:
+    name: "Development Org"
+    region: "us"
+    username: "dev-user@company.com"
+    password: ""
+  staging:
+    name: "Staging Org"
+    region: "USW3"
+    username: "staging-user@company.com"
+    password: ""
+  prod:
+    name: "Production Org"
+    region: "EMEA"
+    username: "prod-admin@company.com"
+    password: ""
+    # Optional: override the auto-resolved login URL
+    # loginUrl: "https://dm-em.informaticacloud.com/saas/public/core/v3/login"

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:knowledge.informatica.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.informatica.com)",
+      "WebFetch(domain:thinketl.com)",
+      "Bash(go version:*)",
+      "WebFetch(domain:jsapi.apiary.io)",
+      "WebFetch(domain:onlinehelp.informatica.com)",
+      "Bash(go mod init:*)",
+      "Bash(export PATH=\"/opt/local/bin:$PATH\")",
+      "Bash(go mod tidy:*)",
+      "Bash(go build:*)",
+      "Bash(/Users/jbrazda/workspace/claude/iics_cli/iics:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)"
+    ]
+  }
+}
