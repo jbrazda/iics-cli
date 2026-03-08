@@ -24,7 +24,7 @@ Explore/<path from the list output>.<type>
 
 ### Example Yaml output structure
 
-Structure when when the id,path,type,location fields ar requested 
+Structure when when the id,path,type,location fields ar requested
 
 ```yaml
 objects:

@@ -25,7 +25,7 @@ func newObjectsCmd() *cobra.Command {
 }
 
 // defaultObjectFields is the default set of fields shown in console and written to file.
-const defaultObjectFields = "id,path,type,description,updatedBy,updateTime"
+const defaultObjectFields = "id,path,type,updatedBy,updateTime"
 
 // objectsColumnDefs maps field names to their column definitions for console output.
 var objectsColumnDefs = map[string]output.Column{
