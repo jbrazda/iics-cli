@@ -19,6 +19,7 @@ type Object struct {
 	UpdatedBy   string   `json:"updatedBy"`
 	UpdateTime  string   `json:"updateTime"`
 	Tags        []string `json:"tags,omitempty"`
+	Location    string   `json:"location,omitempty"` // computed: "Explore/<path>.<type>"
 }
 
 // ObjectsListOptions holds query parameters for listing objects.
@@ -87,9 +88,11 @@ func (c *Client) ListObjects(ctx context.Context, opts ObjectsListOptions) (*Obj
 // ListAllObjects retrieves all assets matching the filter options by paging
 // through results with the default page size (200) until exhausted.
 // opts.Limit and opts.Skip are ignored; use ListObjects for single-page control.
-func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions) (*ObjectsListResponse, error) {
+// progressFn, if non-nil, is called after each page with the page number (1-based) and total fetched count.
+func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions, progressFn func(page, fetched int)) (*ObjectsListResponse, error) {
 	all := &ObjectsListResponse{}
 	skip := 0
+	pageNum := 0
 
 	for {
 		page, err := c.ListObjects(ctx, ObjectsListOptions{
@@ -103,8 +106,13 @@ func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions) (*
 			return nil, err
 		}
 
+		pageNum++
 		all.Objects = append(all.Objects, page.Objects...)
 		all.Count = len(all.Objects)
+
+		if progressFn != nil {
+			progressFn(pageNum, all.Count)
+		}
 
 		if len(page.Objects) < defaultPageSize {
 			// Last page — no more results

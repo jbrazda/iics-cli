@@ -1,0 +1,26 @@
+objectPath,objectName,objectType,id
+/Explore/ZZ_TEST_CLI/Mappings,m_Test_Git,DTEMPLATE,0pXCTRhtjrcdwOCIS5P7S5
+/Explore/ZZ_TEST_CLI,Connectors,Folder,aLX7qnviqxJdmqpVsd17SG
+/Explore/ZZ_TEST_CLI,IssueGenerateRandomString,Folder,9k4OaSJhnYyd4g0NUDlE6s
+/Explore/ZZ_TEST_CLI,Connections,Folder,8aJAqowEF2phOFeUtU8TuS
+/SYS,Telematics,Connection,2E6Di63bPJUer5MvW8lxYx
+/Explore/ZZ_TEST_CLI/Connectors,TestServiceConnector1,AI_SERVICE_CONNECTOR,4ayib7p2V5xlJ1CHmRiTA0
+/Explore/ZZ_TEST_CLI,Mappings,Folder,2evb0eclhUEfvPKOyj794R
+/Explore/ZZ_TEST_CLI,Components,Folder,1vRc0Rb7ua4kT8ccjL6sKf
+/Explore/ZZ_TEST_CLI,TaskFlows,Folder,2mGokcuTPCjdbdeyCmzFKM
+/Explore/ZZ_TEST_CLI,Guides,Folder,3OrYJxTOzUJdwgHskwZCcj
+/Explore,ZZ_TEST_CLI,Project,8XK79DgSovVblOcwrOWF62
+/Explore/ZZ_TEST_CLI,ProcessObjects,Folder,3N4yMZtC2GBhTfdAhT3yG0
+/Explore/ZZ_TEST_CLI/IssueGenerateRandomString,Test_GenRandomString,PROCESS,lFlQBdLdygSfyFK3TZh4IZ
+/Explore/ZZ_TEST_CLI/Processes,MockupEcho,PROCESS,3cnlhCxf4I5kGPJQoIZSMZ
+/Explore/ZZ_TEST_CLI,MassIngestion,Folder,191ZGSrZLeTgtPaXNRQpWV
+/Explore/ZZ_TEST_CLI,Processes,Folder,1yeVVpAOUcHioT3sSTii2G
+/Explore/ZZ_TEST_CLI/Tasks,mt_Test_Git,MTT,kUBJTuKdfe3fZCZfsibhme
+/Explore/ZZ_TEST_CLI/ProcessObjects,TestConfigurationProperty,PROCESS_OBJECT,h2zy4tla02Gf0L72vmIo6L
+/SYS,CDI-G01,AgentGroup,eMvazWw2MoBjBanMZKwNUE
+/Explore/ZZ_TEST_CLI,Tasks,Folder,7fDEP5uXWTWdA9vmHsb7Ex
+/Explore/ZZ_TEST_CLI,Mapplets,Folder,6diNoBL2NEqlCYHhYgc68O
+/Explore/ZZ_TEST_CLI,DataQuality,Folder,guoHBxV3L8GdMprXqqSdKH
+/Explore/ZZ_TEST_CLI/IssueGenerateRandomString,TestRandomString,GUIDE,9WuPOQqwGVfi4M1RQ1OVUZ
+/Explore/ZZ_TEST_CLI/Connections,TestServiceConnection1,AI_CONNECTION,0KfTorzrNwihXfV38FliA2
+/Explore/ZZ_TEST_CLI/Guides,Test Conversion Utility,GUIDE,3sSitJsDn5odECT8qJMYut
