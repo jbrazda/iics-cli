@@ -136,7 +136,7 @@ Environment variables take precedence over config file values.
 
 ### Supported regions
 
-| Region                                 | ssLogin Host                  |
+| Region                                 | ssLogin Host                |
 | -------------------------------------- | --------------------------- |
 | US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com  |
 | USW1-1, USW3-1                         | dm1-us.informaticacloud.com |
@@ -176,15 +176,15 @@ iics
 
 ### Global flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--profile` | `-p` | Profile to use (overrides default) |
-| `--output` | `-o` | Output format: `table` (default) or `json` |
-| `--verbose` | `-v` | Enable verbose output |
-| `--no-color` | | Disable colored output |
-| `--config` | | Config file path (default `~/.iics/config.yaml`) |
+| Flag         | Short | Description                                      |
+| ------------ | ----- | ------------------------------------------------ |
+| `--profile`  | `-p`  | Profile to use (overrides default)               |
+| `--output`   | `-o`  | Output format: `table` (default) or `json`       |
+| `--verbose`  | `-v`  | Enable verbose output                            |
+| `--no-color` |       | Disable colored output                           |
+| `--config`   |       | Config file path (default `~/.iics/config.yaml`) |
 
-## Development
+## DevelopmentPP
 
 ### Prerequisites
 

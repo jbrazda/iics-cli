@@ -1,0 +1,14 @@
+> OIE_002 INFO 2026-03-08T17:38:42.803Z Starting import operation.
+Execution Client: API
+Job Name: ZZ_TEST_CLI
+Organization: National Interstate - DEV
+Job Id: 3zS6n0jqKMggAdN6AHu4cB
+User: jaroslav.brazda.dev@natl.com
+> OIE_003 INFO 2026-03-08T17:38:42.803Z Finished import operation.
+Job Name: ZZ_TEST_CLI
+Start Time: 03/08/26 5:38 PM
+End Time: 03/08/26 5:38 PM
+Started by: jaroslav.brazda.dev@natl.com
+Start Method: API
+Source Organization: National Interstate - DEV
+Status: SUCCESSFUL
