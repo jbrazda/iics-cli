@@ -164,8 +164,26 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 	return resp, nil
 }
 
+// ensureSession guarantees the client has a valid session before a URL is built.
+// It must be called before c.apiURL() so that baseAPIURL is populated.
+func (c *Client) ensureSession(ctx context.Context) error {
+	c.mu.RLock()
+	hasSession := c.sessionID != ""
+	c.mu.RUnlock()
+	if !hasSession {
+		if _, err := c.Login(ctx); err != nil {
+			return fmt.Errorf("auto-login failed: %w", err)
+		}
+	}
+	return nil
+}
+
 // doJSON is a convenience method that sends a JSON request and decodes the response.
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
 	var body io.Reader
 	if reqBody != nil {
 		data, err := json.Marshal(reqBody)
@@ -207,6 +225,10 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 
 // doJSONWithQuery is like doJSON but with query parameters.
 func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query map[string]string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
 	var body io.Reader
 	if reqBody != nil {
 		data, err := json.Marshal(reqBody)
@@ -257,6 +279,10 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 // doRaw performs an HTTP request and returns the raw response body reader.
 // The caller is responsible for closing the reader.
 func (c *Client) doRaw(ctx context.Context, method, path string, query map[string]string) (io.ReadCloser, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return nil, err
+	}
+
 	url := c.apiURL(path)
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
