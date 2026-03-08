@@ -9,12 +9,12 @@ import (
 
 // MeteringData represents metering/usage data.
 type MeteringData struct {
-	ID         string                 `json:"id,omitempty"`
-	OrgID      string                 `json:"orgId,omitempty"`
-	Type       string                 `json:"type,omitempty"`
-	StartDate  string                 `json:"startDate,omitempty"`
-	EndDate    string                 `json:"endDate,omitempty"`
-	Data       map[string]interface{} `json:"data,omitempty"`
+	ID        string                 `json:"id,omitempty"`
+	OrgID     string                 `json:"orgId,omitempty"`
+	Type      string                 `json:"type,omitempty"`
+	StartDate string                 `json:"startDate,omitempty"`
+	EndDate   string                 `json:"endDate,omitempty"`
+	Data      map[string]interface{} `json:"data,omitempty"`
 }
 
 // GetMeteringData retrieves metering data.

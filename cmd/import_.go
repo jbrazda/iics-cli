@@ -30,8 +30,8 @@ func newImportUploadCmd() *cobra.Command {
 	var file string
 
 	cmd := &cobra.Command{
-		Use:   "upload",
-		Short: "Upload a ZIP package for import",
+		Use:     "upload",
+		Short:   "Upload a ZIP package for import",
 		Example: `  iics import upload --file backup.zip`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if file == "" {

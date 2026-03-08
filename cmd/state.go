@@ -25,8 +25,8 @@ func newStateFetchCmd() *cobra.Command {
 		outputFile string
 	)
 	cmd := &cobra.Command{
-		Use:   "fetch",
-		Short: "Fetch object state",
+		Use:     "fetch",
+		Short:   "Fetch object state",
 		Example: `  iics state fetch --object-id <id> --output-file state.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if objectID == "" {
@@ -73,8 +73,8 @@ func newStateLoadCmd() *cobra.Command {
 		inputFile string
 	)
 	cmd := &cobra.Command{
-		Use:   "load",
-		Short: "Load object state",
+		Use:     "load",
+		Short:   "Load object state",
 		Example: `  iics state load --object-id <id> --input-file state.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if objectID == "" {

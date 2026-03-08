@@ -11,20 +11,20 @@ import (
 
 // Exit codes following POSIX conventions.
 const (
-	ExitOK             = 0 // Successful execution
-	ExitError          = 1 // Runtime / API errors
-	ExitUsageError     = 2 // Invalid command usage, missing flags, etc.
+	ExitOK         = 0 // Successful execution
+	ExitError      = 1 // Runtime / API errors
+	ExitUsageError = 2 // Invalid command usage, missing flags, etc.
 )
 
 // APIError represents a structured error from the IICS API.
 // It captures the full HTTP response details for diagnostic output.
 type APIError struct {
-	StatusCode      int              `json:"-"`
-	Code            string           `json:"code"`
-	Message         string           `json:"message"`
-	RequestID       string           `json:"requestId,omitempty"`
-	ResponseHeaders http.Header      `json:"-"`
-	ResponseBody    json.RawMessage  `json:"-"`
+	StatusCode      int             `json:"-"`
+	Code            string          `json:"code"`
+	Message         string          `json:"message"`
+	RequestID       string          `json:"requestId,omitempty"`
+	ResponseHeaders http.Header     `json:"-"`
+	ResponseBody    json.RawMessage `json:"-"`
 }
 
 // Error returns a short, single-line error summary.

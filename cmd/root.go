@@ -92,9 +92,9 @@ func isUsageError(err error) bool {
 		"unknown shorthand flag",
 		"required flag",
 		"invalid argument",
-		"accepts ",            // "accepts N arg(s)"
-		"at least",            // "at least N arg(s)"
-		"at most",             // "at most N arg(s)"
+		"accepts ", // "accepts N arg(s)"
+		"at least", // "at least N arg(s)"
+		"at most",  // "at most N arg(s)"
 		"flag needs an argument",
 	} {
 		if len(msg) >= len(prefix) && msg[:len(prefix)] == prefix {

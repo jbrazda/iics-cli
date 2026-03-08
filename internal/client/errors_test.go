@@ -39,9 +39,9 @@ func TestAPIErrorError(t *testing.T) {
 func TestAPIErrorVerbose(t *testing.T) {
 	body := json.RawMessage(`{"code":"NOT_FOUND","message":"Object not found","requestId":"req-123"}`)
 	headers := http.Header{
-		"Content-Type":   {"application/json"},
-		"X-Request-Id":   {"req-456"},
-		"X-Infa-Org-Id":  {"org-789"},
+		"Content-Type":  {"application/json"},
+		"X-Request-Id":  {"req-456"},
+		"X-Infa-Org-Id": {"org-789"},
 	}
 
 	apiErr := &APIError{
@@ -205,10 +205,10 @@ func TestAPIErrorFromHTTPClient(t *testing.T) {
 
 func TestAPIErrorHelpers(t *testing.T) {
 	tests := []struct {
-		status    int
-		notFound  bool
-		unauth    bool
-		tooMany   bool
+		status   int
+		notFound bool
+		unauth   bool
+		tooMany  bool
 	}{
 		{404, true, false, false},
 		{401, false, true, false},

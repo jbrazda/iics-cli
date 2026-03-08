@@ -27,10 +27,10 @@ func newExportCmd() *cobra.Command {
 
 func newExportCreateCmd() *cobra.Command {
 	var (
-		name     string
-		ids      string
-		deps     bool
-		wait     bool
+		name string
+		ids  string
+		deps bool
+		wait bool
 	)
 
 	cmd := &cobra.Command{
@@ -152,8 +152,8 @@ func newExportDownloadCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "download",
-		Short: "Download export ZIP package",
+		Use:     "download",
+		Short:   "Download export ZIP package",
 		Example: `  iics export download --id <job-id> --output-file backup.zip`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" {
