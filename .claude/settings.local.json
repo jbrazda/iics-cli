@@ -14,7 +14,8 @@
       "Bash(go build:*)",
       "Bash(/Users/jbrazda/workspace/claude/iics_cli/iics:*)",
       "Bash(go test:*)",
-      "Bash(go vet:*)"
+      "Bash(go vet:*)",
+      "Bash(/opt/local/bin/go build:*)"
     ]
   }
 }

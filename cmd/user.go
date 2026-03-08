@@ -49,10 +49,10 @@ func newUserListCmd() *cobra.Command {
 
 			columns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 25},
-				{Header: "EMAIL", Field: "emails", Width: 30},
-				{Header: "STATUS", Field: "status", Width: 10},
-				{Header: "UPDATED", Field: "updateTime", Width: 20},
+				{Header: "USERNAME", Field: "userName", Width: 25},
+				{Header: "EMAIL", Field: "email", Width: 30},
+				{Header: "STATE", Field: "state", Width: 12},
+				{Header: "UPDATED", Field: "updateTime", Width: 22},
 			}
 
 			return f.Format(users, columns)
@@ -92,9 +92,9 @@ func newUserGetCmd() *cobra.Command {
 
 			columns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 25},
-				{Header: "EMAIL", Field: "emails", Width: 30},
-				{Header: "STATUS", Field: "status", Width: 10},
+				{Header: "USERNAME", Field: "userName", Width: 25},
+				{Header: "EMAIL", Field: "email", Width: 30},
+				{Header: "STATE", Field: "state", Width: 12},
 			}
 
 			return f.Format(user, columns)
@@ -136,7 +136,7 @@ func newUserCreateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "User created: %s (ID: %s)\n", created.Name, created.ID)
+			fmt.Fprintf(cmd.OutOrStdout(), "User created: %s (ID: %s)\n", created.UserName, created.ID)
 			return nil
 		},
 	}
@@ -182,7 +182,7 @@ func newUserUpdateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "User updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			fmt.Fprintf(cmd.OutOrStdout(), "User updated: %s (ID: %s)\n", updated.UserName, updated.ID)
 			return nil
 		},
 	}
