@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -24,13 +23,16 @@ func newFolderCreateCmd() *cobra.Command {
 	var (
 		name        string
 		description string
-		parentID    string
+		projectID   string
+		projectName string
 	)
 
 	cmd := &cobra.Command{
-		Use:     "create",
-		Short:   "Create a folder",
-		Example: `  iics folder create --name "My Folder" --parent-id <project-id>`,
+		Use:   "create",
+		Short: "Create a folder",
+		Example: `  iics folder create --name "My Folder"
+  iics folder create --name "My Folder" --project-id <project-id>
+  iics folder create --name "My Folder" --project-name "Orders"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name == "" {
 				return fmt.Errorf("--name is required")
@@ -41,8 +43,7 @@ func newFolderCreateCmd() *cobra.Command {
 				return err
 			}
 
-			folder := &client.Folder{Name: name, Description: description, ParentID: parentID}
-			created, err := c.CreateFolder(context.Background(), folder)
+			created, err := c.CreateFolder(context.Background(), name, description, projectID, projectName)
 			if err != nil {
 				return err
 			}
@@ -54,7 +55,8 @@ func newFolderCreateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "folder name (required)")
 	cmd.Flags().StringVar(&description, "description", "", "folder description")
-	cmd.Flags().StringVar(&parentID, "parent-id", "", "parent project or folder ID")
+	cmd.Flags().StringVar(&projectID, "project-id", "", "parent project ID")
+	cmd.Flags().StringVar(&projectName, "project-name", "", "parent project name (mutually exclusive with --project-id)")
 	return cmd
 }
 
@@ -63,23 +65,24 @@ func newFolderUpdateCmd() *cobra.Command {
 		id          string
 		name        string
 		description string
+		projectID   string
+		projectName string
+		folderName  string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update a folder",
+		Example: `  iics folder update --id <folder-id> --name "New Name"
+  iics folder update --id <folder-id> --project-id <project-id> --name "New Name"
+  iics folder update --project-name "Orders" --folder-name "Northeast Orders" --name "Northeast Requests"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
-			}
-
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
 
-			folder := &client.Folder{Name: name, Description: description}
-			updated, err := c.UpdateFolder(context.Background(), id, folder)
+			updated, err := c.UpdateFolder(context.Background(), id, name, description, projectID, projectName, folderName)
 			if err != nil {
 				return err
 			}
@@ -89,9 +92,12 @@ func newFolderUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&id, "id", "", "folder ID (required)")
-	cmd.Flags().StringVar(&name, "name", "", "folder name")
-	cmd.Flags().StringVar(&description, "description", "", "folder description")
+	cmd.Flags().StringVar(&id, "id", "", "folder ID")
+	cmd.Flags().StringVar(&name, "name", "", "new folder name")
+	cmd.Flags().StringVar(&description, "description", "", "new folder description")
+	cmd.Flags().StringVar(&projectID, "project-id", "", "parent project ID")
+	cmd.Flags().StringVar(&projectName, "project-name", "", "parent project name (use with --folder-name)")
+	cmd.Flags().StringVar(&folderName, "folder-name", "", "current folder name (use with --project-name)")
 	return cmd
 }
 
