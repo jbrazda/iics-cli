@@ -49,7 +49,7 @@ func (c *Client) ListConnections(ctx context.Context, opts ConnectionListOptions
 	}
 
 	var resp []Connection
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "api/v2/connection", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/connection", BaseAPIPathV2), query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -58,7 +58,7 @@ func (c *Client) ListConnections(ctx context.Context, opts ConnectionListOptions
 // GetConnection retrieves a single connection by ID.
 func (c *Client) GetConnection(ctx context.Context, id string) (*Connection, error) {
 	var resp Connection
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("api/v2/connection/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/connection/%s", BaseAPIPathV2, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -67,7 +67,7 @@ func (c *Client) GetConnection(ctx context.Context, id string) (*Connection, err
 // CreateConnection creates a new connection.
 func (c *Client) CreateConnection(ctx context.Context, conn *Connection) (*Connection, error) {
 	var resp Connection
-	if err := c.doJSON(ctx, http.MethodPost, "api/v2/connection", conn, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/connection", BaseAPIPathV2), conn, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -76,7 +76,7 @@ func (c *Client) CreateConnection(ctx context.Context, conn *Connection) (*Conne
 // UpdateConnection updates an existing connection.
 func (c *Client) UpdateConnection(ctx context.Context, id string, conn *Connection) (*Connection, error) {
 	var resp Connection
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("api/v2/connection/%s", id), conn, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/connection/%s", BaseAPIPathV2, id), conn, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -84,5 +84,5 @@ func (c *Client) UpdateConnection(ctx context.Context, id string, conn *Connecti
 
 // DeleteConnection deletes a connection by ID.
 func (c *Client) DeleteConnection(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("api/v2/connection/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/connection/%s", BaseAPIPathV2, id), nil, nil)
 }

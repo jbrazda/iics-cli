@@ -1,0 +1,1420 @@
+{
+  "info": {
+    "_postman_id": "8ed703fa-00e8-4942-b7cc-8cc9fdb61dc8",
+    "name": "IICS  V3 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "488220"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "public/core/v2/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "pm.environment.set(\"icSessionId\", jsonData.icSessionId);",
+                  "pm.environment.set(\"baseApiUrl\", jsonData.serverUrl);",
+                  "pm.environment.set(\"spiUrl\", jsonData.spiUrl);",
+                  "pm.environment.set(\"orgId\", jsonData.orgId);",
+                  "pm.environment.set(\"orgUuid\", jsonData.orgUuid);",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\t\"username\": \"{{iics_username}}\",\t\t\r\n\t\"password\": \"{{iics_password}}\"\r\n}"
+            },
+            "url": {
+              "raw": "{{iicsLoginUrl}}/ma/api/v2/user/login",
+              "host": [
+                "{{iicsLoginUrl}}"
+              ],
+              "path": [
+                "ma",
+                "api",
+                "v2",
+                "user",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "public/core/v3/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = JSON.parse(pm.response.text() );",
+                  "pm.environment.set(\"icSessionId\", jsonData.userInfo.sessionId);",
+                  "pm.environment.set(\"baseApiUrl\", jsonData.products[0].baseApiUrl);",
+                  "pm.environment.set(\"orgId\", jsonData.userInfo.orgId);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\t\"username\": \"{{iics_username}}\",\t\t\r\n\t\"password\": \"{{iics_password}}\"\r\n}"
+            },
+            "url": {
+              "raw": "{{iicsLoginUrl}}/saas/public/core/v3/login",
+              "host": [
+                "{{iicsLoginUrl}}"
+              ],
+              "path": [
+                "saas",
+                "public",
+                "core",
+                "v3",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "public/core/v3/logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "INFA-SESSION-ID",
+                "value": "{{IicSessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{iicsLoginUrl}}/saas/public/core/v3/logout",
+              "host": [
+                "{{iicsLoginUrl}}"
+              ],
+              "path": [
+                "saas",
+                "public",
+                "core",
+                "v3",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "V3",
+      "item": [
+        {
+          "name": "Objects",
+          "item": [
+            {
+              "name": "public/core/v3/objects",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n   \"objects\": [\r\n   {\r\n            \"path\": \"Default\",\r\n            \"type\": \"MAPPING\"\r\n   }\r\n   ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/objects?limit=200&skip=0&q=tag==BC3138",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "objects"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "type==PROCESS",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "200"
+                    },
+                    {
+                      "key": "skip",
+                      "value": "0"
+                    },
+                    {
+                      "key": "q",
+                      "value": "tag==BC3138"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/lookup Default project",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"objects\": [\r\n        {\r\n            \"path\": \"Default\",\r\n            \"type\": \"Project\"\r\n        }\r\n    ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{saasServer}}/public/core/v3/lookup",
+                  "host": [
+                    "{{saasServer}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "lookup"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/lookup Project",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"objects\": [{\r\n        \"path\" : \"\",\r\n        \"type\" : \"PROJECT\"\r\n    }]\r\n}"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/lookup",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "lookup"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/lookup  All Objects",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IDS-SESSION-ID}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"objects\": [\r\n        {\r\n            \"path\": \"Telematics\",\r\n            \"type\": \"MAPPING\"\r\n        }\r\n    ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{saasServer}}/public/core/v3/lookup",
+                  "host": [
+                    "{{saasServer}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "lookup"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/lookup",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n   \"objects\": [\r\n\r\n   {\r\n            \"id\": \"0bMulDFLSyMcsNmAGspuOt\"\r\n   }\r\n   ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{saasServer}}/public/core/v3/lookup",
+                  "host": [
+                    "{{saasServer}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "lookup"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Org",
+          "item": [
+            {
+              "name": "/public/core/v3/agent/service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "",
+                      "var jsonData = JSON.parse(responseBody);",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IDS-SESSION-ID}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"serviceName\":\"Data Integration\",\n    \"serviceAction\":\"start\",\n    \"agentId\":\"0118TN08000000000002\"\n}"
+                },
+                "url": {
+                  "raw": "{{saasServer}}/public/core/v3/agent/service",
+                  "host": [
+                    "{{saasServer}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "agent",
+                    "service"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/license/application",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IicSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"objects\": [\r\n             \r\n        {\r\n          \r\n            \"type\": \"DSS\"\r\n \r\n        }\r\n   ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/license/application",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "license",
+                    "application"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/license/edition",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"objects\": [\r\n             \r\n        {\r\n          \r\n            \"type\": \"DSS\"\r\n \r\n        }\r\n   ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/license/edition",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "license",
+                    "edition"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/license/org",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": " {\r\n\"objects\": [\r\n        {\r\n        \t\"path\": \"Default\",\r\n        \t \"type\": \"MAPPING\"\r\n        }\r\n        ]\r\n }"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/license/org/bu7cIqnSdeUdYKEuKQDwiv",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "license",
+                    "org",
+                    "bu7cIqnSdeUdYKEuKQDwiv"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/api/v2/agent",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "",
+                      "var jsonData = JSON.parse(responseBody);",
+                      "",
+                      "pm.environment.set(\"agentID\", jsonData[0].id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/agent",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "agent"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/api/v2/agent/{ID}",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "",
+                      "var jsonData = JSON.parse(responseBody);",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/agent/details/{{agentID}}",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "agent",
+                    "details",
+                    "{{agentID}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/api/v2/runtimeEnvironment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "",
+                      "var jsonData = JSON.parse(responseBody);",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{IDS-SESSION-ID}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/runtimeEnvironment",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "runtimeEnvironment"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Connections",
+          "item": [
+            {
+              "name": "Get Connections",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/connection",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "connection"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Connection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "IDS-USER-TOKEN",
+                    "value": "eyJraWQiOiI5eUFIUklTRjRtT2o5WXZkM3QxcWNxIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJ1c2VySW5mbyI6IntcImlkXCI6XCIwMk5pZVFOY3REemxyeUI5a0J4RjJmXCIsXCJuYW1lXCI6XCJqYnJhemRhQGFnZmlyc3QubWRtLmRldlwiLFwiY3VycmVudE9yZ0lkXCI6XCI3ODZ3VXBSZVJXeGpwZmxnYUE3MXFCXCIsXCJjdXJyZW50T3JnTmFtZVwiOlwiQWdGaXJzdCBGYXJtIENyZWRpdCBCYW5rIERldlwiLFwicGFyZW50T3JnSWRcIjpcIjUyWlNUQjBJREs2ZFh4YUVRTFVhUXVcIixcIm9yZ0lkXCI6XCI3ODZ3VXBSZVJXeGpwZmxnYUE3MXFCXCIsXCJvcmdOYW1lXCI6XCJBZ0ZpcnN0IEZhcm0gQ3JlZGl0IEJhbmsgRGV2XCIsXCJncm91cHNcIjp7XCJNRE1fQWRtaW5cIjpcImJuRUM5REVhb011ZzFhQVZpZnlEbVlcIixcIk1ETV9QSVBFTElORV9SVU5ORVJcIjpcIjNTNk1RcW95MGRTam5IMTBKOUxCVUFcIixcIkFHRl9TRUFSQ0hfU0VSVklDRV9DT05TVU1FUlNcIjpcImJtMTlFeUtsZWFKZUp2YVBNcFFTYzFcIixcIk1ETV9BbmFseXN0XCI6XCIxV3hYUUdBUWRTSmRqRlM2NmhsZVVHXCJ9LFwiZWZmZWN0aXZlUm9sZXNcIjp7XCJEYXRhbG9hZGVyIEFkbWluXCI6XCI2QUNoN3h4bnM0YmdyRTNXSWhBMzh4XCIsXCJPcGVyYXRvclwiOlwiaU9iTXdYT1RpZ0hpNVhCSlRVMVo4TlwiLFwiRGF0YSBQcmVwIEFkbWluXCI6XCI2ZGJCN0lEUzNTMGt3blNLbEQ2d2F5XCIsXCJTYWxlc19PcGVyYXRpb25fQW5hbHlzdFwiOlwiNVkzOE9yb0pwZzdseTE4YkY3ZnFhb1wiLFwiUmVmZXJlbmNlIDM2MCBTdGFrZSBIb2xkZXJcIjpcImdtTERmZHZCbm9QZFRWSXBHdGhpSXdcIixcIkN1c3RvbWVyIDM2MCBNYW5hZ2VyXCI6XCJrSXJhYlk5S05lRWxjWmZ3NmlVSDZBXCIsXCJNb2RlbCBTZXJ2ZSBTeXN0ZW0gUm9sZVwiOlwiZW9wSFN5MEc0eUlmR1RBMEZrb2h5cVwiLFwiRGF0YSBJbnRlZ3JhdGlvbiBUYXNrIEV4ZWN1dG9yXCI6XCI5ZEt5WHR1QWNKSWRLc0taR29ocTQ5XCIsXCJCdXNpbmVzczM2MFByb2Nlc3NFeGVjdXRvclwiOlwiNkhqNXUzWXMxNjVnVEJaNEo3WGZ5bVwiLFwiRGVzaWduZXJcIjpcIjlhVHVMR1JRZ0h5anBmdHBMRmo3UWdcIixcIk1vbml0b3JcIjpcImpZeHJ5YWFJczBqakFZTFFNQVliSVVcIixcIlJlZmVyZW5jZSAzNjAgUHJpbWFyeSBPd25lclwiOlwiYjF0NUhFRnF3RUxiZUhXTm5QazFnVVwiLFwiQXBwbGljYXRpb25fQWRtaW5pc3RyYXRvclwiOlwiOVFLaEppbkNQN2dkcXd3dllFanNPYlwiLFwiUmVmZXJlbmNlIDM2MCBCdXNpbmVzcyBTdGV3YXJkXCI6XCJlMlVTUWI0TmVjVGxyaDIzaUswTkFNXCIsXCJNRE0gQnVzaW5lc3MgVXNlclwiOlwiaTU3QTFpajBpNlBjQTZTYkhUNEVVT1wiLFwiSm9iIEV4ZWN1dG9yXCI6XCIwUDlpZ3BVTGhvOGowSTBoTmtwcWlIXCIsXCJCdXNpbmVzc19TdGV3YXJkXCI6XCIzejlsUTduUG9XR2Q5TWl5Q2dQTW9KXCIsXCJTZXJ2aWNlIENvbnN1bWVyXCI6XCIxNXNtMG1rek9MamNVOGs2dEk0NzhoXCIsXCJSZWZlcmVuY2UgMzYwIEJ1c2luZXNzIEFuYWx5c3RcIjpcIjVZdGdTMDZDc2RUamhZNUk0Y1l3Z0xcIixcIkRlcGxveWVyXCI6XCJsT2JNd1hPVGlnSGk1WEJKVFUxWjhRXCIsXCJDdXN0b21lciAzNjAgRGF0YSBTdGV3YXJkXCI6XCI0QlB2bE5qWndYSmo1Q042UGY2alV1XCIsXCJTYWxlc19PcGVyYXRpb25fTWFuYWdlclwiOlwiN3BnSFhUVzk0a2tmWXYydUluR0tPQ1wiLFwiUmVmZXJlbmNlIDM2MCBVc2VyXCI6XCIzY3J3R3RrVHFPV2V6NmhmVldrS2tTXCIsXCJSZWZlcmVuY2UgMzYwIEFkbWluaXN0cmF0b3JcIjpcImZZWE52ZWVzNzB2Yjgzb0JxTTNJV2hcIixcIkdvdmVybmFuY2UgQWRtaW5pc3RyYXRvclwiOlwiMjR0Z05SclNCTXppVmdsM1g5RlhLRVwiLFwiRGF0YSBQcmV2aWV3XCI6XCJhS09BQnNYSVJQNmVJMGFFRTMyYmc4XCIsXCJLTVMgS2V5IEFkbWluXCI6XCI1Y0FNS1BXRVZ1QmVQc2NRZEhSYUd4XCIsXCJBZG1pblwiOlwiOWdlZEJEb1lRb1FpYk5Nb2hmNUtDaFwiLFwiRGF0YSBWaWV3ZXJcIjpcIjhoUVZKRkd5eVFrZXAxZzJBZUVld0JcIixcIlJlZmVyZW5jZSAzNjAgUGxhbm5lclwiOlwiNFJJSlVXcHpKNG5qUjZrZnRwcjJpa1wiLFwiTURNIERlc2lnbmVyXCI6XCJsNjFYbjh6Rno0d2ZZSWhiNE42eDhsXCIsXCJCdXNpbmVzcyBNYW5hZ2VyXCI6XCI1UlpLbHlwZEU1UWlBSUlBbmdYU1M4XCIsXCJDdXN0b21lciAzNjAgQW5hbHlzdFwiOlwiakR6cmF5cWE4eWNja1hJWFBCODlVaFwifSxcInRpbWVab25lSWRcIjpcIkFtZXJpY2FcL05ld19Zb3JrXCIsXCJlZmZlY3RpdmVQcml2aWxlZ2VzTFdcIjpcImVcL1BjdjMxdWU1XC9PUGpUMzdkbit6NTJcLzNUeVwveEwzTjlzN2luNjA3ZnZyXC9lM3crNFBcL1wvZjBEXC9cL1wvOFBcL3ZcL1wvXC9cL1wvXC9cL1wvXC94XC94XC8rXC9cL1wvXC9cL1wvOXZQRHdIQURcL2c0azhRQUFENDdcL1wvXC9IUFwvXC9QTVwvelBNXC96UDg4UCt1Y0hcL3ZcL1wvXC9cL1wvXC9cL3o4QUFBQUFBQUFBQUFBQUFBQUFBUEJcL25oXC93XC80Y2Z5UFwvXC9cL1wvM1wvQklBTVwiLFwiYXV0aGVudGljYXRvclwiOjB9IiwiaXNzIjoiaHR0cHM6XC9cL2RtLXVzLmluZm9ybWF0aWNhY2xvdWQuY29tXC9pZGVudGl0eS1zZXJ2aWNlIiwiZXhwIjoxNjg3NDYxNTI4LCJpYXQiOjE2ODc0NTk3MjgsImp0aSI6IjBRb05sczluelBKZmI2TkxqdmpNMHgifQ.TEvtS-VfyTyqN-B9ebkQ5FLUCSckIlPIla17tdDBCaUBwnbGyu_5sZj9v-v4-pJwtHe2ojNHECW-f8H3a0dZmte7mCTgB8-Isa3AsqLDiJSUnLX0hMIm9xmjZal39YlJ5NzPZtMtAqqjNQ-VMIuyLXBL6ZdsfZL9afzfAk7n_lmuYuObo6VsCIazspV-wYEeuQ2xVHFlmf0b8gXyIoRFLUn1Icelcriz1TIGv6mK0FRjh3FnyzWPa4Pxmu8YbynoQnoq0Oct-7e7jnE3kmnzLsMLdwk71yQKXk_HY4pPmlSfboFnvTUQidtZ5MxIIsCyumiHx5dIVSPG687PM9wVjg",
+                    "type": "text",
+                    "disabled": true
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/connection/0022AF0B000000000024",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "connection",
+                    "0022AF0B000000000024"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Connection By Name",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "icSessionId",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/api/v2/connection/name/Salesforce",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "connection",
+                    "name",
+                    "Salesforce"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Export Import",
+          "item": [
+            {
+              "name": "public/core/v3/export/<id>/package",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "0aeHWrbkweLdht2nU0BkiZ"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\" : \"cmd_job1\",\r\n    \"objects\" : [\r\n        {\r\n            \"id\": \"6qIwickXDb8bD3QxaM6UaV\"\r\n        }\r\n       \r\n    ]\r\n}"
+                },
+                "url": {
+                  "raw": "https://qa-pod1.staging1.informaticacloud.com/saas/public/core/v3/export/9qheswOATCOkNbrlbKlRUj/package",
+                  "protocol": "https",
+                  "host": [
+                    "qa-pod1",
+                    "staging1",
+                    "informaticacloud",
+                    "com"
+                  ],
+                  "path": [
+                    "saas",
+                    "public",
+                    "core",
+                    "v3",
+                    "export",
+                    "9qheswOATCOkNbrlbKlRUj",
+                    "package"
+                  ]
+                },
+                "description": "download package"
+              },
+              "response": []
+            },
+            {
+              "name": "public/core/v3/import/job (status)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "multipart/form-data"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IDS-SESSION-ID}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "package",
+                      "value": null,
+                      "type": "file"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{microService}}/public/core/v3/import/4x7yW0HYvpBlshc3RpSs0m",
+                  "host": [
+                    "{{microService}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "import",
+                    "4x7yW0HYvpBlshc3RpSs0m"
+                  ]
+                },
+                "description": " "
+              },
+              "response": []
+            },
+            {
+              "name": "Export",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "var jsonData = JSON.parse(pm.response.text() );\r",
+                      "pm.environment.set(\"exportJobId\", jsonData.id);\r",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\": \"test_export\",\r\n    \"objects\": [\r\n        {\r\n            \"id\": \"098WTUbnwg8igXCQDytXOm\"\r\n        }\r\n    ]\r\n}"
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/export",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "export"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Export Job Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/export/{{exportJobId}}?expand=objects",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "export",
+                    "{{exportJobId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "expand",
+                      "value": "objects"
+                    }
+                  ]
+                },
+                "description": " "
+              },
+              "response": []
+            },
+            {
+              "name": "Download Export Package",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "disabled": true
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/export/{{exportJobId}}/package",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "export",
+                    "{{exportJobId}}",
+                    "package"
+                  ]
+                },
+                "description": " "
+              },
+              "response": []
+            },
+            {
+              "name": "Import",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "multipart/form-data"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IDS-SESSION-ID}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "importPackage",
+                      "type": "file",
+                      "value": null
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{microService}}/public/core/v3/import/package",
+                  "host": [
+                    "{{microService}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "import",
+                    "package"
+                  ]
+                },
+                "description": " "
+              },
+              "response": []
+            },
+            {
+              "name": "Get Import Job Status",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{IDS-SESSION-ID}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/import/5EhA36gDXLxdFYx1rQRYs9",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "import",
+                    "5EhA36gDXLxdFYx1rQRYs9"
+                  ]
+                },
+                "description": " "
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Users Groups Roles",
+          "item": [
+            {
+              "name": "Get Groups",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/userGroups",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "userGroups"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add User to Groups",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"groups\" : [\"SVC_SERVICE_CONSUMER\"]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/users/9IB4JZitmQDhj2cLTgWS64/addGroups",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "users",
+                    "9IB4JZitmQDhj2cLTgWS64",
+                    "addGroups"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Remove User from Groups",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"groups\" : [\"SVC_SERVICE_CONSUMER\"]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/users/9IB4JZitmQDhj2cLTgWS64/removeGroups",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "users",
+                    "9IB4JZitmQDhj2cLTgWS64",
+                    "removeGroups"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Group Detail",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/userGroups?q=userGroupName==\"Administrator\"&expand=privileges",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "userGroups"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "userGroupName==\"Administrator\""
+                    },
+                    {
+                      "key": "expand",
+                      "value": "privileges"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Roles",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/roles?q=roleName==Admin&expand=privileges",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "roles"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "roleName==Admin"
+                    },
+                    {
+                      "key": "expand",
+                      "value": "privileges"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Role Details",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/roles",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "roles"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Users",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "INFA-SESSION-ID",
+                    "value": "{{icSessionId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseApiUrl}}/public/core/v3/users?q=userName==informatica.robot.dev@natl.com",
+                  "host": [
+                    "{{baseApiUrl}}"
+                  ],
+                  "path": [
+                    "public",
+                    "core",
+                    "v3",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "userName==informatica.robot.dev@natl.com"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TaskFlows",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "{{iics_password}}",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "{{iics_username}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"skip_download\": \"true\"\n}\n"
+            },
+            "url": {
+              "raw": "https://use4.dm-us.informaticacloud.com/active-bpel/rt/TF_LSS_FTP_Retrieve",
+              "protocol": "https",
+              "host": [
+                "use4",
+                "dm-us",
+                "informaticacloud",
+                "com"
+              ],
+              "path": [
+                "active-bpel",
+                "rt",
+                "TF_LSS_FTP_Retrieve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "IDS-SESSION-ID",
+      "value": ""
+    },
+    {
+      "key": "microService",
+      "value": ""
+    },
+    {
+      "key": "saasServer",
+      "value": ""
+    },
+    {
+      "key": "orgId",
+      "value": ""
+    }
+  ]
+}

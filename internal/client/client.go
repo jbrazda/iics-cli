@@ -17,6 +17,10 @@ const (
 	// Note: IICS v3 uses "INFA-SESSION-ID" while v2 used "icSessionId".
 	sessionHeaderV3 = "INFA-SESSION-ID"
 	sessionHeaderV2 = "icSessionId"
+	// baseAPIPathV2 is the base path for v2 API endpoints.
+	BaseAPIPathV2 = "api/v2"
+	// baseAPIPathV3 is the base path for v3 API endpoints.
+	BaseAPIPathV3 = "public/core/v3"
 )
 
 // Client is the IICS v3 API client with automatic session management.
