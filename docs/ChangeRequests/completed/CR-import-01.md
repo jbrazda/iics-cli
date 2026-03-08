@@ -1,4 +1,4 @@
-# CR: UPdate Import to be user friendly for CI/CD
+# CR: Update Import to be user friendly for CI/CD
 
 ## Scope
 
@@ -35,9 +35,9 @@
 
 ## Acceptance Criteria
 
-- [ ] Import is successful
-- [ ] Verbose logging outputs details
-- [ ] Existing passing tests still pass
+- [x] Import is successful
+- [x] Verbose logging outputs details
+- [x] Existing passing tests still pass
 
 ## Do NOT
 

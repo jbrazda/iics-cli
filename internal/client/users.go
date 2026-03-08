@@ -7,26 +7,46 @@ import (
 	"strconv"
 )
 
+// UserRole is a role reference as returned within a User object.
+type UserRole struct {
+	ID                 string `json:"id,omitempty"`
+	RoleName           string `json:"roleName,omitempty"`
+	Description        string `json:"description,omitempty"`
+	DisplayName        string `json:"displayName,omitempty"`
+	DisplayDescription string `json:"displayDescription,omitempty"`
+}
+
+// UserGroupRef is a group reference as returned within a User object.
+type UserGroupRef struct {
+	ID            string `json:"id,omitempty"`
+	UserGroupName string `json:"userGroupName,omitempty"`
+	Description   string `json:"description,omitempty"`
+}
+
 // User represents an IICS user.
 type User struct {
-	ID             string   `json:"id,omitempty"`
-	OrgID          string   `json:"orgId,omitempty"`
-	Name           string   `json:"name"`
-	Description    string   `json:"description,omitempty"`
-	CreateTime     string   `json:"createTime,omitempty"`
-	UpdateTime     string   `json:"updateTime,omitempty"`
-	CreatedBy      string   `json:"createdBy,omitempty"`
-	UpdatedBy      string   `json:"updatedBy,omitempty"`
-	FirstName      string   `json:"firstName,omitempty"`
-	LastName       string   `json:"lastName,omitempty"`
-	Email          string   `json:"emails,omitempty"`
-	Phone          string   `json:"phone,omitempty"`
-	Title          string   `json:"title,omitempty"`
-	Status         string   `json:"status,omitempty"`
-	Authentication string   `json:"authentication,omitempty"`
-	Timezone       string   `json:"timezone,omitempty"`
-	Roles          []string `json:"roles,omitempty"`
-	Groups         []string `json:"groups,omitempty"`
+	ID                  string         `json:"id,omitempty"`
+	OrgID               string         `json:"orgId,omitempty"`
+	UserName            string         `json:"userName,omitempty"`
+	FirstName           string         `json:"firstName,omitempty"`
+	LastName            string         `json:"lastName,omitempty"`
+	Description         string         `json:"description,omitempty"`
+	CreateTime          string         `json:"createTime,omitempty"`
+	UpdateTime          string         `json:"updateTime,omitempty"`
+	CreatedBy           string         `json:"createdBy,omitempty"`
+	UpdatedBy           string         `json:"updatedBy,omitempty"`
+	Email               string         `json:"email,omitempty"`
+	Phone               string         `json:"phone,omitempty"`
+	Title               string         `json:"title,omitempty"`
+	State               string         `json:"state,omitempty"`
+	Authentication      string         `json:"authentication,omitempty"`
+	TimeZoneID          string         `json:"timeZoneId,omitempty"`
+	ForcePasswordChange bool           `json:"forcePasswordChange,omitempty"`
+	LastLoginTime       string         `json:"lastLoginTime,omitempty"`
+	LastLoginMode       string         `json:"lastLoginMode,omitempty"`
+	MaxLoginAttempts    string         `json:"maxLoginAttempts,omitempty"`
+	Roles               []UserRole     `json:"roles,omitempty"`
+	Groups              []UserGroupRef `json:"groups,omitempty"`
 }
 
 // UserListOptions holds query parameters for listing users.
