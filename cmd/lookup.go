@@ -11,9 +11,9 @@ import (
 
 func newLookupCmd() *cobra.Command {
 	var (
-		id       string
-		path     string
-		objType  string
+		id      string
+		path    string
+		objType string
 	)
 
 	cmd := &cobra.Command{

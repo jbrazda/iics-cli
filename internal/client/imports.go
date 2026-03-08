@@ -13,7 +13,7 @@ import (
 type ImportUploadResponse struct {
 	JobID         string    `json:"jobId"`
 	JobStatus     JobStatus `json:"jobStatus"`
-	ChecksumValid bool     `json:"checksumValid"`
+	ChecksumValid bool      `json:"checksumValid"`
 }
 
 // ImportSpecification defines import parameters.

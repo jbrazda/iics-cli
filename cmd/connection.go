@@ -118,8 +118,8 @@ func newConnectionCreateCmd() *cobra.Command {
 	var fromFile string
 
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create a connection",
+		Use:     "create",
+		Short:   "Create a connection",
 		Example: `  iics connection create --from-file connection.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if fromFile == "" {
@@ -162,8 +162,8 @@ func newConnectionUpdateCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update",
-		Short: "Update a connection",
+		Use:     "update",
+		Short:   "Update a connection",
 		Example: `  iics connection update --id <connection-id> --from-file connection.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" {

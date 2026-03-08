@@ -9,24 +9,24 @@ import (
 
 // User represents an IICS user.
 type User struct {
-	ID              string   `json:"id,omitempty"`
-	OrgID           string   `json:"orgId,omitempty"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description,omitempty"`
-	CreateTime      string   `json:"createTime,omitempty"`
-	UpdateTime      string   `json:"updateTime,omitempty"`
-	CreatedBy       string   `json:"createdBy,omitempty"`
-	UpdatedBy       string   `json:"updatedBy,omitempty"`
-	FirstName       string   `json:"firstName,omitempty"`
-	LastName        string   `json:"lastName,omitempty"`
-	Email           string   `json:"emails,omitempty"`
-	Phone           string   `json:"phone,omitempty"`
-	Title           string   `json:"title,omitempty"`
-	Status          string   `json:"status,omitempty"`
-	Authentication  string   `json:"authentication,omitempty"`
-	Timezone        string   `json:"timezone,omitempty"`
-	Roles           []string `json:"roles,omitempty"`
-	Groups          []string `json:"groups,omitempty"`
+	ID             string   `json:"id,omitempty"`
+	OrgID          string   `json:"orgId,omitempty"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	CreateTime     string   `json:"createTime,omitempty"`
+	UpdateTime     string   `json:"updateTime,omitempty"`
+	CreatedBy      string   `json:"createdBy,omitempty"`
+	UpdatedBy      string   `json:"updatedBy,omitempty"`
+	FirstName      string   `json:"firstName,omitempty"`
+	LastName       string   `json:"lastName,omitempty"`
+	Email          string   `json:"emails,omitempty"`
+	Phone          string   `json:"phone,omitempty"`
+	Title          string   `json:"title,omitempty"`
+	Status         string   `json:"status,omitempty"`
+	Authentication string   `json:"authentication,omitempty"`
+	Timezone       string   `json:"timezone,omitempty"`
+	Roles          []string `json:"roles,omitempty"`
+	Groups         []string `json:"groups,omitempty"`
 }
 
 // UserListOptions holds query parameters for listing users.

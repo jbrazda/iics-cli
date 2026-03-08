@@ -8,15 +8,15 @@ import (
 
 // SecurityLog represents a security log entry.
 type SecurityLog struct {
-	ID            string `json:"id"`
-	OrgID         string `json:"orgId,omitempty"`
-	UserName      string `json:"userName"`
-	Action        string `json:"action"`
-	ObjectType    string `json:"objectType,omitempty"`
-	ObjectName    string `json:"objectName,omitempty"`
-	Status        string `json:"status,omitempty"`
-	SourceIP      string `json:"sourceIp,omitempty"`
-	EntryTime     string `json:"entryTime"`
+	ID             string `json:"id"`
+	OrgID          string `json:"orgId,omitempty"`
+	UserName       string `json:"userName"`
+	Action         string `json:"action"`
+	ObjectType     string `json:"objectType,omitempty"`
+	ObjectName     string `json:"objectName,omitempty"`
+	Status         string `json:"status,omitempty"`
+	SourceIP       string `json:"sourceIp,omitempty"`
+	EntryTime      string `json:"entryTime"`
 	AdditionalInfo string `json:"additionalInfo,omitempty"`
 }
 

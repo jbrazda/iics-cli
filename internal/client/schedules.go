@@ -9,23 +9,23 @@ import (
 
 // Schedule represents an IICS schedule.
 type Schedule struct {
-	ID          string `json:"id,omitempty"`
-	OrgID       string `json:"orgId,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Status      string `json:"status,omitempty"`
-	CreateTime  string `json:"createTime,omitempty"`
-	UpdateTime  string `json:"updateTime,omitempty"`
-	CreatedBy   string `json:"createdBy,omitempty"`
-	UpdatedBy   string `json:"updatedBy,omitempty"`
-	StartTime   string `json:"startTime,omitempty"`
-	EndTime     string `json:"endTime,omitempty"`
-	Interval    string `json:"interval,omitempty"`
-	Frequency   int    `json:"frequency,omitempty"`
-	Timezone    string `json:"timezone,omitempty"`
-	DayOfWeek   string `json:"dayOfWeek,omitempty"`
-	DayOfMonth  string `json:"dayOfMonth,omitempty"`
-	WeekOfMonth string `json:"weekOfMonth,omitempty"`
+	ID             string `json:"id,omitempty"`
+	OrgID          string `json:"orgId,omitempty"`
+	Name           string `json:"name"`
+	Description    string `json:"description,omitempty"`
+	Status         string `json:"status,omitempty"`
+	CreateTime     string `json:"createTime,omitempty"`
+	UpdateTime     string `json:"updateTime,omitempty"`
+	CreatedBy      string `json:"createdBy,omitempty"`
+	UpdatedBy      string `json:"updatedBy,omitempty"`
+	StartTime      string `json:"startTime,omitempty"`
+	EndTime        string `json:"endTime,omitempty"`
+	Interval       string `json:"interval,omitempty"`
+	Frequency      int    `json:"frequency,omitempty"`
+	Timezone       string `json:"timezone,omitempty"`
+	DayOfWeek      string `json:"dayOfWeek,omitempty"`
+	DayOfMonth     string `json:"dayOfMonth,omitempty"`
+	WeekOfMonth    string `json:"weekOfMonth,omitempty"`
 	RangeStartTime string `json:"rangeStartTime,omitempty"`
 	RangeEndTime   string `json:"rangeEndTime,omitempty"`
 }
