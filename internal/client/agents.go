@@ -39,7 +39,7 @@ func (c *Client) ListAgents(ctx context.Context, opts AgentListOptions) ([]Agent
 	}
 
 	var resp []Agent
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "agents", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/agents", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -48,11 +48,11 @@ func (c *Client) ListAgents(ctx context.Context, opts AgentListOptions) ([]Agent
 // StartAgentService starts a service on a secure agent.
 func (c *Client) StartAgentService(ctx context.Context, agentID, serviceName string) error {
 	body := map[string]string{"serviceName": serviceName, "action": "start"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("agents/%s/services", agentID), body, nil)
+	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("public/core/v3/agents/%s/services", agentID), body, nil)
 }
 
 // StopAgentService stops a service on a secure agent.
 func (c *Client) StopAgentService(ctx context.Context, agentID, serviceName string) error {
 	body := map[string]string{"serviceName": serviceName, "action": "stop"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("agents/%s/services", agentID), body, nil)
+	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("public/core/v3/agents/%s/services", agentID), body, nil)
 }

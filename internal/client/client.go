@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	sessionHeader = "INFA-SESSION-ID"
-	apiBasePath   = "public/core/v3"
+	// sessionHeader is the header used for session authentication in API requests.
+	// Note: IICS v3 uses "INFA-SESSION-ID" while v2 used "icSessionId".
+	sessionHeaderV3 = "INFA-SESSION-ID"
+	sessionHeaderV2 = "icSessionId"
 )
 
 // Client is the IICS v3 API client with automatic session management.
@@ -89,7 +91,7 @@ func (c *Client) apiURL(resourcePath string) string {
 	c.mu.RUnlock()
 
 	base = strings.TrimRight(base, "/")
-	return fmt.Sprintf("%s/%s/%s", base, apiBasePath, resourcePath)
+	return fmt.Sprintf("%s/%s", base, resourcePath)
 }
 
 // doWithSession executes an HTTP request with the session header injected.
@@ -97,8 +99,11 @@ func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Re
 	c.mu.RLock()
 	sessionID := c.sessionID
 	c.mu.RUnlock()
-
-	req.Header.Set(sessionHeader, sessionID)
+	if strings.Contains(req.URL.RequestURI(), "/v2/") {
+		req.Header.Set(sessionHeaderV2, sessionID)
+	} else {
+		req.Header.Set(sessionHeaderV3, sessionID)
+	}
 	req.Header.Set("Accept", "application/json")
 	if req.Header.Get("Content-Type") == "" && req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -184,11 +189,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		apiErr := &APIError{StatusCode: resp.StatusCode}
-		if json.Unmarshal(respData, apiErr) != nil {
-			apiErr.Message = string(respData)
-		}
-		return apiErr
+		return newAPIError(resp, respData)
 	}
 
 	if respBody != nil && len(respData) > 0 {
@@ -237,11 +238,7 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		apiErr := &APIError{StatusCode: resp.StatusCode}
-		if json.Unmarshal(respData, apiErr) != nil {
-			apiErr.Message = string(respData)
-		}
-		return apiErr
+		return newAPIError(resp, respData)
 	}
 
 	if respBody != nil && len(respData) > 0 {
@@ -278,11 +275,7 @@ func (c *Client) doRaw(ctx context.Context, method, path string, query map[strin
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		defer resp.Body.Close()
 		respData, _ := io.ReadAll(resp.Body)
-		apiErr := &APIError{StatusCode: resp.StatusCode}
-		if json.Unmarshal(respData, apiErr) != nil {
-			apiErr.Message = string(respData)
-		}
-		return nil, apiErr
+		return nil, newAPIError(resp, respData)
 	}
 
 	return resp.Body, nil

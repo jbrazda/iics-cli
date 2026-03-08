@@ -31,7 +31,7 @@ func (c *Client) GetMeteringData(ctx context.Context, meteringType, startDate, e
 	}
 
 	var resp MeteringData
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "metering", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/metering", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -39,7 +39,7 @@ func (c *Client) GetMeteringData(ctx context.Context, meteringType, startDate, e
 
 // DownloadMeteringReport downloads a metering report.
 func (c *Client) DownloadMeteringReport(ctx context.Context, reportID string, dest io.Writer) error {
-	path := fmt.Sprintf("metering/%s/report", reportID)
+	path := fmt.Sprintf("public/core/v3/metering/%s/report", reportID)
 	body, err := c.doRaw(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err

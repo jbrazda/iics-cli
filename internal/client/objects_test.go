@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -52,6 +53,81 @@ func TestListObjects(t *testing.T) {
 	}
 	if resp.Objects[0].ID != "obj1" {
 		t.Errorf("expected first object ID obj1, got %s", resp.Objects[0].ID)
+	}
+}
+
+func TestListAllObjects(t *testing.T) {
+	// Simulate 3 pages: two full pages of 200, then a short page of 50.
+	// Total expected: 450 objects.
+	pageSize := defaultPageSize
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		skip := 0
+		if s := r.URL.Query().Get("skip"); s != "" {
+			fmt.Sscanf(s, "%d", &skip)
+		}
+		limit := pageSize
+		if l := r.URL.Query().Get("limit"); l != "" {
+			fmt.Sscanf(l, "%d", &limit)
+		}
+
+		// Build a page of objects
+		count := limit // full page
+		if skip >= pageSize*2 {
+			count = 50 // last (short) page
+		}
+
+		objects := make([]Object, count)
+		for i := range objects {
+			objects[i] = Object{
+				ID:   fmt.Sprintf("obj-%d", skip+i),
+				Type: "MTT",
+				Path: fmt.Sprintf("Default/Task%d", skip+i),
+			}
+		}
+		resp := ObjectsListResponse{Count: count, Objects: objects}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	c := newTestClient(handler)
+	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{Type: "MTT"})
+	if err != nil {
+		t.Fatalf("ListAllObjects() error: %v", err)
+	}
+
+	want := pageSize*2 + 50 // 450
+	if len(resp.Objects) != want {
+		t.Errorf("expected %d objects, got %d", want, len(resp.Objects))
+	}
+	if resp.Count != want {
+		t.Errorf("expected Count=%d, got %d", want, resp.Count)
+	}
+}
+
+func TestListAllObjectsSinglePage(t *testing.T) {
+	// When the API returns fewer than defaultPageSize, no second request is made.
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		resp := ObjectsListResponse{
+			Count:   3,
+			Objects: []Object{{ID: "a"}, {ID: "b"}, {ID: "c"}},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	c := newTestClient(handler)
+	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{})
+	if err != nil {
+		t.Fatalf("ListAllObjects() error: %v", err)
+	}
+	if len(resp.Objects) != 3 {
+		t.Errorf("expected 3 objects, got %d", len(resp.Objects))
+	}
+	if calls != 1 {
+		t.Errorf("expected 1 API call for short result set, got %d", calls)
 	}
 }
 

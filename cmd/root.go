@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -11,14 +12,14 @@ import (
 )
 
 var (
-	cfgFile     string
-	profile     string
-	outputFmt   string
-	verbose     bool
-	noColor     bool
-	versionStr  = "dev"
-	commitStr   = "none"
-	dateStr     = "unknown"
+	cfgFile    string
+	profile    string
+	outputFmt  string
+	verbose    bool
+	noColor    bool
+	versionStr = "dev"
+	commitStr  = "none"
+	dateStr    = "unknown"
 )
 
 // SetVersionInfo sets the version information from build flags.
@@ -38,18 +39,75 @@ users, roles, and more.
 
 Configure profiles in ~/.iics/config.yaml or use environment variables
 (IICS_USERNAME, IICS_PASSWORD, IICS_REGION) for authentication.`,
+	// Silence Cobra's default error and usage printing so we control output.
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
-// Execute runs the root command.
-func Execute() error {
+// Execute runs the root command and returns a POSIX exit code.
+//
+//	0 — success
+//	1 — runtime / API error
+//	2 — usage error (bad flags, missing arguments)
+func Execute() int {
 	rootCmd.Version = fmt.Sprintf("%s (commit: %s, built: %s)", versionStr, commitStr, dateStr)
-	return rootCmd.Execute()
+
+	err := rootCmd.Execute()
+	if err == nil {
+		return client.ExitOK
+	}
+
+	return handleError(err)
+}
+
+// handleError formats the error to stderr and returns the appropriate exit code.
+func handleError(err error) int {
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		// Print short summary line
+		fmt.Fprintf(os.Stderr, "Error: %s\n", apiErr.Error())
+		// Print full HTTP details (status, headers, formatted JSON body)
+		fmt.Fprint(os.Stderr, apiErr.Verbose())
+		return client.ExitError
+	}
+
+	// Check if this is a Cobra usage error (unknown command, bad flags, etc.)
+	if isUsageError(err) {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		return client.ExitUsageError
+	}
+
+	// General runtime error
+	fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+	return client.ExitError
+}
+
+// isUsageError returns true if the error originated from invalid command usage.
+// Cobra wraps these with specific prefixes.
+func isUsageError(err error) bool {
+	msg := err.Error()
+	for _, prefix := range []string{
+		"unknown command",
+		"unknown flag",
+		"unknown shorthand flag",
+		"required flag",
+		"invalid argument",
+		"accepts ",            // "accepts N arg(s)"
+		"at least",            // "at least N arg(s)"
+		"at most",             // "at most N arg(s)"
+		"flag needs an argument",
+	} {
+		if len(msg) >= len(prefix) && msg[:len(prefix)] == prefix {
+			return true
+		}
+	}
+	return false
 }
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default ~/.iics/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&profile, "profile", "p", "", "IICS profile name (default from config)")
-	rootCmd.PersistentFlags().StringVarP(&outputFmt, "output", "o", "table", "output format: table|json")
+	rootCmd.PersistentFlags().StringVarP(&outputFmt, "output", "o", "table", "output format: table|json|csv")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
 

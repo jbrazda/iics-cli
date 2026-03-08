@@ -45,6 +45,7 @@ The session is cached locally so subsequent commands don't require re-authentica
 			fmt.Fprintf(cmd.OutOrStdout(), "Logged in successfully.\n")
 			fmt.Fprintf(cmd.OutOrStdout(), "  User:    %s\n", loginResp.UserInfo.Name)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Org:     %s (%s)\n", loginResp.UserInfo.OrgName, loginResp.UserInfo.OrgID)
+			fmt.Fprintf(cmd.OutOrStdout(), "  BaseURL: %s\n", loginResp.Products[0].BaseAPIURL)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Profile: %s\n", profileName)
 
 			return nil

@@ -22,7 +22,7 @@ type Folder struct {
 // CreateFolder creates a new folder.
 func (c *Client) CreateFolder(ctx context.Context, folder *Folder) (*Folder, error) {
 	var resp Folder
-	if err := c.doJSON(ctx, http.MethodPost, "folders", folder, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/folders", folder, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -31,7 +31,7 @@ func (c *Client) CreateFolder(ctx context.Context, folder *Folder) (*Folder, err
 // UpdateFolder updates an existing folder.
 func (c *Client) UpdateFolder(ctx context.Context, id string, folder *Folder) (*Folder, error) {
 	var resp Folder
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("folders/%s", id), folder, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/folders/%s", id), folder, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -39,5 +39,5 @@ func (c *Client) UpdateFolder(ctx context.Context, id string, folder *Folder) (*
 
 // DeleteFolder deletes a folder by ID.
 func (c *Client) DeleteFolder(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("folders/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/folders/%s", id), nil, nil)
 }
