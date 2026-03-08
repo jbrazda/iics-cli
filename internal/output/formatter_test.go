@@ -97,6 +97,64 @@ func TestTableFormatterNestedField(t *testing.T) {
 	}
 }
 
+func TestCSVFormatter(t *testing.T) {
+	var buf bytes.Buffer
+	f := New(FormatCSV, &buf)
+
+	data := []map[string]interface{}{
+		{"id": "abc123", "name": "My Connection", "type": "TOOLKIT"},
+		{"id": "def456", "name": "Another, Conn", "type": "JDBC"},
+	}
+
+	columns := []Column{
+		{Header: "ID", Field: "id"},
+		{Header: "NAME", Field: "name"},
+		{Header: "TYPE", Field: "type"},
+	}
+
+	if err := f.Format(data, columns); err != nil {
+		t.Fatalf("Format() error: %v", err)
+	}
+
+	out := buf.String()
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines (header + 2 rows), got %d:\n%s", len(lines), out)
+	}
+	if lines[0] != "ID,NAME,TYPE" {
+		t.Errorf("header = %q, want %q", lines[0], "ID,NAME,TYPE")
+	}
+	if !strings.Contains(lines[2], `"Another, Conn"`) {
+		t.Errorf("line 3 should have quoted field with comma: %s", lines[2])
+	}
+}
+
+func TestCSVFormatterEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	f := New(FormatCSV, &buf)
+
+	columns := []Column{{Header: "ID", Field: "id"}}
+	if err := f.Format([]map[string]interface{}{}, columns); err != nil {
+		t.Fatalf("Format() error: %v", err)
+	}
+
+	out := buf.String()
+	// Header only — no data rows
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 1 || lines[0] != "ID" {
+		t.Errorf("expected header-only output, got: %q", out)
+	}
+}
+
+func TestCSVFormatterNoColumns(t *testing.T) {
+	var buf bytes.Buffer
+	f := New(FormatCSV, &buf)
+	err := f.Format([]map[string]interface{}{{"id": "1"}}, nil)
+	if err == nil {
+		t.Error("expected error when no columns defined")
+	}
+}
+
 func TestParseFormat(t *testing.T) {
 	tests := []struct {
 		input   string
@@ -105,6 +163,7 @@ func TestParseFormat(t *testing.T) {
 	}{
 		{"table", FormatTable, false},
 		{"json", FormatJSON, false},
+		{"csv", FormatCSV, false},
 		{"", FormatTable, false},
 		{"xml", "", true},
 	}

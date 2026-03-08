@@ -67,6 +67,7 @@ func TestLogin(t *testing.T) {
 func TestLoginFailure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Request-Id", "login-req-123")
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"code":    "AUTH_FAILED",
@@ -87,5 +88,17 @@ func TestLoginFailure(t *testing.T) {
 	}
 	if apiErr.StatusCode != http.StatusForbidden {
 		t.Errorf("expected status 403, got %d", apiErr.StatusCode)
+	}
+	if apiErr.Code != "AUTH_FAILED" {
+		t.Errorf("expected code AUTH_FAILED, got %s", apiErr.Code)
+	}
+	if apiErr.ResponseHeaders == nil {
+		t.Fatal("expected ResponseHeaders to be set")
+	}
+	if apiErr.ResponseHeaders.Get("X-Request-Id") != "login-req-123" {
+		t.Errorf("expected X-Request-Id header, got %s", apiErr.ResponseHeaders.Get("X-Request-Id"))
+	}
+	if len(apiErr.ResponseBody) == 0 {
+		t.Error("expected ResponseBody to be set")
 	}
 }

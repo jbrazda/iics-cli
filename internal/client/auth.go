@@ -69,11 +69,7 @@ func (c *Client) Login(ctx context.Context) (*LoginResponse, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		apiErr := &APIError{StatusCode: resp.StatusCode}
-		if json.Unmarshal(respBody, apiErr) != nil {
-			apiErr.Message = string(respBody)
-		}
-		return nil, apiErr
+		return nil, newAPIError(resp, respBody)
 	}
 
 	var loginResp LoginResponse
@@ -110,7 +106,7 @@ func (c *Client) Logout(ctx context.Context) error {
 	}
 	c.mu.RUnlock()
 
-	url := c.apiURL("logout")
+	url := c.apiURL("public/core/v3/logout")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating logout request: %w", err)

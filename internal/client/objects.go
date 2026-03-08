@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const defaultPageSize = 200
+
 // Object represents an IICS asset.
 type Object struct {
 	ID          string   `json:"id"`
@@ -76,15 +78,47 @@ func (c *Client) ListObjects(ctx context.Context, opts ObjectsListOptions) (*Obj
 	}
 
 	var resp ObjectsListResponse
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "objects", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/objects", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
+// ListAllObjects retrieves all assets matching the filter options by paging
+// through results with the default page size (200) until exhausted.
+// opts.Limit and opts.Skip are ignored; use ListObjects for single-page control.
+func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions) (*ObjectsListResponse, error) {
+	all := &ObjectsListResponse{}
+	skip := 0
+
+	for {
+		page, err := c.ListObjects(ctx, ObjectsListOptions{
+			Query: opts.Query,
+			Type:  opts.Type,
+			Tag:   opts.Tag,
+			Limit: defaultPageSize,
+			Skip:  skip,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		all.Objects = append(all.Objects, page.Objects...)
+		all.Count = len(all.Objects)
+
+		if len(page.Objects) < defaultPageSize {
+			// Last page — no more results
+			break
+		}
+		skip += defaultPageSize
+	}
+
+	return all, nil
+}
+
 // GetObjectDependencies finds uses/usedBy references for an object.
 func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, refType string, limit, skip int) (*ObjectDependenciesResponse, error) {
-	path := fmt.Sprintf("objects/%s/references", objectID)
+	path := fmt.Sprintf("public/core/v3/objects/%s/references", objectID)
 	query := make(map[string]string)
 
 	if refType != "" {

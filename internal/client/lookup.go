@@ -36,7 +36,7 @@ type LookupResponse struct {
 func (c *Client) Lookup(ctx context.Context, objects []LookupObject) (*LookupResponse, error) {
 	req := LookupRequest{Objects: objects}
 	var resp LookupResponse
-	if err := c.doJSON(ctx, http.MethodPost, "lookup", req, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/lookup", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

@@ -27,7 +27,14 @@ func newObjectsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List organization assets",
-		Example: `  iics objects list --type MTT --limit 50
+		Long: `List assets in the IICS organization.
+
+Without --limit, all matching objects are returned by automatically paging
+through results in batches of 200. Use --limit to cap the results and --skip
+to offset into the result set.`,
+		Example: `  iics objects list                          # all objects (auto-paginated)
+  iics objects list --type MTT               # all mappings
+  iics objects list --type MTT --limit 50    # first 50 mappings
   iics objects list --query "type=='DTEMPLATE' and location=='Default/Sales'"
   iics objects list --tag production --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +43,14 @@ func newObjectsListCmd() *cobra.Command {
 				return err
 			}
 
-			resp, err := c.ListObjects(context.Background(), opts)
+			var resp *client.ObjectsListResponse
+			if opts.Limit > 0 {
+				// Single page — honour explicit limit and skip
+				resp, err = c.ListObjects(context.Background(), opts)
+			} else {
+				// No limit provided: fetch all pages
+				resp, err = c.ListAllObjects(context.Background(), opts)
+			}
 			if err != nil {
 				return err
 			}
@@ -61,8 +75,8 @@ func newObjectsListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&opts.Type, "type", "", "filter by object type (MTT, DTEMPLATE, DSS, etc.)")
 	cmd.Flags().StringVar(&opts.Tag, "tag", "", "filter by tag")
 	cmd.Flags().StringVarP(&opts.Query, "query", "q", "", "raw query filter expression")
-	cmd.Flags().IntVar(&opts.Limit, "limit", 200, "max results (up to 200)")
-	cmd.Flags().IntVar(&opts.Skip, "skip", 0, "number of results to skip")
+	cmd.Flags().IntVar(&opts.Limit, "limit", 0, "max results to return (default 0 = all, pages of 200)")
+	cmd.Flags().IntVar(&opts.Skip, "skip", 0, "number of results to skip (only used with --limit)")
 
 	return cmd
 }

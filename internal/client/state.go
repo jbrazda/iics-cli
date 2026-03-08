@@ -26,7 +26,7 @@ type StateResult struct {
 
 // FetchState fetches the state of an object and writes it to dest.
 func (c *Client) FetchState(ctx context.Context, objectID string, dest io.Writer) error {
-	path := fmt.Sprintf("fetchState/%s", objectID)
+	path := fmt.Sprintf("public/core/v3/fetchState/%s", objectID)
 	body, err := c.doRaw(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *Client) FetchState(ctx context.Context, objectID string, dest io.Writer
 
 // LoadState loads state data for an object.
 func (c *Client) LoadState(ctx context.Context, objectID string, data io.Reader) (*StateResult, error) {
-	url := c.apiURL(fmt.Sprintf("loadState/%s", objectID))
+	url := c.apiURL(fmt.Sprintf("public/core/v3/loadState/%s", objectID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, data)
 	if err != nil {
 		return nil, fmt.Errorf("creating loadState request: %w", err)
@@ -60,11 +60,7 @@ func (c *Client) LoadState(ctx context.Context, objectID string, data io.Reader)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		apiErr := &APIError{StatusCode: resp.StatusCode}
-		if parseJSON(respData, apiErr) != nil {
-			apiErr.Message = string(respData)
-		}
-		return nil, apiErr
+		return nil, newAPIError(resp, respData)
 	}
 
 	var result StateResult

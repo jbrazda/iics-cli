@@ -12,6 +12,7 @@ type Format string
 const (
 	FormatTable Format = "table"
 	FormatJSON  Format = "json"
+	FormatCSV   Format = "csv"
 )
 
 // Column defines a table column for human-readable output.
@@ -35,6 +36,8 @@ func New(format Format, w io.Writer) Formatter {
 	switch format {
 	case FormatJSON:
 		return &jsonFormatter{w: w}
+	case FormatCSV:
+		return &csvFormatter{w: w}
 	default:
 		return &tableFormatter{w: w}
 	}
@@ -47,7 +50,9 @@ func ParseFormat(s string) (Format, error) {
 		return FormatTable, nil
 	case "json":
 		return FormatJSON, nil
+	case "csv":
+		return FormatCSV, nil
 	default:
-		return "", fmt.Errorf("unknown output format %q; valid formats: table, json", s)
+		return "", fmt.Errorf("unknown output format %q; valid formats: table, json, csv", s)
 	}
 }

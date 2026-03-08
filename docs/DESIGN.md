@@ -4,6 +4,9 @@
 
 A comprehensive Go CLI tool (`iics`) to interact with the Informatica Intelligent Cloud Services (IICS) platform REST API v3. Provides a full-featured command-line interface covering all v3 API resources, enabling automation of IICS operations (asset management, export/import, user administration, etc.) from terminals and CI/CD pipelines.
 
+- [API Documentation (PDF)](https://docs.informatica.com/content/dam/source/GUID-B/GUID-BA8ED0B4-AB32-46B1-A7B8-358FAB844D6B/64/en/IICS_November2025_(REST-API)Reference_en.pdf)
+- [API Documentation (html)](https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/preface.html)
+
 ## Technology Choices
 
 - **CLI Framework**: [Cobra](https://github.com/spf13/cobra) (with [Viper](https://github.com/spf13/viper) for config)
@@ -14,7 +17,7 @@ A comprehensive Go CLI tool (`iics`) to interact with the Informatica Intelligen
 
 ## Project Structure
 
-```
+```text
 iics_cli/
 ├── main.go                          # Entry point: cmd.Execute()
 ├── go.mod / go.sum
@@ -60,7 +63,7 @@ iics_cli/
 
 ## Command Hierarchy
 
-```
+```text
 iics
 ├── login                     # Authenticate, store session
 ├── logout                    # Invalidate session
@@ -110,14 +113,14 @@ profiles:
 
 ### Environment variable overrides
 
-| Variable | Description |
-|----------|-------------|
-| `IICS_PROFILE` | Override default profile |
-| `IICS_USERNAME` | Override profile username |
-| `IICS_PASSWORD` | Override profile password |
-| `IICS_REGION` | Override profile region |
-| `IICS_LOGIN_URL` | Override computed login URL |
-| `IICS_OUTPUT` | Override default output format |
+| Variable         | Description                    |
+| ---------------- | ------------------------------ |
+| `IICS_PROFILE`   | Override default profile       |
+| `IICS_USERNAME`  | Override profile username      |
+| `IICS_PASSWORD`  | Override profile password      |
+| `IICS_REGION`    | Override profile region        |
+| `IICS_LOGIN_URL` | Override computed login URL    |
+| `IICS_OUTPUT`    | Override default output format |
 
 Session cache at `~/.iics/sessions.yaml` (ephemeral, never version-controlled).
 
@@ -132,12 +135,12 @@ Session cache at `~/.iics/sessions.yaml` (ephemeral, never version-controlled).
 
 ## Supported IICS Regions
 
-| Region | Login Host |
-|--------|-----------|
-| US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com |
-| USW1-1, USW3-1 | dm1-us.informaticacloud.com |
-| USW1-2 | dm2-us.informaticacloud.com |
-| CAC1 | dm-na.informaticacloud.com |
-| APSE1, APJ | dm-ap.informaticacloud.com |
-| APNE1 | dm1-ap.informaticacloud.com |
-| EMEA, EMWE1 | dm-em.informaticacloud.com |
+| Region                                 | Login Host                  |
+| -------------------------------------- | --------------------------- |
+| US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com  |
+| USW1-1, USW3-1                         | dm1-us.informaticacloud.com |
+| USW1-2                                 | dm2-us.informaticacloud.com |
+| CAC1                                   | dm-na.informaticacloud.com  |
+| APSE1, APJ                             | dm-ap.informaticacloud.com  |
+| APNE1                                  | dm1-ap.informaticacloud.com |
+| EMEA, EMWE1                            | dm-em.informaticacloud.com  |

@@ -33,7 +33,7 @@ type SourceControlResult struct {
 func (c *Client) Checkout(ctx context.Context, objectID string) (*SourceControlResult, error) {
 	body := SourceControlCheckoutRequest{ObjectID: objectID}
 	var resp SourceControlResult
-	if err := c.doJSON(ctx, http.MethodPost, "sourceControl/checkout", body, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/sourceControl/checkout", body, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -43,7 +43,7 @@ func (c *Client) Checkout(ctx context.Context, objectID string) (*SourceControlR
 func (c *Client) Checkin(ctx context.Context, objectID, comment string) (*SourceControlResult, error) {
 	body := SourceControlCheckinRequest{ObjectID: objectID, Comment: comment}
 	var resp SourceControlResult
-	if err := c.doJSON(ctx, http.MethodPost, "sourceControl/checkin", body, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/sourceControl/checkin", body, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -52,7 +52,7 @@ func (c *Client) Checkin(ctx context.Context, objectID, comment string) (*Source
 // Pull pulls changes from source control.
 func (c *Client) Pull(ctx context.Context) (*SourceControlResult, error) {
 	var resp SourceControlResult
-	if err := c.doJSON(ctx, http.MethodPost, "sourceControl/pull", nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/sourceControl/pull", nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -62,7 +62,7 @@ func (c *Client) Pull(ctx context.Context) (*SourceControlResult, error) {
 func (c *Client) Commit(ctx context.Context, comment string) (*SourceControlResult, error) {
 	body := SourceControlCommitRequest{Comment: comment}
 	var resp SourceControlResult
-	if err := c.doJSON(ctx, http.MethodPost, "sourceControl/commit", body, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/sourceControl/commit", body, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -71,7 +71,7 @@ func (c *Client) Commit(ctx context.Context, comment string) (*SourceControlResu
 // GetSourceControlStatus retrieves the source control status of an object.
 func (c *Client) GetSourceControlStatus(ctx context.Context, objectID string) (*SourceControlResult, error) {
 	var resp SourceControlResult
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("sourceControl/%s", objectID), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/sourceControl/%s", objectID), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

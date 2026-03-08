@@ -70,6 +70,11 @@ IICS_USERNAME=user@company.com IICS_PASSWORD=secret iics login
 # List objects
 iics objects list --type MTT
 
+iics objects list                       # all objects, auto-paginated
+iics objects list --type MTT            # all mappings, auto-paginated
+iics objects list --type MTT --limit 50 # first 50 only
+iics objects list --limit 50 --skip 100 # results 101-150
+
 # List objects as JSON
 iics objects list --type DTEMPLATE --output json
 
@@ -118,28 +123,28 @@ profiles:
 
 ### Environment variable overrides
 
-| Variable         | Description                  |
-|------------------|------------------------------|
-| `IICS_PROFILE`   | Override default profile     |
-| `IICS_USERNAME`  | Override profile username    |
-| `IICS_PASSWORD`  | Override profile password    |
-| `IICS_REGION`    | Override profile region      |
-| `IICS_LOGIN_URL` | Override computed login URL  |
+| Variable         | Description                    |
+| ---------------- | ------------------------------ |
+| `IICS_PROFILE`   | Override default profile       |
+| `IICS_USERNAME`  | Override profile username      |
+| `IICS_PASSWORD`  | Override profile password      |
+| `IICS_REGION`    | Override profile region        |
+| `IICS_LOGIN_URL` | Override computed login URL    |
 | `IICS_OUTPUT`    | Override default output format |
 
 Environment variables take precedence over config file values.
 
 ### Supported regions
 
-| Region | Login Host |
-|--------|-----------|
-| US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com |
-| USW1-1, USW3-1 | dm1-us.informaticacloud.com |
-| USW1-2 | dm2-us.informaticacloud.com |
-| CAC1 | dm-na.informaticacloud.com |
-| APSE1, APJ | dm-ap.informaticacloud.com |
-| APNE1 | dm1-ap.informaticacloud.com |
-| EMEA, EMWE1 | dm-em.informaticacloud.com |
+| Region                                 | ssLogin Host                  |
+| -------------------------------------- | --------------------------- |
+| US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com  |
+| USW1-1, USW3-1                         | dm1-us.informaticacloud.com |
+| USW1-2                                 | dm2-us.informaticacloud.com |
+| CAC1                                   | dm-na.informaticacloud.com  |
+| APSE1, APJ                             | dm-ap.informaticacloud.com  |
+| APNE1                                  | dm1-ap.informaticacloud.com |
+| EMEA, EMWE1                            | dm-em.informaticacloud.com  |
 
 ## Commands
 

@@ -21,7 +21,7 @@ type Project struct {
 // CreateProject creates a new project.
 func (c *Client) CreateProject(ctx context.Context, project *Project) (*Project, error) {
 	var resp Project
-	if err := c.doJSON(ctx, http.MethodPost, "projects", project, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/projects", project, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -30,7 +30,7 @@ func (c *Client) CreateProject(ctx context.Context, project *Project) (*Project,
 // UpdateProject updates an existing project.
 func (c *Client) UpdateProject(ctx context.Context, id string, project *Project) (*Project, error) {
 	var resp Project
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("projects/%s", id), project, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/projects/%s", id), project, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -38,5 +38,5 @@ func (c *Client) UpdateProject(ctx context.Context, id string, project *Project)
 
 // DeleteProject deletes a project by ID.
 func (c *Client) DeleteProject(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("projects/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/projects/%s", id), nil, nil)
 }
