@@ -26,7 +26,7 @@
 - Change function signatures
 - Modify test files
 
-```text
+```
 This pattern works because:
 - It pre-scopes which files Claude reads
 - It points to existing utilities (avoiding unnecessary code duplication searches)

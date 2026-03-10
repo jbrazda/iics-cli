@@ -110,11 +110,11 @@ func (c *Client) GetAgentDetails(ctx context.Context, id string) (*AgentDetails,
 // StartAgentService starts a service on a secure agent.
 func (c *Client) StartAgentService(ctx context.Context, agentID, serviceName string) error {
 	body := map[string]string{"serviceName": serviceName, "action": "start"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV2, agentID), body, nil)
+	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV3, agentID), body, nil)
 }
 
 // StopAgentService stops a service on a secure agent.
 func (c *Client) StopAgentService(ctx context.Context, agentID, serviceName string) error {
 	body := map[string]string{"serviceName": serviceName, "action": "stop"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV2, agentID), body, nil)
+	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV3, agentID), body, nil)
 }
