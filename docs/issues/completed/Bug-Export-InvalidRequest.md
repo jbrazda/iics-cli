@@ -71,12 +71,12 @@ Bad Request. Please check your request.
 
 ## Fix
 
-**Applied 2026-03-10** — removed top-level `includeDependencies` from `ExportRequest` in
+**Applied 2026-03-10** - removed top-level `includeDependencies` from `ExportRequest` in
 `internal/client/export.go`. The IICS v3 export API does not accept `includeDependencies` at the
 request root; it is valid only per-object inside the `objects` array.
 
 Also added global `--debug` flag (`cmd/root.go` + `internal/client/client.go`) which prints the
-full JSON request body to stderr on any API error — making future payload mismatches visible without
+full JSON request body to stderr on any API error - making future payload mismatches visible without
 manual logging. Use it as:
 
 ```shell

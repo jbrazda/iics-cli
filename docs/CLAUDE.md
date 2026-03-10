@@ -1,4 +1,4 @@
-# CLAUDE.md — IICS CLI Project Guide
+# CLAUDE.md - IICS CLI Project Guide
 
 This file is the authoritative reference for Claude when working on `github.com/jbrazda/iics-cli`.
 Read it before making any changes. It describes conventions, patterns, and rules that **must** be followed.
@@ -19,7 +19,7 @@ imports, users, roles, schedules, agents, runtime environments, and more.
 
 ## Directory Layout
 
-```
+```text
 iics_cli/
 ├── main.go                        # Entry point; injects version via ldflags
 ├── go.mod / go.sum
@@ -96,14 +96,14 @@ iics_cli/
 
 ## Key Dependencies
 
-| Package | Version | Purpose |
-|---|---|---|
-| `github.com/spf13/cobra` | v1.10.2 | CLI framework |
-| `github.com/spf13/viper` | v1.21.0 | Config file + env var management |
-| `github.com/olekukonko/tablewriter` | v1.1.3 | Table output (**v1.x API — see below**) |
-| `gopkg.in/yaml.v3` | v3.0.1 | Session cache serialization |
+| Package                             | Version | Purpose                                 |
+| ----------------------------------- | ------- | --------------------------------------- |
+| `github.com/spf13/cobra`            | v1.10.2 | CLI framework                           |
+| `github.com/spf13/viper`            | v1.21.0 | Config file + env var management        |
+| `github.com/olekukonko/tablewriter` | v1.1.3  | Table output (**v1.x API - see below**) |
+| `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization             |
 
-No external HTTP library — uses standard `net/http` only.
+No external HTTP library - uses standard `net/http` only.
 
 ---
 
@@ -119,7 +119,7 @@ table.Header(headers...)          // variadic interface{} args
 table.Append(row)                 // []interface{}, not []string
 err := table.Render()             // returns error
 
-// WRONG (v0.x — do not use)
+// WRONG (v0.x - do not use)
 table := tablewriter.NewWriter(w)
 table.SetHeader([]string{...})
 table.Append([]string{...})
@@ -133,31 +133,32 @@ table.SetBorder(false)            // not available in v1.x
 
 Two API versions are in use. The session header **differs** between them.
 
-| | V2 | V3 |
-|---|---|---|
-| Base path constant | `BaseAPIPathV2 = "api/v2"` | `BaseAPIPathV3 = "public/core/v3"` |
-| Session header | `icSessionId` | `INFA-SESSION-ID` |
-| Used for | connections, agents, lookups | everything else |
+|                    | V2                           | V3                                 |
+| ------------------ | ---------------------------- | ---------------------------------- |
+| Base path constant | `BaseAPIPathV2 = "api/v2"`   | `BaseAPIPathV3 = "public/core/v3"` |
+| Session header     | `icSessionId`                | `INFA-SESSION-ID`                  |
+| Used for           | connections, agents, lookups | everything else                    |
 
 **Auto-detection in `client.go`:** `do()` checks whether the URL path contains `/v2/` and sets the appropriate session header automatically. No manual header management needed in resource files.
 
 ### Resources by API version
 
-| V2 (`api/v2`) | V3 (`public/core/v3`) |
-|---|---|
-| `agent` | `users`, `userGroups`, `roles`, `privileges` |
-| `connection` | `export`, `import` |
-| `lookup` | `runtimeEnvironments` |
-| | `folders`, `projects` |
-| | `objects`, `schedules`, `tags` |
-| | `permissions`, `securityLogs`, `metering` |
-| | `sourceControl` |
+| V2 (`api/v2`) | V3 (`public/core/v3`)                        |
+| ------------- | -------------------------------------------- |
+| `agent`       | `users`, `userGroups`, `roles`, `privileges` |
+| `connection`  | `export`, `import`                           |
+| `lookup`      | `runtimeEnvironments`                        |
+|               | `folders`, `projects`                        |
+|               | `objects`, `schedules`, `tags`               |
+|               | `permissions`, `securityLogs`, `metering`    |
+|               | `sourceControl`                              |
 
 ---
 
 ## Architecture: The Two-Layer Rule
 
 **`cmd/` is thin.** Command files only:
+
 1. Define flags and local variables
 2. Call `getClient(cmd)` and `getFormatter()`
 3. Call a single client method
@@ -170,7 +171,7 @@ Never put Cobra or output logic in `internal/client/`.
 
 ---
 
-## Adding a New Resource — Required Pattern
+## Adding a New Resource - Required Pattern
 
 ### 1. Client file: `internal/client/<resource>s.go`
 
@@ -372,14 +373,14 @@ Wrong JSON tags are the most common source of bugs (e.g., `emails` vs `email`, `
 ### Use `omitempty` on all optional fields
 
 ```go
-Name        string `json:"name"`           // required — no omitempty
+Name        string `json:"name"`           // required - no omitempty
 Description string `json:"description,omitempty"`  // optional
 ```
 
-### Nested objects must be proper structs — never `[]string` for API object arrays
+### Nested objects must be proper structs - never `[]string` for API object arrays
 
 ```go
-// WRONG — groups is an array of objects, not strings
+// WRONG - groups is an array of objects, not strings
 Groups []string `json:"groups,omitempty"`
 
 // CORRECT
@@ -397,18 +398,18 @@ If the API returns `true`/`false`, use `bool`.
 
 ### Common field name mappings (v3 API conventions)
 
-| Go field | JSON tag |
-|---|---|
-| `ID` | `id` |
-| `OrgID` | `orgId` |
-| `CreateTime` | `createTime` |
-| `UpdateTime` | `updateTime` |
-| `CreatedBy` | `createdBy` |
-| `UpdatedBy` | `updatedBy` |
-| `UserName` | `userName` |
-| `TimeZoneID` | `timeZoneId` |
-| `AgentHost` | `agentHost` |
-| `GroupID` | `agentGroupId` |
+| Go field     | JSON tag       |
+| ------------ | -------------- |
+| `ID`         | `id`           |
+| `OrgID`      | `orgId`        |
+| `CreateTime` | `createTime`   |
+| `UpdateTime` | `updateTime`   |
+| `CreatedBy`  | `createdBy`    |
+| `UpdatedBy`  | `updatedBy`    |
+| `UserName`   | `userName`     |
+| `TimeZoneID` | `timeZoneId`   |
+| `AgentHost`  | `agentHost`    |
+| `GroupID`    | `agentGroupId` |
 
 ---
 
@@ -416,11 +417,11 @@ If the API returns `true`/`false`, use `bool`.
 
 Always use the method the API specifies. Do not assume:
 
-- **GET** — retrieve (list or single)
-- **POST** — create
-- **PUT** — full replacement update
-- **PATCH** — partial update (e.g., folder update uses PATCH)
-- **DELETE** — delete
+- **GET** - retrieve (list or single)
+- **POST** - create
+- **PUT** - full replacement update
+- **PATCH** - partial update (e.g., folder update uses PATCH)
+- **DELETE** - delete
 
 When in doubt, consult the Informatica docs URL referenced in the relevant issue/CR.
 
@@ -457,15 +458,15 @@ Supports dot notation for nested fields:
 
 ## Global Flags (from `cmd/root.go`)
 
-| Flag | Variable | Default | Description |
-|---|---|---|---|
-| `--config` | `cfgFile` | `~/.iics/config.yaml` | Config file path |
-| `--profile` / `-p` | `profile` | from config | Profile name |
-| `--output` / `-o` | `outputFmt` | `"table"` | Output format: `table\|json\|csv` |
-| `--verbose` / `-v` | `verbose` | `false` | Verbose output |
-| `--no-color` | `noColor` | `false` | Disable color |
+| Flag               | Variable    | Default               | Description            |       |      |
+| ------------------ | ----------- | --------------------- | ---------------------- | ----- | ---- |
+| `--config`         | `cfgFile`   | `~/.iics/config.yaml` | Config file path       |       |      |
+| `--profile` / `-p` | `profile`   | from config           | Profile name           |       |      |
+| `--output` / `-o`  | `outputFmt` | `"table"`             | Output format: `table\ | json\ | csv` |
+| `--verbose` / `-v` | `verbose`   | `false`               | Verbose output         |       |      |
+| `--no-color`       | `noColor`   | `false`               | Disable color          |       |      |
 
-`verbose` is a package-level `bool` in the `cmd` package — access it directly in `RunE` closures.
+`verbose` is a package-level `bool` in the `cmd` package - access it directly in `RunE` closures.
 
 ---
 
@@ -486,15 +487,16 @@ profiles:
 
 **Environment variable overrides (highest precedence):**
 
-| Env var | Overrides |
-|---|---|
-| `IICS_PROFILE` | `--profile` flag |
-| `IICS_USERNAME` | profile username |
-| `IICS_PASSWORD` | profile password |
-| `IICS_REGION` | profile region |
+| Env var          | Overrides        |
+| ---------------- | ---------------- |
+| `IICS_PROFILE`   | `--profile` flag |
+| `IICS_USERNAME`  | profile username |
+| `IICS_PASSWORD`  | profile password |
+| `IICS_REGION`    | profile region   |
 | `IICS_LOGIN_URL` | profile loginUrl |
 
 **Session cache:** `~/.iics/sessions.yaml`
+
 - Expires after 30 minutes
 - Never commit this file
 - Loaded automatically before every command; saves after successful login
@@ -503,9 +505,9 @@ profiles:
 
 ## Error Handling
 
-- **All client methods** return `(result, error)` — wrap errors with `fmt.Errorf("context: %w", err)`
-- **Command `RunE`** returns errors — `cmd/root.go` handles formatting and exit codes
-- **`APIError`** is used for all HTTP error responses — access `.StatusCode`, `.Code`, `.Message`
+- **All client methods** return `(result, error)` - wrap errors with `fmt.Errorf("context: %w", err)`
+- **Command `RunE`** returns errors - `cmd/root.go` handles formatting and exit codes
+- **`APIError`** is used for all HTTP error responses - access `.StatusCode`, `.Code`, `.Message`
 - **Exit codes:** `ExitOK=0`, `ExitError=1`, `ExitUsageError=2` (from `internal/client/errors.go`)
 
 Never call `os.Exit()` directly. Return an error from `RunE` instead.
@@ -564,6 +566,7 @@ for isInProgress(job.Status.State) {
 ```
 
 The `import run` command (in `cmd/import_.go`) is the reference implementation for:
+
 - Combined upload → start → poll → final output
 - `--polling-interval`, `--max-wait-time`, `--detailed-polling`, `--print-import-log`
 - Verbose timestamped progress output
@@ -574,10 +577,10 @@ The `import run` command (in `cmd/import_.go`) is the reference implementation f
 ## Testing Rules
 
 - Tests live in `internal/client/<resource>_test.go` (same package: `package client`)
-- Use `newTestClient(handler)` — creates a real `httptest.Server` and returns a configured `*Client`
+- Use `newTestClient(handler)` - creates a real `httptest.Server` and returns a configured `*Client`
 - Always assert the HTTP method and URL path in the handler
 - Always verify the response fields you care about
-- Do **not** write tests for `cmd/` layer — test the client layer only
+- Do **not** write tests for `cmd/` layer - test the client layer only
 
 ```go
 func TestGetWidget(t *testing.T) {
@@ -615,10 +618,11 @@ Build with: `/opt/local/bin/go build ./...`
 - **Do not add comments or docstrings** to code you did not change
 - **Do not add error handling** for impossible scenarios
 - **Do not create abstractions** for patterns used only once
-- **Do not use `os.Exit()`** — return errors from `RunE`
+- **Do not use `os.Exit()`** - return errors from `RunE`
 - **Do not add features** beyond what the issue/CR explicitly requests
 - **Do not use v0.x tablewriter API** (`NewWriter`, `SetHeader`, `[]string` rows)
-- **Do not guess JSON field names** — always verify against the API docs
+- **Do not guess JSON field names** - always verify against the API docs
+- **Do not use em dashes** (`-`) in generated Markdown; use a regular hyphen (`-`) instead
 
 ---
 
@@ -628,9 +632,11 @@ Base URL for docs:
 `https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/`
 
 Key sections:
+
 - Platform REST API Version 3: `platform-rest-api-version-3-resources/`
 - Platform REST API Version 2: `platform-rest-api-version-2-resources/`
 
 Login endpoints (all return same token, use v3):
+
 - V3: `POST /saas/public/core/v3/login` → returns `sessionId` + `baseApiUrl`
 - V2: `POST /ma/api/v2/user/login` → returns `icSessionId` + `serverUrl`
