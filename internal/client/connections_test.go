@@ -38,7 +38,7 @@ func TestListConnections(t *testing.T) {
 
 func TestGetConnection(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/public/core/v3/connections/conn123" {
+		if r.URL.Path != "/api/v2/connection/conn123" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 
@@ -65,7 +65,7 @@ func TestDeleteConnection(t *testing.T) {
 		if r.Method != http.MethodDelete {
 			t.Errorf("expected DELETE, got %s", r.Method)
 		}
-		if r.URL.Path != "/public/core/v3/connections/conn123" {
+		if r.URL.Path != "/api/v2/connection/conn123" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.WriteHeader(http.StatusNoContent)
