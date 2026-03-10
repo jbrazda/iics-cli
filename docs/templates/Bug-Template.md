@@ -159,7 +159,7 @@ internal/client/<resource>.go:<line>
 - Add error handling for scenarios unrelated to this bug
 - Switch tablewriter to v0.x API patterns (always use v1.x: `NewTable`, `Header`, `Append([]interface{}{...})`, `Render() error`)
 - Call `os.Exit()` — always return errors from `RunE`
-- ~~Guess JSON field names — verify against the API docs or the raw response pasted above~~
+- Never Guess JSON field names — verify against the API docs or the raw response pasted in bug report
 
 ---
 
