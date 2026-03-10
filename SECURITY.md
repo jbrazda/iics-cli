@@ -16,7 +16,7 @@ This CLI handles IICS credentials. Please follow these practices:
 
 - **Never** commit passwords or session tokens to version control
 - Use environment variables (`IICS_PASSWORD`) instead of storing passwords in `~/.iics/config.yaml`
-- The session cache (`~/.iics/sessions.yaml`) contains session tokens — ensure it is not shared
+- The session cache (`~/.iics/sessions.yaml`) contains session tokens - ensure it is not shared
 - The `.gitignore` excludes `.iics/` and `.env` files by default
 
 ## Supported Versions

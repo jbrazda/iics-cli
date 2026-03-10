@@ -44,7 +44,7 @@ make lint
 - Follow standard Go conventions and [Effective Go](https://go.dev/doc/effective_go)
 - Run `gofmt` and `goimports` before committing
 - Add tests for new functionality
-- Keep the `cmd/` layer thin — business logic belongs in `internal/client/`
+- Keep the `cmd/` layer thin - business logic belongs in `internal/client/`
 - Use `internal/output/` for formatting; commands should not print directly
 
 ## Pull Request Process
@@ -52,7 +52,7 @@ make lint
 1. Target the `dev` branch (not `main`)
 2. Ensure all tests pass and the linter is clean
 3. Update documentation if your change affects CLI behavior
-4. Keep PRs focused — one feature or fix per PR
+4. Keep PRs focused - one feature or fix per PR
 5. Write clear commit messages describing the "why"
 
 ## Reporting Issues

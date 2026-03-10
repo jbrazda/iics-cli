@@ -1,4 +1,4 @@
-# CLAUDE.md — IICS CLI Project Guide
+# CLAUDE.md - IICS CLI Project Guide
 
 This file is the authoritative reference for Claude when working on `github.com/jbrazda/iics-cli`.
 Read it before making any changes. It describes conventions, patterns, and rules that **must** be followed.
@@ -100,10 +100,10 @@ iics_cli/
 | ----------------------------------- | ------- | --------------------------------------- |
 | `github.com/spf13/cobra`            | v1.10.2 | CLI framework                           |
 | `github.com/spf13/viper`            | v1.21.0 | Config file + env var management        |
-| `github.com/olekukonko/tablewriter` | v1.1.3  | Table output (**v1.x API — see below**) |
+| `github.com/olekukonko/tablewriter` | v1.1.3  | Table output (**v1.x API - see below**) |
 | `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization             |
 
-No external HTTP library — uses standard `net/http` only.
+No external HTTP library - uses standard `net/http` only.
 
 ---
 
@@ -119,7 +119,7 @@ table.Header(headers...)          // variadic interface{} args
 table.Append(row)                 // []interface{}, not []string
 err := table.Render()             // returns error
 
-// WRONG (v0.x — do not use)
+// WRONG (v0.x - do not use)
 table := tablewriter.NewWriter(w)
 table.SetHeader([]string{...})
 table.Append([]string{...})
@@ -171,7 +171,7 @@ Never put Cobra or output logic in `internal/client/`.
 
 ---
 
-## Adding a New Resource — Required Pattern
+## Adding a New Resource - Required Pattern
 
 ### 1. Client file: `internal/client/<resource>s.go`
 
@@ -373,14 +373,14 @@ Wrong JSON tags are the most common source of bugs (e.g., `emails` vs `email`, `
 ### Use `omitempty` on all optional fields
 
 ```go
-Name        string `json:"name"`           // required — no omitempty
+Name        string `json:"name"`           // required - no omitempty
 Description string `json:"description,omitempty"`  // optional
 ```
 
-### Nested objects must be proper structs — never `[]string` for API object arrays
+### Nested objects must be proper structs - never `[]string` for API object arrays
 
 ```go
-// WRONG — groups is an array of objects, not strings
+// WRONG - groups is an array of objects, not strings
 Groups []string `json:"groups,omitempty"`
 
 // CORRECT
@@ -417,11 +417,11 @@ If the API returns `true`/`false`, use `bool`.
 
 Always use the method the API specifies. Do not assume:
 
-- **GET** — retrieve (list or single)
-- **POST** — create
-- **PUT** — full replacement update
-- **PATCH** — partial update (e.g., folder update uses PATCH)
-- **DELETE** — delete
+- **GET** - retrieve (list or single)
+- **POST** - create
+- **PUT** - full replacement update
+- **PATCH** - partial update (e.g., folder update uses PATCH)
+- **DELETE** - delete
 
 When in doubt, consult the Informatica docs URL referenced in the relevant issue/CR.
 
@@ -466,7 +466,7 @@ Supports dot notation for nested fields:
 | `--verbose` / `-v` | `verbose`   | `false`               | Verbose output         |       |      |
 | `--no-color`       | `noColor`   | `false`               | Disable color          |       |      |
 
-`verbose` is a package-level `bool` in the `cmd` package — access it directly in `RunE` closures.
+`verbose` is a package-level `bool` in the `cmd` package - access it directly in `RunE` closures.
 
 ---
 
@@ -505,9 +505,9 @@ profiles:
 
 ## Error Handling
 
-- **All client methods** return `(result, error)` — wrap errors with `fmt.Errorf("context: %w", err)`
-- **Command `RunE`** returns errors — `cmd/root.go` handles formatting and exit codes
-- **`APIError`** is used for all HTTP error responses — access `.StatusCode`, `.Code`, `.Message`
+- **All client methods** return `(result, error)` - wrap errors with `fmt.Errorf("context: %w", err)`
+- **Command `RunE`** returns errors - `cmd/root.go` handles formatting and exit codes
+- **`APIError`** is used for all HTTP error responses - access `.StatusCode`, `.Code`, `.Message`
 - **Exit codes:** `ExitOK=0`, `ExitError=1`, `ExitUsageError=2` (from `internal/client/errors.go`)
 
 Never call `os.Exit()` directly. Return an error from `RunE` instead.
@@ -577,10 +577,10 @@ The `import run` command (in `cmd/import_.go`) is the reference implementation f
 ## Testing Rules
 
 - Tests live in `internal/client/<resource>_test.go` (same package: `package client`)
-- Use `newTestClient(handler)` — creates a real `httptest.Server` and returns a configured `*Client`
+- Use `newTestClient(handler)` - creates a real `httptest.Server` and returns a configured `*Client`
 - Always assert the HTTP method and URL path in the handler
 - Always verify the response fields you care about
-- Do **not** write tests for `cmd/` layer — test the client layer only
+- Do **not** write tests for `cmd/` layer - test the client layer only
 
 ```go
 func TestGetWidget(t *testing.T) {
@@ -618,10 +618,11 @@ Build with: `/opt/local/bin/go build ./...`
 - **Do not add comments or docstrings** to code you did not change
 - **Do not add error handling** for impossible scenarios
 - **Do not create abstractions** for patterns used only once
-- **Do not use `os.Exit()`** — return errors from `RunE`
+- **Do not use `os.Exit()`** - return errors from `RunE`
 - **Do not add features** beyond what the issue/CR explicitly requests
 - **Do not use v0.x tablewriter API** (`NewWriter`, `SetHeader`, `[]string` rows)
-- **Do not guess JSON field names** — always verify against the API docs
+- **Do not guess JSON field names** - always verify against the API docs
+- **Do not use em dashes** (`-`) in generated Markdown; use a regular hyphen (`-`) instead
 
 ---
 

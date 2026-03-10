@@ -64,17 +64,17 @@ iics <subcommand> [flags]
 > Tick the layer(s) where the bug most likely lives.
 > This tells Claude which files to focus on.
 
-- [ ] **`cmd/`** — flag parsing, command wiring, output formatting
-- [ ] **`internal/client/`** — HTTP logic, API structs, request/response handling
-- [ ] **`internal/config/`** — config file loading, session cache
-- [ ] **`internal/output/`** — table / JSON / CSV renderer
+- [ ] **`cmd/`** - flag parsing, command wiring, output formatting
+- [ ] **`internal/client/`** - HTTP logic, API structs, request/response handling
+- [ ] **`internal/config/`** - config file loading, session cache
+- [ ] **`internal/output/`** - table / JSON / CSV renderer
 
 ---
 
 ## Likely Affected Files
 
 > List files that probably need to change. Claude will read these first.
-> Leave blank if unknown — Claude will locate them.
+> Leave blank if unknown - Claude will locate them.
 
 ```text
 internal/client/<resource>.go
@@ -134,7 +134,7 @@ internal/client/<resource>.go:<line>
 
 1. Read `docs/CLAUDE.md` and the affected files listed above before writing any code.
 2. [Step-by-step description of the fix, e.g.:]
-   - In `internal/client/users.go`, the `Email` field has JSON tag `"email"` but the API returns `"emails"` — change the tag.
+   - In `internal/client/users.go`, the `Email` field has JSON tag `"email"` but the API returns `"emails"` - change the tag.
    - Do **not** touch the `cmd/` layer unless a flag name or output column must change.
 3. Add or update the test in `internal/client/<resource>_test.go` to cover the fixed case.
 4. Run `/opt/local/bin/go test ./internal/client/...` and verify it passes.
@@ -158,8 +158,8 @@ internal/client/<resource>.go:<line>
 - Change function signatures or struct names not directly involved in the bug
 - Add error handling for scenarios unrelated to this bug
 - Switch tablewriter to v0.x API patterns (always use v1.x: `NewTable`, `Header`, `Append([]interface{}{...})`, `Render() error`)
-- Call `os.Exit()` — always return errors from `RunE`
-- Never Guess JSON field names — verify against the API docs or the raw response pasted in bug report
+- Call `os.Exit()` - always return errors from `RunE`
+- Never Guess JSON field names - verify against the API docs or the raw response pasted in bug report
 
 ---
 
@@ -172,11 +172,11 @@ internal/client/<resource>.go:<line>
 **Files changed:**
 
 ```text
-<file>:<line range> — <one-line description of change>
+<file>:<line range> - <one-line description of change>
 ```
 
 **Test added / updated:**
 
 ```text
-internal/client/<resource>_test.go — <describe test>
+internal/client/<resource>_test.go - <describe test>
 ```

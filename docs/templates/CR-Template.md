@@ -16,12 +16,12 @@ HOW TO USE THIS TEMPLATE
 
 > Tick exactly one. Determines which files need to change.
 
-- [ ] **New resource** — add a brand-new `iics <resource>` command tree (all 4 files required)
-- [ ] **New subcommand** — add a subcommand to an existing resource (client method + cmd wiring)
-- [ ] **Enhancement** — change behaviour of an existing command (modify specific files)
-- [ ] **Output change** — add/remove/rename columns, change default format, fix display
-- [ ] **Flag / config change** — add/rename/remove a CLI flag or config field
-- [ ] **Refactor** — internal restructuring with no behaviour change (rare; justify below)
+- [ ] **New resource** - add a brand-new `iics <resource>` command tree (all 4 files required)
+- [ ] **New subcommand** - add a subcommand to an existing resource (client method + cmd wiring)
+- [ ] **Enhancement** - change behaviour of an existing command (modify specific files)
+- [ ] **Output change** - add/remove/rename columns, change default format, fix display
+- [ ] **Flag / config change** - add/rename/remove a CLI flag or config field
+- [ ] **Refactor** - internal restructuring with no behaviour change (rare; justify below)
 
 ---
 
@@ -57,13 +57,13 @@ Also add `rootCmd.AddCommand(new<Resource>Cmd())` in `cmd/root.go init()`.
 ### Files to MODIFY
 
 ```text
-# List each file and what changes — be specific
+# List each file and what changes - be specific
 internal/client/<resource>s.go    # add X method / change Y field
 cmd/<resource>.go                 # wire new subcommand / add flag
 cmd/root.go                       # register new top-level command (new resource only)
 ```
 
-### Files to READ (context only — do NOT modify)
+### Files to READ (context only - do NOT modify)
 
 ```text
 docs/CLAUDE.md                          # mandatory: patterns and rules
@@ -89,14 +89,14 @@ internal/output/        # output layer is correct as-is
 ## API Details
 
 > Required for any CR involving a new or changed API call.
-> Wrong JSON tags are the #1 source of bugs — verify every field name against the API docs.
+> Wrong JSON tags are the #1 source of bugs - verify every field name against the API docs.
 
 | Field          | Value                                             |
 | -------------- | ------------------------------------------------- |
 | API version    | V2 (`api/v2`) / V3 (`public/core/v3`)             |
 | HTTP method    | GET / POST / PUT / PATCH / DELETE                 |
 | Endpoint path  | e.g. `public/core/v3/widgets`                     |
-| Session header | auto-detected by `do()` — no manual action needed |
+| Session header | auto-detected by `do()` - no manual action needed |
 | Request body   | yes / no                                          |
 | Response type  | single object / array / empty 204                 |
 
@@ -113,12 +113,12 @@ internal/output/        # output layer is correct as-is
 
 ```json
 {
-  "id": "string — read-only",
-  "name": "string — required",
-  "description": "string — optional",
-  "orgId": "string — read-only",
-  "createTime": "string — read-only",
-  "updateTime": "string — read-only"
+  "id": "string - read-only",
+  "name": "string - required",
+  "description": "string - optional",
+  "orgId": "string - read-only",
+  "createTime": "string - read-only",
+  "updateTime": "string - read-only"
 }
 ```
 
@@ -130,9 +130,9 @@ internal/output/        # output layer is correct as-is
 ## Implementation Instructions
 
 > Step-by-step, ordered. Claude executes these in sequence.
-> Be explicit; avoid "update as needed" — say exactly what to add or change.
+> Be explicit; avoid "update as needed" - say exactly what to add or change.
 
-### Step 1 — Client layer (`internal/client/`)
+### Step 1 - Client layer (`internal/client/`)
 
 1. Define the Go struct(s) with JSON tags matching the API response exactly:
    - Required fields: no `omitempty`
@@ -141,15 +141,15 @@ internal/output/        # output layer is correct as-is
    - Arrays of objects: use typed structs, never `[]string`
 2. Define `<Resource>ListOptions` with `Limit int` and `Skip int` (and any filter fields).
 3. Implement the following methods (tick which apply):
-   - [ ] `List<Resource>s(ctx, opts) ([]Resource, error)` — uses `doJSONWithQuery`
-   - [ ] `Get<Resource>(ctx, id) (*Resource, error)` — uses `doJSON` GET
-   - [ ] `Create<Resource>(ctx, r) (*Resource, error)` — uses `doJSON` POST
-   - [ ] `Update<Resource>(ctx, id, r) (*Resource, error)` — uses `doJSON` PUT or PATCH
-   - [ ] `Delete<Resource>(ctx, id) error` — uses `doJSON` DELETE
-   - [ ] `<Other>(ctx, ...) (..., error)` — describe: ___
-4. Use `BaseAPIPathV2` or `BaseAPIPathV3` constant — not a hard-coded string.
+   - [ ] `List<Resource>s(ctx, opts) ([]Resource, error)` - uses `doJSONWithQuery`
+   - [ ] `Get<Resource>(ctx, id) (*Resource, error)` - uses `doJSON` GET
+   - [ ] `Create<Resource>(ctx, r) (*Resource, error)` - uses `doJSON` POST
+   - [ ] `Update<Resource>(ctx, id, r) (*Resource, error)` - uses `doJSON` PUT or PATCH
+   - [ ] `Delete<Resource>(ctx, id) error` - uses `doJSON` DELETE
+   - [ ] `<Other>(ctx, ...) (..., error)` - describe: ___
+4. Use `BaseAPIPathV2` or `BaseAPIPathV3` constant - not a hard-coded string.
 
-### Step 2 — Tests (`internal/client/<resource>s_test.go`)
+### Step 2 - Tests (`internal/client/<resource>s_test.go`)
 
 For each client method:
 
@@ -162,7 +162,7 @@ For each client method:
 
 Use `newTestClient(handler)` from `internal/client/objects_test.go`.
 
-### Step 3 — Command layer (`cmd/<resource>.go`)
+### Step 3 - Command layer (`cmd/<resource>.go`)
 
 Follow the thin-cmd rule strictly:
 
@@ -174,7 +174,7 @@ Follow the thin-cmd rule strictly:
 6. Delete commands: require `--yes / -y` flag; prompt if absent.
 7. Create/Update with many fields: use `--from-file` JSON file pattern.
 
-### Step 4 — Register (new resource only)
+### Step 4 - Register (new resource only)
 
 In `cmd/root.go` `init()`:
 
@@ -182,7 +182,7 @@ In `cmd/root.go` `init()`:
 rootCmd.AddCommand(new<Resource>Cmd())
 ```
 
-### Step 5 — Verify
+### Step 5 - Verify
 
 ```bash
 /opt/local/bin/go build ./...
@@ -236,10 +236,10 @@ All must pass with zero new errors.
 - Modify test files other than the one for the new/changed resource
 - Add error handling for scenarios that cannot happen
 - Create helpers or abstractions used only once
-- Use `os.Exit()` — return errors from `RunE`
+- Use `os.Exit()` - return errors from `RunE`
 - Use tablewriter v0.x API (`NewWriter`, `SetHeader`, `[]string` rows, `Render()` without error)
-- Hard-code base API paths — use `BaseAPIPathV2` / `BaseAPIPathV3` constants
-- Guess JSON field names — verify every tag against the API sample response above
+- Hard-code base API paths - use `BaseAPIPathV2` / `BaseAPIPathV3` constants
+- Guess JSON field names - verify every tag against the API sample response above
 - Add features beyond what is explicitly described in "Desired Change"
 - Add `Co-Authored-By` trailers to commit messages
 

@@ -1,16 +1,16 @@
-# iics — Informatica Intelligent Cloud Services CLI
+# iics - Informatica Intelligent Cloud Services CLI
 
-A comprehensive command-line interface for the [Informatica Intelligent Cloud Services (IICS)](https://www.informatica.com/products/cloud-integration.html) platform REST API v3. Manage assets, users, connections, export/import packages, and more — from your terminal or CI/CD pipelines.
+A comprehensive command-line interface for the [Informatica Intelligent Cloud Services (IICS)](https://www.informatica.com/products/cloud-integration.html) platform REST API v3. Manage assets, users, connections, export/import packages, and more - from your terminal or CI/CD pipelines.
 
 ## Features
 
-- **Full API v3 coverage** — objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
-- **Multi-profile configuration** — switch between dev/staging/prod orgs with `--profile`
-- **Session caching** — reuses sessions across invocations (30-min window) to avoid repeated logins
-- **Automatic session refresh** — transparent 401 retry with re-authentication
-- **Flexible output** — human-readable tables (default) or JSON (`--output json`)
-- **CI/CD friendly** — environment variable overrides, `--yes` flag for non-interactive use, JSON output for scripting
-- **Cross-platform** — builds for Linux, macOS, and Windows (amd64 & arm64)
+- **Full API v3 coverage** - objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
+- **Multi-profile configuration** - switch between dev/staging/prod orgs with `--profile`
+- **Session caching** - reuses sessions across invocations (30-min window) to avoid repeated logins
+- **Automatic session refresh** - transparent 401 retry with re-authentication
+- **Flexible output** - human-readable tables (default) or JSON (`--output json`)
+- **CI/CD friendly** - environment variable overrides, `--yes` flag for non-interactive use, JSON output for scripting
+- **Cross-platform** - builds for Linux, macOS, and Windows (amd64 & arm64)
 
 ## Installation
 
@@ -217,4 +217,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

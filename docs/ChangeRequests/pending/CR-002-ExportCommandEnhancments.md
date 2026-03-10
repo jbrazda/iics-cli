@@ -1,16 +1,16 @@
 # CR: Export Command Enhancements
 
-**Status:** PENDING — initial implementation complete; blocked on API validation issue (HTTP 400).
+**Status:** PENDING - initial implementation complete; blocked on API validation issue (HTTP 400).
 See [Bug-Export-InvalidRequest.md](../../issues/new/Bug-Export-InvalidRequest.md).
 
 ## Scope
 
 - Files changed:
-  - `cmd/export.go` — added `export start` and `export run` subcommands
-  - `internal/client/export.go` — new structs, `StartExport`, `DownloadExportLog`, artifact parsing
-  - `internal/client/export_test.go` — tests for all new client functions
-  - `cmd/root.go` — added global `--debug` flag
-  - `internal/client/client.go` — added `WithDebug` option; prints request body on API error
+  - `cmd/export.go` - added `export start` and `export run` subcommands
+  - `internal/client/export.go` - new structs, `StartExport`, `DownloadExportLog`, artifact parsing
+  - `internal/client/export_test.go` - tests for all new client functions
+  - `cmd/root.go` - added global `--debug` flag
+  - `internal/client/client.go` - added `WithDebug` option; prints request body on API error
 
 ## Problem
 IICS Export is used to backup, migrate, and version control IICS resources. It requires multiple
@@ -23,8 +23,8 @@ steps which are desired to be automated.
 
 ## Desired Change
 
-- `export run` — full pipeline: read input → resolve IDs → start job → poll → download ZIP
-- `export start` — steps 1-5 only: resolve and start, return job ID
+- `export run` - full pipeline: read input → resolve IDs → start job → poll → download ZIP
+- `export start` - steps 1-5 only: resolve and start, return job ID
 
 Export steps:
 
@@ -76,7 +76,7 @@ Export steps:
   Download the export job log. If path omitted, uses <export-file-path>.log.
 ```
 
-Expected API request body (per-object `includeDependencies` only — no top-level field):
+Expected API request body (per-object `includeDependencies` only - no top-level field):
 
 ```json
 POST /public/core/v3/export
