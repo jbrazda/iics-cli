@@ -63,7 +63,7 @@ func (c *Client) UploadImportPackage(ctx context.Context, filename string, reade
 		return nil, fmt.Errorf("closing multipart writer: %w", err)
 	}
 
-	url := c.apiURL("public/core/v3/import/package")
+	url := c.apiURL(fmt.Sprintf("%s/import/package", BaseAPIPathV3))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("creating upload request: %w", err)
@@ -96,7 +96,7 @@ func (c *Client) UploadImportPackage(ctx context.Context, filename string, reade
 // StartImport starts an import job.
 func (c *Client) StartImport(ctx context.Context, jobID string, req *ImportStartRequest) (*ImportJob, error) {
 	var resp ImportJob
-	if err := c.doJSON(ctx, http.MethodPost, fmt.Sprintf("public/core/v3/import/%s", jobID), req, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/import/%s", BaseAPIPathV3, jobID), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -110,7 +110,7 @@ func (c *Client) GetImportStatus(ctx context.Context, jobID string, expand bool)
 	}
 
 	var resp ImportJob
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/import/%s", jobID), query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/import/%s", BaseAPIPathV3, jobID), query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -118,7 +118,7 @@ func (c *Client) GetImportStatus(ctx context.Context, jobID string, expand bool)
 
 // DownloadImportLog downloads the import job log.
 func (c *Client) DownloadImportLog(ctx context.Context, jobID string, dest io.Writer) error {
-	path := fmt.Sprintf("public/core/v3/import/%s/log", jobID)
+	path := fmt.Sprintf("%s/import/%s/log", BaseAPIPathV3, jobID)
 	body, err := c.doRaw(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err

@@ -84,10 +84,10 @@ func objectToFilteredMap(obj client.Object, fields []string) map[string]interfac
 
 func newObjectsListCmd() *cobra.Command {
 	var (
-		opts           client.ObjectsListOptions
-		outputFields   string
-		outputFile     string
-		outputFileFmt  string
+		opts             client.ObjectsListOptions
+		outputFields     string
+		outputFile       string
+		outputFileFmt    string
 		outputFileFields string
 	)
 

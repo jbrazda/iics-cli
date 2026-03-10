@@ -38,7 +38,7 @@ func (c *Client) ListRoles(ctx context.Context, opts RoleListOptions) ([]Role, e
 	}
 
 	var resp []Role
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/roles", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/roles", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -47,7 +47,7 @@ func (c *Client) ListRoles(ctx context.Context, opts RoleListOptions) ([]Role, e
 // GetRole retrieves a single role by ID.
 func (c *Client) GetRole(ctx context.Context, id string) (*Role, error) {
 	var resp Role
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/roles/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/roles/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -56,7 +56,7 @@ func (c *Client) GetRole(ctx context.Context, id string) (*Role, error) {
 // CreateRole creates a new role.
 func (c *Client) CreateRole(ctx context.Context, role *Role) (*Role, error) {
 	var resp Role
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/roles", role, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/roles", role, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -65,7 +65,7 @@ func (c *Client) CreateRole(ctx context.Context, role *Role) (*Role, error) {
 // UpdateRole updates an existing role.
 func (c *Client) UpdateRole(ctx context.Context, id string, role *Role) (*Role, error) {
 	var resp Role
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/roles/%s", id), role, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/roles/%s", BaseAPIPathV3, id), role, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -73,5 +73,5 @@ func (c *Client) UpdateRole(ctx context.Context, id string, role *Role) (*Role, 
 
 // DeleteRole deletes a role by ID.
 func (c *Client) DeleteRole(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/roles/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/roles/%s", BaseAPIPathV3, id), nil, nil)
 }

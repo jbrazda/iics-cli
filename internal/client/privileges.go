@@ -17,7 +17,7 @@ type Privilege struct {
 // ListPrivileges retrieves all available privileges.
 func (c *Client) ListPrivileges(ctx context.Context) ([]Privilege, error) {
 	var resp []Privilege
-	if err := c.doJSON(ctx, http.MethodGet, "public/core/v3/privileges", nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, BaseAPIPathV3+"/privileges", nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

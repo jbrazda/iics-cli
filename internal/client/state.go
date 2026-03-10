@@ -26,7 +26,7 @@ type StateResult struct {
 
 // FetchState fetches the state of an object and writes it to dest.
 func (c *Client) FetchState(ctx context.Context, objectID string, dest io.Writer) error {
-	path := fmt.Sprintf("public/core/v3/fetchState/%s", objectID)
+	path := fmt.Sprintf("%s/fetchState/%s", BaseAPIPathV3, objectID)
 	body, err := c.doRaw(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *Client) FetchState(ctx context.Context, objectID string, dest io.Writer
 
 // LoadState loads state data for an object.
 func (c *Client) LoadState(ctx context.Context, objectID string, data io.Reader) (*StateResult, error) {
-	url := c.apiURL(fmt.Sprintf("public/core/v3/loadState/%s", objectID))
+	url := c.apiURL(fmt.Sprintf("%s/loadState/%s", BaseAPIPathV3, objectID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, data)
 	if err != nil {
 		return nil, fmt.Errorf("creating loadState request: %w", err)

@@ -19,7 +19,7 @@ imports, users, roles, schedules, agents, runtime environments, and more.
 
 ## Directory Layout
 
-```
+```text
 iics_cli/
 ├── main.go                        # Entry point; injects version via ldflags
 ├── go.mod / go.sum
@@ -137,7 +137,7 @@ Two API versions are in use. The session header **differs** between them.
 |---|---|---|
 | Base path constant | `BaseAPIPathV2 = "api/v2"` | `BaseAPIPathV3 = "public/core/v3"` |
 | Session header | `icSessionId` | `INFA-SESSION-ID` |
-| Used for | connections, agents, lookups | everything else |
+| Used for | agents | everything else |
 
 **Auto-detection in `client.go`:** `do()` checks whether the URL path contains `/v2/` and sets the appropriate session header automatically. No manual header management needed in resource files.
 
@@ -145,9 +145,10 @@ Two API versions are in use. The session header **differs** between them.
 
 | V2 (`api/v2`) | V3 (`public/core/v3`) |
 |---|---|
-| `agent` | `users`, `userGroups`, `roles`, `privileges` |
-| `connection` | `export`, `import` |
-| `lookup` | `runtimeEnvironments` |
+| `agent` | `connections` |
+| | `users`, `userGroups`, `roles`, `privileges` |
+| | `export`, `import` |
+| | `runtimeEnvironments`, `lookup` |
 | | `folders`, `projects` |
 | | `objects`, `schedules`, `tags` |
 | | `permissions`, `securityLogs`, `metering` |

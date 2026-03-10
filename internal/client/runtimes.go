@@ -38,7 +38,7 @@ func (c *Client) ListRuntimeEnvironments(ctx context.Context, opts RuntimeListOp
 	}
 
 	var resp []RuntimeEnvironment
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/runtimeEnvironments", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/runtimeEnvironments", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -47,7 +47,7 @@ func (c *Client) ListRuntimeEnvironments(ctx context.Context, opts RuntimeListOp
 // GetRuntimeEnvironment retrieves a single runtime environment by ID.
 func (c *Client) GetRuntimeEnvironment(ctx context.Context, id string) (*RuntimeEnvironment, error) {
 	var resp RuntimeEnvironment
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/runtimeEnvironments/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/runtimeEnvironments/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -56,7 +56,7 @@ func (c *Client) GetRuntimeEnvironment(ctx context.Context, id string) (*Runtime
 // CreateRuntimeEnvironment creates a new runtime environment.
 func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
 	var resp RuntimeEnvironment
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/runtimeEnvironments", rt, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/runtimeEnvironments", rt, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -65,7 +65,7 @@ func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnviro
 // UpdateRuntimeEnvironment updates an existing runtime environment.
 func (c *Client) UpdateRuntimeEnvironment(ctx context.Context, id string, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
 	var resp RuntimeEnvironment
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/runtimeEnvironments/%s", id), rt, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/runtimeEnvironments/%s", BaseAPIPathV3, id), rt, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

@@ -24,5 +24,12 @@ Check each API Endpoint against the documentation and correct URI if needed:
 
 ## Acceptance Criteria
 
-- [ ] Make sure all tests pass
-- [ ] Fix any lint issues
+- [x] Make sure all tests pass
+- [x] Fix any lint issues
+
+## Changes Made
+
+- Replaced all hardcoded `"public/core/v3/..."` path strings with `BaseAPIPathV3` constant across all client files
+- Fixed `agents.go`: `StartAgentService`/`StopAgentService` were incorrectly using `BaseAPIPathV3`; corrected to `BaseAPIPathV2`
+- Fixed `connections.go`: moved from V2 `api/v2/connection` (singular) to V3 `public/core/v3/connections` (plural), confirmed by existing tests
+- Updated `docs/CLAUDE.md` resources table to reflect that `connections` and `lookup` are V3 resources

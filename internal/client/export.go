@@ -47,7 +47,7 @@ type ExportJob struct {
 // CreateExport starts an export job.
 func (c *Client) CreateExport(ctx context.Context, req *ExportRequest) (*ExportJob, error) {
 	var resp ExportJob
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/export", req, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/export", BaseAPIPathV3), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -61,7 +61,7 @@ func (c *Client) GetExportStatus(ctx context.Context, jobID string, expand bool)
 	}
 
 	var resp ExportJob
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/export/%s", jobID), query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/export/%s", BaseAPIPathV3, jobID), query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -69,7 +69,7 @@ func (c *Client) GetExportStatus(ctx context.Context, jobID string, expand bool)
 
 // DownloadExportPackage downloads the export ZIP package.
 func (c *Client) DownloadExportPackage(ctx context.Context, jobID string, dest io.Writer) error {
-	path := fmt.Sprintf("public/core/v3/export/%s/package", jobID)
+	path := fmt.Sprintf("%s/export/%s/package", BaseAPIPathV3, jobID)
 	body, err := c.doRaw(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err

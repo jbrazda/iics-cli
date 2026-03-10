@@ -106,7 +106,7 @@ func (c *Client) Logout(ctx context.Context) error {
 	}
 	c.mu.RUnlock()
 
-	url := c.apiURL("public/core/v3/logout")
+	url := c.apiURL(fmt.Sprintf("%s/logout", BaseAPIPathV3))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating logout request: %w", err)

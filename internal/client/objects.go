@@ -79,7 +79,7 @@ func (c *Client) ListObjects(ctx context.Context, opts ObjectsListOptions) (*Obj
 	}
 
 	var resp ObjectsListResponse
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/objects", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/objects", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -126,7 +126,7 @@ func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions, pr
 
 // GetObjectDependencies finds uses/usedBy references for an object.
 func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, refType string, limit, skip int) (*ObjectDependenciesResponse, error) {
-	path := fmt.Sprintf("public/core/v3/objects/%s/references", objectID)
+	path := fmt.Sprintf("%s/objects/%s/references", BaseAPIPathV3, objectID)
 	query := make(map[string]string)
 
 	if refType != "" {
