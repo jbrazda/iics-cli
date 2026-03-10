@@ -41,7 +41,7 @@ func (e *APIError) Verbose() string {
 	var b strings.Builder
 
 	// Status line
-	fmt.Fprintf(&b, "HTTP %d %s\n", e.StatusCode, http.StatusText(e.StatusCode))
+	_, _ = fmt.Fprintf(&b, "HTTP %d %s\n", e.StatusCode, http.StatusText(e.StatusCode))
 
 	// Response headers (sorted for deterministic output)
 	if len(e.ResponseHeaders) > 0 {
@@ -53,7 +53,7 @@ func (e *APIError) Verbose() string {
 		sort.Strings(keys)
 		for _, k := range keys {
 			for _, v := range e.ResponseHeaders[k] {
-				fmt.Fprintf(&b, "  %s: %s\n", k, v)
+				_, _ = fmt.Fprintf(&b, "  %s: %s\n", k, v)
 			}
 		}
 	}

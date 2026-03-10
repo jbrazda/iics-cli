@@ -51,13 +51,13 @@ func newStateFetchCmd() *cobra.Command {
 
 			if err := c.FetchState(context.Background(), objectID, dest); err != nil {
 				if outputFile != "" {
-					os.Remove(outputFile)
+					_ = os.Remove(outputFile)
 				}
 				return err
 			}
 
 			if outputFile != "" {
-				fmt.Fprintf(cmd.ErrOrStderr(), "State fetched to %s\n", outputFile)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "State fetched to %s\n", outputFile)
 			}
 			return nil
 		},
@@ -88,7 +88,7 @@ func newStateLoadCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("opening input file: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			c, err := getClient(cmd)
 			if err != nil {
@@ -100,9 +100,9 @@ func newStateLoadCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "State loaded for object %s (status: %s)\n", objectID, result.Status)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "State loaded for object %s (status: %s)\n", objectID, result.Status)
 			if result.Message != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Message: %s\n", result.Message)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Message: %s\n", result.Message)
 			}
 			return nil
 		},

@@ -66,20 +66,20 @@ func handleError(err error) int {
 	var apiErr *client.APIError
 	if errors.As(err, &apiErr) {
 		// Print short summary line
-		fmt.Fprintf(os.Stderr, "Error: %s\n", apiErr.Error())
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", apiErr.Error())
 		// Print full HTTP details (status, headers, formatted JSON body)
-		fmt.Fprint(os.Stderr, apiErr.Verbose())
+		_, _ = fmt.Fprint(os.Stderr, apiErr.Verbose())
 		return client.ExitError
 	}
 
 	// Check if this is a Cobra usage error (unknown command, bad flags, etc.)
 	if isUsageError(err) {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		return client.ExitUsageError
 	}
 
 	// General runtime error
-	fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+	_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 	return client.ExitError
 }
 

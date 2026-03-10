@@ -117,7 +117,7 @@ func newRuntimeCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Runtime environment created: %s (ID: %s)\n", created.Name, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Runtime environment created: %s (ID: %s)\n", created.Name, created.ID)
 			return nil
 		},
 	}
@@ -157,7 +157,7 @@ func newRuntimeUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Runtime environment updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Runtime environment updated: %s (ID: %s)\n", updated.Name, updated.ID)
 			return nil
 		},
 	}

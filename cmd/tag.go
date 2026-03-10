@@ -45,7 +45,7 @@ func newTagAssignCmd() *cobra.Command {
 			if err := c.AssignTags(context.Background(), objectID, tagList); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Tags assigned to object %s: %s\n", objectID, tags)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Tags assigned to object %s: %s\n", objectID, tags)
 			return nil
 		},
 	}
@@ -81,7 +81,7 @@ func newTagRemoveCmd() *cobra.Command {
 			if err := c.RemoveTags(context.Background(), objectID, tagList); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Tags removed from object %s: %s\n", objectID, tags)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Tags removed from object %s: %s\n", objectID, tags)
 			return nil
 		},
 	}

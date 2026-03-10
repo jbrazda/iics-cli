@@ -44,7 +44,7 @@ func (c *Client) DownloadMeteringReport(ctx context.Context, reportID string, de
 	if err != nil {
 		return err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if _, err := io.Copy(dest, body); err != nil {
 		return fmt.Errorf("downloading metering report: %w", err)

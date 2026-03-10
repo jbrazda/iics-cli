@@ -30,7 +30,7 @@ The session is cached locally so subsequent commands don't require re-authentica
 
 			c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose))
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Logging in as %s...\n", p.Username)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Logging in as %s...\n", p.Username)
 
 			loginResp, err := c.Login(context.Background())
 			if err != nil {
@@ -39,14 +39,14 @@ The session is cached locally so subsequent commands don't require re-authentica
 
 			// Save session to cache
 			if err := saveSession(profileName, c, loginResp); err != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not cache session: %v\n", err)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not cache session: %v\n", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Logged in successfully.\n")
-			fmt.Fprintf(cmd.OutOrStdout(), "  User:    %s\n", loginResp.UserInfo.Name)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Org:     %s (%s)\n", loginResp.UserInfo.OrgName, loginResp.UserInfo.OrgID)
-			fmt.Fprintf(cmd.OutOrStdout(), "  BaseURL: %s\n", loginResp.Products[0].BaseAPIURL)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Profile: %s\n", profileName)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Logged in successfully.\n")
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  User:    %s\n", loginResp.UserInfo.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Org:     %s (%s)\n", loginResp.UserInfo.OrgName, loginResp.UserInfo.OrgID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  BaseURL: %s\n", loginResp.Products[0].BaseAPIURL)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Profile: %s\n", profileName)
 
 			return nil
 		},

@@ -88,7 +88,7 @@ func newMeteringDownloadCmd() *cobra.Command {
 				_ = os.Remove(outputFile)
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Report downloaded: %s\n", outputFile)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Report downloaded: %s\n", outputFile)
 			return nil
 		},
 	}

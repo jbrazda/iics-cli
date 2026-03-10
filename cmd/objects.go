@@ -133,7 +133,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 				var progressFn func(page, fetched int)
 				if verbose {
 					progressFn = func(page, fetched int) {
-						fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Fetched page %d (%d objects total)\n",
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Fetched page %d (%d objects total)\n",
 							time.Now().Format(time.RFC3339), page, fetched)
 					}
 				}
@@ -188,10 +188,10 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 				if verbose {
 					fi, err := fh.Stat()
 					if err == nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s (%d bytes)\n",
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s (%d bytes)\n",
 							time.Now().Format(time.RFC3339), len(resp.Objects), outputFile, fi.Size())
 					} else {
-						fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s\n",
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s\n",
 							time.Now().Format(time.RFC3339), len(resp.Objects), outputFile)
 					}
 				}
@@ -264,7 +264,7 @@ func newObjectsDependenciesCmd() *cobra.Command {
 			if len(resp.UsedBy) > 0 {
 				return f.Format(resp.UsedBy, columns)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "No dependencies found.")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No dependencies found.")
 			return nil
 		},
 	}

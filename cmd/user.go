@@ -137,7 +137,7 @@ func newUserCreateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "User created: %s (ID: %s)\n", created.UserName, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User created: %s (ID: %s)\n", created.UserName, created.ID)
 			return nil
 		},
 	}
@@ -184,7 +184,7 @@ func newUserUpdateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "User updated: %s (ID: %s)\n", updated.UserName, updated.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User updated: %s (ID: %s)\n", updated.UserName, updated.ID)
 			return nil
 		},
 	}
@@ -209,11 +209,11 @@ func newUserDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user %s? [y/N]: ", id)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user %s? [y/N]: ", id)
 				var confirm string
-				fmt.Scanln(&confirm)
+				_, _ = fmt.Scanln(&confirm)
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
 					return nil
 				}
 			}
@@ -227,7 +227,7 @@ func newUserDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "User deleted: %s\n", id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User deleted: %s\n", id)
 			return nil
 		},
 	}
