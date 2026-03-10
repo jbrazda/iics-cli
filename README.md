@@ -148,43 +148,43 @@ Environment variables take precedence over config file values.
 
 ## Commands
 
-```
-iics
-├── login                              Authenticate and store session
-├── logout                             Invalidate session
-├── objects list|dependencies          List/search assets, find dependencies
-├── lookup                             Resolve object IDs/names/paths
-├── connection list|get|create|update|delete
-├── export create|status|download      Export asset packages
-├── import upload|start|status         Import asset packages
-├── schedule list|get|create|update|delete
-├── project create|update|delete
-├── folder create|update|delete
-├── user list|get|create|update|delete
-├── usergroup list|get|create|update|delete
-├── role list|get|create|update|delete
-├── privilege list
-├── runtime list|get|create|update
-├── agent list|start|stop
-├── tag assign|remove
-├── permission get|set|delete
-├── securitylog list
-├── metering get|download
-├── sourcecontrol checkout|checkin|pull|commit
-└── state fetch|load
-```
+| Command | Alias | Subcommands | Description |
+| ------- | ----- | ----------- | ----------- |
+| [login](docs/documentation/login.md) | | | Authenticate and cache session |
+| [logout](docs/documentation/logout.md) | | | Invalidate session |
+| [objects](docs/documentation/objects.md) | | `list`, `dependencies` | List/search assets, find dependencies |
+| [lookup](docs/documentation/lookup.md) | | | Resolve object IDs, names, and paths |
+| [connection](docs/documentation/connection.md) | `conn` | `list`, `get`, `create`, `update`, `delete` | Manage connections |
+| [export](docs/documentation/export.md) | | `run`, `start`, `status`, `download`, `create` | Export asset packages |
+| [import](docs/documentation/import.md) | `imp` | `run`, `upload`, `start`, `status`, `download-log` | Import asset packages |
+| [project](docs/documentation/project.md) | | `create`, `update`, `delete` | Manage projects |
+| [folder](docs/documentation/folder.md) | | `create`, `update`, `delete` | Manage folders |
+| [schedule](docs/documentation/schedule.md) | | `list`, `get`, `create`, `update`, `delete` | Manage schedules |
+| [user](docs/documentation/user.md) | | `list`, `get`, `create`, `update`, `delete` | Manage users |
+| [usergroup](docs/documentation/usergroup.md) | `ug` | `list`, `get`, `create`, `update`, `delete` | Manage user groups |
+| [role](docs/documentation/role.md) | | `list`, `get`, `create`, `update`, `delete` | Manage roles |
+| [privilege](docs/documentation/privilege.md) | | `list` | List available privileges |
+| [runtime](docs/documentation/runtime.md) | `rt` | `list`, `get`, `create`, `update` | Manage runtime environments |
+| [agent](docs/documentation/agent.md) | | `list`, `get`, `details`, `start`, `stop` | Manage Secure Agents |
+| [tag](docs/documentation/tag.md) | | `assign`, `remove` | Assign/remove tags on objects |
+| [permission](docs/documentation/permission.md) | `perm` | `get`, `set`, `delete` | Manage object-level permissions |
+| [securitylog](docs/documentation/securitylog.md) | `auditlog` | `list` | Query security audit log |
+| [metering](docs/documentation/metering.md) | | `get`, `download` | Query usage and metering data |
+| [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc` | `checkout`, `checkin`, `pull`, `commit` | Source control operations |
+| [state](docs/documentation/state.md) | | `fetch`, `load` | Fetch/load object state snapshots |
 
 ### Global flags
 
 | Flag         | Short | Description                                      |
 | ------------ | ----- | ------------------------------------------------ |
 | `--profile`  | `-p`  | Profile to use (overrides default)               |
-| `--output`   | `-o`  | Output format: `table` (default) or `json`       |
+| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`  |
 | `--verbose`  | `-v`  | Enable verbose output                            |
 | `--no-color` |       | Disable colored output                           |
 | `--config`   |       | Config file path (default `~/.iics/config.yaml`) |
+| `--debug`    |       | Print request body to stderr on API errors       |
 
-## DevelopmentPP
+## Development
 
 ### Prerequisites
 
