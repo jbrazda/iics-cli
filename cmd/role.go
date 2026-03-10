@@ -116,7 +116,7 @@ func newRoleCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s)\n", created.Name, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s)\n", created.Name, created.ID)
 			return nil
 		},
 	}
@@ -156,7 +156,7 @@ func newRoleUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Role updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role updated: %s (ID: %s)\n", updated.Name, updated.ID)
 			return nil
 		},
 	}
@@ -178,11 +178,11 @@ func newRoleDeleteCmd() *cobra.Command {
 				return fmt.Errorf("--id is required")
 			}
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete role %s? [y/N]: ", id)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete role %s? [y/N]: ", id)
 				var confirm string
-				fmt.Scanln(&confirm)
+				_, _ = fmt.Scanln(&confirm)
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
 					return nil
 				}
 			}
@@ -193,7 +193,7 @@ func newRoleDeleteCmd() *cobra.Command {
 			if err := c.DeleteRole(context.Background(), id); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Role deleted: %s\n", id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role deleted: %s\n", id)
 			return nil
 		},
 	}

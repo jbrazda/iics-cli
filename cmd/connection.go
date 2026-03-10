@@ -147,7 +147,7 @@ func newConnectionCreateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Connection created: %s (ID: %s)\n", created.Name, created.ID) //nolint:errcheck
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Connection created: %s (ID: %s)\n", created.Name, created.ID)
 			return nil
 		},
 	}
@@ -195,7 +195,7 @@ func newConnectionUpdateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Connection updated: %s (ID: %s)\n", updated.Name, updated.ID) //nolint:errcheck
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Connection updated: %s (ID: %s)\n", updated.Name, updated.ID)
 			return nil
 		},
 	}
@@ -222,11 +222,11 @@ func newConnectionDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete connection %s? [y/N]: ", id) //nolint:errcheck
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete connection %s? [y/N]: ", id)
 				var confirm string
-				fmt.Scanln(&confirm) //nolint:errcheck
+				_, _ = fmt.Scanln(&confirm)
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.") //nolint:errcheck
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
 					return nil
 				}
 			}
@@ -240,7 +240,7 @@ func newConnectionDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Connection deleted: %s\n", id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Connection deleted: %s\n", id)
 			return nil
 		},
 	}

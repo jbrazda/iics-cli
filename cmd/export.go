@@ -76,19 +76,19 @@ func newExportCreateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Export job created: %s (status: %s)\n", job.ID, job.Status.State)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Export job created: %s (status: %s)\n", job.ID, job.Status.State)
 
 			if wait {
-				fmt.Fprintln(cmd.OutOrStdout(), "Waiting for export to complete...")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Waiting for export to complete...")
 				for job.Status.State == "IN_PROGRESS" || job.Status.State == "QUEUED" {
 					time.Sleep(3 * time.Second)
 					job, err = c.GetExportStatus(context.Background(), job.ID, false)
 					if err != nil {
 						return err
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", job.Status.State)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", job.Status.State)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Export completed: %s (status: %s)\n", job.ID, job.Status.State)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Export completed: %s (status: %s)\n", job.ID, job.Status.State)
 			}
 
 			return nil
@@ -180,14 +180,14 @@ func newExportDownloadCmd() *cobra.Command {
 			}
 			defer func() { _ = file.Close() }()
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Downloading export package to %s...\n", outputFile)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Downloading export package to %s...\n", outputFile)
 
 			if err := c.DownloadExportPackage(context.Background(), id, file); err != nil {
 				_ = os.Remove(outputFile)
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Download complete: %s\n", outputFile)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Download complete: %s\n", outputFile)
 			return nil
 		},
 	}
@@ -228,7 +228,7 @@ func newExportStartCmd() *cobra.Command {
 				return err
 			}
 			if verbose {
-				fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
+				_, _ = fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
 			}
 
 			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
@@ -246,10 +246,10 @@ func newExportStartCmd() *cobra.Command {
 			}
 
 			if verbose {
-				fmt.Fprintf(out, "[%s] Starting export job \"%s\" with %d objects...\n",
+				_, _ = fmt.Fprintf(out, "[%s] Starting export job \"%s\" with %d objects...\n",
 					ts(), jobName, len(objects))
 				for _, o := range objects {
-					fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
+					_, _ = fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
 				}
 			}
 
@@ -258,7 +258,7 @@ func newExportStartCmd() *cobra.Command {
 				return fmt.Errorf("starting export: %w", err)
 			}
 
-			fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
+			_, _ = fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
 			return nil
 		},
 	}
@@ -313,7 +313,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				return err
 			}
 			if verbose {
-				fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
+				_, _ = fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
 			}
 
 			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
@@ -331,22 +331,22 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				Objects: objects,
 			}
 			if verbose {
-				fmt.Fprintf(out, "[%s] Export request: name=%q, objects=%d, includeDeps=%v\n",
+				_, _ = fmt.Fprintf(out, "[%s] Export request: name=%q, objects=%d, includeDeps=%v\n",
 					ts(), req.Name, len(req.Objects), !excludeDependencies)
 				for _, o := range objects {
-					fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
+					_, _ = fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
 				}
 			}
 
 			// Step 5: Start export job.
 			if verbose {
-				fmt.Fprintf(out, "[%s] Starting export job...\n", ts())
+				_, _ = fmt.Fprintf(out, "[%s] Starting export job...\n", ts())
 			}
 			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
 			if err != nil {
 				return fmt.Errorf("starting export: %w", err)
 			}
-			fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
+			_, _ = fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
 
 			// Step 6: Poll until complete or max-wait exceeded.
 			deadline := startWall.Add(time.Duration(maxWaitTime) * time.Second)
@@ -365,13 +365,13 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				}
 				elapsed := time.Since(startWall).Round(time.Second)
 				if verbose {
-					fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+					_, _ = fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
 				}
 			}
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			if verbose {
-				fmt.Fprintf(out, "[%s] Export finished — status: %s, total time: %s\n",
+				_, _ = fmt.Fprintf(out, "[%s] Export finished — status: %s, total time: %s\n",
 					ts(), job.Status.State, elapsed)
 			}
 
@@ -386,16 +386,16 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 			}
 
 			// Print summary.
-			fmt.Fprintf(out, "\nExport Summary:\n")
-			fmt.Fprintf(out, "  Job ID:  %s\n", finalJob.ID)
-			fmt.Fprintf(out, "  Name:    %s\n", finalJob.Name)
-			fmt.Fprintf(out, "  Status:  %s\n", finalJob.Status.State)
+			_, _ = fmt.Fprintf(out, "\nExport Summary:\n")
+			_, _ = fmt.Fprintf(out, "  Job ID:  %s\n", finalJob.ID)
+			_, _ = fmt.Fprintf(out, "  Name:    %s\n", finalJob.Name)
+			_, _ = fmt.Fprintf(out, "  Status:  %s\n", finalJob.Status.State)
 			if finalJob.Status.Message != "" {
-				fmt.Fprintf(out, "  Message: %s\n", finalJob.Status.Message)
+				_, _ = fmt.Fprintf(out, "  Message: %s\n", finalJob.Status.Message)
 			}
 
 			if expandStatus && len(finalJob.Objects) > 0 {
-				fmt.Fprintln(out, "\nExported Objects:")
+				_, _ = fmt.Fprintln(out, "\nExported Objects:")
 				printExportObjects(cmd, finalJob)
 			}
 
@@ -405,7 +405,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 
 			// Step 7: Download the export package.
 			if verbose {
-				fmt.Fprintf(out, "[%s] Downloading export package to %s...\n", ts(), exportFilePath)
+				_, _ = fmt.Fprintf(out, "[%s] Downloading export package to %s...\n", ts(), exportFilePath)
 			}
 
 			zipFile, err := os.Create(exportFilePath)
@@ -421,15 +421,15 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 
 			info, statErr := zipFile.Stat()
 			if statErr == nil {
-				fmt.Fprintf(out, "Downloaded: %s (%d bytes)\n", exportFilePath, info.Size())
+				_, _ = fmt.Fprintf(out, "Downloaded: %s (%d bytes)\n", exportFilePath, info.Size())
 			} else {
-				fmt.Fprintf(out, "Downloaded: %s\n", exportFilePath)
+				_, _ = fmt.Fprintf(out, "Downloaded: %s\n", exportFilePath)
 			}
 
 			// Step 8: Optionally print zip contents.
 			if printFileContents || verbose {
 				if err := printZipContents(exportFilePath, out); err != nil {
-					fmt.Fprintf(out, "  (could not list zip contents: %v)\n", err)
+					_, _ = fmt.Fprintf(out, "  (could not list zip contents: %v)\n", err)
 				}
 			}
 
@@ -441,17 +441,17 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 					logPath = strings.TrimSuffix(exportFilePath, ext) + ".log"
 				}
 				if verbose {
-					fmt.Fprintf(out, "[%s] Downloading export log to %s...\n", ts(), logPath)
+					_, _ = fmt.Fprintf(out, "[%s] Downloading export log to %s...\n", ts(), logPath)
 				}
 				logFile, err := os.Create(logPath)
 				if err != nil {
-					fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", logPath, err)
+					_, _ = fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", logPath, err)
 				} else {
 					defer func() { _ = logFile.Close() }()
 					if err := c.DownloadExportLog(ctx, finalJob.ID, logFile); err != nil {
-						fmt.Fprintf(out, "Warning: could not download export log: %v\n", err)
+						_, _ = fmt.Fprintf(out, "Warning: could not download export log: %v\n", err)
 					} else {
-						fmt.Fprintf(out, "Export log saved to: %s\n", logPath)
+						_, _ = fmt.Fprintf(out, "Export log saved to: %s\n", logPath)
 					}
 				}
 			}
@@ -545,7 +545,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 	resolvedIDs := make(map[int]string)
 	if len(lookupObjs) > 0 {
 		if verbose {
-			fmt.Fprintf(out, "[%s] Looking up IDs for %d objects...\n", ts(), len(lookupObjs))
+			_, _ = fmt.Fprintf(out, "[%s] Looking up IDs for %d objects...\n", ts(), len(lookupObjs))
 		}
 		resp, err := c.Lookup(ctx, lookupObjs)
 		if err != nil {
@@ -557,7 +557,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 			}
 		}
 		if verbose {
-			fmt.Fprintf(out, "[%s] Lookup complete: %d resolved\n", ts(), len(resp.Objects))
+			_, _ = fmt.Fprintf(out, "[%s] Lookup complete: %d resolved\n", ts(), len(resp.Objects))
 		}
 	}
 
@@ -584,7 +584,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 func printExportObjects(cmd *cobra.Command, job *client.ExportJob) {
 	formatter, err := getFormatter()
 	if err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
 		return
 	}
 	columns := []output.Column{
@@ -594,7 +594,7 @@ func printExportObjects(cmd *cobra.Command, job *client.ExportJob) {
 		{Header: "STATUS", Field: "status.state", Width: 15},
 	}
 	if err := formatter.Format(job.Objects, columns); err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
 	}
 }
 
@@ -606,9 +606,9 @@ func printZipContents(zipPath string, out io.Writer) error {
 	}
 	defer func() { _ = r.Close() }()
 
-	fmt.Fprintf(out, "\nZIP contents (%d files):\n", len(r.File))
+	_, _ = fmt.Fprintf(out, "\nZIP contents (%d files):\n", len(r.File))
 	for _, f := range r.File {
-		fmt.Fprintf(out, "  %s\n", f.Name)
+		_, _ = fmt.Fprintf(out, "  %s\n", f.Name)
 	}
 	return nil
 }

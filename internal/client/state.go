@@ -31,7 +31,7 @@ func (c *Client) FetchState(ctx context.Context, objectID string, dest io.Writer
 	if err != nil {
 		return err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if _, err := io.Copy(dest, body); err != nil {
 		return fmt.Errorf("downloading state: %w", err)
@@ -52,7 +52,7 @@ func (c *Client) LoadState(ctx context.Context, objectID string, data io.Reader)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respData, err := io.ReadAll(resp.Body)
 	if err != nil {

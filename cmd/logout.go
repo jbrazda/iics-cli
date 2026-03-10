@@ -34,8 +34,9 @@ func newLogoutCmd() *cobra.Command {
 			// Try to logout via API if we have a session
 			c, err := getClient(cmd)
 			if err == nil && c.SessionID() != "" {
-				if err := c.Logout(context.Background()); err != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: API logout failed: %v\n", err)
+				err = c.Logout(context.Background())
+				if err != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: API logout failed: %v\n", err)
 				}
 			}
 
@@ -45,11 +46,11 @@ func newLogoutCmd() *cobra.Command {
 				cache.Delete(profileName)
 				err = cache.Save("")
 				if err != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update session cache: %v\n", err)
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update session cache: %v\n", err)
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Logged out (profile: %s).\n", profileName)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Logged out (profile: %s).\n", profileName)
 			return nil
 		},
 	}

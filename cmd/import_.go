@@ -54,17 +54,17 @@ func newImportUploadCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Uploading %s...\n", file)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Uploading %s...\n", file)
 
 			resp, err := c.UploadImportPackage(context.Background(), file, f)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Upload complete.\n")
-			fmt.Fprintf(cmd.OutOrStdout(), "  Job ID: %s\n", resp.JobID)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", resp.JobStatus.State)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Checksum valid: %v\n", resp.ChecksumValid)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Upload complete.\n")
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Job ID: %s\n", resp.JobID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", resp.JobStatus.State)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Checksum valid: %v\n", resp.ChecksumValid)
 
 			return nil
 		},
@@ -128,19 +128,19 @@ func newImportStartCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Import job started: %s (status: %s)\n", job.ID, job.Status.State)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Import job started: %s (status: %s)\n", job.ID, job.Status.State)
 
 			if wait {
-				fmt.Fprintln(cmd.OutOrStdout(), "Waiting for import to complete...")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Waiting for import to complete...")
 				for job.Status.State == "IN_PROGRESS" || job.Status.State == "QUEUED" {
 					time.Sleep(3 * time.Second)
 					job, err = c.GetImportStatus(context.Background(), job.ID, false)
 					if err != nil {
 						return err
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", job.Status.State)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Status: %s\n", job.Status.State)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Import completed: %s (status: %s)\n", job.ID, job.Status.State)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Import completed: %s (status: %s)\n", job.ID, job.Status.State)
 			}
 
 			return nil
@@ -249,7 +249,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			defer func() { _ = f.Close() }()
 
 			if verbose {
-				fmt.Fprintf(out, "[%s] Uploading %s...\n", ts(), zipFile)
+				_, _ = fmt.Fprintf(out, "[%s] Uploading %s...\n", ts(), zipFile)
 			}
 
 			uploadResp, err := c.UploadImportPackage(context.Background(), filepath.Base(zipFile), f)
@@ -258,7 +258,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				fmt.Fprintf(out, "[%s] Upload complete — job ID: %s, checksum valid: %v\n",
+				_, _ = fmt.Fprintf(out, "[%s] Upload complete — job ID: %s, checksum valid: %v\n",
 					ts(), uploadResp.JobID, uploadResp.ChecksumValid)
 			}
 
@@ -288,7 +288,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			// --- Step 3: Start ---
 			if verbose {
-				fmt.Fprintf(out, "[%s] Starting import job \"%s\"...\n", ts(), startReq.Name)
+				_, _ = fmt.Fprintf(out, "[%s] Starting import job \"%s\"...\n", ts(), startReq.Name)
 			}
 
 			job, err := c.StartImport(context.Background(), uploadResp.JobID, &startReq)
@@ -297,10 +297,10 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				fmt.Fprintf(out, "[%s] Import job started — ID: %s, status: %s\n",
+				_, _ = fmt.Fprintf(out, "[%s] Import job started — ID: %s, status: %s\n",
 					ts(), job.ID, job.Status.State)
 				if job.StartTime != "" {
-					fmt.Fprintf(out, "[%s] Start time: %s\n", ts(), job.StartTime)
+					_, _ = fmt.Fprintf(out, "[%s] Start time: %s\n", ts(), job.StartTime)
 				}
 			}
 
@@ -322,7 +322,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 				elapsed := time.Since(startWall).Round(time.Second)
 				if verbose {
-					fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+					_, _ = fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
 				}
 
 				if detailedPolling && len(job.Objects) > 0 {
@@ -332,7 +332,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			if verbose {
-				fmt.Fprintf(out, "[%s] Import finished — status: %s, total time: %s\n",
+				_, _ = fmt.Fprintf(out, "[%s] Import finished — status: %s, total time: %s\n",
 					ts(), job.Status.State, elapsed)
 			}
 
@@ -348,7 +348,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 				finalJob = job // fall back to last polled state
 			}
 
-			fmt.Fprintln(out, "\nImport Summary:")
+			_, _ = fmt.Fprintln(out, "\nImport Summary:")
 			summaryColumns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
 				{Header: "NAME", Field: "name", Width: 25},
@@ -362,19 +362,19 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if len(finalJob.Objects) > 0 {
-				fmt.Fprintln(out, "\nImported Objects:")
+				_, _ = fmt.Fprintln(out, "\nImported Objects:")
 				printImportObjects(cmd, finalJob)
 			}
 
 			// --- Step 6: Import log ---
 			needLog := printImportLog || isImportFailed(finalJob.Status.State)
 			if needLog {
-				fmt.Fprintln(out, "\nImport Log:")
+				_, _ = fmt.Fprintln(out, "\nImport Log:")
 				var logBuf bytes.Buffer
 				if err := c.DownloadImportLog(context.Background(), finalJob.ID, &logBuf); err != nil {
-					fmt.Fprintf(out, "  (could not download log: %v)\n", err)
+					_, _ = fmt.Fprintf(out, "  (could not download log: %v)\n", err)
 				} else {
-					fmt.Fprintln(out, logBuf.String())
+					_, _ = fmt.Fprintln(out, logBuf.String())
 				}
 			}
 
@@ -453,7 +453,7 @@ func newImportDownloadLogCmd() *cobra.Command {
 				return fmt.Errorf("downloading log: %w", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Import log saved to: %s\n", dest)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Import log saved to: %s\n", dest)
 			return nil
 		},
 	}
@@ -490,7 +490,7 @@ func buildLogFileName(name, id, state string) string {
 func printImportObjects(cmd *cobra.Command, job *client.ImportJob) {
 	formatter, err := getFormatter()
 	if err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
 		return
 	}
 	objColumns := []output.Column{
@@ -501,6 +501,6 @@ func printImportObjects(cmd *cobra.Command, job *client.ImportJob) {
 		{Header: "MESSAGE", Field: "status.message", Width: 40},
 	}
 	if err := formatter.Format(job.Objects, objColumns); err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
 	}
 }

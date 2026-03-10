@@ -89,7 +89,7 @@ func newPermissionSetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Permissions set on object %s\n", objectID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Permissions set on object %s\n", objectID)
 			return nil
 		},
 	}
@@ -111,11 +111,11 @@ func newPermissionDeleteCmd() *cobra.Command {
 				return fmt.Errorf("--object-id is required")
 			}
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete permissions for object %s? [y/N]: ", objectID) //nolint:errcheck
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete permissions for object %s? [y/N]: ", objectID)
 				var confirm string
-				fmt.Scanln(&confirm) //nolint:errcheck
+				_, _ = fmt.Scanln(&confirm)
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.") //nolint:errcheck
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
 					return nil
 				}
 			}
@@ -126,7 +126,7 @@ func newPermissionDeleteCmd() *cobra.Command {
 			if err := c.DeleteObjectPermissions(context.Background(), objectID); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Permissions deleted for object %s\n", objectID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Permissions deleted for object %s\n", objectID)
 			return nil
 		},
 	}

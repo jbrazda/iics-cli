@@ -28,7 +28,7 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 	}
 
 	if len(rows) == 0 {
-		fmt.Fprintln(f.w, "No results found.") //nolint:errcheck
+		_, _ = fmt.Fprintln(f.w, "No results found.") //nolint:errcheck
 		return nil
 	}
 

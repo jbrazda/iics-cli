@@ -214,7 +214,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -223,7 +223,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		if c.debug && len(reqData) > 0 {
-			fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
+			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
 		}
 		return newAPIError(resp, respData)
 	}
@@ -272,7 +272,7 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -281,7 +281,7 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		if c.debug && len(reqData) > 0 {
-			fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
+			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
 		}
 		return newAPIError(resp, respData)
 	}
@@ -322,7 +322,7 @@ func (c *Client) doRaw(ctx context.Context, method, path string, query map[strin
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		respData, _ := io.ReadAll(resp.Body)
 		return nil, newAPIError(resp, respData)
 	}
