@@ -178,12 +178,12 @@ func newExportDownloadCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("creating output file: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Downloading export package to %s...\n", outputFile)
 
 			if err := c.DownloadExportPackage(context.Background(), id, file); err != nil {
-				os.Remove(outputFile)
+				_ = os.Remove(outputFile)
 				return err
 			}
 
@@ -378,7 +378,8 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 			// Fetch final status with expanded objects if requested.
 			finalJob := job
 			if expandStatus {
-				expanded, err := c.GetExportStatus(ctx, job.ID, true)
+				var expanded *client.ExportJob
+				expanded, err = c.GetExportStatus(ctx, job.ID, true)
 				if err == nil {
 					finalJob = expanded
 				}
@@ -411,10 +412,10 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 			if err != nil {
 				return fmt.Errorf("creating export file %s: %w", exportFilePath, err)
 			}
-			defer zipFile.Close()
+			defer func() { _ = zipFile.Close() }()
 
 			if err := c.DownloadExportPackage(ctx, finalJob.ID, zipFile); err != nil {
-				os.Remove(exportFilePath)
+				_ = os.Remove(exportFilePath)
 				return fmt.Errorf("downloading export package: %w", err)
 			}
 
@@ -446,7 +447,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				if err != nil {
 					fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", logPath, err)
 				} else {
-					defer logFile.Close()
+					defer func() { _ = logFile.Close() }()
 					if err := c.DownloadExportLog(ctx, finalJob.ID, logFile); err != nil {
 						fmt.Fprintf(out, "Warning: could not download export log: %v\n", err)
 					} else {
@@ -603,7 +604,7 @@ func printZipContents(zipPath string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("opening zip %s: %w", zipPath, err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	fmt.Fprintf(out, "\nZIP contents (%d files):\n", len(r.File))
 	for _, f := range r.File {

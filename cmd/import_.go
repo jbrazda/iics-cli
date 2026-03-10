@@ -47,7 +47,7 @@ func newImportUploadCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("opening file %s: %w", file, err)
 			}
-			defer f.Close()
+			defer func() { _ = f.Close() }()
 
 			c, err := getClient(cmd)
 			if err != nil {
@@ -99,7 +99,8 @@ func newImportStartCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("reading file %s: %w", fromFile, err)
 				}
-				if err := json.Unmarshal(data, &req); err != nil {
+				err = json.Unmarshal(data, &req)
+				if err != nil {
 					return fmt.Errorf("parsing import spec: %w", err)
 				}
 			} else {
@@ -245,7 +246,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			if err != nil {
 				return fmt.Errorf("opening %s: %w", zipFile, err)
 			}
-			defer f.Close()
+			defer func() { _ = f.Close() }()
 
 			if verbose {
 				fmt.Fprintf(out, "[%s] Uploading %s...\n", ts(), zipFile)
@@ -264,11 +265,13 @@ the import log automatically on failure or when --print-import-log is set.`,
 			// --- Step 2: Build start request ---
 			var startReq client.ImportStartRequest
 			if fromFile != "" {
-				data, err := os.ReadFile(fromFile)
+				var data []byte
+				data, err = os.ReadFile(fromFile)
 				if err != nil {
 					return fmt.Errorf("reading %s: %w", fromFile, err)
 				}
-				if err := json.Unmarshal(data, &startReq); err != nil {
+				err = json.Unmarshal(data, &startReq)
+				if err != nil {
 					return fmt.Errorf("parsing import spec: %w", err)
 				}
 			} else {
@@ -424,7 +427,8 @@ func newImportDownloadLogCmd() *cobra.Command {
 			// Resolve default filename from job metadata
 			filename := logName
 			if filename == "" {
-				job, err := c.GetImportStatus(context.Background(), id, false)
+				var job *client.ImportJob
+				job, err = c.GetImportStatus(context.Background(), id, false)
 				if err != nil {
 					// Fall back to a safe default if we can't fetch status
 					filename = fmt.Sprintf("import_%s.log", id)
@@ -433,7 +437,8 @@ func newImportDownloadLogCmd() *cobra.Command {
 				}
 			}
 
-			if err := os.MkdirAll(logPath, 0o755); err != nil {
+			err = os.MkdirAll(logPath, 0o755)
+			if err != nil {
 				return fmt.Errorf("creating log directory: %w", err)
 			}
 
@@ -442,7 +447,7 @@ func newImportDownloadLogCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("creating log file %s: %w", dest, err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			if err := c.DownloadImportLog(context.Background(), id, file); err != nil {
 				return fmt.Errorf("downloading log: %w", err)

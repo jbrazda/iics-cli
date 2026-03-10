@@ -107,7 +107,8 @@ func newUsergroupCreateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var group client.UserGroup
-			if err := json.Unmarshal(data, &group); err != nil {
+			err = json.Unmarshal(data, &group)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)
@@ -146,7 +147,8 @@ func newUsergroupUpdateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var group client.UserGroup
-			if err := json.Unmarshal(data, &group); err != nil {
+			err = json.Unmarshal(data, &group)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)

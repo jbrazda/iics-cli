@@ -157,7 +157,7 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 
 	// On 401, re-authenticate and retry once
 	if resp.StatusCode == http.StatusUnauthorized {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if _, err := c.Login(ctx); err != nil {
 			return nil, &SessionExpiredError{Wrapped: err}

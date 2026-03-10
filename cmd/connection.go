@@ -132,7 +132,8 @@ func newConnectionCreateCmd() *cobra.Command {
 			}
 
 			var conn client.Connection
-			if err := json.Unmarshal(data, &conn); err != nil {
+			err = json.Unmarshal(data, &conn)
+			if err != nil {
 				return fmt.Errorf("parsing connection JSON: %w", err)
 			}
 
@@ -146,7 +147,7 @@ func newConnectionCreateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Connection created: %s (ID: %s)\n", created.Name, created.ID)
+			fmt.Fprintf(cmd.OutOrStdout(), "Connection created: %s (ID: %s)\n", created.Name, created.ID) //nolint:errcheck
 			return nil
 		},
 	}
@@ -179,7 +180,8 @@ func newConnectionUpdateCmd() *cobra.Command {
 			}
 
 			var conn client.Connection
-			if err := json.Unmarshal(data, &conn); err != nil {
+			err = json.Unmarshal(data, &conn)
+			if err != nil {
 				return fmt.Errorf("parsing connection JSON: %w", err)
 			}
 
@@ -193,7 +195,7 @@ func newConnectionUpdateCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Connection updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			fmt.Fprintf(cmd.OutOrStdout(), "Connection updated: %s (ID: %s)\n", updated.Name, updated.ID) //nolint:errcheck
 			return nil
 		},
 	}
@@ -220,11 +222,11 @@ func newConnectionDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete connection %s? [y/N]: ", id)
+				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete connection %s? [y/N]: ", id) //nolint:errcheck
 				var confirm string
-				fmt.Scanln(&confirm)
+				fmt.Scanln(&confirm) //nolint:errcheck
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.") //nolint:errcheck
 					return nil
 				}
 			}

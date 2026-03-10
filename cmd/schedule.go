@@ -123,7 +123,8 @@ func newScheduleCreateCmd() *cobra.Command {
 			}
 
 			var schedule client.Schedule
-			if err := json.Unmarshal(data, &schedule); err != nil {
+			err = json.Unmarshal(data, &schedule)
+			if err != nil {
 				return fmt.Errorf("parsing schedule JSON: %w", err)
 			}
 
@@ -169,7 +170,8 @@ func newScheduleUpdateCmd() *cobra.Command {
 			}
 
 			var schedule client.Schedule
-			if err := json.Unmarshal(data, &schedule); err != nil {
+			err = json.Unmarshal(data, &schedule)
+			if err != nil {
 				return fmt.Errorf("parsing schedule JSON: %w", err)
 			}
 

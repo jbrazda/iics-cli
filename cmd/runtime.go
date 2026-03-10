@@ -105,7 +105,8 @@ func newRuntimeCreateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var rt client.RuntimeEnvironment
-			if err := json.Unmarshal(data, &rt); err != nil {
+			err = json.Unmarshal(data, &rt)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)
@@ -144,7 +145,8 @@ func newRuntimeUpdateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var rt client.RuntimeEnvironment
-			if err := json.Unmarshal(data, &rt); err != nil {
+			err = json.Unmarshal(data, &rt)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)

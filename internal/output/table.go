@@ -28,7 +28,7 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 	}
 
 	if len(rows) == 0 {
-		fmt.Fprintln(f.w, "No results found.")
+		fmt.Fprintln(f.w, "No results found.") //nolint:errcheck
 		return nil
 	}
 
@@ -47,7 +47,9 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 		for i, col := range columns {
 			record[i] = extractField(row, col)
 		}
-		table.Append(record)
+		if err := table.Append(record); err != nil {
+			return err
+		}
 	}
 
 	return table.Render()

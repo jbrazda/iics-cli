@@ -116,11 +116,11 @@ func newFolderDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete folder %s? [y/N]: ", id)
+				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete folder %s? [y/N]: ", id) //nolint:errcheck
 				var confirm string
-				fmt.Scanln(&confirm)
+				fmt.Scanln(&confirm) //nolint:errcheck
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.") //nolint:errcheck
 					return nil
 				}
 			}

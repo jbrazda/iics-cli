@@ -82,10 +82,10 @@ func newMeteringDownloadCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("creating output file: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			if err := c.DownloadMeteringReport(context.Background(), id, file); err != nil {
-				os.Remove(outputFile)
+				_ = os.Remove(outputFile)
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Report downloaded: %s\n", outputFile)

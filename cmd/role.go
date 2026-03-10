@@ -104,7 +104,8 @@ func newRoleCreateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var role client.Role
-			if err := json.Unmarshal(data, &role); err != nil {
+			err = json.Unmarshal(data, &role)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)
@@ -143,7 +144,8 @@ func newRoleUpdateCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var role client.Role
-			if err := json.Unmarshal(data, &role); err != nil {
+			err = json.Unmarshal(data, &role)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)
