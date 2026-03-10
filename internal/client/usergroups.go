@@ -17,7 +17,7 @@ type UserGroup struct {
 	UpdateTime  string   `json:"updateTime,omitempty"`
 	CreatedBy   string   `json:"createdBy,omitempty"`
 	UpdatedBy   string   `json:"updatedBy,omitempty"`
-	Roles       []string `json:"roles,omitempty"`
+	Roles       []UserRole `json:"roles,omitempty"`
 }
 
 // UserGroupListOptions holds query parameters for listing user groups.
