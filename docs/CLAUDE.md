@@ -19,7 +19,7 @@ imports, users, roles, schedules, agents, runtime environments, and more.
 
 ## Directory Layout
 
-```
+```text
 iics_cli/
 ├── main.go                        # Entry point; injects version via ldflags
 ├── go.mod / go.sum
@@ -96,12 +96,12 @@ iics_cli/
 
 ## Key Dependencies
 
-| Package | Version | Purpose |
-|---|---|---|
-| `github.com/spf13/cobra` | v1.10.2 | CLI framework |
-| `github.com/spf13/viper` | v1.21.0 | Config file + env var management |
-| `github.com/olekukonko/tablewriter` | v1.1.3 | Table output (**v1.x API — see below**) |
-| `gopkg.in/yaml.v3` | v3.0.1 | Session cache serialization |
+| Package                             | Version | Purpose                                 |
+| ----------------------------------- | ------- | --------------------------------------- |
+| `github.com/spf13/cobra`            | v1.10.2 | CLI framework                           |
+| `github.com/spf13/viper`            | v1.21.0 | Config file + env var management        |
+| `github.com/olekukonko/tablewriter` | v1.1.3  | Table output (**v1.x API — see below**) |
+| `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization             |
 
 No external HTTP library — uses standard `net/http` only.
 
@@ -133,31 +133,32 @@ table.SetBorder(false)            // not available in v1.x
 
 Two API versions are in use. The session header **differs** between them.
 
-| | V2 | V3 |
-|---|---|---|
-| Base path constant | `BaseAPIPathV2 = "api/v2"` | `BaseAPIPathV3 = "public/core/v3"` |
-| Session header | `icSessionId` | `INFA-SESSION-ID` |
-| Used for | connections, agents, lookups | everything else |
+|                    | V2                           | V3                                 |
+| ------------------ | ---------------------------- | ---------------------------------- |
+| Base path constant | `BaseAPIPathV2 = "api/v2"`   | `BaseAPIPathV3 = "public/core/v3"` |
+| Session header     | `icSessionId`                | `INFA-SESSION-ID`                  |
+| Used for           | connections, agents, lookups | everything else                    |
 
 **Auto-detection in `client.go`:** `do()` checks whether the URL path contains `/v2/` and sets the appropriate session header automatically. No manual header management needed in resource files.
 
 ### Resources by API version
 
-| V2 (`api/v2`) | V3 (`public/core/v3`) |
-|---|---|
-| `agent` | `users`, `userGroups`, `roles`, `privileges` |
-| `connection` | `export`, `import` |
-| `lookup` | `runtimeEnvironments` |
-| | `folders`, `projects` |
-| | `objects`, `schedules`, `tags` |
-| | `permissions`, `securityLogs`, `metering` |
-| | `sourceControl` |
+| V2 (`api/v2`) | V3 (`public/core/v3`)                        |
+| ------------- | -------------------------------------------- |
+| `agent`       | `users`, `userGroups`, `roles`, `privileges` |
+| `connection`  | `export`, `import`                           |
+| `lookup`      | `runtimeEnvironments`                        |
+|               | `folders`, `projects`                        |
+|               | `objects`, `schedules`, `tags`               |
+|               | `permissions`, `securityLogs`, `metering`    |
+|               | `sourceControl`                              |
 
 ---
 
 ## Architecture: The Two-Layer Rule
 
 **`cmd/` is thin.** Command files only:
+
 1. Define flags and local variables
 2. Call `getClient(cmd)` and `getFormatter()`
 3. Call a single client method
@@ -397,18 +398,18 @@ If the API returns `true`/`false`, use `bool`.
 
 ### Common field name mappings (v3 API conventions)
 
-| Go field | JSON tag |
-|---|---|
-| `ID` | `id` |
-| `OrgID` | `orgId` |
-| `CreateTime` | `createTime` |
-| `UpdateTime` | `updateTime` |
-| `CreatedBy` | `createdBy` |
-| `UpdatedBy` | `updatedBy` |
-| `UserName` | `userName` |
-| `TimeZoneID` | `timeZoneId` |
-| `AgentHost` | `agentHost` |
-| `GroupID` | `agentGroupId` |
+| Go field     | JSON tag       |
+| ------------ | -------------- |
+| `ID`         | `id`           |
+| `OrgID`      | `orgId`        |
+| `CreateTime` | `createTime`   |
+| `UpdateTime` | `updateTime`   |
+| `CreatedBy`  | `createdBy`    |
+| `UpdatedBy`  | `updatedBy`    |
+| `UserName`   | `userName`     |
+| `TimeZoneID` | `timeZoneId`   |
+| `AgentHost`  | `agentHost`    |
+| `GroupID`    | `agentGroupId` |
 
 ---
 
@@ -457,13 +458,13 @@ Supports dot notation for nested fields:
 
 ## Global Flags (from `cmd/root.go`)
 
-| Flag | Variable | Default | Description |
-|---|---|---|---|
-| `--config` | `cfgFile` | `~/.iics/config.yaml` | Config file path |
-| `--profile` / `-p` | `profile` | from config | Profile name |
-| `--output` / `-o` | `outputFmt` | `"table"` | Output format: `table\|json\|csv` |
-| `--verbose` / `-v` | `verbose` | `false` | Verbose output |
-| `--no-color` | `noColor` | `false` | Disable color |
+| Flag               | Variable    | Default               | Description            |       |      |
+| ------------------ | ----------- | --------------------- | ---------------------- | ----- | ---- |
+| `--config`         | `cfgFile`   | `~/.iics/config.yaml` | Config file path       |       |      |
+| `--profile` / `-p` | `profile`   | from config           | Profile name           |       |      |
+| `--output` / `-o`  | `outputFmt` | `"table"`             | Output format: `table\ | json\ | csv` |
+| `--verbose` / `-v` | `verbose`   | `false`               | Verbose output         |       |      |
+| `--no-color`       | `noColor`   | `false`               | Disable color          |       |      |
 
 `verbose` is a package-level `bool` in the `cmd` package — access it directly in `RunE` closures.
 
@@ -486,15 +487,16 @@ profiles:
 
 **Environment variable overrides (highest precedence):**
 
-| Env var | Overrides |
-|---|---|
-| `IICS_PROFILE` | `--profile` flag |
-| `IICS_USERNAME` | profile username |
-| `IICS_PASSWORD` | profile password |
-| `IICS_REGION` | profile region |
+| Env var          | Overrides        |
+| ---------------- | ---------------- |
+| `IICS_PROFILE`   | `--profile` flag |
+| `IICS_USERNAME`  | profile username |
+| `IICS_PASSWORD`  | profile password |
+| `IICS_REGION`    | profile region   |
 | `IICS_LOGIN_URL` | profile loginUrl |
 
 **Session cache:** `~/.iics/sessions.yaml`
+
 - Expires after 30 minutes
 - Never commit this file
 - Loaded automatically before every command; saves after successful login
@@ -564,6 +566,7 @@ for isInProgress(job.Status.State) {
 ```
 
 The `import run` command (in `cmd/import_.go`) is the reference implementation for:
+
 - Combined upload → start → poll → final output
 - `--polling-interval`, `--max-wait-time`, `--detailed-polling`, `--print-import-log`
 - Verbose timestamped progress output
@@ -628,9 +631,11 @@ Base URL for docs:
 `https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/`
 
 Key sections:
+
 - Platform REST API Version 3: `platform-rest-api-version-3-resources/`
 - Platform REST API Version 2: `platform-rest-api-version-2-resources/`
 
 Login endpoints (all return same token, use v3):
+
 - V3: `POST /saas/public/core/v3/login` → returns `sessionId` + `baseApiUrl`
 - V2: `POST /ma/api/v2/user/login` → returns `icSessionId` + `serverUrl`

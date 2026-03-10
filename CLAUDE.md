@@ -65,4 +65,8 @@ golangci-lint run ./...
 3. `cmd/<resource>.go` — thin command wiring, `getClient` → client method → `getFormatter` → `f.Format`
 4. `cmd/root.go` `init()` — `rootCmd.AddCommand(newResourceCmd())`
 
-See `docs/CLAUDE.md` for complete code templates for all four files.
+## Markdown Rules
+
+- Generate Markdown that follows the [Markdown Lint Rules](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md)
+
+See [docs/CLAUDE.md](docs/CLAUDE.md) for complete code templates for all four files.

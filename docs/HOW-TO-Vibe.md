@@ -28,7 +28,7 @@ Include tests, screenshots, or expected outputs so Claude can check itself. This
 
 ## Summary Workflow
 
-```
+```text
 CR.md (scoped change request)
   ↓
 /plan mode — Claude outlines approach, you review
@@ -38,3 +38,4 @@ Implementation (single session, one task)
 Self-verification via tests in acceptance criteria
   ↓
 /compact or /clear before next task
+```
