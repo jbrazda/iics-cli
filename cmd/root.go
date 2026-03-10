@@ -17,6 +17,7 @@ var (
 	outputFmt  string
 	verbose    bool
 	noColor    bool
+	debug      bool
 	versionStr = "dev"
 	commitStr  = "none"
 	dateStr    = "unknown"
@@ -110,6 +111,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFmt, "output", "o", "table", "output format: table|json|csv")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "print request body to stderr on API error")
 
 	rootCmd.AddCommand(newLoginCmd())
 	rootCmd.AddCommand(newLogoutCmd())
@@ -180,7 +182,7 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 		return nil, err
 	}
 
-	c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose))
+	c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose), client.WithDebug(debug))
 
 	// Try to load cached session
 	cache, err := config.LoadSessionCache("")

@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,6 +26,8 @@ func newExportCmd() *cobra.Command {
 	cmd.AddCommand(newExportCreateCmd())
 	cmd.AddCommand(newExportStatusCmd())
 	cmd.AddCommand(newExportDownloadCmd())
+	cmd.AddCommand(newExportStartCmd())
+	cmd.AddCommand(newExportRunCmd())
 	return cmd
 }
 
@@ -190,4 +196,418 @@ func newExportDownloadCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&outputFile, "output-file", "f", "", "output file path (default: export_<id>.zip)")
 
 	return cmd
+}
+
+// newExportStartCmd starts an export job from an artifacts list and returns the job ID.
+// Performs steps 1-5: parse input → resolve IDs → start job.
+func newExportStartCmd() *cobra.Command {
+	var (
+		artifactsFile       string
+		name                string
+		includeTags         bool
+		excludeDependencies bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Start an export job from an artifacts list and return the job ID",
+		Long:  `Reads an artifacts list, resolves object IDs via lookup if needed, and starts an export job.`,
+		Example: `  iics export start --artifacts-file ./config/export_list.txt
+  iics export start --artifacts-file ./config/export_list.json --include-tags
+  iics objects list -q "location==ZZ_TEST_CLI" -o csv | iics export start --export-file-path ./out.zip`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			out := cmd.OutOrStdout()
+
+			entries, err := readArtifacts(artifactsFile)
+			if err != nil {
+				return err
+			}
+			if verbose {
+				fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
+			}
+
+			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
+			if err != nil {
+				return err
+			}
+
+			jobName := name
+			if jobName == "" {
+				jobName = defaultExportName()
+			}
+			req := &client.ExportRequest{
+				Name:    jobName,
+				Objects: objects,
+			}
+
+			if verbose {
+				fmt.Fprintf(out, "[%s] Starting export job \"%s\" with %d objects...\n",
+					ts(), jobName, len(objects))
+				for _, o := range objects {
+					fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
+				}
+			}
+
+			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
+			if err != nil {
+				return fmt.Errorf("starting export: %w", err)
+			}
+
+			fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&artifactsFile, "artifacts-file", "", "file with artifacts list (.txt/.json/.yaml/.csv); omit to read from stdin")
+	cmd.Flags().StringVarP(&name, "name", "n", "", "export job name (default: iics-cli(version) yyyy-mm-dd hh-mm-ss)")
+	cmd.Flags().BoolVar(&includeTags, "include-tags", false, "export tag information with assets")
+	cmd.Flags().BoolVar(&excludeDependencies, "exclude-dependencies", false, "exclude dependent objects from export")
+
+	return cmd
+}
+
+// newExportRunCmd runs the full export pipeline: resolve objects → start → poll → download.
+func newExportRunCmd() *cobra.Command {
+	var (
+		artifactsFile       string
+		name                string
+		exportFilePath      string
+		pollingInterval     int
+		maxWaitTime         int
+		printFileContents   bool
+		expandStatus        bool
+		includeTags         bool
+		excludeDependencies bool
+		downloadExportLog   string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "run",
+		Short: "Run a complete export: resolve objects, start job, wait, and download",
+		Long: `Reads an artifacts list, resolves object IDs, starts an export job, polls until
+completion, and downloads the ZIP package. Always prints the job summary.`,
+		Example: `  iics export run --artifacts-file ./config/export_list.txt --export-file-path ./backup.zip
+  iics export run --artifacts-file ./config/export_list.json --export-file-path ./backup.zip --expand-status --verbose
+  iics objects list -q "location==ZZ_TEST_CLI" -o csv | iics export run --export-file-path ./backup.zip`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if exportFilePath == "" {
+				return fmt.Errorf("--export-file-path is required")
+			}
+
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			out := cmd.OutOrStdout()
+			startWall := time.Now()
+
+			// Step 1-2: Read input and resolve artifact IDs.
+			entries, err := readArtifacts(artifactsFile)
+			if err != nil {
+				return err
+			}
+			if verbose {
+				fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
+			}
+
+			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
+			if err != nil {
+				return err
+			}
+
+			// Step 3-4: Construct the export request.
+			jobName := name
+			if jobName == "" {
+				jobName = defaultExportName()
+			}
+			req := &client.ExportRequest{
+				Name:    jobName,
+				Objects: objects,
+			}
+			if verbose {
+				fmt.Fprintf(out, "[%s] Export request: name=%q, objects=%d, includeDeps=%v\n",
+					ts(), req.Name, len(req.Objects), !excludeDependencies)
+				for _, o := range objects {
+					fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
+				}
+			}
+
+			// Step 5: Start export job.
+			if verbose {
+				fmt.Fprintf(out, "[%s] Starting export job...\n", ts())
+			}
+			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
+			if err != nil {
+				return fmt.Errorf("starting export: %w", err)
+			}
+			fmt.Fprintf(out, "Export job started: %s (status: %s)\n", job.ID, job.Status.State)
+
+			// Step 6: Poll until complete or max-wait exceeded.
+			deadline := startWall.Add(time.Duration(maxWaitTime) * time.Second)
+			interval := time.Duration(pollingInterval) * time.Second
+
+			for isExportInProgress(job.Status.State) {
+				if time.Now().After(deadline) {
+					return fmt.Errorf("timed out after %ds waiting for export job %s (last status: %s)",
+						maxWaitTime, job.ID, job.Status.State)
+				}
+				time.Sleep(interval)
+
+				job, err = c.GetExportStatus(ctx, job.ID, false)
+				if err != nil {
+					return fmt.Errorf("polling export status: %w", err)
+				}
+				elapsed := time.Since(startWall).Round(time.Second)
+				if verbose {
+					fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+				}
+			}
+
+			elapsed := time.Since(startWall).Round(time.Second)
+			if verbose {
+				fmt.Fprintf(out, "[%s] Export finished — status: %s, total time: %s\n",
+					ts(), job.Status.State, elapsed)
+			}
+
+			// Fetch final status with expanded objects if requested.
+			finalJob := job
+			if expandStatus {
+				expanded, err := c.GetExportStatus(ctx, job.ID, true)
+				if err == nil {
+					finalJob = expanded
+				}
+			}
+
+			// Print summary.
+			fmt.Fprintf(out, "\nExport Summary:\n")
+			fmt.Fprintf(out, "  Job ID:  %s\n", finalJob.ID)
+			fmt.Fprintf(out, "  Name:    %s\n", finalJob.Name)
+			fmt.Fprintf(out, "  Status:  %s\n", finalJob.Status.State)
+			if finalJob.Status.Message != "" {
+				fmt.Fprintf(out, "  Message: %s\n", finalJob.Status.Message)
+			}
+
+			if expandStatus && len(finalJob.Objects) > 0 {
+				fmt.Fprintln(out, "\nExported Objects:")
+				printExportObjects(cmd, finalJob)
+			}
+
+			if isExportFailed(finalJob.Status.State) {
+				return fmt.Errorf("export job %s failed with status: %s", finalJob.ID, finalJob.Status.State)
+			}
+
+			// Step 7: Download the export package.
+			if verbose {
+				fmt.Fprintf(out, "[%s] Downloading export package to %s...\n", ts(), exportFilePath)
+			}
+
+			zipFile, err := os.Create(exportFilePath)
+			if err != nil {
+				return fmt.Errorf("creating export file %s: %w", exportFilePath, err)
+			}
+			defer zipFile.Close()
+
+			if err := c.DownloadExportPackage(ctx, finalJob.ID, zipFile); err != nil {
+				os.Remove(exportFilePath)
+				return fmt.Errorf("downloading export package: %w", err)
+			}
+
+			info, statErr := zipFile.Stat()
+			if statErr == nil {
+				fmt.Fprintf(out, "Downloaded: %s (%d bytes)\n", exportFilePath, info.Size())
+			} else {
+				fmt.Fprintf(out, "Downloaded: %s\n", exportFilePath)
+			}
+
+			// Step 8: Optionally print zip contents.
+			if printFileContents || verbose {
+				if err := printZipContents(exportFilePath, out); err != nil {
+					fmt.Fprintf(out, "  (could not list zip contents: %v)\n", err)
+				}
+			}
+
+			// Optional: Download export log.
+			if cmd.Flags().Changed("download-export-log") {
+				logPath := downloadExportLog
+				if logPath == "" {
+					ext := filepath.Ext(exportFilePath)
+					logPath = strings.TrimSuffix(exportFilePath, ext) + ".log"
+				}
+				if verbose {
+					fmt.Fprintf(out, "[%s] Downloading export log to %s...\n", ts(), logPath)
+				}
+				logFile, err := os.Create(logPath)
+				if err != nil {
+					fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", logPath, err)
+				} else {
+					defer logFile.Close()
+					if err := c.DownloadExportLog(ctx, finalJob.ID, logFile); err != nil {
+						fmt.Fprintf(out, "Warning: could not download export log: %v\n", err)
+					} else {
+						fmt.Fprintf(out, "Export log saved to: %s\n", logPath)
+					}
+				}
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&artifactsFile, "artifacts-file", "", "file with artifacts list (.txt/.json/.yaml/.csv); omit to read from stdin")
+	cmd.Flags().StringVarP(&name, "name", "n", "", "export job name (default: iics-cli(version) yyyy-mm-dd hh-mm-ss)")
+	cmd.Flags().StringVar(&exportFilePath, "export-file-path", "", "output ZIP file path (required)")
+	cmd.Flags().IntVar(&pollingInterval, "polling-interval", 10, "seconds between status polls")
+	cmd.Flags().IntVar(&maxWaitTime, "max-wait-time", 300, "maximum seconds to wait for completion")
+	cmd.Flags().BoolVar(&printFileContents, "print-file-contents", false, "print ZIP file contents listing after download")
+	cmd.Flags().BoolVar(&expandStatus, "expand-status", false, "fetch and print the exported object list after completion")
+	cmd.Flags().BoolVar(&includeTags, "include-tags", false, "export tag information with assets")
+	cmd.Flags().BoolVar(&excludeDependencies, "exclude-dependencies", false, "exclude dependent objects from export")
+	cmd.Flags().StringVar(&downloadExportLog, "download-export-log", "", "download export log (default path: <export-file-path>.log)")
+
+	return cmd
+}
+
+// isExportInProgress returns true when the job state is still running.
+func isExportInProgress(state string) bool {
+	return state == "IN_PROGRESS" || state == "QUEUED" || state == "STARTING"
+}
+
+// isExportFailed returns true when the job ended in a failure state.
+func isExportFailed(state string) bool {
+	return state == "FAILED" || state == "ERROR"
+}
+
+// defaultExportName returns a default export job name with version and timestamp.
+func defaultExportName() string {
+	return fmt.Sprintf("iics-cli(version:%s) %s", versionStr, time.Now().Format("2006-01-02 15-04-05"))
+}
+
+// readArtifacts reads artifact entries from a file or stdin.
+// If artifactsFile is "" or "-", reads from stdin with auto-detected format.
+func readArtifacts(artifactsFile string) ([]client.ArtifactEntry, error) {
+	if artifactsFile == "" || artifactsFile == "-" {
+		return readArtifactsFromStdin()
+	}
+	return client.ParseArtifactsFile(artifactsFile)
+}
+
+// readArtifactsFromStdin reads all of stdin and auto-detects the format.
+func readArtifactsFromStdin() ([]client.ArtifactEntry, error) {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, fmt.Errorf("reading stdin: %w", err)
+	}
+	format := detectDataFormat(data)
+	return client.ParseArtifactsReader(bytes.NewReader(data), format)
+}
+
+// detectDataFormat sniffs the first bytes to decide txt/json/csv.
+func detectDataFormat(data []byte) string {
+	preview := strings.TrimSpace(string(data))
+	if len(preview) == 0 {
+		return "txt"
+	}
+	if preview[0] == '{' || preview[0] == '[' {
+		return "json"
+	}
+	// If the first line contains commas it's likely CSV output from objects list.
+	firstLine := preview
+	if idx := strings.IndexByte(preview, '\n'); idx >= 0 {
+		firstLine = preview[:idx]
+	}
+	if strings.Contains(firstLine, ",") {
+		return "csv"
+	}
+	return "txt"
+}
+
+// resolveExportObjects converts ArtifactEntries to ExportObjects, looking up IDs as needed.
+func resolveExportObjects(ctx context.Context, c *client.Client, entries []client.ArtifactEntry, includeDeps bool, out io.Writer) ([]client.ExportObject, error) {
+	// Collect entries that require lookup.
+	var lookupObjs []client.LookupObject
+	var lookupOrigIdx []int
+
+	for i, e := range entries {
+		if e.ID == "" {
+			lookupObjs = append(lookupObjs, client.LookupObject{Path: e.Path, Type: e.Type})
+			lookupOrigIdx = append(lookupOrigIdx, i)
+		}
+	}
+
+	// Perform lookup for entries without IDs.
+	resolvedIDs := make(map[int]string)
+	if len(lookupObjs) > 0 {
+		if verbose {
+			fmt.Fprintf(out, "[%s] Looking up IDs for %d objects...\n", ts(), len(lookupObjs))
+		}
+		resp, err := c.Lookup(ctx, lookupObjs)
+		if err != nil {
+			return nil, fmt.Errorf("looking up object IDs: %w", err)
+		}
+		for i, result := range resp.Objects {
+			if i < len(lookupOrigIdx) {
+				resolvedIDs[lookupOrigIdx[i]] = result.ID
+			}
+		}
+		if verbose {
+			fmt.Fprintf(out, "[%s] Lookup complete: %d resolved\n", ts(), len(resp.Objects))
+		}
+	}
+
+	// Build ExportObject list preserving original order.
+	objects := make([]client.ExportObject, 0, len(entries))
+	for i, e := range entries {
+		id := e.ID
+		if id == "" {
+			var ok bool
+			id, ok = resolvedIDs[i]
+			if !ok || id == "" {
+				return nil, fmt.Errorf("could not resolve ID for artifact %d (path=%s, type=%s)", i, e.Path, e.Type)
+			}
+		}
+		objects = append(objects, client.ExportObject{
+			ID:                  id,
+			IncludeDependencies: includeDeps,
+		})
+	}
+	return objects, nil
+}
+
+// printExportObjects renders the object list table for an export job.
+func printExportObjects(cmd *cobra.Command, job *client.ExportJob) {
+	formatter, err := getFormatter()
+	if err != nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
+		return
+	}
+	columns := []output.Column{
+		{Header: "ID", Field: "id", Width: 24},
+		{Header: "NAME", Field: "name", Width: 35},
+		{Header: "TYPE", Field: "type", Width: 15},
+		{Header: "STATUS", Field: "status.state", Width: 15},
+	}
+	if err := formatter.Format(job.Objects, columns); err != nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
+	}
+}
+
+// printZipContents lists the files inside a ZIP archive.
+func printZipContents(zipPath string, out io.Writer) error {
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return fmt.Errorf("opening zip %s: %w", zipPath, err)
+	}
+	defer r.Close()
+
+	fmt.Fprintf(out, "\nZIP contents (%d files):\n", len(r.File))
+	for _, f := range r.File {
+		fmt.Fprintf(out, "  %s\n", f.Name)
+	}
+	return nil
 }

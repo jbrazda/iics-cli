@@ -465,8 +465,10 @@ Supports dot notation for nested fields:
 | `--output` / `-o` | `outputFmt` | `"table"` | Output format: `table\|json\|csv` |
 | `--verbose` / `-v` | `verbose` | `false` | Verbose output |
 | `--no-color` | `noColor` | `false` | Disable color |
+| `--debug` | `debug` | `false` | Print JSON request body to stderr on API error |
 
-`verbose` is a package-level `bool` in the `cmd` package — access it directly in `RunE` closures.
+`verbose` and `debug` are package-level `bool` vars in the `cmd` package — access them directly in `RunE` closures.
+`debug` is wired to the client via `client.WithDebug(debug)` in `getClient()`.
 
 ---
 
@@ -569,6 +571,14 @@ The `import run` command (in `cmd/import_.go`) is the reference implementation f
 - `--polling-interval`, `--max-wait-time`, `--detailed-polling`, `--print-import-log`
 - Verbose timestamped progress output
 - Automatic log download on failure
+
+The `export run` command (in `cmd/export.go`) follows the same pattern for export:
+
+- Reads artifact list from file or stdin (`.txt`/`.json`/`.yaml`/`.csv`)
+- Resolves object IDs via the lookup API when only path+type is available
+- `--polling-interval`, `--max-wait-time`, `--expand-status`, `--print-file-contents`
+- `--download-export-log` to save the export job log alongside the ZIP
+- `--debug` (global) prints the JSON request body to stderr on any API error
 
 ---
 
