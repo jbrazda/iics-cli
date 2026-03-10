@@ -66,7 +66,7 @@ func (c *Client) ListUsers(ctx context.Context, opts UserListOptions) ([]User, e
 	}
 
 	var resp []User
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/users", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/users", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -75,7 +75,7 @@ func (c *Client) ListUsers(ctx context.Context, opts UserListOptions) ([]User, e
 // GetUser retrieves a single user by ID.
 func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 	var resp User
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/users/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/users/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -84,7 +84,7 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 // CreateUser creates a new user.
 func (c *Client) CreateUser(ctx context.Context, user *User) (*User, error) {
 	var resp User
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/users", user, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/users", user, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -93,7 +93,7 @@ func (c *Client) CreateUser(ctx context.Context, user *User) (*User, error) {
 // UpdateUser updates an existing user.
 func (c *Client) UpdateUser(ctx context.Context, id string, user *User) (*User, error) {
 	var resp User
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/users/%s", id), user, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/users/%s", BaseAPIPathV3, id), user, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -101,5 +101,5 @@ func (c *Client) UpdateUser(ctx context.Context, id string, user *User) (*User, 
 
 // DeleteUser deletes a user by ID.
 func (c *Client) DeleteUser(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/users/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/users/%s", BaseAPIPathV3, id), nil, nil)
 }

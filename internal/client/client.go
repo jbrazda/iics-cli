@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ type Client struct {
 	username   string
 	password   string
 	verbose    bool
+	debug      bool
 	mu         sync.RWMutex
 }
 
@@ -49,6 +51,13 @@ func WithHTTPClient(hc *http.Client) ClientOption {
 func WithVerbose(v bool) ClientOption {
 	return func(c *Client) {
 		c.verbose = v
+	}
+}
+
+// WithDebug enables debug mode, which prints the request body to stderr on API errors.
+func WithDebug(v bool) ClientOption {
+	return func(c *Client) {
+		c.debug = v
 	}
 }
 
@@ -164,15 +173,35 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 	return resp, nil
 }
 
+// ensureSession guarantees the client has a valid session before a URL is built.
+// It must be called before c.apiURL() so that baseAPIURL is populated.
+func (c *Client) ensureSession(ctx context.Context) error {
+	c.mu.RLock()
+	hasSession := c.sessionID != ""
+	c.mu.RUnlock()
+	if !hasSession {
+		if _, err := c.Login(ctx); err != nil {
+			return fmt.Errorf("auto-login failed: %w", err)
+		}
+	}
+	return nil
+}
+
 // doJSON is a convenience method that sends a JSON request and decodes the response.
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
 	var body io.Reader
+	var reqData []byte
 	if reqBody != nil {
-		data, err := json.Marshal(reqBody)
+		var err error
+		reqData, err = json.Marshal(reqBody)
 		if err != nil {
 			return fmt.Errorf("marshaling request: %w", err)
 		}
-		body = bytes.NewReader(data)
+		body = bytes.NewReader(reqData)
 	}
 
 	url := c.apiURL(path)
@@ -193,6 +222,9 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if c.debug && len(reqData) > 0 {
+			fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
+		}
 		return newAPIError(resp, respData)
 	}
 
@@ -207,13 +239,19 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 
 // doJSONWithQuery is like doJSON but with query parameters.
 func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query map[string]string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
 	var body io.Reader
+	var reqData []byte
 	if reqBody != nil {
-		data, err := json.Marshal(reqBody)
+		var err error
+		reqData, err = json.Marshal(reqBody)
 		if err != nil {
 			return fmt.Errorf("marshaling request: %w", err)
 		}
-		body = bytes.NewReader(data)
+		body = bytes.NewReader(reqData)
 	}
 
 	url := c.apiURL(path)
@@ -242,6 +280,9 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if c.debug && len(reqData) > 0 {
+			fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
+		}
 		return newAPIError(resp, respData)
 	}
 
@@ -257,6 +298,10 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 // doRaw performs an HTTP request and returns the raw response body reader.
 // The caller is responsible for closing the reader.
 func (c *Client) doRaw(ctx context.Context, method, path string, query map[string]string) (io.ReadCloser, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return nil, err
+	}
+
 	url := c.apiURL(path)
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {

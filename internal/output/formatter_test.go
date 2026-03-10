@@ -164,6 +164,7 @@ func TestParseFormat(t *testing.T) {
 		{"table", FormatTable, false},
 		{"json", FormatJSON, false},
 		{"csv", FormatCSV, false},
+		{"yaml", FormatYAML, false},
 		{"", FormatTable, false},
 		{"xml", "", true},
 	}

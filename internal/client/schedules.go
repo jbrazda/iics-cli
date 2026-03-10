@@ -47,7 +47,7 @@ func (c *Client) ListSchedules(ctx context.Context, opts ScheduleListOptions) ([
 	}
 
 	var resp []Schedule
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/schedule", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/schedule", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -56,7 +56,7 @@ func (c *Client) ListSchedules(ctx context.Context, opts ScheduleListOptions) ([
 // GetSchedule retrieves a single schedule by ID.
 func (c *Client) GetSchedule(ctx context.Context, id string) (*Schedule, error) {
 	var resp Schedule
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/schedule/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/schedule/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -65,7 +65,7 @@ func (c *Client) GetSchedule(ctx context.Context, id string) (*Schedule, error) 
 // CreateSchedule creates a new schedule.
 func (c *Client) CreateSchedule(ctx context.Context, schedule *Schedule) (*Schedule, error) {
 	var resp Schedule
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/schedule", schedule, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/schedule", schedule, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -74,7 +74,7 @@ func (c *Client) CreateSchedule(ctx context.Context, schedule *Schedule) (*Sched
 // UpdateSchedule updates an existing schedule.
 func (c *Client) UpdateSchedule(ctx context.Context, id string, schedule *Schedule) (*Schedule, error) {
 	var resp Schedule
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/schedule/%s", id), schedule, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/schedule/%s", BaseAPIPathV3, id), schedule, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -82,5 +82,5 @@ func (c *Client) UpdateSchedule(ctx context.Context, id string, schedule *Schedu
 
 // DeleteSchedule deletes a schedule by ID.
 func (c *Client) DeleteSchedule(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/schedule/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/schedule/%s", BaseAPIPathV3, id), nil, nil)
 }

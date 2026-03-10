@@ -91,7 +91,7 @@ func TestListAllObjects(t *testing.T) {
 	})
 
 	c := newTestClient(handler)
-	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{Type: "MTT"})
+	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{Type: "MTT"}, nil)
 	if err != nil {
 		t.Fatalf("ListAllObjects() error: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestListAllObjectsSinglePage(t *testing.T) {
 	})
 
 	c := newTestClient(handler)
-	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{})
+	resp, err := c.ListAllObjects(context.Background(), ObjectsListOptions{}, nil)
 	if err != nil {
 		t.Fatalf("ListAllObjects() error: %v", err)
 	}

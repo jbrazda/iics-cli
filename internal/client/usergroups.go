@@ -17,7 +17,7 @@ type UserGroup struct {
 	UpdateTime  string   `json:"updateTime,omitempty"`
 	CreatedBy   string   `json:"createdBy,omitempty"`
 	UpdatedBy   string   `json:"updatedBy,omitempty"`
-	Roles       []string `json:"roles,omitempty"`
+	Roles       []UserRole `json:"roles,omitempty"`
 }
 
 // UserGroupListOptions holds query parameters for listing user groups.
@@ -37,7 +37,7 @@ func (c *Client) ListUserGroups(ctx context.Context, opts UserGroupListOptions) 
 	}
 
 	var resp []UserGroup
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/userGroups", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/userGroups", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -46,7 +46,7 @@ func (c *Client) ListUserGroups(ctx context.Context, opts UserGroupListOptions) 
 // GetUserGroup retrieves a single user group by ID.
 func (c *Client) GetUserGroup(ctx context.Context, id string) (*UserGroup, error) {
 	var resp UserGroup
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("public/core/v3/userGroups/%s", id), nil, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/userGroups/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -55,7 +55,7 @@ func (c *Client) GetUserGroup(ctx context.Context, id string) (*UserGroup, error
 // CreateUserGroup creates a new user group.
 func (c *Client) CreateUserGroup(ctx context.Context, group *UserGroup) (*UserGroup, error) {
 	var resp UserGroup
-	if err := c.doJSON(ctx, http.MethodPost, "public/core/v3/userGroups", group, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/userGroups", group, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -64,7 +64,7 @@ func (c *Client) CreateUserGroup(ctx context.Context, group *UserGroup) (*UserGr
 // UpdateUserGroup updates an existing user group.
 func (c *Client) UpdateUserGroup(ctx context.Context, id string, group *UserGroup) (*UserGroup, error) {
 	var resp UserGroup
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("public/core/v3/userGroups/%s", id), group, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/userGroups/%s", BaseAPIPathV3, id), group, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -72,5 +72,5 @@ func (c *Client) UpdateUserGroup(ctx context.Context, id string, group *UserGrou
 
 // DeleteUserGroup deletes a user group by ID.
 func (c *Client) DeleteUserGroup(ctx context.Context, id string) error {
-	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("public/core/v3/userGroups/%s", id), nil, nil)
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/userGroups/%s", BaseAPIPathV3, id), nil, nil)
 }

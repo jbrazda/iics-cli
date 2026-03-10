@@ -45,7 +45,7 @@ func (c *Client) ListSecurityLogs(ctx context.Context, opts SecurityLogListOptio
 	}
 
 	var resp []SecurityLog
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, "public/core/v3/securityLogs", query, nil, &resp); err != nil {
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/securityLogs", query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
