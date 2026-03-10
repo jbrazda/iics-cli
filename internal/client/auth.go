@@ -61,7 +61,7 @@ func (c *Client) Login(ctx context.Context) (*LoginResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("login request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -116,7 +116,7 @@ func (c *Client) Logout(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("logout request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	c.mu.Lock()
 	c.sessionID = ""

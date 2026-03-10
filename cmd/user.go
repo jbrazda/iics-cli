@@ -122,7 +122,8 @@ func newUserCreateCmd() *cobra.Command {
 			}
 
 			var user client.User
-			if err := json.Unmarshal(data, &user); err != nil {
+			err = json.Unmarshal(data, &user)
+			if err != nil {
 				return fmt.Errorf("parsing user JSON: %w", err)
 			}
 
@@ -168,7 +169,8 @@ func newUserUpdateCmd() *cobra.Command {
 			}
 
 			var user client.User
-			if err := json.Unmarshal(data, &user); err != nil {
+			err = json.Unmarshal(data, &user)
+			if err != nil {
 				return fmt.Errorf("parsing user JSON: %w", err)
 			}
 

@@ -44,7 +44,7 @@ func newStateFetchCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("creating output file: %w", err)
 				}
-				defer dest.Close()
+				defer func() { _ = dest.Close() }()
 			} else {
 				dest = os.Stdout
 			}

@@ -136,7 +136,7 @@ func newAgentDetailsCmd() *cobra.Command {
 			}
 			// Print engine service status
 			if len(details.AgentEngineStatus) > 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "\nService Status:")
+				fmt.Fprintln(cmd.OutOrStdout(), "\nService Status:") //nolint:errcheck
 				svcColumns := []output.Column{
 					{Header: "SERVICE", Field: "appDisplayName", Width: 30},
 					{Header: "APP NAME", Field: "appname", Width: 25},
@@ -177,7 +177,7 @@ func newAgentStartCmd() *cobra.Command {
 			if err := c.StartAgentService(context.Background(), id, service); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Service %s started on agent %s\n", service, id)
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s started on agent %s\n", service, id) //nolint:errcheck
 			return nil
 		},
 	}
@@ -208,7 +208,7 @@ func newAgentStopCmd() *cobra.Command {
 			if err := c.StopAgentService(context.Background(), id, service); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Service %s stopped on agent %s\n", service, id)
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s stopped on agent %s\n", service, id) //nolint:errcheck
 			return nil
 		},
 	}

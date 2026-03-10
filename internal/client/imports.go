@@ -55,11 +55,13 @@ func (c *Client) UploadImportPackage(ctx context.Context, filename string, reade
 		return nil, fmt.Errorf("creating form file: %w", err)
 	}
 
-	if _, err := io.Copy(part, reader); err != nil {
+	_, err = io.Copy(part, reader)
+	if err != nil {
 		return nil, fmt.Errorf("copying file data: %w", err)
 	}
 
-	if err := writer.Close(); err != nil {
+	err = writer.Close()
+	if err != nil {
 		return nil, fmt.Errorf("closing multipart writer: %w", err)
 	}
 
@@ -74,7 +76,7 @@ func (c *Client) UploadImportPackage(ctx context.Context, filename string, reade
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -123,7 +125,7 @@ func (c *Client) DownloadImportLog(ctx context.Context, jobID string, dest io.Wr
 	if err != nil {
 		return err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if _, err := io.Copy(dest, body); err != nil {
 		return fmt.Errorf("downloading import log: %w", err)

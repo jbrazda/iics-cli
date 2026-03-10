@@ -123,7 +123,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 			var resp *client.ObjectsListResponse
 
 			if opts.Limit > 0 {
-				// Single page — honour explicit limit and skip
+				// Single page — honor explicit limit and skip
 				resp, err = c.ListObjects(context.Background(), opts)
 				if err != nil {
 					return err
@@ -171,7 +171,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 				if err != nil {
 					return fmt.Errorf("creating output file %s: %w", outputFile, err)
 				}
-				defer fh.Close()
+				defer func() { _ = fh.Close() }()
 
 				fileFields := parseFields(outputFileFields)
 				fileRows := make([]map[string]interface{}, len(resp.Objects))

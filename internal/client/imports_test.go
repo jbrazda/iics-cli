@@ -28,7 +28,8 @@ func TestUploadImportPackage(t *testing.T) {
 			t.Errorf("expected multipart/form-data Content-Type, got %s", ct)
 		}
 
-		if err := r.ParseMultipartForm(1 << 20); err != nil {
+		err = r.ParseMultipartForm(1 << 20)
+		if err != nil {
 			t.Fatalf("parsing multipart form: %v", err)
 		}
 		file, _, err := r.FormFile("package")

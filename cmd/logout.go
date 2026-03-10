@@ -43,7 +43,8 @@ func newLogoutCmd() *cobra.Command {
 			cache, err := config.LoadSessionCache("")
 			if err == nil {
 				cache.Delete(profileName)
-				if err := cache.Save(""); err != nil {
+				err = cache.Save("")
+				if err != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update session cache: %v\n", err)
 				}
 			}

@@ -108,7 +108,7 @@ func (c *Client) DownloadExportPackage(ctx context.Context, jobID string, dest i
 	if err != nil {
 		return err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if _, err := io.Copy(dest, body); err != nil {
 		return fmt.Errorf("downloading export package: %w", err)
@@ -123,7 +123,7 @@ func (c *Client) DownloadExportLog(ctx context.Context, jobID string, dest io.Wr
 	if err != nil {
 		return err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if _, err := io.Copy(dest, body); err != nil {
 		return fmt.Errorf("downloading export log: %w", err)
@@ -149,7 +149,7 @@ func ParseArtifactsFile(filePath string) ([]ArtifactEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("opening artifacts file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(filePath), "."))
 	return ParseArtifactsReader(f, ext)

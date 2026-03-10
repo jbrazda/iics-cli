@@ -77,7 +77,8 @@ func newPermissionSetCmd() *cobra.Command {
 				return fmt.Errorf("reading file: %w", err)
 			}
 			var perms client.ObjectPermission
-			if err := json.Unmarshal(data, &perms); err != nil {
+			err = json.Unmarshal(data, &perms)
+			if err != nil {
 				return fmt.Errorf("parsing JSON: %w", err)
 			}
 			c, err := getClient(cmd)
@@ -110,11 +111,11 @@ func newPermissionDeleteCmd() *cobra.Command {
 				return fmt.Errorf("--object-id is required")
 			}
 			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete permissions for object %s? [y/N]: ", objectID)
+				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete permissions for object %s? [y/N]: ", objectID) //nolint:errcheck
 				var confirm string
-				fmt.Scanln(&confirm)
+				fmt.Scanln(&confirm) //nolint:errcheck
 				if confirm != "y" && confirm != "Y" {
-					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+					fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.") //nolint:errcheck
 					return nil
 				}
 			}
