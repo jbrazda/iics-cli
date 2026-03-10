@@ -11,8 +11,6 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - gofmt
-    - goimports
     - misspell
     - bodyclose
     - nilerr
@@ -30,3 +28,8 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
