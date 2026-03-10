@@ -41,6 +41,12 @@ golangci-lint run ./...
 
 ---
 
+## Commit Style
+
+- Do **not** include `Co-Authored-By: Claude ...` trailers in commit messages.
+
+---
+
 ## Critical Constraints
 
 - **tablewriter v1.x API only**: `NewTable(w)`, `Header(...)`, `Append([]interface{}{...})`, `err := Render()`. Never v0.x patterns.
