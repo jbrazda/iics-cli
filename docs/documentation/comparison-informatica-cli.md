@@ -87,7 +87,7 @@ The official tool requires passing credentials as command-line flags on every in
 iics export -u user@company.com -p MyPassword123 -r us -a "..."
 ```
 
-Credentials passed as arguments are visible in the system process list (`ps aux`), shell history,
+Credentials passed as arguments are visible in the system Pprocess list (`ps aux`), shell history,
 and CI/CD build logs. This is a significant security risk.
 
 `iics-cli` stores credentials in a YAML config file (`~/.iics/config.yaml`) and reads the
