@@ -207,6 +207,14 @@ make lint
 make all
 ```
 
+### Install from Build
+
+```bash
+make install
+```
+
+Compiles the binary and installs it to `$GOPATH/bin` (typically `~/go/bin`), making `iics` available system-wide without specifying a path. The build injects the current git tag or commit SHA as the version string via `-ldflags`, and strips debug symbols (`-s -w`) to reduce binary size.
+
 ### Project structure
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.
