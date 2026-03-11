@@ -5,11 +5,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
+
+// allUsergroupColumns defines all available columns for usergroup output.
+var allUsergroupColumns = map[string]output.Column{
+	"id":            {Header: "ID", Field: "id", Width: 24},
+	"userGroupName": {Header: "NAME", Field: "userGroupName", Width: 30},
+	"description":   {Header: "DESCRIPTION", Field: "description", Width: 30},
+	"updatedBy":     {Header: "UPDATED BY", Field: "updatedBy", Width: 30},
+	"updateTime":    {Header: "UPDATED", Field: "updateTime", Width: 24},
+	"createdBy":     {Header: "CREATED BY", Field: "createdBy", Width: 30},
+	"createTime":    {Header: "CREATED", Field: "createTime", Width: 24},
+	"countMembers":  {Header: "MEMBERS", Field: "countMembers", Width: 8},
+	"countRoles":    {Header: "ROLES", Field: "countRoles", Width: 8},
+}
+
+func columnsFromFields(fields string) []output.Column {
+	var columns []output.Column
+	for _, name := range strings.Split(fields, ",") {
+		name = strings.TrimSpace(name)
+		if col, ok := allUsergroupColumns[name]; ok {
+			columns = append(columns, col)
+		}
+	}
+	return columns
+}
 
 func newUsergroupCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -26,8 +51,14 @@ func newUsergroupCmd() *cobra.Command {
 	return cmd
 }
 
+const (
+	usergroupTableFields = "id,userGroupName,updatedBy,updateTime,countMembers,countRoles"
+	usergroupCSVFields   = "id,userGroupName,updatedBy,updateTime,description,countMembers,countRoles"
+)
+
 func newUsergroupListCmd() *cobra.Command {
 	var opts client.UserGroupListOptions
+	var fields string
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -45,18 +76,21 @@ func newUsergroupListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
-				{Header: "UPDATED BY", Field: "updatedBy", Width: 20},
-				{Header: "UPDATED", Field: "updateTime", Width: 20},
+			if fields == "" {
+				if outputFmt == "csv" {
+					fields = usergroupCSVFields
+				} else {
+					fields = usergroupTableFields
+				}
 			}
-			return f.Format(groups, columns)
+			return f.Format(groups, columnsFromFields(fields))
 		},
 	}
 
 	cmd.Flags().IntVar(&opts.Limit, "limit", 200, "max results")
 	cmd.Flags().IntVar(&opts.Skip, "skip", 0, "number of results to skip")
+	cmd.Flags().StringVarP(&opts.Query, "query", "q", "", `filter query (e.g. userGroupName=="Administrator")`)
+	cmd.Flags().StringVar(&fields, "fields", "", "comma-separated list of fields to display (default varies by output format)")
 	return cmd
 }
 
@@ -83,7 +117,7 @@ func newUsergroupGetCmd() *cobra.Command {
 			}
 			columns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
+				{Header: "NAME", Field: "userGroupName", Width: 30},
 				{Header: "DESCRIPTION", Field: "description"},
 			}
 			return f.Format(group, columns)
@@ -119,7 +153,7 @@ func newUsergroupCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group created: %s (ID: %s)\n", created.Name, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group created: %s (ID: %s)\n", created.UserGroupName, created.ID)
 			return nil
 		},
 	}
@@ -159,7 +193,7 @@ func newUsergroupUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group updated: %s (ID: %s)\n", updated.UserGroupName, updated.ID)
 			return nil
 		},
 	}

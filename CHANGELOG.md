@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `usergroup list` displayed empty NAME column - corrected JSON tag on `UserGroupName` from `"name"` to `"userGroupName"` to match the IICS v3 API response field
+
+### Changed
+
+- `usergroup list` now shows member count and role count columns (`countMembers`, `countRoles`) by default instead of `description`
+- `usergroup list` CSV output includes `description`, `countMembers`, and `countRoles` by default
+
 ### Added
+
+- `usergroup list --query` / `-q` flag for server-side filtering (e.g. `userGroupName=="Administrator"`)
+- `usergroup list --fields` flag for custom column selection; accepts any combination of `id`, `userGroupName`, `description`, `updatedBy`, `updateTime`, `createdBy`, `createTime`, `countMembers`, `countRoles`
+- `UserGroupMember` struct captures the `users` array returned by the userGroups API
+
+### Added (initial)
+
 - Initial CLI with Cobra framework and Viper configuration
 - Multi-profile configuration (`~/.iics/config.yaml`) with environment variable overrides
 - Session caching with 30-minute expiry and automatic 401 retry
