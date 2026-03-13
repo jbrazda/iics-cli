@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -135,6 +136,7 @@ func init() {
 	rootCmd.AddCommand(newMeteringCmd())
 	rootCmd.AddCommand(newSourcecontrolCmd())
 	rootCmd.AddCommand(newStateCmd())
+	rootCmd.AddCommand(newProfileCmd())
 }
 
 // loadConfig loads and returns the configuration.
@@ -169,12 +171,62 @@ func resolveProfile() (*config.Config, *config.Profile, string, error) {
 	return cfg, p, profileName, nil
 }
 
+// isMissingCredentialsError returns true for errors from ResolveProfile when
+// username or password is not configured.
+func isMissingCredentialsError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "username not configured") ||
+		strings.Contains(msg, "password not configured")
+}
+
+// isProfileCommand returns true if cmd or any ancestor is the "profile" command.
+// Used to prevent the auto-setup wizard from triggering recursively.
+func isProfileCommand(cmd *cobra.Command) bool {
+	for c := cmd; c != nil; c = c.Parent() {
+		if c.Use == "profile" {
+			return true
+		}
+	}
+	return false
+}
+
 // getClient creates an authenticated IICS API client.
 // It attempts to use a cached session first, then falls back to login.
+// When no profile credentials are configured and stdin is a terminal, it
+// launches an interactive setup wizard before proceeding.
 func getClient(cmd *cobra.Command) (*client.Client, error) {
 	_, p, profileName, err := resolveProfile()
 	if err != nil {
-		return nil, err
+		if isMissingCredentialsError(err) && config.IsTerminal() && !isProfileCommand(cmd) {
+			_, _ = fmt.Fprintf(os.Stderr,
+				"\nNo credentials configured for profile %q.\nLet's set up a profile now.\n\n",
+				profileName)
+			cfg, loadErr := config.Load(cfgFile)
+			if loadErr != nil {
+				return nil, err
+			}
+			newProfile, makeDefault, promptErr := config.PromptProfile(cfg.Profiles[profileName], profileName)
+			if promptErr != nil {
+				return nil, fmt.Errorf("profile setup: %w", promptErr)
+			}
+			if cfg.Profiles == nil {
+				cfg.Profiles = make(map[string]*config.Profile)
+			}
+			cfg.Profiles[profileName] = newProfile
+			if makeDefault {
+				cfg.DefaultProfile = profileName
+			}
+			if saveErr := cfg.Save(cfgFile); saveErr != nil {
+				return nil, fmt.Errorf("saving profile: %w", saveErr)
+			}
+			_, _ = fmt.Fprintf(os.Stderr, "\nProfile %q saved.\n\n", profileName)
+			_, p, profileName, err = resolveProfile()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	loginURL, err := p.GetLoginURL()

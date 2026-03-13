@@ -5,6 +5,7 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 ## Features
 
 - **Full API v3 coverage** - objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
+- **Interactive setup** - guided profile wizard on first run, or via `iics profile add`
 - **Multi-profile configuration** - switch between dev/staging/prod orgs with `--profile`
 - **Session caching** - reuses sessions across invocations (30-min window) to avoid repeated logins
 - **Automatic session refresh** - transparent 401 retry with re-authentication
@@ -36,20 +37,22 @@ make build
 
 ## Quick Start
 
-### 1. Create a configuration file
+### 1. Set up a profile
 
 ```bash
-mkdir -p ~/.iics
-cat > ~/.iics/config.yaml << 'EOF'
-defaultProfile: dev
-profiles:
-  dev:
-    name: "Development Org"
-    region: "us"
-    username: "user@company.com"
-    password: ""
-EOF
+iics profile add
 ```
+
+The wizard prompts for your username, password, and region, then saves the profile to
+`~/.iics/config.yaml`. You can also set up multiple named profiles:
+
+```bash
+iics profile add dev
+iics profile add prod
+iics profile set-default dev
+```
+
+Alternatively, create the config file manually - see the [Configuration](#configuration) section.
 
 ### 2. Login
 
@@ -150,6 +153,7 @@ Environment variables take precedence over config file values.
 
 | Command | Alias | Subcommands | Description |
 | ------- | ----- | ----------- | ----------- |
+| [profile](docs/documentation/profile.md) | | `add`, `list`, `delete`, `set-default`, `show` | Manage connection profiles |
 | [login](docs/documentation/login.md) | | | Authenticate and cache session |
 | [logout](docs/documentation/logout.md) | | | Invalidate session |
 | [objects](docs/documentation/objects.md) | | `list`, `dependencies` | List/search assets, find dependencies |
