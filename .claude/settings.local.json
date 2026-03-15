@@ -18,7 +18,8 @@
       "Bash(/opt/local/bin/go build:*)",
       "Bash(python3:*)",
       "Bash(/opt/local/bin/go test:*)",
-      "Bash(/opt/local/bin/go vet:*)"
+      "Bash(/opt/local/bin/go vet:*)",
+      "Bash(go run:*)"
     ]
   }
 }
