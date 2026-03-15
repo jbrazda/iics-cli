@@ -161,6 +161,7 @@ Environment variables take precedence over config file values.
 | [connection](docs/documentation/connection.md) | `conn` | `list`, `get`, `create`, `update`, `delete` | Manage connections |
 | [export](docs/documentation/export.md) | | `run`, `start`, `status`, `download`, `create` | Export asset packages |
 | [import](docs/documentation/import.md) | `imp` | `run`, `upload`, `start`, `status`, `download-log` | Import asset packages |
+| [package](docs/documentation/package.md) | | `expand`, `create` | Extract or assemble IICS export package files (local, no API) |
 | [project](docs/documentation/project.md) | | `create`, `update`, `delete` | Manage projects |
 | [folder](docs/documentation/folder.md) | | `create`, `update`, `delete` | Manage folders |
 | [schedule](docs/documentation/schedule.md) | | `list`, `get`, `create`, `update`, `delete` | Manage schedules |

@@ -1,0 +1,124 @@
+<aetgt:getResponse xmlns:aetgt="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd"
+                   xmlns:types1="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd">
+   <types1:Item>
+      <types1:EntryId>Z5Hhwq9bdsreK8Z-gt-56887454-2024-07-08T21:19:50.824Z::gt.xml</types1:EntryId>
+      <types1:Name>TestRandomString</types1:Name>
+      <types1:MimeType>application/xml+screenflow</types1:MimeType>
+      <types1:Description/>
+      <types1:AppliesTo/>
+      <types1:Tags/>
+      <types1:VersionLabel>1.0</types1:VersionLabel>
+      <types1:State>CURRENT</types1:State>
+      <types1:ProcessGroup/>
+      <types1:CreatedBy>jaroslav.brazda.dev@natl.com</types1:CreatedBy>
+      <types1:CreationDate>2024-07-08T21:19:51Z</types1:CreationDate>
+      <types1:ModifiedBy>jaroslav.brazda.dev@natl.com</types1:ModifiedBy>
+      <types1:ModificationDate>2026-03-08T17:20:01Z</types1:ModificationDate>
+      <types1:PublicationStatus>published</types1:PublicationStatus>
+      <types1:PublishedBy>jaroslav.brazda.dev@natl.com</types1:PublishedBy>
+      <types1:PublicationDate>2026-03-08T17:20:08Z</types1:PublicationDate>
+      <types1:PublishedContributionId>project:/sf.TestRandomString/TestRandomString.xml</types1:PublishedContributionId>
+      <types1:Entry>
+         <avosScreenflow xmlns="http://schemas.active-endpoints.com/appmodules/screenflow/2010/10/avosScreenflow.xsd"
+                         xmlns:list="urn:activevos:spi:list:functions"
+                         allowRestart="true"
+                         displayName="TestRandomString"
+                         doneOnEndStep="false"
+                         name="TestRandomString"
+                         runAsUser="$current">
+            <description/>
+            <appliesTo/>
+            <tags/>
+            <generator>Informatica Process Designer 11</generator>
+            <runOn target="desktop"/>
+            <notes/>
+            <deployment/>
+            <sendFeedback>
+               <emailTo/>
+            </sendFeedback>
+            <flow>
+               <startScreen id="jd300kk3">
+                  <title>Start</title>
+                  <body contentType="text/html"/>
+                  <actions>
+                     <action alt="null" id="jd300kk3_lydhhmri" targetScreen="lydhhmri">
+                        <text>Continue</text>
+                     </action>
+                  </actions>
+                  <screenData skipIfRequiredFilled="true"/>
+               </startScreen>
+               <screen id="lydhhmri">
+                  <title>Test Random Generator</title>
+                  <body contentType="text/html">&lt;p&gt;Run guide to test&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;</body>
+                  <actionPrompt/>
+                  <actions>
+                     <action alt="null" id="lydhhmri_lydhhmro" targetScreen="lydhhmro">
+                        <text>Continue</text>
+                     </action>
+                  </actions>
+               </screen>
+               <screen id="lydhhmrx">
+                  <title>Output</title>
+                  <body contentType="text/html">&lt;p&gt;Test Output&lt;/p&gt;
+&lt;p&gt;&lt;input class="" style="-moz-appearance: none; background-color: lightgrey; border: none;" title="out_poperties (output)" name="output.out_poperties" readonly="readonly" type="text" value="out_poperties (output)"&gt;&amp;nbsp;&lt;/p&gt;</body>
+                  <actionPrompt/>
+                  <actions>
+                     <action alt="null" id="lydhhmrx_lydhhmsf" targetScreen="lydhhmsf">
+                        <text>Run Again</text>
+                     </action>
+                  </actions>
+                  <screenData skipIfRequiredFilled="false">
+                     <screenDataItem name="output.out_poperties"
+                                     readonly="true"
+                                     renderingType="table"
+                                     required="false"
+                                     type="objectlist">
+                        <options>
+                           <option hide="true" name="referenceTo">$po:ConfigurationProperty</option>
+                           <option hide="true" name="multiSelect">true</option>
+                           <option name="required">false</option>
+                           <option name="isCopy">true</option>
+                           <option name="guid">kK2XE6nUuqwiLvXzbtUWCc</option>
+                           <option name="display-options">{"display-options":{"columns":{"column":[{"name":"PKEY","type":"string","label":"PKEY","renderingType":"string"},{"name":"PVALUE","type":"string","label":"PVALUE","renderingType":"string"}]},"rendering-type":{"table-style":null,"height":null},"allow_pagination":true,"allow_filtering":true,"allow_sorting":true}}</option>
+                        </options>
+                     </screenDataItem>
+                  </screenData>
+               </screen>
+               <jumpTo id="lydhhmsf" targetTitle="Test_GenRandomString">
+                  <actions>
+                     <action alt="null" id="lydhhmsf_lydhhmro" targetScreen="lydhhmro">
+                        <text>Continue</text>
+                     </action>
+                  </actions>
+               </jumpTo>
+               <callProcess id="lydhhmro">
+                  <title>Test_GenRandomString</title>
+                  <subflowGUID>lFlQBdLdygSfyFK3TZh4IZ</subflowGUID>
+                  <subflowPath>Test_GenRandomString</subflowPath>
+                  <runAsUser>$current</runAsUser>
+                  <subflowOutput>
+                     <field name="out_poperties" type="objectlist">
+                        <options>
+                           <option name="referenceTo">$po:TestConfigurationProperty</option>
+                           <option hide="true" name="multiSelect">true</option>
+                           <option name="required">false</option>
+                           <option name="isCopy">true</option>
+                           <option name="guid">h2zy4tla02Gf0L72vmIo6L</option>
+                        </options>
+                     </field>
+                  </subflowOutput>
+                  <actions>
+                     <action alt="" id="lydhhmro_lydhhmrx" targetScreen="lydhhmrx">
+                        <text>Continue</text>
+                     </action>
+                  </actions>
+               </callProcess>
+            </flow>
+         </avosScreenflow>
+      </types1:Entry>
+      <types1:GUID>9WuPOQqwGVfi4M1RQ1OVUZ</types1:GUID>
+      <types1:DisplayName>TestRandomString</types1:DisplayName>
+   </types1:Item>
+   <types1:CurrentServerDateTime>2026-03-08T17:21:02.633Z</types1:CurrentServerDateTime>
+</aetgt:getResponse>

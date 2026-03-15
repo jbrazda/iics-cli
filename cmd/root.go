@@ -137,6 +137,7 @@ func init() {
 	rootCmd.AddCommand(newSourcecontrolCmd())
 	rootCmd.AddCommand(newStateCmd())
 	rootCmd.AddCommand(newProfileCmd())
+	rootCmd.AddCommand(newPackageCmd())
 }
 
 // loadConfig loads and returns the configuration.

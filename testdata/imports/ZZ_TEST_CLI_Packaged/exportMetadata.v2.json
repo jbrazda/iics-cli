@@ -1,0 +1,559 @@
+{
+   "exportedObjects": [
+      {
+         "objectGuid": "8XK79DgSovVblOcwrOWF62",
+         "objectName": "ZZ_TEST_CLI",
+         "objectType": "Project",
+         "path": "/Explore",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "Binary",
+               "description": "Project to test custom IICS CLI Operations",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "1vRc0Rb7ua4kT8ccjL6sKf",
+         "objectName": "Components",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "Miscellaneous components such as Business Services, Saved Query, Hierarchical Schema, Intelligent Structure Model, Fixed-Width File Format, Visio Template, User-Defined Function, Shared Sequence, File Listener",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "8aJAqowEF2phOFeUtU8TuS",
+         "objectName": "Connections",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CAI APP Connections",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "0KfTorzrNwihXfV38FliA2",
+         "objectName": "TestServiceConnection1",
+         "objectType": "AI_CONNECTION",
+         "path": "/Explore/ZZ_TEST_CLI/Connections",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "Test connection",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [
+               "4ayib7p2V5xlJ1CHmRiTA0"
+            ],
+            "repoInfo": {
+               "repoHandle": "S45bfTQbdxWq9bd-gt-30555076-2026-03-08T16:48:15.713Z::conn.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "4ayib7p2V5xlJ1CHmRiTA0",
+         "objectName": "TestServiceConnector1",
+         "objectType": "AI_SERVICE_CONNECTOR",
+         "path": "/Explore/ZZ_TEST_CLI/Connectors",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "Test Connector",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "RmnBtBghuImXyco-gt-30623978-2026-03-08T16:31:35.694Z::svc.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "aLX7qnviqxJdmqpVsd17SG",
+         "objectName": "Connectors",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CAI Service Connectors",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "guoHBxV3L8GdMprXqqSdKH",
+         "objectName": "DataQuality",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "Data Quality Components",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "3OrYJxTOzUJdwgHskwZCcj",
+         "objectName": "Guides",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CAI Guides",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "3sSitJsDn5odECT8qJMYut",
+         "objectName": "Test Conversion Utility",
+         "objectType": "GUIDE",
+         "path": "/Explore/ZZ_TEST_CLI/Guides",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "Guide to convert XML sample data to JSON and vice versa.\nversion: 2.0",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "SuwSSp7aa-gt-30823923-2026-03-08T16:55:34.716Z::gt.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "9k4OaSJhnYyd4g0NUDlE6s",
+         "objectName": "IssueGenerateRandomString",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "Binary",
+               "description": "",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "9WuPOQqwGVfi4M1RQ1OVUZ",
+         "objectName": "TestRandomString",
+         "objectType": "GUIDE",
+         "path": "/Explore/ZZ_TEST_CLI/IssueGenerateRandomString",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [
+               "h2zy4tla02Gf0L72vmIo6L",
+               "lFlQBdLdygSfyFK3TZh4IZ"
+            ],
+            "repoInfo": {
+               "repoHandle": "Z5Hhwq9bdsreK8Z-gt-56887454-2024-07-08T21:19:50.824Z::gt.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "h2zy4tla02Gf0L72vmIo6L",
+         "objectName": "TestConfigurationProperty",
+         "objectType": "PROCESS_OBJECT",
+         "path": "/Explore/ZZ_TEST_CLI/ProcessObjects",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "Represents Key/Value Configuration Property  This is the same Stucture as the  IC_CONFIGURATION table also supplied by IPaaS-Configuration-DB Connection the  to remove Dependency on IC_JDBC connection\n\nversion: 1.0",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "gdrOvMBu8zbgdwU-gt-30760898-2026-03-08T17:06:41.102Z::po.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "lFlQBdLdygSfyFK3TZh4IZ",
+         "objectName": "Test_GenRandomString",
+         "objectType": "PROCESS",
+         "path": "/Explore/ZZ_TEST_CLI/IssueGenerateRandomString",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "Process to Simulate Random String generation",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [
+               "h2zy4tla02Gf0L72vmIo6L"
+            ],
+            "repoInfo": {
+               "repoHandle": "f17k4AdypKwKBqR-gt-56757190-2024-07-08T21:17:11.092Z::pd.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "2evb0eclhUEfvPKOyj794R",
+         "objectName": "Mappings",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CDI Mappings",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "0pXCTRhtjrcdwOCIS5P7S5",
+         "objectName": "m_Test_Git",
+         "objectType": "DTEMPLATE",
+         "path": "/Explore/ZZ_TEST_CLI/Mappings",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "",
+               "documentState": "VALID"
+            },
+            "contextAttributes": [
+               {
+                  "name": "id",
+                  "value": "@1"
+               }
+            ],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [
+               "2E6Di63bPJUer5MvW8lxYx"
+            ],
+            "repoInfo": {
+               "repoHandle": "0022AF170000000004BL"
+            }
+         }
+      },
+      {
+         "objectGuid": "2E6Di63bPJUer5MvW8lxYx",
+         "objectName": "Telematics",
+         "objectType": "Connection",
+         "path": "/SYS",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "JSON",
+               "description": null,
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [
+               {
+                  "name": "id",
+                  "value": "@1"
+               }
+            ],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "0022AF0B0000000000F4"
+            }
+         }
+      },
+      {
+         "objectGuid": "6diNoBL2NEqlCYHhYgc68O",
+         "objectName": "Mapplets",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CDI Mapplets",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "191ZGSrZLeTgtPaXNRQpWV",
+         "objectName": "MassIngestion",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "Mass Ingestion Tasks and Components",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "3N4yMZtC2GBhTfdAhT3yG0",
+         "objectName": "ProcessObjects",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CAI Process Objects",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "1yeVVpAOUcHioT3sSTii2G",
+         "objectName": "Processes",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "CAI processes",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "3cnlhCxf4I5kGPJQoIZSMZ",
+         "objectName": "MockupEcho",
+         "objectType": "PROCESS",
+         "path": "/Explore/ZZ_TEST_CLI/Processes",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "application/json; charset=utf-8",
+               "description": "This is a Utility service to replace  now dysfunction mocky.io to  allow generation of the Sample Payloads in the Connectors  This service receives the data and Simply Echoes back the received payload as XML",
+               "documentState": "VALID"
+            },
+            "contextAttributes": null,
+            "modelVersion": {
+               "major": 1,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "wq9bdsreK8ZAZf5-gt-30437353-2026-03-08T16:42:30.36Z::pd.xml"
+            }
+         }
+      },
+      {
+         "objectGuid": "2mGokcuTPCjdbdeyCmzFKM",
+         "objectName": "TaskFlows",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "Linear and advanced task flows",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "7fDEP5uXWTWdA9vmHsb7Ex",
+         "objectName": "Tasks",
+         "objectType": "Folder",
+         "path": "/Explore/ZZ_TEST_CLI",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": " DSS Tasks, Mapping Tasks, Replication Tasks",
+               "documentState": "COMPLETE"
+            },
+            "contextAttributes": [],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": null
+         }
+      },
+      {
+         "objectGuid": "kUBJTuKdfe3fZCZfsibhme",
+         "objectName": "mt_Test_Git",
+         "objectType": "MTT",
+         "path": "/Explore/ZZ_TEST_CLI/Tasks",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": null,
+               "description": "",
+               "documentState": "VALID"
+            },
+            "contextAttributes": [
+               {
+                  "name": "id",
+                  "value": "@1"
+               }
+            ],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [
+               "0pXCTRhtjrcdwOCIS5P7S5",
+               "2E6Di63bPJUer5MvW8lxYx",
+               "eMvazWw2MoBjBanMZKwNUE"
+            ],
+            "repoInfo": {
+               "repoHandle": "0022AF0Z00000000053W"
+            }
+         }
+      },
+      {
+         "objectGuid": "eMvazWw2MoBjBanMZKwNUE",
+         "objectName": "CDI-G01",
+         "objectType": "AgentGroup",
+         "path": "/SYS",
+         "metadata": {
+            "additionalInfo": {
+               "contentType": "JSON",
+               "description": null,
+               "documentState": "VALID"
+            },
+            "contextAttributes": [
+               {
+                  "name": "id",
+                  "value": "@1"
+               }
+            ],
+            "modelVersion": {
+               "major": 0,
+               "minor": 0
+            },
+            "objectRefs": [],
+            "repoInfo": {
+               "repoHandle": "0022AF2500000000000A"
+            }
+         }
+      }
+   ]
+}

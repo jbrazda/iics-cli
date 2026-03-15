@@ -1,0 +1,22 @@
+[
+   {
+      "objectGuid": "3N4yMZtC2GBhTfdAhT3yG0",
+      "objectName": "ProcessObjects",
+      "objectType": "Folder",
+      "path": "/Explore/ZZ_TEST_CLI",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": null,
+            "description": "CAI Process Objects",
+            "documentState": "COMPLETE"
+         },
+         "contextAttributes": [],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": null
+      }
+   }
+]

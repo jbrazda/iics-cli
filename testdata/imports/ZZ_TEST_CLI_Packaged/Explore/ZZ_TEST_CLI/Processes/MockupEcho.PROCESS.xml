@@ -1,0 +1,81 @@
+<aetgt:getResponse xmlns:aetgt="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd"
+                   xmlns:types1="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd">
+   <types1:Item>
+      <types1:EntryId>wq9bdsreK8ZAZf5-gt-30437353-2026-03-08T16:42:30.36Z::pd.xml</types1:EntryId>
+      <types1:Name>MockupEcho</types1:Name>
+      <types1:MimeType>application/xml+process</types1:MimeType>
+      <types1:Description>This is a Utility service to replace  now dysfunction mocky.io to  allow generation of the Sample Payloads in the Connectors  This service receives the data and Simply Echoes back the received payload as XML</types1:Description>
+      <types1:AppliesTo/>
+      <types1:Tags>.agent:CAI,.anonymous</types1:Tags>
+      <types1:VersionLabel>1.0</types1:VersionLabel>
+      <types1:State>CURRENT</types1:State>
+      <types1:ProcessGroup/>
+      <types1:CreatedBy>jaroslav.brazda.dev@natl.com</types1:CreatedBy>
+      <types1:CreationDate>2026-03-08T16:42:30Z</types1:CreationDate>
+      <types1:ModifiedBy>jaroslav.brazda.dev@natl.com</types1:ModifiedBy>
+      <types1:ModificationDate>2026-03-08T16:43:16Z</types1:ModificationDate>
+      <types1:PublicationStatus>published</types1:PublicationStatus>
+      <types1:PublishedBy>jaroslav.brazda.dev@natl.com</types1:PublishedBy>
+      <types1:PublicationDate>2026-03-08T16:43:28Z</types1:PublicationDate>
+      <types1:PublishedContributionId>project:/spi.MockupEcho/MockupEcho.pd.xml</types1:PublishedContributionId>
+      <types1:Entry>
+         <process xmlns="http://schemas.active-endpoints.com/appmodules/screenflow/2010/10/avosScreenflow.xsd"
+                  xmlns:tfm="http://schemas.active-endpoints.com/appmodules/screenflow/2021/04/taskflowModel.xsd"
+                  xmlns:list="urn:activevos:spi:list:functions"
+                  GUID="3cnlhCxf4I5kGPJQoIZSMZ"
+                  displayName="MockupEcho"
+                  name="MockupEcho"
+                  overrideAPIName="false">
+            <parameterSet xmlns="http://schemas.active-endpoints.com/appmodules/screenflow/2021/04/taskflowModel.xsd"/>
+            <appliesTo/>
+            <description>This is a Utility service to replace  now dysfunction mocky.io to  allow generation of the Sample Payloads in the Connectors  This service receives the data and Simply Echoes back the received payload as XML</description>
+            <tags>.agent:CAI,.anonymous</tags>
+            <generator>Informatica Process Designer 11</generator>
+            <input>
+               <parameter description="" name="payload" type="reference">
+                  <options>
+                     <option name="referenceTo">$po:$any</option>
+                     <option name="required">false</option>
+                     <option name="isCopy">true</option>
+                  </options>
+               </parameter>
+            </input>
+            <output>
+               <field description="" name="response" type="reference">
+                  <options>
+                     <option name="referenceTo">$po:$any</option>
+                     <option name="required">false</option>
+                     <option name="isCopy">true</option>
+                  </options>
+               </field>
+            </output>
+            <notes/>
+            <deployment skipIfRunning="false" suspendOnFault="false" tracingLevel="none">
+               <targetLocation>CAI</targetLocation>
+               <rest>
+                  <allowAnonymousAccess/>
+                  <wholePayload inputWholePayload="true" outputWholePayload="true"/>
+               </rest>
+            </deployment>
+            <extData>
+               <nvpair name="treatEmptyStringAsNotNull">false</nvpair>
+               <nvpair name="treatEmptyObjectListAsArray">true</nvpair>
+            </extData>
+            <flow id="a">
+               <start id="b">
+                  <link id="mcdoasq1" targetId="mcdoasq0"/>
+               </start>
+               <assignment id="mcdoasq0">
+                  <title>Set Output</title>
+                  <operation source="field" to="output.response">input.payload</operation>
+                  <link id="mcdoasq2" targetId="c"/>
+               </assignment>
+               <end id="c"/>
+            </flow>
+         </process>
+      </types1:Entry>
+      <types1:GUID>3cnlhCxf4I5kGPJQoIZSMZ</types1:GUID>
+      <types1:DisplayName>MockupEcho</types1:DisplayName>
+   </types1:Item>
+   <types1:CurrentServerDateTime>2026-03-08T17:21:02.373Z</types1:CurrentServerDateTime>
+</aetgt:getResponse>
