@@ -1,0 +1,13 @@
+{
+  "name": "iics_cli_test_Schedule_Weekly",
+  "description": "Test weekly schedule created by iics-cli functional tests - safe to delete",
+  "status": "Enabled",
+  "startTime": "2026-01-01T06:00:00.000Z",
+  "endTime": "2030-12-31T22:00:00.000Z",
+  "interval": "WEEKLY",
+  "frequency": 1,
+  "dayOfWeek": "MON",
+  "timezone": "America/New_York",
+  "rangeStartTime": "06:00:00",
+  "rangeEndTime": "22:00:00"
+}

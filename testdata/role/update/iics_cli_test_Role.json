@@ -1,0 +1,7 @@
+{
+  "name": "iics_cli_test_Role",
+  "description": "Updated by iics-cli functional tests - safe to delete",
+  "privileges": [
+    "<replace-with-privilege-id>"
+  ]
+}

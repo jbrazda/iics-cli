@@ -1,0 +1,21 @@
+{
+  "userName": "iics_cli_test_user@example.com",
+  "firstName": "IICS",
+  "lastName": "CLI Test User",
+  "title": "Test Account",
+  "email": "iics_cli_test_user@example.com",
+  "phone": "+1-555-000-0001",
+  "description": "Test user created by iics-cli functional tests - safe to delete",
+  "state": "Active",
+  "authentication": "LOCAL",
+  "timeZoneId": "America/New_York",
+  "forcePasswordChange": false,
+  "maxLoginAttempts": "5",
+  "roles": [
+    {
+      "id": "<replace-with-role-id>",
+      "roleName": "Designer"
+    }
+  ],
+  "groups": []
+}

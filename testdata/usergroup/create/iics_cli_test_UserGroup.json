@@ -1,0 +1,11 @@
+{
+  "userGroupName": "iics_cli_test_UserGroup",
+  "description": "Test user group created by iics-cli functional tests - safe to delete",
+  "roles": [
+    {
+      "id": "<replace-with-role-id>",
+      "roleName": "Designer"
+    }
+  ],
+  "users": []
+}

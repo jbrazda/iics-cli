@@ -1,0 +1,5 @@
+{
+  "name": "iics_cli_test_Role",
+  "description": "Test role created by iics-cli functional tests - safe to delete",
+  "privileges": []
+}
