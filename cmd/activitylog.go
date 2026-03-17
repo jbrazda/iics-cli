@@ -118,31 +118,41 @@ func mapToKVPairs(m map[string]string) []kvPair {
 // fields on a single ActivityLogEntry. Only meaningful for table output format.
 func printActivityLogNestedSections(entry client.ActivityLogEntry, f output.Formatter, cols []output.Column) error {
 	if len(entry.Entries) > 0 {
-		fmt.Fprintf(os.Stdout, "\nEntries:\n")
+		if _, err := fmt.Fprintf(os.Stdout, "\nEntries:\n"); err != nil {
+			return err
+		}
 		if err := f.Format(entry.Entries, cols); err != nil {
 			return err
 		}
 	}
 	if len(entry.SubTaskEntries) > 0 {
-		fmt.Fprintf(os.Stdout, "\nSub-task Entries:\n")
+		if _, err := fmt.Fprintf(os.Stdout, "\nSub-task Entries:\n"); err != nil {
+			return err
+		}
 		if err := f.Format(entry.SubTaskEntries, cols); err != nil {
 			return err
 		}
 	}
 	if len(entry.LogEntryItemAttrs) > 0 {
-		fmt.Fprintf(os.Stdout, "\nItem Attributes:\n")
+		if _, err := fmt.Fprintf(os.Stdout, "\nItem Attributes:\n"); err != nil {
+			return err
+		}
 		if err := f.Format(mapToKVPairs(entry.LogEntryItemAttrs), mapAttrCols); err != nil {
 			return err
 		}
 	}
 	if len(entry.SessionVariables) > 0 {
-		fmt.Fprintf(os.Stdout, "\nSession Variables:\n")
+		if _, err := fmt.Fprintf(os.Stdout, "\nSession Variables:\n"); err != nil {
+			return err
+		}
 		if err := f.Format(mapToKVPairs(entry.SessionVariables), mapAttrCols); err != nil {
 			return err
 		}
 	}
 	if len(entry.TransformationEntries) > 0 {
-		fmt.Fprintf(os.Stdout, "\nTransformation Entries:\n")
+		if _, err := fmt.Fprintf(os.Stdout, "\nTransformation Entries:\n"); err != nil {
+			return err
+		}
 		if err := f.Format(entry.TransformationEntries, transformationEntryCols); err != nil {
 			return err
 		}

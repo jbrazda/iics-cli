@@ -19,36 +19,36 @@ type TransformationEntry struct {
 
 // ActivityLogEntry represents a completed job activity log entry.
 type ActivityLogEntry struct {
-	ID                   string                `json:"id"`
-	Type                 string                `json:"type"`
-	ObjectID             string                `json:"objectId,omitempty"`
-	ObjectName           string                `json:"objectName"`
-	RunID                int64                 `json:"runId"`
-	AgentID              string                `json:"agentId,omitempty"`
-	RuntimeEnvironmentID string                `json:"runtimeEnvironmentId,omitempty"`
-	StartTime            string                `json:"startTime,omitempty"`
-	EndTime              string                `json:"endTime,omitempty"`
-	StartTimeUtc         string                `json:"startTimeUtc,omitempty"`
-	EndTimeUtc           string                `json:"endTimeUtc,omitempty"`
-	State                int                   `json:"state"`
-	FailedSourceRows     int64                 `json:"failedSourceRows,omitempty"`
-	SuccessSourceRows    int64                 `json:"successSourceRows,omitempty"`
-	FailedTargetRows     int64                 `json:"failedTargetRows,omitempty"`
-	SuccessTargetRows    int64                 `json:"successTargetRows,omitempty"`
-	ScheduleName         string                `json:"scheduleName,omitempty"`
-	ErrorMsg             string                `json:"errorMsg,omitempty"`
-	StartedBy            string                `json:"startedBy,omitempty"`
-	RunContextType       string                `json:"runContextType,omitempty"`
-	IsStopped            bool                  `json:"isStopped,omitempty"`
-	TotalSuccessRows     int64                 `json:"totalSuccessRows,omitempty"`
-	TotalFailedRows      int64                 `json:"totalFailedRows,omitempty"`
-	StopOnError          bool                  `json:"stopOnError,omitempty"`
-	HasStopOnErrorRecord bool                  `json:"hasStopOnErrorRecord,omitempty"`
-	ContextExternalID    string                `json:"contextExternalId,omitempty"`
-	Entries              []ActivityLogEntry    `json:"entries,omitempty"`
-	SubTaskEntries       []ActivityLogEntry    `json:"subTaskEntries,omitempty"`
-	LogEntryItemAttrs    map[string]string     `json:"logEntryItemAttrs,omitempty"`
-	SessionVariables     map[string]string     `json:"sessionVariables,omitempty"`
+	ID                    string                `json:"id"`
+	Type                  string                `json:"type"`
+	ObjectID              string                `json:"objectId,omitempty"`
+	ObjectName            string                `json:"objectName"`
+	RunID                 int64                 `json:"runId"`
+	AgentID               string                `json:"agentId,omitempty"`
+	RuntimeEnvironmentID  string                `json:"runtimeEnvironmentId,omitempty"`
+	StartTime             string                `json:"startTime,omitempty"`
+	EndTime               string                `json:"endTime,omitempty"`
+	StartTimeUtc          string                `json:"startTimeUtc,omitempty"`
+	EndTimeUtc            string                `json:"endTimeUtc,omitempty"`
+	State                 int                   `json:"state"`
+	FailedSourceRows      int64                 `json:"failedSourceRows,omitempty"`
+	SuccessSourceRows     int64                 `json:"successSourceRows,omitempty"`
+	FailedTargetRows      int64                 `json:"failedTargetRows,omitempty"`
+	SuccessTargetRows     int64                 `json:"successTargetRows,omitempty"`
+	ScheduleName          string                `json:"scheduleName,omitempty"`
+	ErrorMsg              string                `json:"errorMsg,omitempty"`
+	StartedBy             string                `json:"startedBy,omitempty"`
+	RunContextType        string                `json:"runContextType,omitempty"`
+	IsStopped             bool                  `json:"isStopped,omitempty"`
+	TotalSuccessRows      int64                 `json:"totalSuccessRows,omitempty"`
+	TotalFailedRows       int64                 `json:"totalFailedRows,omitempty"`
+	StopOnError           bool                  `json:"stopOnError,omitempty"`
+	HasStopOnErrorRecord  bool                  `json:"hasStopOnErrorRecord,omitempty"`
+	ContextExternalID     string                `json:"contextExternalId,omitempty"`
+	Entries               []ActivityLogEntry    `json:"entries,omitempty"`
+	SubTaskEntries        []ActivityLogEntry    `json:"subTaskEntries,omitempty"`
+	LogEntryItemAttrs     map[string]string     `json:"logEntryItemAttrs,omitempty"`
+	SessionVariables      map[string]string     `json:"sessionVariables,omitempty"`
 	TransformationEntries []TransformationEntry `json:"transformationEntries,omitempty"`
 }
 

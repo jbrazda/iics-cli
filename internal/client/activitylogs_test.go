@@ -77,7 +77,7 @@ func TestGetActivityLog(t *testing.T) {
 				{ID: "tx1", TxName: "Source1", TxType: "SOURCE", SuccessRows: 39, FailedRows: 0},
 			},
 			LogEntryItemAttrs: map[string]string{
-				"ERROR_CODE": "0",
+				"ERROR_CODE":            "0",
 				"Session Log File Name": "s_test.log",
 			},
 		}
