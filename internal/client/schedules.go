@@ -9,25 +9,39 @@ import (
 
 // Schedule represents an IICS schedule.
 type Schedule struct {
-	ID             string `json:"id,omitempty"`
-	OrgID          string `json:"orgId,omitempty"`
-	Name           string `json:"name"`
-	Description    string `json:"description,omitempty"`
-	Status         string `json:"status,omitempty"`
-	CreateTime     string `json:"createTime,omitempty"`
-	UpdateTime     string `json:"updateTime,omitempty"`
-	CreatedBy      string `json:"createdBy,omitempty"`
-	UpdatedBy      string `json:"updatedBy,omitempty"`
-	StartTime      string `json:"startTime,omitempty"`
-	EndTime        string `json:"endTime,omitempty"`
-	Interval       string `json:"interval,omitempty"`
-	Frequency      int    `json:"frequency,omitempty"`
-	Timezone       string `json:"timezone,omitempty"`
-	DayOfWeek      string `json:"dayOfWeek,omitempty"`
-	DayOfMonth     string `json:"dayOfMonth,omitempty"`
-	WeekOfMonth    string `json:"weekOfMonth,omitempty"`
-	RangeStartTime string `json:"rangeStartTime,omitempty"`
-	RangeEndTime   string `json:"rangeEndTime,omitempty"`
+	ID                  string `json:"id,omitempty"`
+	ScheduleFederatedID string `json:"scheduleFederatedId,omitempty"`
+	OrgID               string `json:"orgId,omitempty"`
+	Name                string `json:"name"`
+	Description         string `json:"description,omitempty"`
+	Status              string `json:"status,omitempty"`
+	CreateTime          string `json:"createTime,omitempty"`
+	UpdateTime          string `json:"updateTime,omitempty"`
+	CreatedBy           string `json:"createdBy,omitempty"`
+	UpdatedBy           string `json:"updatedBy,omitempty"`
+	StartTime           string `json:"startTime,omitempty"`
+	EndTime             string `json:"endTime,omitempty"`
+	Interval            string `json:"interval,omitempty"`
+	Frequency           int    `json:"frequency,omitempty"`
+	TimeZoneID          string `json:"timeZoneId,omitempty"`
+	Sun                 bool   `json:"sun,omitempty"`
+	Mon                 bool   `json:"mon,omitempty"`
+	Tue                 bool   `json:"tue,omitempty"`
+	Wed                 bool   `json:"wed,omitempty"`
+	Thu                 bool   `json:"thu,omitempty"`
+	Fri                 bool   `json:"fri,omitempty"`
+	Sat                 bool   `json:"sat,omitempty"`
+	WeekDay             bool   `json:"weekDay,omitempty"`
+	DayOfWeek           string `json:"dayOfWeek,omitempty"`
+	DayOfMonth          int    `json:"dayOfMonth,omitempty"`
+	WeekOfMonth         string `json:"weekOfMonth,omitempty"`
+	RangeStartTime      string `json:"rangeStartTime,omitempty"`
+	RangeEndTime        string `json:"rangeEndTime,omitempty"`
+}
+
+// scheduleListResponse is the API wrapper returned by GET /public/core/v3/schedule.
+type scheduleListResponse struct {
+	Schedules []Schedule `json:"schedules"`
 }
 
 // ScheduleListOptions holds query parameters for listing schedules.
@@ -46,11 +60,11 @@ func (c *Client) ListSchedules(ctx context.Context, opts ScheduleListOptions) ([
 		query["skip"] = strconv.Itoa(opts.Skip)
 	}
 
-	var resp []Schedule
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/schedule", query, nil, &resp); err != nil {
+	var wrapper scheduleListResponse
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/schedule", query, nil, &wrapper); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return wrapper.Schedules, nil
 }
 
 // GetSchedule retrieves a single schedule by ID.
