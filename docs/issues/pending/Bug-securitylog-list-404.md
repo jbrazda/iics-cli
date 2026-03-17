@@ -114,12 +114,34 @@ instance: "/saas/public/core/v3/securityLogs"
 
 ---
 
+## Fix (filled in after resolution)
+
+**Root cause:**
+
+Three issues in `internal/client/securitylogs.go`:
+
+1. Wrong endpoint path: `/securityLogs` should be `/securityLog` (singular, lowercase L).
+2. List response decoded into `[]SecurityLog` but API wraps the array in `{"entries": [...]}`.
+3. Struct fields did not match API field names: `userName`/`action`/`objectType` →
+   `actor`/`actionEvent`/`actionCategory`. Fields `status`, `sourceIp`, `additionalInfo`
+   are not returned by the API. Added `objectId`. Filter params changed from `startTime`/
+   `endTime` query params to a `q` filter string (`entryTime>="...";entryTime<="..."`).
+
+**Files changed:**
+
+```text
+internal/client/securitylogs.go - corrected endpoint, wrapper struct, struct fields, query building
+cmd/securitylog.go              - updated output columns to match new field names
+```
+
+---
+
 ## Acceptance Criteria
 
-- [ ] `iics securitylog list --profile dev` returns a table of entries without error
-- [ ] All existing tests still pass (`/opt/local/bin/go test ./...`)
-- [ ] No unrelated code is refactored
-- [ ] `go vet ./...` and `golangci-lint run ./...` report no new issues
+- [x] `iics securitylog list --profile dev` returns a table of entries without error
+- [x] All existing tests still pass (`/opt/local/bin/go test ./...`)
+- [x] No unrelated code is refactored
+- [x] `go vet ./...` and `golangci-lint run ./...` report no new issues
 
 ---
 

@@ -2,22 +2,27 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // SecurityLog represents a security log entry.
 type SecurityLog struct {
 	ID             string `json:"id"`
 	OrgID          string `json:"orgId,omitempty"`
-	UserName       string `json:"userName"`
-	Action         string `json:"action"`
-	ObjectType     string `json:"objectType,omitempty"`
-	ObjectName     string `json:"objectName,omitempty"`
-	Status         string `json:"status,omitempty"`
-	SourceIP       string `json:"sourceIp,omitempty"`
+	Actor          string `json:"actor"`
 	EntryTime      string `json:"entryTime"`
-	AdditionalInfo string `json:"additionalInfo,omitempty"`
+	ObjectID       string `json:"objectId,omitempty"`
+	ObjectName     string `json:"objectName,omitempty"`
+	ActionCategory string `json:"actionCategory,omitempty"`
+	ActionEvent    string `json:"actionEvent,omitempty"`
+}
+
+// securityLogListResponse is the API wrapper returned by GET /public/core/v3/securityLog.
+type securityLogListResponse struct {
+	Entries []SecurityLog `json:"entries"`
 }
 
 // SecurityLogListOptions holds query parameters for listing security logs.
@@ -31,12 +36,18 @@ type SecurityLogListOptions struct {
 // ListSecurityLogs retrieves security log entries.
 func (c *Client) ListSecurityLogs(ctx context.Context, opts SecurityLogListOptions) ([]SecurityLog, error) {
 	query := make(map[string]string)
+
+	var filters []string
 	if opts.StartTime != "" {
-		query["startTime"] = opts.StartTime
+		filters = append(filters, fmt.Sprintf(`entryTime>="%s"`, opts.StartTime))
 	}
 	if opts.EndTime != "" {
-		query["endTime"] = opts.EndTime
+		filters = append(filters, fmt.Sprintf(`entryTime<="%s"`, opts.EndTime))
 	}
+	if len(filters) > 0 {
+		query["q"] = strings.Join(filters, ";")
+	}
+
 	if opts.Limit > 0 {
 		query["limit"] = strconv.Itoa(opts.Limit)
 	}
@@ -44,9 +55,9 @@ func (c *Client) ListSecurityLogs(ctx context.Context, opts SecurityLogListOptio
 		query["skip"] = strconv.Itoa(opts.Skip)
 	}
 
-	var resp []SecurityLog
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/securityLogs", query, nil, &resp); err != nil {
+	var wrapper securityLogListResponse
+	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/securityLog", query, nil, &wrapper); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return wrapper.Entries, nil
 }
