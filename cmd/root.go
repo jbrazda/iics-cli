@@ -138,6 +138,8 @@ func init() {
 	rootCmd.AddCommand(newStateCmd())
 	rootCmd.AddCommand(newProfileCmd())
 	rootCmd.AddCommand(newPackageCmd())
+	rootCmd.AddCommand(newActivitylogCmd())
+	rootCmd.AddCommand(newCompletionCmd())
 }
 
 // loadConfig loads and returns the configuration.

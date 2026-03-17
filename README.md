@@ -173,10 +173,16 @@ Environment variables take precedence over config file values.
 | [agent](docs/documentation/agent.md) | | `list`, `get`, `details`, `start`, `stop` | Manage Secure Agents |
 | [tag](docs/documentation/tag.md) | | `assign`, `remove` | Assign/remove tags on objects |
 | [permission](docs/documentation/permission.md) | `perm` | `get`, `set`, `delete` | Manage object-level permissions |
+| [activitylog](docs/documentation/activitylog.md) | | `list`, `get` | Query activity logs for completed jobs |
 | [securitylog](docs/documentation/securitylog.md) | `auditlog` | `list` | Query security audit log |
 | [metering](docs/documentation/metering.md) | | `get`, `download` | Query usage and metering data |
 | [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc` | `checkout`, `checkin`, `pull`, `commit` | Source control operations |
 | [state](docs/documentation/state.md) | | `fetch`, `load` | Fetch/load object state snapshots |
+| [completion](docs/documentation/completion.md) | | `bash`, `zsh`, `fish`, `powershell` | Generate shell completion scripts |
+
+> **Keeping completions up to date:** After adding or changing any command or flag, regenerate
+> the shell completion scripts by running `make completions`. The pre-generated scripts live in
+> the `completions/` directory and must be committed together with the code change.
 
 ### Global flags
 

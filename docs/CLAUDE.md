@@ -364,6 +364,31 @@ Add inside the `init()` function:
 rootCmd.AddCommand(newWidgetCmd())
 ```
 
+### 5. Documentation: `docs/documentation/<resource>.md`
+
+Create a command reference page with:
+
+- Synopsis block
+- Subcommands table
+- Flags table per subcommand (type, default, description)
+- Output columns table (JSON tag name + description)
+- Usage examples
+
+### 6. Update `README.md` Commands table
+
+Add a row to the Commands table linking to the new doc page.
+
+**Documentation is mandatory.** Every time a command is added or updated, steps 5 and 6 must be
+completed before the work is considered done.
+
+### 7. Regenerate shell completions
+
+```bash
+make completions
+```
+
+Commit the updated files in `completions/` together with the code change.
+
 ---
 
 ## Struct Field Rules

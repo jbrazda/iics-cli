@@ -64,6 +64,18 @@ golangci-lint run ./...
 2. `internal/client/<resource>s_test.go` - test each method with `newTestClient`
 3. `cmd/<resource>.go` - thin command wiring, `getClient` → client method → `getFormatter` → `f.Format`
 4. `cmd/root.go` `init()` - `rootCmd.AddCommand(newResourceCmd())`
+5. `docs/documentation/<resource>.md` - command reference page (synopsis, flags, output columns, examples)
+6. `README.md` Commands table - add a row linking to the new doc page
+
+**Documentation is mandatory.** Every time a command is added or updated, steps 5 and 6 must be completed before the work is considered done.
+
+After updating documentation, regenerate shell completion scripts:
+
+```bash
+make completions
+```
+
+Commit the updated files in `completions/` together with the code change.
 
 ## Markdown Rules
 
