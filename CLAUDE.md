@@ -84,6 +84,24 @@ make completions
 
 Commit the updated files in `completions/` together with the code change.
 
+## Change Request and Bug Lifecycle
+
+### Change Requests (`docs/ChangeRequests/`)
+
+- **New CRs** are created in `docs/ChangeRequests/new/`.
+- **After implementing** a CR, move the file to `docs/ChangeRequests/pending/` and include that move in the same commit as the implementation.
+- **After the developer confirms** the CR is complete and correct, move the file to `docs/ChangeRequests/completed/` and include that move in the commit.
+- If the developer has **not yet confirmed**, keep the file in `docs/ChangeRequests/pending/`.
+
+### Bugs (`docs/issues/`)
+
+- **New bugs** are created in `docs/issues/new/`.
+- **After fixing** a bug, move the file to `docs/issues/pending/` and include that move in the same commit as the fix.
+- **After the developer confirms** the fix is correct, move the file to `docs/issues/completed/` and include that move in the commit.
+- If the developer has **not yet confirmed**, keep the file in `docs/issues/pending/`.
+
+---
+
 ## Markdown Rules
 
 - Generate Markdown that follows the [Markdown Lint Rules](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md)
