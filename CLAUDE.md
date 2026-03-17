@@ -44,6 +44,13 @@ golangci-lint run ./...
 ## Commit Style
 
 - Do **not** include `Co-Authored-By: Claude ...` trailers in commit messages.
+- **Before every commit**, run the following and fix all reported issues:
+
+  ```bash
+  gofmt -s -w .
+  /opt/local/bin/go vet ./...
+  golangci-lint run ./...
+  ```
 
 ---
 
