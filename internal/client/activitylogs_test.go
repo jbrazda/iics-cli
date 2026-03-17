@@ -17,7 +17,7 @@ func TestListActivityLogs(t *testing.T) {
 		}
 
 		entries := []ActivityLogEntry{
-			{ID: "log1", ObjectName: "MyTask", State: 1, RunID: 42},
+			{ID: "log1", ObjectName: "MyTask", State: 1, RunID: 42, TotalSuccessRows: 39},
 			{ID: "log2", ObjectName: "MyTask", State: 3, RunID: 43},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -34,6 +34,9 @@ func TestListActivityLogs(t *testing.T) {
 	}
 	if logs[0].ID != "log1" {
 		t.Errorf("expected ID log1, got %s", logs[0].ID)
+	}
+	if logs[0].TotalSuccessRows != 39 {
+		t.Errorf("expected TotalSuccessRows 39, got %d", logs[0].TotalSuccessRows)
 	}
 	if logs[1].State != 3 {
 		t.Errorf("expected state 3, got %d", logs[1].State)
@@ -62,7 +65,22 @@ func TestGetActivityLog(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 
-		entry := ActivityLogEntry{ID: "log999", ObjectName: "SomeTask", State: 1, RunID: 100}
+		entry := ActivityLogEntry{
+			ID:         "log999",
+			ObjectName: "SomeTask",
+			State:      1,
+			RunID:      100,
+			Entries: []ActivityLogEntry{
+				{ID: "child1", ObjectName: "SomeTask", State: 1, RunID: 100},
+			},
+			TransformationEntries: []TransformationEntry{
+				{ID: "tx1", TxName: "Source1", TxType: "SOURCE", SuccessRows: 39, FailedRows: 0},
+			},
+			LogEntryItemAttrs: map[string]string{
+				"ERROR_CODE": "0",
+				"Session Log File Name": "s_test.log",
+			},
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(entry)
 	})
@@ -77,5 +95,17 @@ func TestGetActivityLog(t *testing.T) {
 	}
 	if entry.ObjectName != "SomeTask" {
 		t.Errorf("expected ObjectName SomeTask, got %s", entry.ObjectName)
+	}
+	if len(entry.Entries) != 1 {
+		t.Errorf("expected 1 child entry, got %d", len(entry.Entries))
+	}
+	if len(entry.TransformationEntries) != 1 {
+		t.Errorf("expected 1 transformation entry, got %d", len(entry.TransformationEntries))
+	}
+	if entry.TransformationEntries[0].TxName != "Source1" {
+		t.Errorf("expected TxName Source1, got %s", entry.TransformationEntries[0].TxName)
+	}
+	if len(entry.LogEntryItemAttrs) != 2 {
+		t.Errorf("expected 2 item attrs, got %d", len(entry.LogEntryItemAttrs))
 	}
 }
