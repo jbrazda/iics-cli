@@ -10,23 +10,41 @@ import (
 
 const defaultPageSize = 200
 
+// ObjectSourceControl holds source control metadata for an asset.
+type ObjectSourceControl struct {
+	CheckedOutBy     string `json:"checkedOutBy,omitempty"`
+	CheckedOutTime   string `json:"checkedOutTime,omitempty"`
+	Hash             string `json:"hash,omitempty"`
+	LastCheckinBy    string `json:"lastCheckinBy,omitempty"`
+	LastCheckinTime  string `json:"lastCheckinTime,omitempty"`
+	LastPullTime     string `json:"lastPullTime,omitempty"`
+	SourceControlled bool   `json:"sourceControlled,omitempty"`
+}
+
+// ObjectCustomAttributes holds Application Integration publication metadata.
+type ObjectCustomAttributes struct {
+	PublishedBy     string `json:"publishedBy,omitempty"`
+	PublicationDate string `json:"publicationDate,omitempty"`
+}
+
 // Object represents an IICS asset.
 type Object struct {
-	ID          string   `json:"id"`
-	Path        string   `json:"path"`
-	Type        string   `json:"type"`
-	Description string   `json:"description"`
-	UpdatedBy   string   `json:"updatedBy"`
-	UpdateTime  string   `json:"updateTime"`
-	Tags        []string `json:"tags,omitempty"`
-	Location    string   `json:"location,omitempty"` // computed: "Explore/<path>.<type>"
+	ID               string                  `json:"id"`
+	Path             string                  `json:"path"`
+	Type             string                  `json:"type"`
+	Description      string                  `json:"description"`
+	UpdatedBy        string                  `json:"updatedBy"`
+	UpdateTime       string                  `json:"updateTime"`
+	Tags             []string                `json:"tags,omitempty"`
+	SourceControl    *ObjectSourceControl    `json:"sourceControl,omitempty"`
+	CustomAttributes *ObjectCustomAttributes `json:"customAttributes,omitempty"`
+	Location         string                  `json:"location,omitempty"` // computed: "Explore/<path>.<type>"
 }
 
 // ObjectsListOptions holds query parameters for listing objects.
 type ObjectsListOptions struct {
 	Query string
 	Type  string
-	Tag   string
 	Limit int
 	Skip  int
 }
@@ -64,11 +82,8 @@ func (c *Client) ListObjects(ctx context.Context, opts ObjectsListOptions) (*Obj
 	if opts.Type != "" {
 		filters = append(filters, fmt.Sprintf("type=='%s'", opts.Type))
 	}
-	if opts.Tag != "" {
-		filters = append(filters, fmt.Sprintf("tag=='%s'", opts.Tag))
-	}
 	if len(filters) > 0 {
-		query["q"] = strings.Join(filters, " and ")
+		query["q"] = strings.Join(filters, ";")
 	}
 
 	if opts.Limit > 0 {
@@ -98,7 +113,6 @@ func (c *Client) ListAllObjects(ctx context.Context, opts ObjectsListOptions, pr
 		page, err := c.ListObjects(ctx, ObjectsListOptions{
 			Query: opts.Query,
 			Type:  opts.Type,
-			Tag:   opts.Tag,
 			Limit: defaultPageSize,
 			Skip:  skip,
 		})

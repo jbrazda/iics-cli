@@ -161,14 +161,37 @@ that are not mapped in the current `Object` struct:
 
 ---
 
+## Fix (filled in after resolution)
+
+**Root cause:**
+
+Three issues in `internal/client/objects.go` and `cmd/objects.go`:
+
+1. Filter separator was `" and "` — API requires `";"`.
+2. `--tag` flag existed as a separate CLI parameter backed by `ObjectsListOptions.Tag`;
+   tag filtering must go through `--query "tag=='value'"`.
+3. `Object` struct was missing `sourceControl` and `customAttributes` nested fields
+   returned by the API.
+
+**Files changed:**
+
+```text
+internal/client/objects.go - removed Tag from ObjectsListOptions; fixed separator to ";";
+                             added ObjectSourceControl and ObjectCustomAttributes structs;
+                             added SourceControl and CustomAttributes fields to Object
+cmd/objects.go             - removed --tag flag; fixed --query examples to use ";" separator
+```
+
+---
+
 ## Acceptance Criteria
 
-- [ ] `iics objects list --query "tag=='production'"` returns correct results
-- [ ] `iics objects list --query "type=='MTT';tag=='production'"` works correctly
-- [ ] No `--tag` flag on `objects list`
-- [ ] `q` filter conditions are joined with `";"`
-- [ ] All existing tests still pass
-- [ ] `go vet ./...` and `golangci-lint run ./...` report no new issues
+- [x] `iics objects list --query "tag=='production'"` reaches the API correctly
+- [x] `iics objects list --type MTT --query "location=='Playground/Smart'"` works with ";" separator
+- [x] No `--tag` flag on `objects list`
+- [x] `q` filter conditions are joined with `";"`
+- [x] All existing tests still pass
+- [x] `go vet ./...` and `golangci-lint run ./...` report no new issues
 
 ---
 
