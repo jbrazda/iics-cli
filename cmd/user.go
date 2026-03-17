@@ -22,6 +22,8 @@ func newUserCmd() *cobra.Command {
 	cmd.AddCommand(newUserCreateCmd())
 	cmd.AddCommand(newUserUpdateCmd())
 	cmd.AddCommand(newUserDeleteCmd())
+	cmd.AddCommand(newUserChangePasswordCmd())
+	cmd.AddCommand(newUserResetPasswordCmd())
 	return cmd
 }
 
@@ -191,6 +193,95 @@ func newUserUpdateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&id, "id", "", "user ID (required)")
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with user updates (required)")
+	return cmd
+}
+
+func newUserChangePasswordCmd() *cobra.Command {
+	var (
+		newPassword string
+		oldPassword string
+		userID      string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "change-password",
+		Short: "Change a user password",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if newPassword == "" {
+				return fmt.Errorf("--new-password is required")
+			}
+			if oldPassword == "" && userID == "" {
+				return fmt.Errorf("either --old-password or --id is required")
+			}
+
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			req := &client.ChangePasswordRequest{
+				NewPassword: newPassword,
+				OldPassword: oldPassword,
+				UserID:      userID,
+			}
+			if err := c.ChangePassword(context.Background(), req); err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Password changed successfully.")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&newPassword, "new-password", "", "new password (required)")
+	cmd.Flags().StringVar(&oldPassword, "old-password", "", "current password (required when changing own password)")
+	cmd.Flags().StringVar(&userID, "id", "", "user ID (required when admin changes another user's password)")
+	return cmd
+}
+
+func newUserResetPasswordCmd() *cobra.Command {
+	var (
+		userID         string
+		securityAnswer string
+		newPassword    string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "reset-password",
+		Short: "Reset a user password using the security answer",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if userID == "" {
+				return fmt.Errorf("--id is required")
+			}
+			if securityAnswer == "" {
+				return fmt.Errorf("--security-answer is required")
+			}
+			if newPassword == "" {
+				return fmt.Errorf("--new-password is required")
+			}
+
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			req := &client.ResetPasswordRequest{
+				UserID:         userID,
+				SecurityAnswer: securityAnswer,
+				NewPassword:    newPassword,
+			}
+			if err := c.ResetPassword(context.Background(), req); err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Password reset successfully.")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&userID, "id", "", "user ID (required)")
+	cmd.Flags().StringVar(&securityAnswer, "security-answer", "", "answer to the security question (required)")
+	cmd.Flags().StringVar(&newPassword, "new-password", "", "new password (required)")
 	return cmd
 }
 

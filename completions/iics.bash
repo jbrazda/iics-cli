@@ -4107,6 +4107,50 @@ _iics_tag()
     noun_aliases=()
 }
 
+_iics_user_change-password()
+{
+    last_command="iics_user_change-password"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--new-password=")
+    two_word_flags+=("--new-password")
+    local_nonpersistent_flags+=("--new-password")
+    local_nonpersistent_flags+=("--new-password=")
+    flags+=("--old-password=")
+    two_word_flags+=("--old-password")
+    local_nonpersistent_flags+=("--old-password")
+    local_nonpersistent_flags+=("--old-password=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_user_create()
 {
     last_command="iics_user_create"
@@ -4259,6 +4303,50 @@ _iics_user_list()
     noun_aliases=()
 }
 
+_iics_user_reset-password()
+{
+    last_command="iics_user_reset-password"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--new-password=")
+    two_word_flags+=("--new-password")
+    local_nonpersistent_flags+=("--new-password")
+    local_nonpersistent_flags+=("--new-password=")
+    flags+=("--security-answer=")
+    two_word_flags+=("--security-answer")
+    local_nonpersistent_flags+=("--security-answer")
+    local_nonpersistent_flags+=("--security-answer=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_user_update()
 {
     last_command="iics_user_update"
@@ -4306,10 +4394,12 @@ _iics_user()
     command_aliases=()
 
     commands=()
+    commands+=("change-password")
     commands+=("create")
     commands+=("delete")
     commands+=("get")
     commands+=("list")
+    commands+=("reset-password")
     commands+=("update")
 
     flags=()
