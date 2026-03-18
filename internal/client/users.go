@@ -103,3 +103,29 @@ func (c *Client) UpdateUser(ctx context.Context, id string, user *User) (*User, 
 func (c *Client) DeleteUser(ctx context.Context, id string) error {
 	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/users/%s", BaseAPIPathV3, id), nil, nil)
 }
+
+// ChangePasswordRequest is the request body for the ChangePassword endpoint.
+// Set OldPassword when changing your own password.
+// Set UserID when an administrator is changing another user's password.
+type ChangePasswordRequest struct {
+	NewPassword string `json:"newPassword"`
+	OldPassword string `json:"oldPassword,omitempty"`
+	UserID      string `json:"userId,omitempty"`
+}
+
+// ResetPasswordRequest is the request body for the ResetPassword endpoint.
+type ResetPasswordRequest struct {
+	UserID         string `json:"userId"`
+	SecurityAnswer string `json:"securityAnswer"`
+	NewPassword    string `json:"newPassword"`
+}
+
+// ChangePassword changes a user password.
+func (c *Client) ChangePassword(ctx context.Context, req *ChangePasswordRequest) error {
+	return c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/Users/ChangePassword", req, nil)
+}
+
+// ResetPassword resets a user password using the user's security answer.
+func (c *Client) ResetPassword(ctx context.Context, req *ResetPasswordRequest) error {
+	return c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/Users/ResetPassword", req, nil)
+}

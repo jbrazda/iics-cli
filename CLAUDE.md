@@ -44,6 +44,13 @@ golangci-lint run ./...
 ## Commit Style
 
 - Do **not** include `Co-Authored-By: Claude ...` trailers in commit messages.
+- **Before every commit**, run the following and fix all reported issues:
+
+  ```bash
+  gofmt -s -w .
+  /opt/local/bin/go vet ./...
+  golangci-lint run ./...
+  ```
 
 ---
 
@@ -64,6 +71,36 @@ golangci-lint run ./...
 2. `internal/client/<resource>s_test.go` - test each method with `newTestClient`
 3. `cmd/<resource>.go` - thin command wiring, `getClient` → client method → `getFormatter` → `f.Format`
 4. `cmd/root.go` `init()` - `rootCmd.AddCommand(newResourceCmd())`
+5. `docs/documentation/<resource>.md` - command reference page (synopsis, flags, output columns, examples)
+6. `README.md` Commands table - add a row linking to the new doc page
+
+**Documentation is mandatory.** Every time a command is added or updated, steps 5 and 6 must be completed before the work is considered done.
+
+After updating documentation, regenerate shell completion scripts:
+
+```bash
+make completions
+```
+
+Commit the updated files in `completions/` together with the code change.
+
+## Change Request and Bug Lifecycle
+
+### Change Requests (`docs/ChangeRequests/`)
+
+- **New CRs** are created in `docs/ChangeRequests/new/`.
+- **After implementing** a CR, move the file to `docs/ChangeRequests/pending/` and include that move in the same commit as the implementation.
+- **After the developer confirms** the CR is complete and correct, move the file to `docs/ChangeRequests/completed/` and include that move in the commit.
+- If the developer has **not yet confirmed**, keep the file in `docs/ChangeRequests/pending/`.
+
+### Bugs (`docs/issues/`)
+
+- **New bugs** are created in `docs/issues/new/`.
+- **After fixing** a bug, move the file to `docs/issues/pending/` and include that move in the same commit as the fix.
+- **After the developer confirms** the fix is correct, move the file to `docs/issues/completed/` and include that move in the commit.
+- If the developer has **not yet confirmed**, keep the file in `docs/issues/pending/`.
+
+---
 
 ## Markdown Rules
 

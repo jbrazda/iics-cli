@@ -109,8 +109,9 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 		Example: `  iics objects list                          # all objects (auto-paginated)
   iics objects list --type MTT               # all mappings
   iics objects list --type MTT --limit 50    # first 50 mappings
-  iics objects list --query "type=='DTEMPLATE' and location=='Default/Sales'"
-  iics objects list --tag production --output json
+  iics objects list --query "location=='Default/Sales'"
+  iics objects list --query "type=='DTEMPLATE';location=='Default/Sales'"
+  iics objects list --query "tag=='production'" --output json
   iics objects list --output-file objects.yaml --output-file-format yaml
   iics objects list --output-file objects.yaml --output-file-format yaml \
     --output-file-fields id,path,type,location`,
@@ -202,8 +203,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 	}
 
 	cmd.Flags().StringVar(&opts.Type, "type", "", "filter by object type (MTT, DTEMPLATE, DSS, etc.)")
-	cmd.Flags().StringVar(&opts.Tag, "tag", "", "filter by tag")
-	cmd.Flags().StringVarP(&opts.Query, "query", "q", "", "raw query filter expression")
+	cmd.Flags().StringVarP(&opts.Query, "query", "q", "", "q filter expression (e.g. \"tag=='prod';location=='Default'\")")
 	cmd.Flags().IntVar(&opts.Limit, "limit", 0, "max results to return (default 0 = all, pages of 200)")
 	cmd.Flags().IntVar(&opts.Skip, "skip", 0, "number of results to skip (only used with --limit)")
 	cmd.Flags().StringVar(&outputFields, "output-fields", defaultObjectFields,

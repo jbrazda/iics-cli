@@ -25,7 +25,7 @@ func newSecuritylogListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List security log entries",
 		Example: `  iics securitylog list --start "2024-01-01T00:00:00Z" --end "2024-01-31T23:59:59Z"
-  iics securitylog list --limit 50`,
+  iics securitylog list --start "2024-01-01T00:00:00Z" --limit 100`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := getClient(cmd)
 			if err != nil {
@@ -41,11 +41,10 @@ func newSecuritylogListCmd() *cobra.Command {
 			}
 			columns := []output.Column{
 				{Header: "TIME", Field: "entryTime", Width: 22},
-				{Header: "USER", Field: "userName", Width: 25},
-				{Header: "ACTION", Field: "action", Width: 20},
-				{Header: "OBJECT TYPE", Field: "objectType", Width: 15},
-				{Header: "STATUS", Field: "status", Width: 10},
-				{Header: "SOURCE IP", Field: "sourceIp", Width: 15},
+				{Header: "ACTOR", Field: "actor", Width: 25},
+				{Header: "CATEGORY", Field: "actionCategory", Width: 20},
+				{Header: "EVENT", Field: "actionEvent", Width: 20},
+				{Header: "OBJECT NAME", Field: "objectName", Width: 30},
 			}
 			return f.Format(logs, columns)
 		},

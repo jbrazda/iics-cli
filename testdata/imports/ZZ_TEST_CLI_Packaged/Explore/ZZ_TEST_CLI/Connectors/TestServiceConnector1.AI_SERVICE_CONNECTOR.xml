@@ -1,0 +1,78 @@
+<aetgt:getResponse xmlns:aetgt="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd"
+                   xmlns:types1="http://schemas.active-endpoints.com/appmodules/repository/2010/10/avrepository.xsd">
+   <types1:Item>
+      <types1:EntryId>RmnBtBghuImXyco-gt-30623978-2026-03-08T16:31:35.694Z::svc.xml</types1:EntryId>
+      <types1:Name>TestServiceConnector1</types1:Name>
+      <types1:ParentFlowIds>S45bfTQbdxWq9bd-gt-30555076-2026-03-08T16:48:15.713Z::conn.xml</types1:ParentFlowIds>
+      <types1:MimeType>application/xml+businesssconnector</types1:MimeType>
+      <types1:Description>Test Connector</types1:Description>
+      <types1:AppliesTo/>
+      <types1:Tags/>
+      <types1:VersionLabel>1.0</types1:VersionLabel>
+      <types1:State>CURRENT</types1:State>
+      <types1:ProcessGroup/>
+      <types1:CreatedBy>jaroslav.brazda.dev@natl.com</types1:CreatedBy>
+      <types1:CreationDate>2026-03-08T16:31:36Z</types1:CreationDate>
+      <types1:ModifiedBy>jaroslav.brazda.dev@natl.com</types1:ModifiedBy>
+      <types1:ModificationDate>2026-03-08T16:45:25Z</types1:ModificationDate>
+      <types1:PublicationStatus>published</types1:PublicationStatus>
+      <types1:PublishedBy>jaroslav.brazda.dev@natl.com</types1:PublishedBy>
+      <types1:PublicationDate>2026-03-08T16:45:32Z</types1:PublicationDate>
+      <types1:PublishedContributionId>project:/rt.connector/TestServiceConnector1/TestServiceConnector1_svcDef.xml</types1:PublishedContributionId>
+      <types1:Entry>
+         <businessConnector xmlns="http://schemas.informatica.com/socrates/data-services/2014/05/business-connector-model.xsd"
+                            agentOnly="true"
+                            debug="false"
+                            displayName="TestServiceConnector1"
+                            label=""
+                            name="TestServiceConnector1"
+                            uuid="4ea33e01-d6e7-4c97-998c-37f4763b3fdc">
+            <description>Test Connector</description>
+            <tags/>
+            <connectionAttributes xmlns="http://schemas.informatica.com/appmodules/screenflow/2014/04/avosConnectors.xsd"/>
+            <actions>
+               <action category=""
+                       failOnError="true"
+                       forSearch="false"
+                       label="getSampleData"
+                       maxRedirects="100"
+                       name="getSampleData"
+                       preemptiveAuth="true"
+                       responseEncoding="">
+                  <description/>
+                  <input>
+                     <parameter description=""
+                                label=""
+                                name="request"
+                                required="false"
+                                testWith="&lt;createUserRequest xmlns:m=&#34;urn:informatica:ae:xquery:json2xml:meta-data&#34;&gt;&#xA;    &lt;name&gt;jdoe@.com.edu&lt;/name&gt;&#xA;    &lt;firstName&gt;John&lt;/firstName&gt;&#xA;    &lt;lastName&gt;Doe&lt;/lastName&gt;&#xA;    &lt;email&gt;jdoe@acme.com&lt;/email&gt;&#xA;    &lt;phone&gt;1234567890&lt;/phone&gt;&#xA;    &lt;title&gt;User Account&lt;/title&gt;&#xA;    &lt;description&gt;IICS Demo Account&lt;/description&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;9gedBDoYQoQibNMohf5KCh&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;5RZKlypdE5QiAIIAngXSS8&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;8hQVJFGyyQkep1g2AeEewB&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;jDzrayqa8ycckXIXPB89Uh&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;4BPvlNjZwXJj5CN6Pf6jUu&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;kIrabY9KNeElcZfw6iUH6A&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;aKOABsXIRP6eI0aEE32bg8&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;9dKyXtuAcJIdKsKZGohq49&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;lObMwXOTigHi5XBJTU1Z8Q&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;9aTuLGRQgHyjpftpLFj7Qg&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;5cAMKPWEVuBePscQdHRaGx&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;i57A1ij0i6PcA6SbHT4EUO&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;l61Xn8zFz4wfYIhb4N6x8l&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;jYxryaaIs0jjAYLQMAYbIU&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;iObMwXOTigHi5XBJTU1Z8N&lt;/roles&gt;&#xA;    &lt;roles m:isArray=&#34;true&#34;&gt;15sm0mkzOLjcU8k6tI478h&lt;/roles&gt;&#xA;    &lt;groups m:isArray=&#34;true&#34;&gt;3jjrAYgva8mlCV1DZCoLQ1&lt;/groups&gt;&#xA;&lt;/createUserRequest&gt;&#xA;"
+                                type="reference">
+                        <options>
+                           <option name="relationshipName">Child</option>
+                           <option name="referenceTo">$po:$any</option>
+                           <option name="isCopy">true</option>
+                        </options>
+                     </parameter>
+                  </input>
+                  <binding>
+                     <restSimpleBinding multiUsing="semicolonSeparated"
+                                        url="https://apidev.natl.com/process-engine/public/rt/MockupEcho"
+                                        verb="POST">
+                        <mutualAuth enabled="false">
+                           <keyStore mode="file"/>
+                           <keyStorePassword/>
+                        </mutualAuth>
+                        <body generateUsing="UnwrappedJSON" preserveJsonStringFormatting="true"/>
+                     </restSimpleBinding>
+                  </binding>
+                  <output/>
+               </action>
+            </actions>
+            <objects/>
+         </businessConnector>
+      </types1:Entry>
+      <types1:GUID>4ayib7p2V5xlJ1CHmRiTA0</types1:GUID>
+      <types1:DisplayName>TestServiceConnector1</types1:DisplayName>
+   </types1:Item>
+   <types1:CurrentServerDateTime>2026-03-08T17:21:02.48Z</types1:CurrentServerDateTime>
+</aetgt:getResponse>

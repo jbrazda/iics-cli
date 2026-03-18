@@ -1,0 +1,114 @@
+[
+   {
+      "objectGuid": "kUBJTuKdfe3fZCZfsibhme",
+      "objectName": "mt_Test_Git",
+      "objectType": "MTT",
+      "path": "/Explore/ZZ_TEST_CLI/Tasks",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": null,
+            "description": "",
+            "documentState": "VALID"
+         },
+         "contextAttributes": [
+            {
+               "name": "id",
+               "value": "@1"
+            }
+         ],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [
+            "0pXCTRhtjrcdwOCIS5P7S5",
+            "2E6Di63bPJUer5MvW8lxYx",
+            "eMvazWw2MoBjBanMZKwNUE"
+         ],
+         "repoInfo": {
+            "repoHandle": "0022AF0Z00000000053W"
+         }
+      }
+   },
+   {
+      "objectGuid": "0pXCTRhtjrcdwOCIS5P7S5",
+      "objectName": "m_Test_Git",
+      "objectType": "DTEMPLATE",
+      "path": "/Explore/ZZ_TEST_CLI/Mappings",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": null,
+            "description": "",
+            "documentState": "VALID"
+         },
+         "contextAttributes": [
+            {
+               "name": "id",
+               "value": "@1"
+            }
+         ],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": {
+            "repoHandle": "0022AF170000000004BL"
+         }
+      }
+   },
+   {
+      "objectGuid": "2E6Di63bPJUer5MvW8lxYx",
+      "objectName": "Telematics",
+      "objectType": "Connection",
+      "path": "/SYS",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": "JSON",
+            "description": null,
+            "documentState": "COMPLETE"
+         },
+         "contextAttributes": [
+            {
+               "name": "id",
+               "value": "@1"
+            }
+         ],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": {
+            "repoHandle": "0022AF0B0000000000F4"
+         }
+      }
+   },
+   {
+      "objectGuid": "eMvazWw2MoBjBanMZKwNUE",
+      "objectName": "CDI-G01",
+      "objectType": "AgentGroup",
+      "path": "/SYS",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": "JSON",
+            "description": null,
+            "documentState": "VALID"
+         },
+         "contextAttributes": [
+            {
+               "name": "id",
+               "value": "@1"
+            }
+         ],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": {
+            "repoHandle": "0022AF2500000000000A"
+         }
+      }
+   }
+]

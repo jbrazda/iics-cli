@@ -5,6 +5,7 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 ## Features
 
 - **Full API v3 coverage** - objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
+- **Interactive setup** - guided profile wizard on first run, or via `iics profile add`
 - **Multi-profile configuration** - switch between dev/staging/prod orgs with `--profile`
 - **Session caching** - reuses sessions across invocations (30-min window) to avoid repeated logins
 - **Automatic session refresh** - transparent 401 retry with re-authentication
@@ -36,20 +37,22 @@ make build
 
 ## Quick Start
 
-### 1. Create a configuration file
+### 1. Set up a profile
 
 ```bash
-mkdir -p ~/.iics
-cat > ~/.iics/config.yaml << 'EOF'
-defaultProfile: dev
-profiles:
-  dev:
-    name: "Development Org"
-    region: "us"
-    username: "user@company.com"
-    password: ""
-EOF
+iics profile add
 ```
+
+The wizard prompts for your username, password, and region, then saves the profile to
+`~/.iics/config.yaml`. You can also set up multiple named profiles:
+
+```bash
+iics profile add dev
+iics profile add prod
+iics profile set-default dev
+```
+
+Alternatively, create the config file manually - see the [Configuration](#configuration) section.
 
 ### 2. Login
 
@@ -150,6 +153,7 @@ Environment variables take precedence over config file values.
 
 | Command | Alias | Subcommands | Description |
 | ------- | ----- | ----------- | ----------- |
+| [profile](docs/documentation/profile.md) | | `add`, `list`, `delete`, `set-default`, `show` | Manage connection profiles |
 | [login](docs/documentation/login.md) | | | Authenticate and cache session |
 | [logout](docs/documentation/logout.md) | | | Invalidate session |
 | [objects](docs/documentation/objects.md) | | `list`, `dependencies` | List/search assets, find dependencies |
@@ -157,6 +161,7 @@ Environment variables take precedence over config file values.
 | [connection](docs/documentation/connection.md) | `conn` | `list`, `get`, `create`, `update`, `delete` | Manage connections |
 | [export](docs/documentation/export.md) | | `run`, `start`, `status`, `download`, `create` | Export asset packages |
 | [import](docs/documentation/import.md) | `imp` | `run`, `upload`, `start`, `status`, `download-log` | Import asset packages |
+| [package](docs/documentation/package.md) | | `expand`, `create` | Extract or assemble IICS export package files (local, no API) |
 | [project](docs/documentation/project.md) | | `create`, `update`, `delete` | Manage projects |
 | [folder](docs/documentation/folder.md) | | `create`, `update`, `delete` | Manage folders |
 | [schedule](docs/documentation/schedule.md) | | `list`, `get`, `create`, `update`, `delete` | Manage schedules |
@@ -168,10 +173,16 @@ Environment variables take precedence over config file values.
 | [agent](docs/documentation/agent.md) | | `list`, `get`, `details`, `start`, `stop` | Manage Secure Agents |
 | [tag](docs/documentation/tag.md) | | `assign`, `remove` | Assign/remove tags on objects |
 | [permission](docs/documentation/permission.md) | `perm` | `get`, `set`, `delete` | Manage object-level permissions |
+| [activitylog](docs/documentation/activitylog.md) | | `list`, `get` | Query activity logs for completed jobs |
 | [securitylog](docs/documentation/securitylog.md) | `auditlog` | `list` | Query security audit log |
 | [metering](docs/documentation/metering.md) | | `get`, `download` | Query usage and metering data |
 | [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc` | `checkout`, `checkin`, `pull`, `commit` | Source control operations |
 | [state](docs/documentation/state.md) | | `fetch`, `load` | Fetch/load object state snapshots |
+| [completion](docs/documentation/completion.md) | | `bash`, `zsh`, `fish`, `powershell` | Generate shell completion scripts |
+
+> **Keeping completions up to date:** After adding or changing any command or flag, regenerate
+> the shell completion scripts by running `make completions`. The pre-generated scripts live in
+> the `completions/` directory and must be committed together with the code change.
 
 ### Global flags
 

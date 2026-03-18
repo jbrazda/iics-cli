@@ -43,6 +43,7 @@ iics_cli/
 │   ├── schedule.go
 │   ├── securitylog.go
 │   ├── sourcecontrol.go
+│   ├── profile.go
 │   ├── state.go
 │   ├── tag.go
 │   ├── user.go
@@ -76,7 +77,9 @@ iics_cli/
 │   │   └── *_test.go              # One test file per client module
 │   ├── config/
 │   │   ├── config.go              # Config/Profile structs, Viper loading
-│   │   ├── pods.go                # Region → login URL mapping
+│   │   ├── pods.go                # Region -> login URL mapping
+│   │   ├── prompt.go              # Interactive profile prompting (IsTerminal, PromptProfile)
+│   │   ├── prompt_test.go         # Tests for prompt logic
 │   │   └── session.go             # Session cache (~/.iics/sessions.yaml)
 │   └── output/
 │       ├── formatter.go           # Format enum + Formatter interface + Column struct
@@ -360,6 +363,31 @@ Add inside the `init()` function:
 ```go
 rootCmd.AddCommand(newWidgetCmd())
 ```
+
+### 5. Documentation: `docs/documentation/<resource>.md`
+
+Create a command reference page with:
+
+- Synopsis block
+- Subcommands table
+- Flags table per subcommand (type, default, description)
+- Output columns table (JSON tag name + description)
+- Usage examples
+
+### 6. Update `README.md` Commands table
+
+Add a row to the Commands table linking to the new doc page.
+
+**Documentation is mandatory.** Every time a command is added or updated, steps 5 and 6 must be
+completed before the work is considered done.
+
+### 7. Regenerate shell completions
+
+```bash
+make completions
+```
+
+Commit the updated files in `completions/` together with the code change.
 
 ---
 

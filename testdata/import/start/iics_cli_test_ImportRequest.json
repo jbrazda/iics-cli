@@ -1,0 +1,7 @@
+{
+  "name": "iics_cli_test_Import",
+  "importSpecification": {
+    "defaultConflictResolution": "OVERWRITE",
+    "objectSpecification": []
+  }
+}

@@ -1,0 +1,24 @@
+[
+   {
+      "objectGuid": "3cnlhCxf4I5kGPJQoIZSMZ",
+      "objectName": "MockupEcho",
+      "objectType": "PROCESS",
+      "path": "/Explore/ZZ_TEST_CLI/Processes",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": "application/json; charset=utf-8",
+            "description": "This is a Utility service to replace  now dysfunction mocky.io to  allow generation of the Sample Payloads in the Connectors  This service receives the data and Simply Echoes back the received payload as XML",
+            "documentState": "VALID"
+         },
+         "contextAttributes": null,
+         "modelVersion": {
+            "major": 1,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": {
+            "repoHandle": "wq9bdsreK8ZAZf5-gt-30437353-2026-03-08T16:42:30.36Z::pd.xml"
+         }
+      }
+   }
+]

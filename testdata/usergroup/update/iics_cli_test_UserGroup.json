@@ -1,0 +1,14 @@
+{
+  "userGroupName": "iics_cli_test_UserGroup",
+  "description": "Updated by iics-cli functional tests - safe to delete",
+  "roles": [
+    {
+      "id": "<replace-with-role-id>",
+      "roleName": "Designer"
+    },
+    {
+      "id": "<replace-with-role-id-2>",
+      "roleName": "Monitor"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "iics_cli_test_RuntimeEnvironment",
+  "description": "Test runtime environment created by iics-cli functional tests - safe to delete",
+  "type": "CLOUD"
+}

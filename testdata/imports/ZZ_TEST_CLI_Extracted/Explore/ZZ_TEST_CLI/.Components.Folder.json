@@ -1,0 +1,22 @@
+[
+   {
+      "objectGuid": "1vRc0Rb7ua4kT8ccjL6sKf",
+      "objectName": "Components",
+      "objectType": "Folder",
+      "path": "/Explore/ZZ_TEST_CLI",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": null,
+            "description": "Miscellaneous components such as Business Services, Saved Query, Hierarchical Schema, Intelligent Structure Model, Fixed-Width File Format, Visio Template, User-Defined Function, Shared Sequence, File Listener",
+            "documentState": "COMPLETE"
+         },
+         "contextAttributes": [],
+         "modelVersion": {
+            "major": 0,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": null
+      }
+   }
+]

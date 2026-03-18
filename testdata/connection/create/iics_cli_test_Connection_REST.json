@@ -1,0 +1,12 @@
+{
+  "name": "iics_cli_test_Connection_REST",
+  "description": "Test REST connection created by iics-cli functional tests - safe to delete",
+  "type": "TOOLKIT",
+  "agentId": "<replace-with-agent-id>",
+  "runtimeEnvironmentId": "<replace-with-runtime-env-id>",
+  "connParams": {
+    "SWAGGER_URL": "https://api.example.com/openapi.json",
+    "AUTH_TYPE": "NONE",
+    "BASE_URL": "https://api.example.com/v1"
+  }
+}

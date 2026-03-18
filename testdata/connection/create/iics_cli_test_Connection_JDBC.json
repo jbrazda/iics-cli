@@ -1,0 +1,13 @@
+{
+  "name": "iics_cli_test_Connection_JDBC",
+  "description": "Test JDBC connection created by iics-cli functional tests - safe to delete",
+  "type": "JDBC",
+  "agentId": "<replace-with-agent-id>",
+  "runtimeEnvironmentId": "<replace-with-runtime-env-id>",
+  "connParams": {
+    "JDBC_URL": "jdbc:mysql://localhost:3306/testdb",
+    "USERNAME": "testuser",
+    "PASSWORD": "",
+    "JDBC_DRIVER": "com.mysql.cj.jdbc.Driver"
+  }
+}

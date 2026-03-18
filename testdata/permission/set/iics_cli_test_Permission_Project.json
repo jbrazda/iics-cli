@@ -1,0 +1,16 @@
+{
+  "objectId": "<replace-with-project-id>",
+  "objectType": "PROJECT",
+  "permissions": [
+    {
+      "principalId": "<replace-with-user-id>",
+      "principalType": "USER",
+      "permission": "READ"
+    },
+    {
+      "principalId": "<replace-with-group-id>",
+      "principalType": "USER_GROUP",
+      "permission": "READ_WRITE"
+    }
+  ]
+}

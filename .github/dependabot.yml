@@ -4,14 +4,24 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    target-branch: "dev"
     labels:
       - "dependencies"
     open-pull-requests-limit: 10
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    target-branch: "dev"
     labels:
       - "dependencies"
       - "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

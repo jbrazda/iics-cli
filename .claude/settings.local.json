@@ -18,7 +18,14 @@
       "Bash(/opt/local/bin/go build:*)",
       "Bash(python3:*)",
       "Bash(/opt/local/bin/go test:*)",
-      "Bash(/opt/local/bin/go vet:*)"
+      "Bash(/opt/local/bin/go vet:*)",
+      "Bash(go run:*)",
+      "Bash(curl -s \"https://docs.informatica.com/integration-cloud/data-integration/current-version/rest-api-reference/platform-rest-api-version-3-resources/passwords.html\")",
+      "Bash(perl -ne 'print if /Passwords|password|endpoint|request|response/i')",
+      "Bash(curl -s \"https://docs.informatica.com/integration-cloud/data-integration/current-version/rest-api-reference/platform-rest-api-version-3-resources/passwords/changing-a-password.html\")",
+      "Bash(perl -ne 'print if /POST|GET|Request|Response|Parameter|Example|endpoint|curl|json|application/')",
+      "Bash(perl -ne 's/<[^>]*>//g; print')",
+      "Bash(curl -s \"https://docs.informatica.com/integration-cloud/data-integration/current-version/rest-api-reference/platform-rest-api-version-3-resources/passwords/resetting-a-password.html\")"
     ]
   }
 }

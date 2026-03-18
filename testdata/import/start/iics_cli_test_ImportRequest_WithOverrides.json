@@ -1,0 +1,16 @@
+{
+  "name": "iics_cli_test_Import_WithOverrides",
+  "importSpecification": {
+    "defaultConflictResolution": "RENAME_NEW",
+    "objectSpecification": [
+      {
+        "sourceObjectId": "<replace-with-source-object-id>",
+        "conflictResolution": "OVERWRITE"
+      },
+      {
+        "sourceObjectId": "<replace-with-source-object-id-2>",
+        "conflictResolution": "KEEP_EXISTING"
+      }
+    ]
+  }
+}

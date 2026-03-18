@@ -1,0 +1,48 @@
+[
+   {
+      "objectGuid": "0KfTorzrNwihXfV38FliA2",
+      "objectName": "TestServiceConnection1",
+      "objectType": "AI_CONNECTION",
+      "path": "/Explore/ZZ_TEST_CLI/Connections",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": "application/json; charset=utf-8",
+            "description": "Test connection",
+            "documentState": "VALID"
+         },
+         "contextAttributes": null,
+         "modelVersion": {
+            "major": 1,
+            "minor": 0
+         },
+         "objectRefs": [
+            "4ayib7p2V5xlJ1CHmRiTA0"
+         ],
+         "repoInfo": {
+            "repoHandle": "S45bfTQbdxWq9bd-gt-30555076-2026-03-08T16:48:15.713Z::conn.xml"
+         }
+      }
+   },
+   {
+      "objectGuid": "4ayib7p2V5xlJ1CHmRiTA0",
+      "objectName": "TestServiceConnector1",
+      "objectType": "AI_SERVICE_CONNECTOR",
+      "path": "/Explore/ZZ_TEST_CLI/Connectors",
+      "metadata": {
+         "additionalInfo": {
+            "contentType": "application/json; charset=utf-8",
+            "description": "Test Connector",
+            "documentState": "VALID"
+         },
+         "contextAttributes": null,
+         "modelVersion": {
+            "major": 1,
+            "minor": 0
+         },
+         "objectRefs": [],
+         "repoInfo": {
+            "repoHandle": "RmnBtBghuImXyco-gt-30623978-2026-03-08T16:31:35.694Z::svc.xml"
+         }
+      }
+   }
+]
