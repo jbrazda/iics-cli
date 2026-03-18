@@ -21,6 +21,7 @@ type Profile struct {
 	Username string `yaml:"username" mapstructure:"username"`
 	Password string `yaml:"password" mapstructure:"password"`
 	LoginURL string `yaml:"loginUrl,omitempty" mapstructure:"loginUrl"`
+	CaiURL   string `yaml:"caiUrl,omitempty" mapstructure:"caiUrl"`
 }
 
 // DefaultConfigDir returns the default config directory path.
@@ -110,6 +111,9 @@ func (c *Config) ResolveProfile(profileName string) (*Profile, error) {
 	}
 	if v := os.Getenv("IICS_LOGIN_URL"); v != "" {
 		profile.LoginURL = v
+	}
+	if v := os.Getenv("IICS_CAI_URL"); v != "" {
+		profile.CaiURL = v
 	}
 
 	if profile.Username == "" {

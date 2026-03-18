@@ -139,6 +139,8 @@ func init() {
 	rootCmd.AddCommand(newProfileCmd())
 	rootCmd.AddCommand(newPackageCmd())
 	rootCmd.AddCommand(newActivitylogCmd())
+	rootCmd.AddCommand(newPublishCmd())
+	rootCmd.AddCommand(newUnpublishCmd())
 	rootCmd.AddCommand(newCompletionCmd())
 }
 
@@ -237,7 +239,11 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 		return nil, err
 	}
 
-	c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose), client.WithDebug(debug))
+	opts := []client.ClientOption{client.WithVerbose(verbose), client.WithDebug(debug)}
+	if p.CaiURL != "" {
+		opts = append(opts, client.WithCAIURL(p.CaiURL))
+	}
+	c := client.NewClient(loginURL, p.Username, p.Password, opts...)
 
 	// Try to load cached session
 	cache, err := config.LoadSessionCache("")

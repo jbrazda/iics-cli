@@ -29,6 +29,7 @@ type Client struct {
 	httpClient *http.Client
 	loginURL   string
 	baseAPIURL string
+	caiURL     string
 	sessionID  string
 	username   string
 	password   string
@@ -59,6 +60,11 @@ func WithDebug(v bool) ClientOption {
 	return func(c *Client) {
 		c.debug = v
 	}
+}
+
+// WithCAIURL sets the CAI-specific base URL (overrides auto-detection from login response).
+func WithCAIURL(url string) ClientOption {
+	return func(c *Client) { c.caiURL = url }
 }
 
 // NewClient creates a new IICS API client.
@@ -95,6 +101,13 @@ func (c *Client) BaseAPIURL() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.baseAPIURL
+}
+
+// CAIURL returns the CAI-specific base URL.
+func (c *Client) CAIURL() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.caiURL
 }
 
 // apiURL constructs a full API URL from a resource path.
@@ -292,6 +305,50 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 		}
 	}
 
+	return nil
+}
+
+// doCAIJSON sends a JSON:API request to an absolute CAI URL and decodes the response.
+// It sets application/vnd.api+json Content-Type and bypasses c.apiURL().
+func (c *Client) doCAIJSON(ctx context.Context, method, absoluteURL string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+	var body io.Reader
+	var reqData []byte
+	if reqBody != nil {
+		var err error
+		reqData, err = json.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("marshaling request: %w", err)
+		}
+		body = bytes.NewReader(reqData)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, absoluteURL, body)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+	resp, err := c.do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if c.debug && len(reqData) > 0 {
+			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, absoluteURL, reqData)
+		}
+		return newAPIError(resp, respData)
+	}
+	if respBody != nil && len(respData) > 0 {
+		if err := json.Unmarshal(respData, respBody); err != nil {
+			return fmt.Errorf("parsing response: %w", err)
+		}
+	}
 	return nil
 }
 

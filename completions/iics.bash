@@ -2972,6 +2972,189 @@ _iics_project()
     noun_aliases=()
 }
 
+_iics_publish_run()
+{
+    last_command="iics_publish_run"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--asset=")
+    two_word_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset=")
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--detailed-polling")
+    local_nonpersistent_flags+=("--detailed-polling")
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--max-wait-time=")
+    two_word_flags+=("--max-wait-time")
+    local_nonpersistent_flags+=("--max-wait-time")
+    local_nonpersistent_flags+=("--max-wait-time=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--polling-interval=")
+    two_word_flags+=("--polling-interval")
+    local_nonpersistent_flags+=("--polling-interval")
+    local_nonpersistent_flags+=("--polling-interval=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_publish_start()
+{
+    last_command="iics_publish_start"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--asset=")
+    two_word_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset=")
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_publish_status()
+{
+    last_command="iics_publish_status"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--full")
+    local_nonpersistent_flags+=("--full")
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_publish()
+{
+    last_command="iics_publish"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("run")
+    commands+=("start")
+    commands+=("status")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_role_create()
 {
     last_command="iics_role_create"
@@ -4111,6 +4294,189 @@ _iics_tag()
     noun_aliases=()
 }
 
+_iics_unpublish_run()
+{
+    last_command="iics_unpublish_run"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--asset=")
+    two_word_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset=")
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--detailed-polling")
+    local_nonpersistent_flags+=("--detailed-polling")
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--max-wait-time=")
+    two_word_flags+=("--max-wait-time")
+    local_nonpersistent_flags+=("--max-wait-time")
+    local_nonpersistent_flags+=("--max-wait-time=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--polling-interval=")
+    two_word_flags+=("--polling-interval")
+    local_nonpersistent_flags+=("--polling-interval")
+    local_nonpersistent_flags+=("--polling-interval=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_unpublish_start()
+{
+    last_command="iics_unpublish_start"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--asset=")
+    two_word_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset")
+    local_nonpersistent_flags+=("--asset=")
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_unpublish_status()
+{
+    last_command="iics_unpublish_status"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--cai-url=")
+    two_word_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url")
+    local_nonpersistent_flags+=("--cai-url=")
+    flags+=("--full")
+    local_nonpersistent_flags+=("--full")
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_unpublish()
+{
+    last_command="iics_unpublish"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("run")
+    commands+=("start")
+    commands+=("status")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_user_change-password()
 {
     last_command="iics_user_change-password"
@@ -4706,6 +5072,7 @@ _iics_root_command()
     commands+=("privilege")
     commands+=("profile")
     commands+=("project")
+    commands+=("publish")
     commands+=("role")
     commands+=("runtime")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
@@ -4725,6 +5092,7 @@ _iics_root_command()
     fi
     commands+=("state")
     commands+=("tag")
+    commands+=("unpublish")
     commands+=("user")
     commands+=("usergroup")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
