@@ -137,7 +137,9 @@ func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Re
 	} else {
 		req.Header.Set(sessionHeaderV3, sessionID)
 	}
-	req.Header.Set("Accept", "application/json")
+	if req.Header.Get("Accept") == "" {
+		req.Header.Set("Accept", "application/json")
+	}
 	if req.Header.Get("Content-Type") == "" && req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
