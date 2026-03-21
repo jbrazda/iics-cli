@@ -336,6 +336,7 @@ func (c *Client) doCAIJSON(ctx context.Context, method, absoluteURL string, reqB
 		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/vnd.api+json")
+	req.Header.Set("Accept", "application/vnd.api+json")
 	resp, err := c.do(ctx, req)
 	if err != nil {
 		return err
