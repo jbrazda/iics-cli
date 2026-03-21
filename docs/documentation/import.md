@@ -38,8 +38,34 @@ The recommended command for most use cases. Uploads the ZIP, starts the import, 
 | `--detailed-polling`    |       | bool   |          | false           | Print per-object status on every poll                        |
 | `--print-import-log`    |       | bool   |          | false           | Print the import log after completion                        |
 | `--expand`              |       | bool   |          | false           | Expand object list in final output                           |
+| `--object-status-fields`|       | string |          | see below       | Comma-separated list of object fields to display             |
 
 All [global flags](../../README.md#global-flags) apply.
+
+### Object status fields
+
+When `--expand` or `--detailed-polling` is set, a per-object table is printed. The default
+columns are `sourceId,sourcePath,sourceName,sourceType,targetName,state,message`.
+
+Override with `--object-status-fields` using any combination of:
+
+| Field name          | Description                      |
+| ------------------- | -------------------------------- |
+| `sourceId`          | Source object ID                 |
+| `sourceName`        | Source object name               |
+| `sourcePath`        | Source object path               |
+| `sourceType`        | Source object type               |
+| `sourceDescription` | Source object description        |
+| `targetId`          | Target object ID (if assigned)   |
+| `targetName`        | Target object name               |
+| `targetPath`        | Target object path               |
+| `targetType`        | Target object type               |
+| `targetDescription` | Target object description        |
+| `state`             | Import state for this object     |
+| `message`           | Status message for this object   |
+
+A warning is printed to stderr for each object where `sourceName` differs from `targetName`
+(indicates a potential rename or duplicate).
 
 ### Conflict resolution modes
 
@@ -139,29 +165,38 @@ Check the current status of an import job.
 
 ### Flags
 
-| Flag       | Type   | Required | Description                          |
-| ---------- | ------ | -------- | ------------------------------------ |
-| `--id`     | string | yes      | Import job ID                        |
-| `--expand` | bool   |          | Show per-object import status        |
+| Flag                     | Type   | Required | Description                                                          |
+| ------------------------ | ------ | -------- | -------------------------------------------------------------------- |
+| `--id`                   | string | yes      | Import job ID                                                        |
+| `--expand`               | bool   |          | Show per-object import status table                                  |
+| `--object-status-fields` | string |          | Comma-separated object fields to display (see `import run` section)  |
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column           | Description                                                    |
-| ---------------- | -------------------------------------------------------------- |
-| `id`             | Job ID                                                         |
-| `name`           | Job name                                                       |
-| `status.state`   | Current state: `SUCCESSFUL`, `FAILED`, `IN_PROGRESS`, etc.    |
-| `status.message` | Status detail                                                  |
+Job summary table:
+
+| Column           | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `id`             | Job ID                                       |
+| `name`           | Job name                                     |
+| `status.state`   | `SUCCESSFUL`, `FAILED`, `IN_PROGRESS`, etc.  |
+| `status.message` | Status detail                                |
+
+When `--expand` is set, a second per-object table is printed below the summary using the
+fields specified by `--object-status-fields` (default: `sourceId,sourcePath,sourceName,sourceType,targetName,state,message`).
 
 ### Examples
 
 ```bash
 iics import status --id <job-id>
 
-# Show per-object results
+# Show per-object results with default columns
 iics import status --id <job-id> --expand
+
+# Show only name and state columns
+iics import status --id <job-id> --expand --object-status-fields sourceName,targetName,state,message
 ```
 
 ---

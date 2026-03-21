@@ -2,7 +2,13 @@
 
 Authenticate with IICS and cache the session for subsequent commands.
 
-The session token is stored in `~/.iics/sessions.yaml` and reused automatically for 30 minutes. After expiry the next command triggers a silent re-login.
+The session token is stored in `~/.iics/sessions.yaml` and reused automatically for 30 minutes.
+After expiry the next command triggers a silent re-login.
+
+On a successful login the command also writes the discovered `loginUrl`, `baseApiUrl`, and
+`caiUrl` back to the active profile in `~/.iics/config.yaml`. This means commands that require
+the CAI endpoint (such as `publish run` and `state fetch`) work automatically after the first
+login without any manual configuration.
 
 ## Synopsis
 
@@ -23,6 +29,29 @@ Credentials are resolved in this order (highest to lowest priority):
 3. `defaultProfile` in `~/.iics/config.yaml`
 
 If no password is available, the command prompts interactively.
+
+## Profile enrichment after login
+
+After a successful login the following fields are written back to the active profile and saved
+to `~/.iics/config.yaml`:
+
+| Field        | Value                                                         |
+| ------------ | ------------------------------------------------------------- |
+| `loginUrl`   | The login URL actually used (resolved from region or explicit)|
+| `baseApiUrl` | Org-specific base API URL from the login response             |
+| `caiUrl`     | CAI endpoint URL derived from `baseApiUrl` (see rule below)   |
+
+The `caiUrl` derivation inserts `-cai` after the first DNS label of the `baseApiUrl` hostname:
+
+```text
+baseApiUrl: https://use4.dm-us.informaticacloud.com/saas
+caiUrl:     https://use4-cai.dm-us.informaticacloud.com
+```
+
+If `caiUrl` is already set in the profile, it is not overwritten.
+
+The same `caiUrl` and `loginUrl` are also stored in the session cache (`~/.iics/sessions.yaml`)
+so that they are available when restoring a cached session without a full re-login.
 
 ## Examples
 
@@ -47,16 +76,20 @@ iics login --profile prod
 
 ## Output
 
-On success the command prints the authenticated user name, organisation info, and the base API URL that will be used for subsequent requests.
+On success the command prints the authenticated user, org info, base API URL, and derived CAI URL:
 
 ```
-Logged in as Jane Smith (jane.smith@company.com)
-Org: My Production Org (orgId: abcdef1234)
-Base URL: https://usw3.dm.informaticacloud.com
-Session cached for 30 minutes.
+Logging in as jane.smith@company.com...
+Logged in successfully.
+  User:    Jane Smith
+  Org:     My Production Org (a1B2c3D4E5F6)
+  BaseURL: https://use4.dm-us.informaticacloud.com/saas
+  CAI URL: https://use4-cai.dm-us.informaticacloud.com
+  Profile: prod
 ```
 
 ## See also
 
 - [logout](logout.md)
+- [profile](profile.md) - manage connection profiles
 - [Configuration reference](../../README.md#configuration)

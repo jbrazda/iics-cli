@@ -40,15 +40,22 @@ All other subcommands accept only the [global flags](../../README.md#global-flag
 
 Profiles are stored under the `profiles` key in `~/.iics/config.yaml`. Each profile
 specifies a `username`, `password`, and either a `region` code (resolved to a login URL via
-the built-in POD registry) or an explicit `loginUrl`.
+the built-in POD registry) or an explicit `loginUrl`. The `baseApiUrl` and `caiUrl` fields
+are populated automatically after the first successful `iics login`.
 
 The `add` subcommand:
 
 - Prompts for `username`, `password` (input is masked), and `region` or custom login URL.
+- Derives `loginUrl` from the region automatically (if a known region code is entered).
+- Derives `caiUrl` from the login URL and shows it as the default for the CAI URL prompt;
+  the user can accept the derived value or type a custom URL.
 - When editing an existing profile, shows the current value in brackets so you can press
   Enter to keep it.
 - Asks whether to set the profile as the default.
 - Saves the result to `~/.iics/config.yaml`.
+
+On first `iics login` after creating a profile, the `baseApiUrl` (org-specific, not known
+before a real login) and any remaining derived URLs are written back to the profile automatically.
 
 The `delete` subcommand removes the profile from the config file and also clears any cached
 session for that profile from `~/.iics/sessions.yaml`.
@@ -92,6 +99,27 @@ iics profile delete staging --yes
 # Use a specific profile for a single command (without changing the default)
 iics --profile prod connection list
 ```
+
+## `profile show` output
+
+`profile show` renders a vertical FIELD/VALUE table. Example:
+
+```text
++--------------+----------------------------------------------------------+
+| FIELD        | VALUE                                                    |
++--------------+----------------------------------------------------------+
+| Name         | prod                                                     |
+| Default      | yes                                                      |
+| Region       | USE4                                                     |
+| Login URL    | https://use4.dm-us.informaticacloud.com/saas/...         |
+| Base API URL | https://use4.dm-us.informaticacloud.com/saas             |
+| CAI URL      | https://use4-cai.dm-us.informaticacloud.com              |
+| Username     | admin@company.com                                        |
+| Password     | ***                                                      |
++--------------+----------------------------------------------------------+
+```
+
+`Base API URL` and `CAI URL` are empty until after the first `iics login`.
 
 ## See also
 

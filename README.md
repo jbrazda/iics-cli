@@ -113,27 +113,36 @@ defaultProfile: dev
 profiles:
   dev:
     name: "Development Org"
-    region: "us"
+    region: "USE4"
     username: "user@company.com"
     password: ""
+    loginUrl: "https://use4.dm-us.informaticacloud.com/saas/public/core/v3/login"
+    baseApiUrl: "https://use4.dm-us.informaticacloud.com/saas"
+    caiUrl: "https://use4-cai.dm-us.informaticacloud.com"
   prod:
     name: "Production Org"
     region: "EMEA"
     username: "admin@company.com"
     password: ""
     loginUrl: "https://dm-em.informaticacloud.com/saas/public/core/v3/login"
+    baseApiUrl: "https://dm-em.informaticacloud.com/saas"
+    caiUrl: "https://dm-em-cai.informaticacloud.com"
 ```
+
+The `loginUrl`, `baseApiUrl`, and `caiUrl` fields are populated automatically after the first
+`iics login` - you do not need to set them manually.
 
 ### Environment variable overrides
 
-| Variable         | Description                    |
-| ---------------- | ------------------------------ |
-| `IICS_PROFILE`   | Override default profile       |
-| `IICS_USERNAME`  | Override profile username      |
-| `IICS_PASSWORD`  | Override profile password      |
-| `IICS_REGION`    | Override profile region        |
-| `IICS_LOGIN_URL` | Override computed login URL    |
-| `IICS_OUTPUT`    | Override default output format |
+| Variable         | Description                              |
+| ---------------- | ---------------------------------------- |
+| `IICS_PROFILE`   | Override default profile                 |
+| `IICS_USERNAME`  | Override profile username                |
+| `IICS_PASSWORD`  | Override profile password                |
+| `IICS_REGION`    | Override profile region                  |
+| `IICS_LOGIN_URL` | Override computed login URL              |
+| `IICS_CAI_URL`   | Override profile `caiUrl`                |
+| `IICS_OUTPUT`    | Override default output format           |
 
 Environment variables take precedence over config file values.
 
