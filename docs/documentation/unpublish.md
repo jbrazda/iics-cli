@@ -4,7 +4,7 @@ Unpublish Cloud Application Integration (CAI) assets from the IICS runtime.
 
 ## Synopsis
 
-```
+```text
 iics unpublish <subcommand> [flags]
 ```
 
@@ -77,12 +77,28 @@ Submit an unpublish job and print the job ID. Does not wait for completion.
 
 ### Input format
 
-The `--from-file` file (or stdin) is auto-detected:
+`--from-file` uses the file extension to select a parser. When reading from stdin the format
+is auto-detected from content.
 
-- **Plain text** (`.txt`): one asset path per line
-- **JSON array**: `["Explore/...", "Explore/...", ...]`
-- **CSV** (output of `iics objects list -o csv`): rows with `PATH` and `TYPE` columns are
-  converted to asset paths; rows with non-publishable types are silently skipped
+| Extension / source | Behaviour |
+| ------------------ | --------- |
+| `.txt` | One asset path per line, no header. Lines starting with `#` are comments. |
+| `.csv` | CSV with header row. `PATH` column required; `TYPE` column optional. When both are present rows are converted to `Explore/<PATH>.<TYPE>.xml` and non-publishable types are skipped silently. When only `PATH` is present the value is used as-is. |
+| `.json` | JSON array of strings (direct asset paths) or array of objects with `path` and optional `type` (output of `iics objects list -o json`). When `type` is present rows are converted; non-publishable types are skipped. |
+| `.yaml` / `.yml` | Same as `.json` but YAML format (output of `iics objects list -o yaml`). |
+| stdin | Auto-detected: starts with `[` - JSON; commas in first line or first line is `PATH` - CSV; otherwise plain text. |
+
+#### Generating an asset list from `objects list`
+
+```bash
+# CSV with automatic path conversion (PATH + TYPE both present)
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
+  > assets.csv
+iics unpublish start --from-file assets.csv
+
+# Pipe directly (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv | iics unpublish start
+```
 
 ### Examples
 
@@ -94,6 +110,8 @@ iics unpublish start \
   --asset "Explore/Default/MyConn.AI_CONNECTION.xml"
 
 iics unpublish start --from-file assets.txt
+iics unpublish start --from-file assets.csv
+iics unpublish start --from-file assets.json
 
 iics objects list -q "type=='PROCESS'" -o csv | iics unpublish start
 ```
@@ -144,12 +162,16 @@ and print a detailed summary.
 | Flag | Type | Default | Description | Required |
 | ---- | ---- | ------- | ----------- | -------- |
 | `--asset` | string (repeatable) | | Asset path(s) to unpublish | one input required |
-| `--from-file` | string | | File with asset paths (txt/json/csv); omit to read from stdin | |
+| `--from-file` | string | | File with asset paths (.txt/.csv/.json/.yaml); omit to read from stdin | |
 | `--cai-url` | string | | CAI base URL override | |
 | `--name` | string | | Optional job label | |
 | `--polling-interval` | int | 10 | Seconds between status polls | |
 | `--max-wait-time` | int | 300 | Maximum seconds to wait for completion | |
 | `--detailed-polling` | bool | false | Print totalCount/processedCount on each poll | |
+
+### Input format
+
+Same as `unpublish start`. See the [Input format](#input-format) section above.
 
 ### Output columns
 
@@ -166,13 +188,19 @@ Same as `unpublish status`.
 # Unpublish a single asset
 iics unpublish run --asset "Explore/Default/MyProcess.PROCESS.xml"
 
-# Unpublish from a text file with verbose progress
+# Unpublish from a text file (pre-formatted Explore/...xml paths)
 iics unpublish run --from-file assets.txt --verbose
 
-# Unpublish from a CSV file (iics objects list output)
-iics unpublish run --from-file objects.csv
+# Unpublish from CSV with automatic path conversion (PATH + TYPE)
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
+  > assets.csv
+iics unpublish run --from-file assets.csv
 
-# Pipe directly from objects list
+# Unpublish from JSON
+iics objects list -q "location==MyProject/Processes" -o json > assets.json
+iics unpublish run --from-file assets.json
+
+# Pipe directly from objects list (stdin auto-detect)
 iics objects list -q "type=='PROCESS'" -o csv | iics unpublish run
 
 # Custom polling and timeout

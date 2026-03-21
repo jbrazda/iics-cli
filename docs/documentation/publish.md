@@ -4,7 +4,7 @@ Publish Cloud Application Integration (CAI) assets to the IICS runtime.
 
 ## Synopsis
 
-```
+```text
 iics publish <subcommand> [flags]
 ```
 
@@ -77,12 +77,35 @@ Submit a publish job and print the job ID. Does not wait for completion.
 
 ### Input format
 
-The `--from-file` file (or stdin) is auto-detected:
+`--from-file` uses the file extension to select a parser. When reading from stdin the format
+is auto-detected from content.
 
-- **Plain text** (`.txt`): one asset path per line
-- **JSON array**: `["Explore/...", "Explore/...", ...]`
-- **CSV** (output of `iics objects list -o csv`): rows with `PATH` and `TYPE` columns are
-  converted to asset paths; rows with non-publishable types are silently skipped
+| Extension / source | Behaviour |
+| ------------------ | --------- |
+| `.txt` | One asset path per line, no header. Lines starting with `#` are comments. |
+| `.csv` | CSV with header row. `PATH` column required; `TYPE` column optional. When both are present rows are converted to `Explore/<PATH>.<TYPE>.xml` and non-publishable types are skipped silently. When only `PATH` is present the value is used as-is. |
+| `.json` | JSON array of strings (direct asset paths) or array of objects with `path` and optional `type` (output of `iics objects list -o json`). When `type` is present, rows are converted; non-publishable types are skipped. |
+| `.yaml` / `.yml` | Same as `.json` but YAML format (output of `iics objects list -o yaml`). |
+| stdin | Auto-detected: starts with `[` - JSON; commas in first line or first line is `PATH` - CSV; otherwise plain text. |
+
+#### Generating an asset list from `objects list`
+
+```bash
+# CSV with automatic path conversion (PATH + TYPE both present)
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
+  > assets.csv
+iics publish start --from-file assets.csv
+
+# Pipe directly (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv | iics publish start
+
+# JSON with automatic path conversion
+iics objects list -q "location==MyProject/Processes" -o json > assets.json
+iics publish start --from-file assets.json
+
+# Plain text file (paths must already be in Explore/...xml format)
+iics publish start --from-file assets.txt
+```
 
 ### Examples
 
@@ -94,6 +117,8 @@ iics publish start \
   --asset "Explore/Default/MyConn.AI_CONNECTION.xml"
 
 iics publish start --from-file assets.txt
+iics publish start --from-file assets.csv
+iics publish start --from-file assets.json
 
 iics objects list -q "type=='PROCESS'" -o csv | iics publish start
 ```
@@ -144,12 +169,16 @@ and print a detailed summary. Mirrors the `import run` pattern.
 | Flag | Type | Default | Description | Required |
 | ---- | ---- | ------- | ----------- | -------- |
 | `--asset` | string (repeatable) | | Asset path(s) to publish | one input required |
-| `--from-file` | string | | File with asset paths (txt/json/csv); omit to read from stdin | |
+| `--from-file` | string | | File with asset paths (.txt/.csv/.json/.yaml); omit to read from stdin | |
 | `--cai-url` | string | | CAI base URL override | |
 | `--name` | string | | Optional job label | |
 | `--polling-interval` | int | 10 | Seconds between status polls | |
 | `--max-wait-time` | int | 300 | Maximum seconds to wait for completion | |
 | `--detailed-polling` | bool | false | Print totalCount/processedCount on each poll | |
+
+### Input format
+
+Same as `publish start`. See the [Input format](#input-format) section above.
 
 ### Output columns
 
@@ -166,13 +195,19 @@ Same as `publish status`.
 # Publish a single asset
 iics publish run --asset "Explore/Default/MyProcess.PROCESS.xml"
 
-# Publish from a text file with verbose progress
+# Publish from a text file (pre-formatted Explore/...xml paths)
 iics publish run --from-file assets.txt --verbose
 
-# Publish from a CSV file (iics objects list output)
-iics publish run --from-file objects.csv
+# Publish from CSV with automatic path conversion (PATH + TYPE)
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
+  > assets.csv
+iics publish run --from-file assets.csv
 
-# Pipe directly from objects list
+# Publish from JSON
+iics objects list -q "location==MyProject/Processes" -o json > assets.json
+iics publish run --from-file assets.json
+
+# Pipe directly from objects list (stdin auto-detect)
 iics objects list -q "type=='PROCESS'" -o csv | iics publish run
 
 # Custom polling and timeout

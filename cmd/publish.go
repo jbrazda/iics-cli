@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // publishJobDisplay is a flat struct for formatting publish job output.
@@ -309,11 +311,13 @@ func resolvePublishAssets(assets []string, fromFile string) ([]string, error) {
 
 	var data []byte
 	var err error
+	var ext string
 	if fromFile != "" {
 		data, err = os.ReadFile(fromFile)
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", fromFile, err)
 		}
+		ext = strings.ToLower(filepath.Ext(fromFile))
 	} else {
 		data, err = io.ReadAll(os.Stdin)
 		if err != nil {
@@ -321,47 +325,47 @@ func resolvePublishAssets(assets []string, fromFile string) ([]string, error) {
 		}
 	}
 
-	return parsePublishAssets(data)
+	return parsePublishAssets(data, ext)
 }
 
-// parsePublishAssets auto-detects format (json/csv/txt) and returns asset paths.
-func parsePublishAssets(data []byte) ([]string, error) {
+// parsePublishAssets routes to the right parser based on the file extension, or auto-detects
+// for stdin (ext == ""). Supported extensions: .txt, .csv, .json, .yaml, .yml.
+func parsePublishAssets(data []byte, ext string) ([]string, error) {
 	trimmed := strings.TrimSpace(string(data))
 	if len(trimmed) == 0 {
 		return nil, nil
 	}
 
-	// JSON array of asset paths.
-	if trimmed[0] == '[' {
-		var paths []string
-		if err := json.Unmarshal([]byte(trimmed), &paths); err != nil {
-			return nil, fmt.Errorf("parsing JSON asset list: %w", err)
-		}
-		return paths, nil
+	switch ext {
+	case ".txt":
+		return parsePlainPaths(trimmed), nil
+	case ".csv":
+		return parsePublishCSV([]byte(trimmed))
+	case ".json":
+		return parsePublishJSON([]byte(trimmed))
+	case ".yaml", ".yml":
+		return parsePublishYAML([]byte(trimmed))
 	}
 
-	// CSV: check if first line has commas (objects list output).
-	firstLine := trimmed
-	if idx := strings.IndexByte(trimmed, '\n'); idx >= 0 {
-		firstLine = trimmed[:idx]
+	// Auto-detect for stdin or unknown extensions.
+	if trimmed[0] == '[' {
+		return parsePublishJSON([]byte(trimmed))
 	}
-	if strings.Contains(firstLine, ",") {
+	firstLine := strings.TrimSpace(trimmed)
+	if idx := strings.IndexByte(trimmed, '\n'); idx >= 0 {
+		firstLine = strings.TrimSpace(trimmed[:idx])
+	}
+	// CSV: commas in header line, or single-column CSV header "PATH".
+	if strings.Contains(firstLine, ",") || strings.EqualFold(firstLine, "path") {
 		return parsePublishCSV([]byte(trimmed))
 	}
-
-	// Plain text: one path per line.
-	var paths []string
-	for _, line := range strings.Split(trimmed, "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "#") {
-			paths = append(paths, line)
-		}
-	}
-	return paths, nil
+	return parsePlainPaths(trimmed), nil
 }
 
-// parsePublishCSV reads CSV from `iics objects list -o csv` and converts rows to asset paths.
-// Expected headers: PATH and TYPE (case-insensitive).
+// parsePublishCSV reads CSV (e.g. from `iics objects list -o csv`) and returns asset paths.
+// PATH column is required. TYPE column is optional: when present rows are converted to full
+// Explore/... CAI paths and non-publishable types are silently skipped; when absent the PATH
+// value is used as-is (caller is responsible for providing the correct asset path format).
 func parsePublishCSV(data []byte) ([]string, error) {
 	r := csv.NewReader(strings.NewReader(string(data)))
 	headers, err := r.Read()
@@ -379,8 +383,8 @@ func parsePublishCSV(data []byte) ([]string, error) {
 		}
 	}
 
-	if pathIdx < 0 || typeIdx < 0 {
-		return nil, fmt.Errorf("CSV must have PATH and TYPE columns (got: %s)", strings.Join(headers, ", "))
+	if pathIdx < 0 {
+		return nil, fmt.Errorf("CSV must have a PATH column (got: %s)", strings.Join(headers, ", "))
 	}
 
 	var paths []string
@@ -392,19 +396,125 @@ func parsePublishCSV(data []byte) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading CSV row: %w", err)
 		}
-		if pathIdx >= len(record) || typeIdx >= len(record) {
+		if pathIdx >= len(record) {
 			continue
 		}
-		obj := client.Object{
-			Path: strings.TrimSpace(record[pathIdx]),
-			Type: strings.TrimSpace(record[typeIdx]),
-		}
-		assetPath, err := client.AssetPathFromObject(obj)
-		if err != nil {
-			// Skip non-publishable types silently (e.g., MTT mappings in a mixed list).
+		p := strings.TrimSpace(record[pathIdx])
+		if p == "" {
 			continue
 		}
-		paths = append(paths, assetPath)
+		if typeIdx >= 0 && typeIdx < len(record) {
+			obj := client.Object{
+				Path: p,
+				Type: strings.TrimSpace(record[typeIdx]),
+			}
+			assetPath, err := client.AssetPathFromObject(obj)
+			if err != nil {
+				// Skip non-publishable types silently (e.g. MTT mappings in a mixed list).
+				continue
+			}
+			paths = append(paths, assetPath)
+		} else {
+			paths = append(paths, p)
+		}
+	}
+	return paths, nil
+}
+
+// parsePlainPaths splits trimmed text into one asset path per line.
+// Lines starting with # and blank lines are ignored.
+func parsePlainPaths(trimmed string) []string {
+	var paths []string
+	for _, line := range strings.Split(trimmed, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			paths = append(paths, line)
+		}
+	}
+	return paths
+}
+
+// parsePublishJSON handles a JSON array of strings (direct asset paths) or a JSON array of
+// objects from `iics objects list -o json`. When objects have a non-empty type field they are
+// converted to full Explore/... paths; non-publishable types are silently skipped. When type
+// is absent the path value is used as-is.
+func parsePublishJSON(data []byte) ([]string, error) {
+	trimmed := strings.TrimSpace(string(data))
+	// Try array of strings first.
+	var strPaths []string
+	if err := json.Unmarshal([]byte(trimmed), &strPaths); err == nil {
+		var out []string
+		for _, p := range strPaths {
+			if p != "" {
+				out = append(out, p)
+			}
+		}
+		return out, nil
+	}
+	// Try array of objects (iics objects list -o json output).
+	var objs []struct {
+		Path string `json:"path"`
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(trimmed), &objs); err != nil {
+		return nil, fmt.Errorf("parsing JSON asset list: %w", err)
+	}
+	var paths []string
+	for _, o := range objs {
+		if o.Path == "" {
+			continue
+		}
+		if o.Type != "" {
+			assetPath, err := client.AssetPathFromObject(client.Object{Path: o.Path, Type: o.Type})
+			if err != nil {
+				continue // skip non-publishable types
+			}
+			paths = append(paths, assetPath)
+		} else {
+			paths = append(paths, o.Path)
+		}
+	}
+	return paths, nil
+}
+
+// parsePublishYAML handles a YAML list of strings (direct asset paths) or a YAML list of
+// objects from `iics objects list -o yaml`. When objects have a non-empty type field they are
+// converted to full Explore/... paths; non-publishable types are silently skipped. When type
+// is absent the path value is used as-is.
+func parsePublishYAML(data []byte) ([]string, error) {
+	// Try list of strings first.
+	var strPaths []string
+	if err := yaml.Unmarshal(data, &strPaths); err == nil && len(strPaths) > 0 {
+		var out []string
+		for _, p := range strPaths {
+			if p != "" {
+				out = append(out, p)
+			}
+		}
+		return out, nil
+	}
+	// Try list of objects.
+	var objs []struct {
+		Path string `yaml:"path"`
+		Type string `yaml:"type"`
+	}
+	if err := yaml.Unmarshal(data, &objs); err != nil {
+		return nil, fmt.Errorf("parsing YAML asset list: %w", err)
+	}
+	var paths []string
+	for _, o := range objs {
+		if o.Path == "" {
+			continue
+		}
+		if o.Type != "" {
+			assetPath, err := client.AssetPathFromObject(client.Object{Path: o.Path, Type: o.Type})
+			if err != nil {
+				continue // skip non-publishable types
+			}
+			paths = append(paths, assetPath)
+		} else {
+			paths = append(paths, o.Path)
+		}
 	}
 	return paths, nil
 }
