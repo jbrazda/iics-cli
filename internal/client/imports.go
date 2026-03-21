@@ -47,6 +47,10 @@ type ImportJob struct {
 
 // UploadImportPackage uploads a ZIP package for import.
 func (c *Client) UploadImportPackage(ctx context.Context, filename string, reader io.Reader) (*ImportUploadResponse, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return nil, err
+	}
+
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
