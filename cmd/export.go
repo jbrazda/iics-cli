@@ -13,6 +13,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -231,7 +232,7 @@ func newExportStartCmd() *cobra.Command {
 				_, _ = fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
 			}
 
-			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
+			objects, enrichedEntries, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
 			if err != nil {
 				return err
 			}
@@ -246,11 +247,11 @@ func newExportStartCmd() *cobra.Command {
 			}
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Starting export job \"%s\" with %d objects...\n",
+				stderr := cmd.ErrOrStderr()
+				_, _ = fmt.Fprintf(stderr, "[%s] Objects to export:\n", ts())
+				printArtifactTable(enrichedEntries, stderr)
+				_, _ = fmt.Fprintf(stderr, "[%s] Starting export job \"%s\" with %d objects...\n",
 					ts(), jobName, len(objects))
-				for _, o := range objects {
-					_, _ = fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
-				}
 			}
 
 			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
@@ -316,7 +317,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				_, _ = fmt.Fprintf(out, "[%s] Read %d artifact entries\n", ts(), len(entries))
 			}
 
-			objects, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
+			objects, enrichedEntries, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
 			if err != nil {
 				return err
 			}
@@ -331,11 +332,11 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				Objects: objects,
 			}
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Export request: name=%q, objects=%d, includeDeps=%v\n",
+				stderr := cmd.ErrOrStderr()
+				_, _ = fmt.Fprintf(stderr, "[%s] Export request: name=%q, objects=%d, includeDeps=%v\n",
 					ts(), req.Name, len(req.Objects), !excludeDependencies)
-				for _, o := range objects {
-					_, _ = fmt.Fprintf(out, "  - %s (includeDeps: %v)\n", o.ID, o.IncludeDependencies)
-				}
+				_, _ = fmt.Fprintf(stderr, "[%s] Objects to export:\n", ts())
+				printArtifactTable(enrichedEntries, stderr)
 			}
 
 			// Step 5: Start export job.
@@ -529,12 +530,18 @@ func detectDataFormat(data []byte) string {
 }
 
 // resolveExportObjects converts ArtifactEntries to ExportObjects, looking up IDs as needed.
-func resolveExportObjects(ctx context.Context, c *client.Client, entries []client.ArtifactEntry, includeDeps bool, out io.Writer) ([]client.ExportObject, error) {
-	// Collect entries that require lookup.
+// It returns both the ExportObject slice and an enriched copy of entries with resolved
+// ID, Path, and Type back-filled from lookup results.
+func resolveExportObjects(ctx context.Context, c *client.Client, entries []client.ArtifactEntry, includeDeps bool, out io.Writer) ([]client.ExportObject, []client.ArtifactEntry, error) {
+	// Work on a copy so callers see enriched data without aliasing surprises.
+	enriched := make([]client.ArtifactEntry, len(entries))
+	copy(enriched, entries)
+
+	// Collect entries that require lookup (any entry missing an ID).
 	var lookupObjs []client.LookupObject
 	var lookupOrigIdx []int
 
-	for i, e := range entries {
+	for i, e := range enriched {
 		if e.ID == "" {
 			lookupObjs = append(lookupObjs, client.LookupObject{Path: e.Path, Type: e.Type})
 			lookupOrigIdx = append(lookupOrigIdx, i)
@@ -542,18 +549,24 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 	}
 
 	// Perform lookup for entries without IDs.
-	resolvedIDs := make(map[int]string)
 	if len(lookupObjs) > 0 {
 		if verbose {
 			_, _ = fmt.Fprintf(out, "[%s] Looking up IDs for %d objects...\n", ts(), len(lookupObjs))
 		}
 		resp, err := c.Lookup(ctx, lookupObjs)
 		if err != nil {
-			return nil, fmt.Errorf("looking up object IDs: %w", err)
+			return nil, nil, fmt.Errorf("looking up object IDs: %w", err)
 		}
 		for i, result := range resp.Objects {
 			if i < len(lookupOrigIdx) {
-				resolvedIDs[lookupOrigIdx[i]] = result.ID
+				origIdx := lookupOrigIdx[i]
+				enriched[origIdx].ID = result.ID
+				if enriched[origIdx].Path == "" {
+					enriched[origIdx].Path = result.Path
+				}
+				if enriched[origIdx].Type == "" {
+					enriched[origIdx].Type = result.Type
+				}
 			}
 		}
 		if verbose {
@@ -562,22 +575,28 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 	}
 
 	// Build ExportObject list preserving original order.
-	objects := make([]client.ExportObject, 0, len(entries))
-	for i, e := range entries {
-		id := e.ID
-		if id == "" {
-			var ok bool
-			id, ok = resolvedIDs[i]
-			if !ok || id == "" {
-				return nil, fmt.Errorf("could not resolve ID for artifact %d (path=%s, type=%s)", i, e.Path, e.Type)
-			}
+	objects := make([]client.ExportObject, 0, len(enriched))
+	for i, e := range enriched {
+		if e.ID == "" {
+			return nil, nil, fmt.Errorf("could not resolve ID for artifact %d (path=%s, type=%s)", i, e.Path, e.Type)
 		}
 		objects = append(objects, client.ExportObject{
-			ID:                  id,
+			ID:                  e.ID,
 			IncludeDependencies: includeDeps,
 		})
 	}
-	return objects, nil
+	return objects, enriched, nil
+}
+
+// printArtifactTable writes a three-column (ID, PATH, TYPE) table of artifact entries to w.
+// Cells are blank when the field is not populated on an entry.
+func printArtifactTable(entries []client.ArtifactEntry, w io.Writer) {
+	table := tablewriter.NewTable(w)
+	table.Header("ID", "PATH", "TYPE")
+	for _, e := range entries {
+		_ = table.Append([]interface{}{e.ID, e.Path, e.Type})
+	}
+	_ = table.Render()
 }
 
 // printExportObjects renders the object list table for an export job.

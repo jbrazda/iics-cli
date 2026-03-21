@@ -219,11 +219,11 @@ func parseArtifactsFromRawObjects(objs []artifactObjectRaw) ([]ArtifactEntry, er
 			entries = append(entries, ArtifactEntry{Path: path, Type: assetType})
 			continue
 		}
-		if o.Path != "" && o.Type != "" {
+		if o.Path != "" {
 			entries = append(entries, ArtifactEntry{Path: o.Path, Type: o.Type})
 			continue
 		}
-		return nil, fmt.Errorf("artifact entry has no id, location, or path+type: %+v", o)
+		return nil, fmt.Errorf("artifact entry has no id, location, or path: %+v", o)
 	}
 	return entries, nil
 }
@@ -320,8 +320,8 @@ func parseArtifactsCSV(r io.Reader) ([]ArtifactEntry, error) {
 			}
 		}
 
-		if entry.ID == "" && (entry.Path == "" || entry.Type == "") {
-			continue // skip incomplete rows
+		if entry.ID == "" && entry.Path == "" {
+			continue // skip rows with neither ID nor path
 		}
 		entries = append(entries, entry)
 	}

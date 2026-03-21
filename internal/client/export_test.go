@@ -330,6 +330,45 @@ abc123,MyProject/Task1,MTT,A task,admin,2024-01-01
 	}
 }
 
+func TestParseArtifactsJSONPathOnly(t *testing.T) {
+	// Entries with only path (no type, no id) should be accepted and require lookup.
+	input := `[{"path": "MyProject/MyMapping"}, {"path": "MyProject/MyTask", "type": "MTT"}]`
+	entries, err := ParseArtifactsReader(strings.NewReader(input), "json")
+	if err != nil {
+		t.Fatalf("ParseArtifactsReader(json path-only) error: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+	if entries[0].Path != "MyProject/MyMapping" || entries[0].Type != "" || entries[0].ID != "" {
+		t.Errorf("entry 0: got path=%q type=%q id=%q", entries[0].Path, entries[0].Type, entries[0].ID)
+	}
+	if entries[1].Path != "MyProject/MyTask" || entries[1].Type != "MTT" {
+		t.Errorf("entry 1: got path=%q type=%q", entries[1].Path, entries[1].Type)
+	}
+}
+
+func TestParseArtifactsCSVPathOnly(t *testing.T) {
+	// CSV rows with only a path column (no type, no id) should be accepted and require lookup.
+	input := `ID,PATH,TYPE
+,MyProject/Task1,
+abc123,MyProject/Task2,MTT
+`
+	entries, err := ParseArtifactsReader(strings.NewReader(input), "csv")
+	if err != nil {
+		t.Fatalf("ParseArtifactsReader(csv path-only) error: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+	if entries[0].Path != "MyProject/Task1" || entries[0].Type != "" || entries[0].ID != "" {
+		t.Errorf("entry 0: got path=%q type=%q id=%q", entries[0].Path, entries[0].Type, entries[0].ID)
+	}
+	if entries[1].ID != "abc123" || entries[1].Type != "MTT" {
+		t.Errorf("entry 1: got id=%q type=%q", entries[1].ID, entries[1].Type)
+	}
+}
+
 func TestParseArtifactsCSVWithLocation(t *testing.T) {
 	input := `ID,LOCATION,TYPE
 ,Explore/MyProject/MyTask.MTT,
