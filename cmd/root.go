@@ -250,6 +250,9 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 	if err == nil {
 		if entry, ok := cache.Get(profileName); ok {
 			c.SetSession(entry.SessionID, entry.BaseAPIURL)
+			if entry.CAIUrl != "" && p.CaiURL == "" {
+				c.SetCAIURL(entry.CAIUrl)
+			}
 			return c, nil
 		}
 	}
@@ -267,7 +270,7 @@ func getFormatter() (output.Formatter, error) {
 }
 
 // saveSession saves the current session to the cache.
-func saveSession(profileName string, c *client.Client, loginResp *client.LoginResponse) error {
+func saveSession(profileName, loginURL string, c *client.Client, loginResp *client.LoginResponse) error {
 	cache, err := config.LoadSessionCache("")
 	if err != nil {
 		cache = &config.SessionCache{Sessions: make(map[string]*config.SessionEntry)}
@@ -276,6 +279,8 @@ func saveSession(profileName string, c *client.Client, loginResp *client.LoginRe
 	cache.Set(profileName, &config.SessionEntry{
 		SessionID:  loginResp.UserInfo.SessionID,
 		BaseAPIURL: c.BaseAPIURL(),
+		CAIUrl:     c.CAIURL(),
+		LoginURL:   loginURL,
 		OrgID:      loginResp.UserInfo.OrgID,
 		OrgName:    loginResp.UserInfo.OrgName,
 		UserName:   loginResp.UserInfo.Name,

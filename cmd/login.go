@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ The session is cached locally so subsequent commands don't require re-authentica
   iics login --profile prod
   IICS_USERNAME=user@company.com IICS_PASSWORD=secret IICS_REGION=USW3 iics login`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, p, profileName, err := resolveProfile()
+			cfg, p, profileName, err := resolveProfile()
 			if err != nil {
 				return err
 			}
@@ -37,8 +38,23 @@ The session is cached locally so subsequent commands don't require re-authentica
 				return fmt.Errorf("login failed: %w", err)
 			}
 
+			// Persist discovered URLs back to profile so subsequent commands
+			// (e.g. publish, state) can find caiUrl without manual config.
+			if len(loginResp.Products) > 0 {
+				baseAPIURL := loginResp.Products[0].BaseAPIURL
+				p.LoginURL = loginURL
+				p.BaseAPIURL = baseAPIURL
+				if p.CaiURL == "" {
+					p.CaiURL = config.DeriveCaiURL(baseAPIURL)
+				}
+				cfg.Profiles[profileName] = p
+				if saveErr := cfg.Save(cfgFile); saveErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update profile: %v\n", saveErr)
+				}
+			}
+
 			// Save session to cache
-			if err := saveSession(profileName, c, loginResp); err != nil {
+			if err := saveSession(profileName, loginURL, c, loginResp); err != nil {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not cache session: %v\n", err)
 			}
 
@@ -46,6 +62,7 @@ The session is cached locally so subsequent commands don't require re-authentica
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  User:    %s\n", loginResp.UserInfo.Name)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Org:     %s (%s)\n", loginResp.UserInfo.OrgName, loginResp.UserInfo.OrgID)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  BaseURL: %s\n", loginResp.Products[0].BaseAPIURL)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  CAI URL: %s\n", c.CAIURL())
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Profile: %s\n", profileName)
 
 			return nil

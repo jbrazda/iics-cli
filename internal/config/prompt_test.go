@@ -73,7 +73,8 @@ func TestPromptProfile_KeepsExistingOnEmptyInput(t *testing.T) {
 		Region:   "USW3",
 	}
 	stubReadPassword(t, "") // empty — should keep existing password
-	withFakeStdin(t, "\n\n\n", func() {
+	// inputs: username(keep), region(keep), caiUrl(keep derived), default(y)
+	withFakeStdin(t, "\n\n\n\n", func() {
 		p, makeDefault, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -102,8 +103,8 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 	customURL := "https://custom.example.com/saas/public/core/v3/login"
 	stubReadPassword(t, "newpass")
 	// existing already has username+password set, so those loops are skipped;
-	// stdin only needs: region line, default line.
-	withFakeStdin(t, customURL+"\n\n", func() {
+	// stdin only needs: region line, caiUrl line, default line.
+	withFakeStdin(t, customURL+"\n\n\n", func() {
 		p, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -120,8 +121,8 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 func TestPromptProfile_RegionUppercased(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")
-	// existing already has username+password set; stdin only needs: region, default.
-	withFakeStdin(t, "usw3\n\n", func() {
+	// existing already has username+password set; stdin only needs: region, caiUrl, default.
+	withFakeStdin(t, "usw3\n\n\n", func() {
 		p, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)

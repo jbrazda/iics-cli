@@ -132,6 +132,45 @@ func TestResolveProfileMissingCredentials(t *testing.T) {
 	}
 }
 
+func TestDeriveCaiURL(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "https://use4.dm-us.informaticacloud.com/saas",
+			want:  "https://use4-cai.dm-us.informaticacloud.com",
+		},
+		{
+			input: "https://dm-ap.informaticacloud.com/saas",
+			want:  "https://dm-ap-cai.informaticacloud.com",
+		},
+		{
+			input: "https://dm1-em.informaticacloud.com/saas",
+			want:  "https://dm1-em-cai.informaticacloud.com",
+		},
+		{
+			input: "",
+			want:  "",
+		},
+		{
+			input: "not-a-url",
+			want:  "",
+		},
+		{
+			input: "https://nodot",
+			want:  "",
+		},
+	}
+
+	for _, tc := range tests {
+		got := DeriveCaiURL(tc.input)
+		if got != tc.want {
+			t.Errorf("DeriveCaiURL(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
 func TestProfileGetLoginURL(t *testing.T) {
 	// With explicit loginUrl
 	p := &Profile{LoginURL: "https://custom.example.com/login"}

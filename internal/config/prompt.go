@@ -111,6 +111,38 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		p.LoginURL = ""
 	}
 
+	// Derive loginUrl from region if not set explicitly.
+	if p.LoginURL == "" && p.Region != "" {
+		if derivedLogin, lerr := LoginURL(p.Region); lerr == nil {
+			p.LoginURL = derivedLogin
+		}
+	}
+
+	// CAI URL - derive from login URL and offer for override.
+	derivedCaiURL := ""
+	if p.LoginURL != "" {
+		derivedCaiURL = DeriveCaiURL(p.LoginURL)
+	}
+	caiDefault := p.CaiURL
+	if caiDefault == "" {
+		caiDefault = derivedCaiURL
+	}
+	if caiDefault != "" {
+		_, _ = fmt.Fprintf(os.Stderr, "CAI URL [%s]: ", caiDefault)
+	} else {
+		_, _ = fmt.Fprint(os.Stderr, "CAI URL (leave blank to derive automatically on login): ")
+	}
+	line, err = r.ReadString('\n')
+	if err != nil {
+		return nil, false, fmt.Errorf("reading CAI URL: %w", err)
+	}
+	line = strings.TrimSpace(line)
+	if line != "" {
+		p.CaiURL = line
+	} else {
+		p.CaiURL = caiDefault
+	}
+
 	// Default profile prompt (default: yes)
 	_, _ = fmt.Fprint(os.Stderr, "Set as default profile? [Y/n]: ")
 	line, err = r.ReadString('\n')

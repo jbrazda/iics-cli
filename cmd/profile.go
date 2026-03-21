@@ -234,13 +234,15 @@ func newProfileShowCmd() *cobra.Command {
 				defaultMark = "yes"
 			}
 
-			row := map[string]interface{}{
-				"name":      name,
-				"default":   defaultMark,
-				"region":    p.Region,
-				"login_url": p.LoginURL,
-				"username":  p.Username,
-				"password":  maskedPassword,
+			rows := []map[string]interface{}{
+				{"field": "Name", "value": name},
+				{"field": "Default", "value": defaultMark},
+				{"field": "Region", "value": p.Region},
+				{"field": "Login URL", "value": p.LoginURL},
+				{"field": "Base API URL", "value": p.BaseAPIURL},
+				{"field": "CAI URL", "value": p.CaiURL},
+				{"field": "Username", "value": p.Username},
+				{"field": "Password", "value": maskedPassword},
 			}
 
 			f, err := getFormatter()
@@ -248,14 +250,10 @@ func newProfileShowCmd() *cobra.Command {
 				return err
 			}
 			columns := []output.Column{
-				{Header: "NAME", Field: "name"},
-				{Header: "DEFAULT", Field: "default"},
-				{Header: "REGION", Field: "region"},
-				{Header: "LOGIN_URL", Field: "login_url"},
-				{Header: "USERNAME", Field: "username"},
-				{Header: "PASSWORD", Field: "password"},
+				{Header: "FIELD", Field: "field", Width: 15},
+				{Header: "VALUE", Field: "value"},
 			}
-			return f.Format([]map[string]interface{}{row}, columns)
+			return f.Format(rows, columns)
 		},
 	}
 }

@@ -15,6 +15,8 @@ const sessionTimeout = 30 * time.Minute
 type SessionEntry struct {
 	SessionID  string    `yaml:"sessionId"`
 	BaseAPIURL string    `yaml:"baseApiUrl"`
+	CAIUrl     string    `yaml:"caiUrl,omitempty"`
+	LoginURL   string    `yaml:"loginUrl,omitempty"`
 	OrgID      string    `yaml:"orgId"`
 	OrgName    string    `yaml:"orgName"`
 	UserName   string    `yaml:"userName"`

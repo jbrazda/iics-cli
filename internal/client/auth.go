@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
+
+	"github.com/jbrazda/iics-cli/internal/config"
 )
 
 // LoginRequest is the v3 login request body.
@@ -93,12 +94,9 @@ func (c *Client) Login(ctx context.Context) (*LoginResponse, error) {
 	c.mu.Lock()
 	c.sessionID = loginResp.UserInfo.SessionID
 	c.baseAPIURL = baseURL
-	// Auto-detect CAI base URL from the product base URL (scheme+host only).
-	// Only set if not already configured via WithCAIURL or IICS_CAI_URL.
+	// Auto-derive CAI URL from the product baseApiUrl if not already set.
 	if c.caiURL == "" && baseURL != "" {
-		if u, err := url.Parse(baseURL); err == nil && u.Host != "" {
-			c.caiURL = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
-		}
+		c.caiURL = config.DeriveCaiURL(baseURL)
 	}
 	c.mu.Unlock()
 

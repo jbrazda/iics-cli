@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -16,12 +18,31 @@ type Config struct {
 
 // Profile represents a single IICS org connection profile.
 type Profile struct {
-	Name     string `yaml:"name" mapstructure:"name"`
-	Region   string `yaml:"region" mapstructure:"region"`
-	Username string `yaml:"username" mapstructure:"username"`
-	Password string `yaml:"password" mapstructure:"password"`
-	LoginURL string `yaml:"loginUrl,omitempty" mapstructure:"loginUrl"`
-	CaiURL   string `yaml:"caiUrl,omitempty" mapstructure:"caiUrl"`
+	Name       string `yaml:"name" mapstructure:"name"`
+	Region     string `yaml:"region,omitempty" mapstructure:"region"`
+	Username   string `yaml:"username" mapstructure:"username"`
+	Password   string `yaml:"password" mapstructure:"password"`
+	LoginURL   string `yaml:"loginUrl,omitempty" mapstructure:"loginUrl"`
+	BaseAPIURL string `yaml:"baseApiUrl,omitempty" mapstructure:"baseApiUrl"`
+	CaiURL     string `yaml:"caiUrl,omitempty" mapstructure:"caiUrl"`
+}
+
+// DeriveCaiURL derives the CAI base URL from an IICS product baseApiUrl.
+// The CAI hostname is formed by inserting "-cai" after the first DNS label:
+//
+//	https://use4.dm-us.informaticacloud.com/saas -> https://use4-cai.dm-us.informaticacloud.com
+//
+// Returns "" if baseAPIURL cannot be parsed or the host has no dot separator.
+func DeriveCaiURL(baseAPIURL string) string {
+	u, err := url.Parse(baseAPIURL)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	dot := strings.Index(u.Host, ".")
+	if dot < 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s://%s-cai%s", u.Scheme, u.Host[:dot], u.Host[dot:])
 }
 
 // DefaultConfigDir returns the default config directory path.

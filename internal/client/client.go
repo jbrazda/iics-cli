@@ -110,6 +110,13 @@ func (c *Client) CAIURL() string {
 	return c.caiURL
 }
 
+// SetCAIURL sets the CAI-specific base URL (e.g., restored from session cache).
+func (c *Client) SetCAIURL(url string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.caiURL = url
+}
+
 // apiURL constructs a full API URL from a resource path.
 func (c *Client) apiURL(resourcePath string) string {
 	c.mu.RLock()
