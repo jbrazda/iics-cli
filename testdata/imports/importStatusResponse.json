@@ -1,0 +1,436 @@
+{
+    "id": "a7rONqd7QzEdtm9ByPIhmT",
+    "createTime": "2026-03-21T01:30:33.000Z",
+    "updateTime": "2026-03-21T01:30:38.000Z",
+    "name": "ZZ_TEST_CLI",
+    "startTime": "2026-03-21T01:30:33.000Z",
+    "endTime": "2026-03-21T01:30:38.000Z",
+    "status": {
+        "state": "SUCCESSFUL",
+        "message": "Import completed successfully"
+    },
+    "objects": [
+        {
+            "sourceObject": {
+                "id": "0KfTorzrNwihXfV38FliA2",
+                "name": "TestServiceConnection1",
+                "path": "/ZZ_TEST_CLI/Connections",
+                "type": "AI_CONNECTION",
+                "description": "Test connection"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "TestServiceConnection1",
+                "path": "/ZZ_TEST_CLI/Connections",
+                "type": "AI_CONNECTION",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "0pXCTRhtjrcdwOCIS5P7S5",
+                "name": "m_Test_Git",
+                "path": "/ZZ_TEST_CLI/Mappings",
+                "type": "DTEMPLATE",
+                "description": ""
+            },
+            "targetObject": {
+                "id": null,
+                "name": "m_Test_Git",
+                "path": "/ZZ_TEST_CLI/Mappings",
+                "type": "DTEMPLATE",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "1yeVVpAOUcHioT3sSTii2G",
+                "name": "Processes",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CAI processes"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Processes",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "2E6Di63bPJUer5MvW8lxYx",
+                "name": "Telematics",
+                "path": null,
+                "type": "Connection",
+                "description": null
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Telematics",
+                "path": null,
+                "type": "Connection",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "2evb0eclhUEfvPKOyj794R",
+                "name": "Mappings",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CDI Mappings"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Mappings",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "3cnlhCxf4I5kGPJQoIZSMZ",
+                "name": "MockupEcho",
+                "path": "/ZZ_TEST_CLI/Processes",
+                "type": "PROCESS",
+                "description": "This is a Utility service to replace  now dysfunction mocky.io to  allow generation of the Sample Payloads in the Connectors  This service receives the data and Simply Echoes back the received payload as XML"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "MockupEcho",
+                "path": "/ZZ_TEST_CLI/Processes",
+                "type": "PROCESS",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "3N4yMZtC2GBhTfdAhT3yG0",
+                "name": "ProcessObjects",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CAI Process Objects"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "ProcessObjects",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "3OrYJxTOzUJdwgHskwZCcj",
+                "name": "Guides",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CAI Guides"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Guides",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "3sSitJsDn5odECT8qJMYut",
+                "name": "Test Conversion Utility",
+                "path": "/ZZ_TEST_CLI/Guides",
+                "type": "GUIDE",
+                "description": "Guide to convert XML sample data to JSON and vice versa.\nversion: 2.0"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Test Conversion Utility",
+                "path": "/ZZ_TEST_CLI/Guides",
+                "type": "GUIDE",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "4ayib7p2V5xlJ1CHmRiTA0",
+                "name": "TestServiceConnector1",
+                "path": "/ZZ_TEST_CLI/Connectors",
+                "type": "AI_SERVICE_CONNECTOR",
+                "description": "Test Connector"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "TestServiceConnector1",
+                "path": "/ZZ_TEST_CLI/Connectors",
+                "type": "AI_SERVICE_CONNECTOR",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "7fDEP5uXWTWdA9vmHsb7Ex",
+                "name": "Tasks",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": " DSS Tasks, Mapping Tasks, Replication Tasks"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Tasks",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "8aJAqowEF2phOFeUtU8TuS",
+                "name": "Connections",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CAI APP Connections"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Connections",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "8XK79DgSovVblOcwrOWF62",
+                "name": "ZZ_TEST_CLI",
+                "path": "/",
+                "type": "Project",
+                "description": "Project to test custom IICS CLI Operations"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "ZZ_TEST_CLI",
+                "path": "/",
+                "type": "Project",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "9k4OaSJhnYyd4g0NUDlE6s",
+                "name": "IssueGenerateRandomString",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": ""
+            },
+            "targetObject": {
+                "id": null,
+                "name": "IssueGenerateRandomString",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "9WuPOQqwGVfi4M1RQ1OVUZ",
+                "name": "TestRandomString",
+                "path": "/ZZ_TEST_CLI/IssueGenerateRandomString",
+                "type": "GUIDE",
+                "description": ""
+            },
+            "targetObject": {
+                "id": null,
+                "name": "TestRandomString",
+                "path": "/ZZ_TEST_CLI/IssueGenerateRandomString",
+                "type": "GUIDE",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "aLX7qnviqxJdmqpVsd17SG",
+                "name": "Connectors",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": "CAI Service Connectors"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Connectors",
+                "path": "/ZZ_TEST_CLI",
+                "type": "Folder",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "eMvazWw2MoBjBanMZKwNUE",
+                "name": "CDI-G01",
+                "path": null,
+                "type": "AgentGroup",
+                "description": null
+            },
+            "targetObject": {
+                "id": null,
+                "name": "CDI-G01",
+                "path": null,
+                "type": "AgentGroup",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Reuse existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "h2zy4tla02Gf0L72vmIo6L",
+                "name": "TestConfigurationProperty",
+                "path": "/ZZ_TEST_CLI/ProcessObjects",
+                "type": "PROCESS_OBJECT",
+                "description": "Represents Key/Value Configuration Property  This is the same Stucture as the  IC_CONFIGURATION table also supplied by IPaaS-Configuration-DB Connection the  to remove Dependency on IC_JDBC connection\n\nversion: 1.0"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "TestConfigurationProperty",
+                "path": "/ZZ_TEST_CLI/ProcessObjects",
+                "type": "PROCESS_OBJECT",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "kUBJTuKdfe3fZCZfsibhme",
+                "name": "mt_Test_Git",
+                "path": "/ZZ_TEST_CLI/Tasks",
+                "type": "MTT",
+                "description": ""
+            },
+            "targetObject": {
+                "id": null,
+                "name": "mt_Test_Git",
+                "path": "/ZZ_TEST_CLI/Tasks",
+                "type": "MTT",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        },
+        {
+            "sourceObject": {
+                "id": "lFlQBdLdygSfyFK3TZh4IZ",
+                "name": "Test_GenRandomString",
+                "path": "/ZZ_TEST_CLI/IssueGenerateRandomString",
+                "type": "PROCESS",
+                "description": "Process to Simulate Random String generation"
+            },
+            "targetObject": {
+                "id": null,
+                "name": "Test_GenRandomString",
+                "path": "/ZZ_TEST_CLI/IssueGenerateRandomString",
+                "type": "PROCESS",
+                "description": null,
+                "status": null
+            },
+            "status": {
+                "state": "SUCCESSFUL",
+                "message": "Overwrite existing object"
+            }
+        }
+    ],
+    "sourceOrgId": "iGefnn2sAmxbnCx8WdS5mb",
+    "checksumValid": true
+}

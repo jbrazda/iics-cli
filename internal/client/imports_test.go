@@ -123,8 +123,12 @@ func TestGetImportStatus(t *testing.T) {
 			Status: JobStatus{
 				State: "SUCCESSFUL",
 			},
-			Objects: []JobObject{
-				{ID: "obj1", Name: "MyMapping", Type: "MTT", Status: JobStatus{State: "SUCCESSFUL"}},
+			Objects: []ImportJobObject{
+				{
+					SourceObject: ImportObjectRef{ID: "obj1", Name: "MyMapping", Path: "/Mappings", Type: "MTT"},
+					TargetObject: ImportObjectRef{Name: "MyMapping", Path: "/Mappings", Type: "MTT"},
+					Status:       JobStatus{State: "SUCCESSFUL", Message: "Overwrite existing object"},
+				},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -142,8 +146,83 @@ func TestGetImportStatus(t *testing.T) {
 	if len(job.Objects) != 1 {
 		t.Fatalf("expected 1 object, got %d", len(job.Objects))
 	}
-	if job.Objects[0].Name != "MyMapping" {
-		t.Errorf("expected object name MyMapping, got %s", job.Objects[0].Name)
+	if job.Objects[0].SourceObject.Name != "MyMapping" {
+		t.Errorf("expected source object name MyMapping, got %s", job.Objects[0].SourceObject.Name)
+	}
+}
+
+func TestFlattenImportObjects(t *testing.T) {
+	objects := []ImportJobObject{
+		{
+			SourceObject: ImportObjectRef{
+				ID:          "0KfTorzrNwihXfV38FliA2",
+				Name:        "TestServiceConnection1",
+				Path:        "/ZZ_TEST_CLI/Connections",
+				Type:        "AI_CONNECTION",
+				Description: "Test connection",
+			},
+			TargetObject: ImportObjectRef{
+				Name: "TestServiceConnection1",
+				Path: "/ZZ_TEST_CLI/Connections",
+				Type: "AI_CONNECTION",
+			},
+			Status: JobStatus{State: "SUCCESSFUL", Message: "Overwrite existing object"},
+		},
+		{
+			SourceObject: ImportObjectRef{
+				ID:   "0pXCTRhtjrcdwOCIS5P7S5",
+				Name: "m_Test_Git",
+				Path: "/ZZ_TEST_CLI/Mappings",
+				Type: "DTEMPLATE",
+			},
+			TargetObject: ImportObjectRef{
+				Name: "m_Test_Git_renamed",
+				Path: "/ZZ_TEST_CLI/Mappings",
+				Type: "DTEMPLATE",
+			},
+			Status: JobStatus{State: "SUCCESSFUL", Message: "Overwrite existing object"},
+		},
+	}
+
+	flat := FlattenImportObjects(objects)
+
+	if len(flat) != 2 {
+		t.Fatalf("expected 2 flat objects, got %d", len(flat))
+	}
+
+	f0 := flat[0]
+	if f0.SourceID != "0KfTorzrNwihXfV38FliA2" {
+		t.Errorf("expected sourceId 0KfTorzrNwihXfV38FliA2, got %s", f0.SourceID)
+	}
+	if f0.SourceName != "TestServiceConnection1" {
+		t.Errorf("expected sourceName TestServiceConnection1, got %s", f0.SourceName)
+	}
+	if f0.SourcePath != "/ZZ_TEST_CLI/Connections" {
+		t.Errorf("expected sourcePath /ZZ_TEST_CLI/Connections, got %s", f0.SourcePath)
+	}
+	if f0.SourceType != "AI_CONNECTION" {
+		t.Errorf("expected sourceType AI_CONNECTION, got %s", f0.SourceType)
+	}
+	if f0.SourceDescription != "Test connection" {
+		t.Errorf("expected sourceDescription 'Test connection', got %s", f0.SourceDescription)
+	}
+	if f0.TargetName != "TestServiceConnection1" {
+		t.Errorf("expected targetName TestServiceConnection1, got %s", f0.TargetName)
+	}
+	if f0.State != "SUCCESSFUL" {
+		t.Errorf("expected state SUCCESSFUL, got %s", f0.State)
+	}
+	if f0.Message != "Overwrite existing object" {
+		t.Errorf("expected message 'Overwrite existing object', got %s", f0.Message)
+	}
+
+	// second object has different source/target names
+	f1 := flat[1]
+	if f1.SourceName != "m_Test_Git" {
+		t.Errorf("expected sourceName m_Test_Git, got %s", f1.SourceName)
+	}
+	if f1.TargetName != "m_Test_Git_renamed" {
+		t.Errorf("expected targetName m_Test_Git_renamed, got %s", f1.TargetName)
 	}
 }
 

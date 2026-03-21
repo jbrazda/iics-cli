@@ -34,15 +34,73 @@ type ImportStartRequest struct {
 	ImportSpecification ImportSpecification `json:"importSpecification"`
 }
 
+// ImportObjectRef is a source or target object reference within an import job object entry.
+type ImportObjectRef struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
+// ImportJobObject is a single entry in the ImportJob.Objects list.
+// The import status API returns a nested sourceObject/targetObject structure,
+// unlike the export API which returns flat JobObject entries.
+type ImportJobObject struct {
+	SourceObject ImportObjectRef `json:"sourceObject"`
+	TargetObject ImportObjectRef `json:"targetObject"`
+	Status       JobStatus       `json:"status"`
+}
+
+// FlatImportObject is a display-ready flattened view of an ImportJobObject.
+// All fields from sourceObject, targetObject, and status are exposed so that
+// any combination can be selected via --object-status-fields.
+type FlatImportObject struct {
+	SourceID          string `json:"sourceId"`
+	SourceName        string `json:"sourceName"`
+	SourcePath        string `json:"sourcePath"`
+	SourceType        string `json:"sourceType"`
+	SourceDescription string `json:"sourceDescription"`
+	TargetID          string `json:"targetId"`
+	TargetName        string `json:"targetName"`
+	TargetPath        string `json:"targetPath"`
+	TargetType        string `json:"targetType"`
+	TargetDescription string `json:"targetDescription"`
+	State             string `json:"state"`
+	Message           string `json:"message"`
+}
+
+// FlattenImportObjects converts a slice of ImportJobObject to a flat display slice.
+func FlattenImportObjects(objects []ImportJobObject) []FlatImportObject {
+	flat := make([]FlatImportObject, len(objects))
+	for i, o := range objects {
+		flat[i] = FlatImportObject{
+			SourceID:          o.SourceObject.ID,
+			SourceName:        o.SourceObject.Name,
+			SourcePath:        o.SourceObject.Path,
+			SourceType:        o.SourceObject.Type,
+			SourceDescription: o.SourceObject.Description,
+			TargetID:          o.TargetObject.ID,
+			TargetName:        o.TargetObject.Name,
+			TargetPath:        o.TargetObject.Path,
+			TargetType:        o.TargetObject.Type,
+			TargetDescription: o.TargetObject.Description,
+			State:             o.Status.State,
+			Message:           o.Status.Message,
+		}
+	}
+	return flat
+}
+
 // ImportJob represents an import job.
 type ImportJob struct {
-	ID         string      `json:"id"`
-	CreateTime string      `json:"createTime,omitempty"`
-	Name       string      `json:"name"`
-	Status     JobStatus   `json:"status"`
-	StartTime  string      `json:"startTime,omitempty"`
-	EndTime    string      `json:"endTime,omitempty"`
-	Objects    []JobObject `json:"objects,omitempty"`
+	ID         string            `json:"id"`
+	CreateTime string            `json:"createTime,omitempty"`
+	Name       string            `json:"name"`
+	Status     JobStatus         `json:"status"`
+	StartTime  string            `json:"startTime,omitempty"`
+	EndTime    string            `json:"endTime,omitempty"`
+	Objects    []ImportJobObject `json:"objects,omitempty"`
 }
 
 // UploadImportPackage uploads a ZIP package for import.

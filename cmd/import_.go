@@ -158,15 +158,17 @@ func newImportStartCmd() *cobra.Command {
 
 func newImportStatusCmd() *cobra.Command {
 	var (
-		id     string
-		expand bool
+		id                 string
+		expand             bool
+		objectStatusFields string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Check import job status",
 		Example: `  iics import status --id <job-id>
-  iics import status --id <job-id> --expand`,
+  iics import status --id <job-id> --expand
+  iics import status --id <job-id> --expand --object-status-fields sourceId,sourceName,targetName,state,message`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" {
 				return fmt.Errorf("--id is required")
@@ -194,12 +196,23 @@ func newImportStatusCmd() *cobra.Command {
 				{Header: "MESSAGE", Field: "status.message"},
 			}
 
-			return f.Format(job, columns)
+			if err := f.Format(job, columns); err != nil {
+				return err
+			}
+
+			if expand && len(job.Objects) > 0 {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nImported Objects:")
+				printImportObjects(cmd, job, objectStatusFields)
+			}
+
+			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&id, "id", "", "import job ID (required)")
 	cmd.Flags().BoolVar(&expand, "expand", false, "expand to show individual object status")
+	cmd.Flags().StringVar(&objectStatusFields, "object-status-fields", defaultObjectStatusFields,
+		"comma-separated list of fields to display in the object status table")
 
 	return cmd
 }
@@ -216,6 +229,7 @@ func newImportRunCmd() *cobra.Command {
 		detailedPolling    bool
 		printImportLog     bool
 		expand             bool
+		objectStatusFields string
 	)
 
 	cmd := &cobra.Command{
@@ -326,7 +340,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 				}
 
 				if detailedPolling && len(job.Objects) > 0 {
-					printImportObjects(cmd, job)
+					printImportObjects(cmd, job, objectStatusFields)
 				}
 			}
 
@@ -363,7 +377,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			if len(finalJob.Objects) > 0 {
 				_, _ = fmt.Fprintln(out, "\nImported Objects:")
-				printImportObjects(cmd, finalJob)
+				printImportObjects(cmd, finalJob, objectStatusFields)
 			}
 
 			// --- Step 6: Import log ---
@@ -394,6 +408,8 @@ the import log automatically on failure or when --print-import-log is set.`,
 	cmd.Flags().BoolVar(&detailedPolling, "detailed-polling", false, "print object list on every poll")
 	cmd.Flags().BoolVar(&printImportLog, "print-import-log", false, "print import log after completion")
 	cmd.Flags().BoolVar(&expand, "expand", false, "expand object list in final status output")
+	cmd.Flags().StringVar(&objectStatusFields, "object-status-fields", defaultObjectStatusFields,
+		"comma-separated list of fields to display in the object status table")
 
 	return cmd
 }
@@ -486,21 +502,62 @@ func buildLogFileName(name, id, state string) string {
 	return fmt.Sprintf("%s_%s_%s.log", safe, id, state)
 }
 
-// printImportObjects renders the object list table for an import job.
-func printImportObjects(cmd *cobra.Command, job *client.ImportJob) {
+// importObjectColumns maps FlatImportObject JSON tag names to display columns.
+var importObjectColumns = map[string]output.Column{
+	"sourceId":          {Header: "SOURCE ID", Field: "sourceId", Width: 24},
+	"sourceName":        {Header: "SOURCE NAME", Field: "sourceName", Width: 35},
+	"sourcePath":        {Header: "SOURCE PATH", Field: "sourcePath", Width: 40},
+	"sourceType":        {Header: "SOURCE TYPE", Field: "sourceType", Width: 20},
+	"sourceDescription": {Header: "SOURCE DESC", Field: "sourceDescription"},
+	"targetId":          {Header: "TARGET ID", Field: "targetId", Width: 24},
+	"targetName":        {Header: "TARGET NAME", Field: "targetName", Width: 35},
+	"targetPath":        {Header: "TARGET PATH", Field: "targetPath", Width: 40},
+	"targetType":        {Header: "TARGET TYPE", Field: "targetType", Width: 20},
+	"targetDescription": {Header: "TARGET DESC", Field: "targetDescription"},
+	"state":             {Header: "STATE", Field: "state", Width: 15},
+	"message":           {Header: "MESSAGE", Field: "message"},
+}
+
+const defaultObjectStatusFields = "sourceId,sourcePath,sourceName,targetName,sourceType,state,message"
+
+// printImportObjects renders the flattened object list table for an import job.
+// fields is a comma-separated list of FlatImportObject JSON tag names; pass "" for defaults.
+// Writes a warning to stderr for each object where sourceName != targetName.
+func printImportObjects(cmd *cobra.Command, job *client.ImportJob, fields string) {
+	if fields == "" {
+		fields = defaultObjectStatusFields
+	}
+
+	flat := client.FlattenImportObjects(job.Objects)
+
+	// Warn about potential duplicates/renames.
+	for _, f := range flat {
+		if f.SourceName != f.TargetName && f.TargetName != "" {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+				"WARNING: source name %q differs from target name %q (path: %s) - potential rename or duplicate\n",
+				f.SourceName, f.TargetName, f.SourcePath)
+		}
+	}
+
+	// Build column list from requested field names.
+	var cols []output.Column
+	for _, name := range strings.Split(fields, ",") {
+		name = strings.TrimSpace(name)
+		if col, ok := importObjectColumns[name]; ok {
+			cols = append(cols, col)
+		}
+	}
+	if len(cols) == 0 {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (no valid fields in --object-status-fields)\n")
+		return
+	}
+
 	formatter, err := getFormatter()
 	if err != nil {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (formatter error: %v)\n", err)
 		return
 	}
-	objColumns := []output.Column{
-		{Header: "ID", Field: "id", Width: 24},
-		{Header: "NAME", Field: "name", Width: 35},
-		{Header: "TYPE", Field: "type", Width: 15},
-		{Header: "STATUS", Field: "status.state", Width: 15},
-		{Header: "MESSAGE", Field: "status.message", Width: 40},
-	}
-	if err := formatter.Format(job.Objects, objColumns); err != nil {
+	if err := formatter.Format(flat, cols); err != nil {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
 	}
 }

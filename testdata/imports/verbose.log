@@ -1,0 +1,40 @@
+[21:30:32] Uploading testdata/imports/ZZ_TEST_CLI.zip...
+[21:30:32] Upload complete — job ID: a7rONqd7QzEdtm9ByPIhmT, checksum valid: true
+[21:30:32] Starting import job "ZZ_TEST_CLI"...
+[21:30:33] Import job started — ID: a7rONqd7QzEdtm9ByPIhmT, status: IN_PROGRESS
+[21:30:33] Start time: 2026-03-21T01:30:33.096Z
+[21:30:43] Status: SUCCESSFUL      elapsed: 11s
+[21:30:43] Import finished — status: SUCCESSFUL, total time: 11s
+
+Import Summary:
+┌────────────────────────┬─────────────┬────────────┬───────────────────────────────┬──────────────────────────┬──────────────────────────┐
+│           ID           │    NAME     │   STATUS   │            MESSAGE            │        START TIME        │         END TIME         │
+├────────────────────────┼─────────────┼────────────┼───────────────────────────────┼──────────────────────────┼──────────────────────────┤
+│ a7rONqd7QzEdtm9ByPIhmT │ ZZ_TEST_CLI │ SUCCESSFUL │ Import completed successfully │ 2026-03-21T01:30:33.000Z │ 2026-03-21T01:30:38.000Z │
+└────────────────────────┴─────────────┴────────────┴───────────────────────────────┴──────────────────────────┴──────────────────────────┘
+
+Imported Objects:
+┌────┬──────┬──────┬────────────┬───────────────────────────┐
+│ ID │ NAME │ TYPE │   STATUS   │          MESSAGE          │
+├────┼──────┼──────┼────────────┼───────────────────────────┤
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Reuse existing object     │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+│    │      │      │ SUCCESSFUL │ Overwrite existing object │
+└────┴──────┴──────┴────────────┴───────────────────────────┘
