@@ -43,3 +43,6 @@ dist/
 
 # Debug binaries
 __debug_bin*
+
+# Claude Code runtime artifacts
+.claude/worktrees/
