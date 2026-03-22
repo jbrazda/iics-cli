@@ -28,9 +28,9 @@ var (
 )
 
 // ts returns the current local time formatted for progress output.
-// The brackets are included so call sites use "%s message" not "[%s] message".
+// Includes a trailing space so call sites use "%smessage" not "%s message".
 func ts() string {
-	return time.Now().Format("[2006-01-02 15:04:05.000]")
+	return time.Now().Format("[2006-01-02 15:04:05.000] ")
 }
 
 // logLevel returns the effective slog level based on active flags.

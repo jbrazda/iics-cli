@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -218,32 +219,42 @@ func prettyJSONString(data []byte) string {
 	return string(data)
 }
 
-// debugPrintHTTP writes a full request/response trace via slog at DEBUG level.
-// Session header values are masked. JSON bodies are pretty-printed when possible.
+// debugPrintHTTP writes a human-readable request/response trace to stderr.
+// It is level-gated via slog: output is suppressed unless the default logger
+// is configured at DEBUG level (i.e. --debug flag is set).
+// Session header values are masked. JSON bodies are pretty-printed.
 func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, respData []byte) {
-	log := slog.Default()
-	attrs := []any{
-		slog.String("method", req.Method),
-		slog.String("url", req.URL.String()),
-		slog.String("status", resp.Status),
+	if !slog.Default().Enabled(req.Context(), slog.LevelDebug) {
+		return
 	}
+	w := os.Stderr
+	_, _ = fmt.Fprintf(w, "DEBUG > %s %s\n", req.Method, req.URL)
+	_, _ = fmt.Fprintln(w, "Request Headers:")
 	for k, vs := range req.Header {
-		if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
-			attrs = append(attrs, slog.String("req."+k, "***"))
-		} else {
-			attrs = append(attrs, slog.String("req."+k, strings.Join(vs, ",")))
+		for _, v := range vs {
+			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
+				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
+			} else {
+				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
+			}
 		}
 	}
-	for k, vs := range resp.Header {
-		attrs = append(attrs, slog.String("resp."+k, strings.Join(vs, ",")))
-	}
 	if len(reqData) > 0 {
-		attrs = append(attrs, slog.String("reqBody", prettyJSONString(reqData)))
+		_, _ = fmt.Fprintln(w, "Request Body:")
+		_, _ = fmt.Fprintf(w, "  %s\n", prettyJSONString(reqData))
+	}
+	_, _ = fmt.Fprintf(w, "DEBUG < %s\n", resp.Status)
+	_, _ = fmt.Fprintln(w, "Response Headers:")
+	for k, vs := range resp.Header {
+		for _, v := range vs {
+			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
+		}
 	}
 	if len(respData) > 0 {
-		attrs = append(attrs, slog.String("respBody", prettyJSONString(respData)))
+		_, _ = fmt.Fprintln(w, "Response Body:")
+		_, _ = fmt.Fprintf(w, "  %s\n", prettyJSONString(respData))
 	}
-	log.Debug("http", attrs...)
+	_, _ = fmt.Fprintln(w)
 }
 
 // doJSON is a convenience method that sends a JSON request and decodes the response.
