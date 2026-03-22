@@ -3,8 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -22,7 +24,40 @@ var (
 	versionStr = "dev"
 	commitStr  = "none"
 	dateStr    = "unknown"
+	logger     *slog.Logger
 )
+
+// ts returns the current local time formatted for progress output.
+// The brackets are included so call sites use "%s message" not "[%s] message".
+func ts() string {
+	return time.Now().Format("[2006-01-02 15:04:05.000]")
+}
+
+// logLevel returns the effective slog level based on active flags.
+func logLevel() slog.Level {
+	if debug {
+		return slog.LevelDebug
+	}
+	if verbose {
+		return slog.LevelInfo
+	}
+	return slog.LevelWarn
+}
+
+// initLogger configures the package-level slog logger and sets it as the default.
+func initLogger() {
+	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: logLevel(),
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				a.Value = slog.StringValue(time.Now().Format("[2006-01-02 15:04:05.000]"))
+			}
+			return a
+		},
+	})
+	logger = slog.New(h)
+	slog.SetDefault(logger)
+}
 
 // SetVersionInfo sets the version information from build flags.
 func SetVersionInfo(version, commit, date string) {
@@ -44,6 +79,10 @@ Configure profiles in ~/.iics/config.yaml or use environment variables
 	// Silence Cobra's default error and usage printing so we control output.
 	SilenceErrors: true,
 	SilenceUsage:  true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		initLogger()
+		return nil
+	},
 }
 
 // Execute runs the root command and returns a POSIX exit code.

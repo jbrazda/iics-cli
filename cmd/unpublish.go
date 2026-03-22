@@ -54,9 +54,9 @@ func newUnpublishStartCmd() *cobra.Command {
 
 			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
-				_, _ = fmt.Fprintf(out, "[%s] Unpublishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
+				_, _ = fmt.Fprintf(out, "%sUnpublishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
 			} else if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Unpublishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
+				_, _ = fmt.Fprintf(out, "%sUnpublishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
 			}
 
 			for i, batch := range batches {

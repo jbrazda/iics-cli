@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
@@ -134,8 +133,8 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 				var progressFn func(page, fetched int)
 				if verbose {
 					progressFn = func(page, fetched int) {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Fetched page %d (%d objects total)\n",
-							time.Now().Format(time.RFC3339), page, fetched)
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s Fetched page %d (%d objects total)\n",
+							ts(), page, fetched)
 					}
 				}
 				resp, err = c.ListAllObjects(context.Background(), opts, progressFn)
@@ -189,11 +188,11 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 				if verbose {
 					fi, err := fh.Stat()
 					if err == nil {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s (%d bytes)\n",
-							time.Now().Format(time.RFC3339), len(resp.Objects), outputFile, fi.Size())
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s Wrote %d objects to %s (%d bytes)\n",
+							ts(), len(resp.Objects), outputFile, fi.Size())
 					} else {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[%s] Wrote %d objects to %s\n",
-							time.Now().Format(time.RFC3339), len(resp.Objects), outputFile)
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s Wrote %d objects to %s\n",
+							ts(), len(resp.Objects), outputFile)
 					}
 				}
 			}

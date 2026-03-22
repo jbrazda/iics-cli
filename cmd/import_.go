@@ -263,7 +263,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			defer func() { _ = f.Close() }()
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Uploading %s...\n", ts(), zipFile)
+				_, _ = fmt.Fprintf(out, "%sUploading %s...\n", ts(), zipFile)
 			}
 
 			uploadResp, err := c.UploadImportPackage(context.Background(), filepath.Base(zipFile), f)
@@ -272,7 +272,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Upload complete — job ID: %s, checksum valid: %v\n",
+				_, _ = fmt.Fprintf(out, "%sUpload complete — job ID: %s, checksum valid: %v\n",
 					ts(), uploadResp.JobID, uploadResp.ChecksumValid)
 			}
 
@@ -302,7 +302,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			// --- Step 3: Start ---
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Starting import job \"%s\"...\n", ts(), startReq.Name)
+				_, _ = fmt.Fprintf(out, "%sStarting import job \"%s\"...\n", ts(), startReq.Name)
 			}
 
 			job, err := c.StartImport(context.Background(), uploadResp.JobID, &startReq)
@@ -311,10 +311,10 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Import job started — ID: %s, status: %s\n",
+				_, _ = fmt.Fprintf(out, "%sImport job started — ID: %s, status: %s\n",
 					ts(), job.ID, job.Status.State)
 				if job.StartTime != "" {
-					_, _ = fmt.Fprintf(out, "[%s] Start time: %s\n", ts(), job.StartTime)
+					_, _ = fmt.Fprintf(out, "%sStart time: %s\n", ts(), job.StartTime)
 				}
 			}
 
@@ -336,7 +336,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 				elapsed := time.Since(startWall).Round(time.Second)
 				if verbose {
-					_, _ = fmt.Fprintf(out, "[%s] Status: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+					_, _ = fmt.Fprintf(out, "%sStatus: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
 				}
 
 				if detailedPolling && len(job.Objects) > 0 {
@@ -346,7 +346,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Import finished — status: %s, total time: %s\n",
+				_, _ = fmt.Fprintf(out, "%sImport finished — status: %s, total time: %s\n",
 					ts(), job.Status.State, elapsed)
 			}
 
@@ -489,11 +489,6 @@ func isImportInProgress(state string) bool {
 // isImportFailed returns true when the job ended in a failure state.
 func isImportFailed(state string) bool {
 	return state == "FAILED" || state == "ERROR"
-}
-
-// ts returns the current time formatted for progress output.
-func ts() string {
-	return time.Now().Format("15:04:05")
 }
 
 // buildLogFileName builds a default log filename from job metadata.

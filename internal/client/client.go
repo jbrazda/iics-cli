@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -209,47 +209,41 @@ func (c *Client) ensureSession(ctx context.Context) error {
 	return nil
 }
 
-// debugPrintHTTP writes a full request/response trace to stderr.
+// prettyJSONString pretty-prints JSON bytes; returns the raw string on failure.
+func prettyJSONString(data []byte) string {
+	var buf bytes.Buffer
+	if json.Indent(&buf, data, "", "  ") == nil {
+		return buf.String()
+	}
+	return string(data)
+}
+
+// debugPrintHTTP writes a full request/response trace via slog at DEBUG level.
 // Session header values are masked. JSON bodies are pretty-printed when possible.
 func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, respData []byte) {
-	w := os.Stderr
-	_, _ = fmt.Fprintf(w, "DEBUG > %s %s\n", req.Method, req.URL)
-	_, _ = fmt.Fprintln(w, "Request Headers:")
+	log := slog.Default()
+	attrs := []any{
+		slog.String("method", req.Method),
+		slog.String("url", req.URL.String()),
+		slog.String("status", resp.Status),
+	}
 	for k, vs := range req.Header {
-		for _, v := range vs {
-			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
-				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
-			} else {
-				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
-			}
+		if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
+			attrs = append(attrs, slog.String("req."+k, "***"))
+		} else {
+			attrs = append(attrs, slog.String("req."+k, strings.Join(vs, ",")))
 		}
+	}
+	for k, vs := range resp.Header {
+		attrs = append(attrs, slog.String("resp."+k, strings.Join(vs, ",")))
 	}
 	if len(reqData) > 0 {
-		_, _ = fmt.Fprintln(w, "Request Body:")
-		var buf bytes.Buffer
-		if json.Indent(&buf, reqData, "  ", "  ") == nil {
-			_, _ = fmt.Fprintf(w, "  %s\n", buf.Bytes())
-		} else {
-			_, _ = fmt.Fprintf(w, "  %s\n", reqData)
-		}
-	}
-	_, _ = fmt.Fprintf(w, "DEBUG < %s\n", resp.Status)
-	_, _ = fmt.Fprintln(w, "Response Headers:")
-	for k, vs := range resp.Header {
-		for _, v := range vs {
-			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
-		}
+		attrs = append(attrs, slog.String("reqBody", prettyJSONString(reqData)))
 	}
 	if len(respData) > 0 {
-		_, _ = fmt.Fprintln(w, "Response Body:")
-		var buf bytes.Buffer
-		if json.Indent(&buf, respData, "  ", "  ") == nil {
-			_, _ = fmt.Fprintf(w, "  %s\n", buf.Bytes())
-		} else {
-			_, _ = fmt.Fprintf(w, "  %s\n", respData)
-		}
+		attrs = append(attrs, slog.String("respBody", prettyJSONString(respData)))
 	}
-	_, _ = fmt.Fprintln(w)
+	log.Debug("http", attrs...)
 }
 
 // doJSON is a convenience method that sends a JSON request and decodes the response.

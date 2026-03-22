@@ -64,9 +64,9 @@ func newPublishStartCmd() *cobra.Command {
 
 			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
-				_, _ = fmt.Fprintf(out, "[%s] Publishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
+				_, _ = fmt.Fprintf(out, "%sPublishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
 			} else if verbose {
-				_, _ = fmt.Fprintf(out, "[%s] Publishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
+				_, _ = fmt.Fprintf(out, "%sPublishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
 			}
 
 			for i, batch := range batches {
@@ -224,7 +224,7 @@ func runPublishOp(
 		if name != "" {
 			label = " - " + name
 		}
-		_, _ = fmt.Fprintf(out, "[%s] %s %d assets in %d batch(es)%s...\n",
+		_, _ = fmt.Fprintf(out, "%s%s %d assets in %d batch(es)%s...\n",
 			ts(), verbLabel, len(paths), len(batches), label)
 	}
 
@@ -234,7 +234,7 @@ func runPublishOp(
 	var results []batchResult
 	for batchIdx, batch := range batches {
 		if verbose {
-			_, _ = fmt.Fprintf(out, "[%s] Submitting batch %d/%d (%d assets)...\n",
+			_, _ = fmt.Fprintf(out, "%sSubmitting batch %d/%d (%d assets)...\n",
 				ts(), batchIdx+1, len(batches), len(batch))
 		}
 
@@ -243,7 +243,7 @@ func runPublishOp(
 			return fmt.Errorf("batch %d: submitting: %w", batchIdx+1, err)
 		}
 		jobID := resp.Data.ID
-		_, _ = fmt.Fprintf(out, "[%s] Batch %d/%d job ID: %s\n", ts(), batchIdx+1, len(batches), jobID)
+		_, _ = fmt.Fprintf(out, "%sBatch %d/%d job ID: %s\n", ts(), batchIdx+1, len(batches), jobID)
 
 		// Poll until terminal or timeout.
 		timedOut := false
@@ -251,7 +251,7 @@ func runPublishOp(
 		for !client.PublishIsTerminal(resp.Data.Attributes.JobState) {
 			if time.Now().After(deadline) {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
-					"[%s] warning: timed out after %ds waiting for %s job %s (last state: %s)\n",
+					"%swarning: timed out after %ds waiting for %s job %s (last state: %s)\n",
 					ts(), maxWaitTime, verb, jobID, resp.Data.Attributes.JobState)
 				timedOut = true
 				break
@@ -265,7 +265,7 @@ func runPublishOp(
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			attrs := resp.Data.Attributes
-			_, _ = fmt.Fprintf(out, "[%s] %s %d out of %d asset(s). State: %s elapsed: %s\n",
+			_, _ = fmt.Fprintf(out, "%s%s %d out of %d asset(s). State: %s elapsed: %s\n",
 				ts(), titleCase(verb)+"ed", attrs.ProcessedCount, attrs.TotalCount, attrs.JobState, elapsed)
 
 			if verbose && detailedPolling && len(attrs.ItemDetail) > 0 {
