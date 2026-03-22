@@ -56,7 +56,7 @@ golangci-lint run ./...
 
 ## Critical Constraints
 
-- **tablewriter v1.x API only**: `NewTable(w)`, `Header(...)`, `Append([]interface{}{...})`, `err := Render()`. Never v0.x patterns.
+- **Table output**: use `output.New(format, w, output.TableStyle{})` from `internal/output/`. Do not add new `tablewriter` imports - the dependency was removed.
 - **JSON tags must exactly match API field names** - never guess; verify against API docs.
 - **Nested API objects must use typed structs** - never `[]string` for arrays of objects.
 - **Never call `os.Exit()`** - always return errors from `RunE`.

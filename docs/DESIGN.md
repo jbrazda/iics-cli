@@ -56,7 +56,7 @@ iics_cli/
 │   │   └── session.go               # File-based session cache
 │   └── output/                      # Output formatting
 │       ├── formatter.go             # Formatter interface + factory
-│       ├── table.go                 # Table renderer (tablewriter)
+│       ├── table.go                 # lipgloss table renderer
 │       └── json.go                  # JSON renderer
 └── testdata/                        # Sample config and test fixtures
 ```

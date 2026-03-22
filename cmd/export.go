@@ -13,7 +13,6 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -591,12 +590,13 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 // printArtifactTable writes a three-column (ID, PATH, TYPE) table of artifact entries to w.
 // Cells are blank when the field is not populated on an entry.
 func printArtifactTable(entries []client.ArtifactEntry, w io.Writer) {
-	table := tablewriter.NewTable(w)
-	table.Header("ID", "PATH", "TYPE")
-	for _, e := range entries {
-		_ = table.Append([]interface{}{e.ID, e.Path, e.Type})
+	f := output.New(output.FormatTable, w, output.TableStyle{})
+	cols := []output.Column{
+		{Header: "ID", Field: "ID"},
+		{Header: "PATH", Field: "Path"},
+		{Header: "TYPE", Field: "Type"},
 	}
-	_ = table.Render()
+	_ = f.Format(entries, cols)
 }
 
 // printExportObjects renders the object list table for an export job.

@@ -17,7 +17,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.25 or later
 - Make
 - golangci-lint (for linting)
 

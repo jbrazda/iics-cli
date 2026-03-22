@@ -17,7 +17,7 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 
 ### From source
 
-Requires Go 1.23 or later.
+Requires Go 1.25 or later.
 
 ```bash
 go install github.com/jbrazda/iics-cli@latest
@@ -225,7 +225,7 @@ Environment variables take precedence over config file values.
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.25+
 - Make
 
 ### Build and test

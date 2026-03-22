@@ -237,7 +237,7 @@ All must pass with zero new errors.
 - Add error handling for scenarios that cannot happen
 - Create helpers or abstractions used only once
 - Use `os.Exit()` - return errors from `RunE`
-- Use tablewriter v0.x API (`NewWriter`, `SetHeader`, `[]string` rows, `Render()` without error)
+- Add new `tablewriter` imports - use `output.New()` with the lipgloss renderer instead
 - Hard-code base API paths - use `BaseAPIPathV2` / `BaseAPIPathV3` constants
 - Guess JSON field names - verify every tag against the API sample response above
 - Add features beyond what is explicitly described in "Desired Change"

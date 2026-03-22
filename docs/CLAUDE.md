@@ -83,7 +83,7 @@ iics_cli/
 │   │   └── session.go             # Session cache (~/.iics/sessions.yaml)
 │   └── output/
 │       ├── formatter.go           # Format enum + Formatter interface + Column struct
-│       ├── table.go               # tablewriter v1.x renderer
+│       ├── table.go               # lipgloss table renderer
 │       ├── json.go                # JSON renderer
 │       └── csv.go                 # CSV renderer
 ├── testdata/
@@ -99,36 +99,36 @@ iics_cli/
 
 ## Key Dependencies
 
-| Package                             | Version | Purpose                                 |
-| ----------------------------------- | ------- | --------------------------------------- |
-| `github.com/spf13/cobra`            | v1.10.2 | CLI framework                           |
-| `github.com/spf13/viper`            | v1.21.0 | Config file + env var management        |
-| `github.com/olekukonko/tablewriter` | v1.1.3  | Table output (**v1.x API - see below**) |
-| `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization             |
+| Package                             | Version | Purpose                          |
+| ----------------------------------- | ------- | -------------------------------- |
+| `github.com/spf13/cobra`            | v1.10.2 | CLI framework                    |
+| `github.com/spf13/viper`            | v1.21.0 | Config file + env var management |
+| `github.com/charmbracelet/lipgloss` | v1.1.0  | Table output and terminal styles |
+| `github.com/mattn/go-isatty`        | v0.0.20 | TTY detection for color fallback |
+| `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization      |
 
 No external HTTP library - uses standard `net/http` only.
 
 ---
 
-## tablewriter v1.x API (CRITICAL)
+## Table Output
 
-The project uses `tablewriter` **v1.x**, which has a completely different API from v0.x.
-**Always use the v1.x API. Never use v0.x patterns.**
+Table rendering uses a custom lipgloss-based renderer in `internal/output/table.go`.
+Do **not** add new `tablewriter` imports - the dependency has been removed.
+
+To render a table, use `output.New()` with an `output.TableStyle`:
 
 ```go
-// CORRECT (v1.x)
-table := tablewriter.NewTable(w)
-table.Header(headers...)          // variadic interface{} args
-table.Append(row)                 // []interface{}, not []string
-err := table.Render()             // returns error
-
-// WRONG (v0.x - do not use)
-table := tablewriter.NewWriter(w)
-table.SetHeader([]string{...})
-table.Append([]string{...})
-table.Render()                    // no return value
-table.SetBorder(false)            // not available in v1.x
+f := output.New(output.FormatTable, w, output.TableStyle{})
+cols := []output.Column{
+    {Header: "ID",   Field: "id",   Width: 24},
+    {Header: "NAME", Field: "name"},
+}
+_ = f.Format(data, cols)
 ```
+
+`TableStyle.NoColor = true` forces plain ASCII rendering (no color, no Unicode borders).
+When the output writer is not a TTY the renderer automatically falls back to plain style.
 
 ---
 
@@ -648,7 +648,7 @@ Build with: `/opt/local/bin/go build ./...`
 - **Do not create abstractions** for patterns used only once
 - **Do not use `os.Exit()`** - return errors from `RunE`
 - **Do not add features** beyond what the issue/CR explicitly requests
-- **Do not use v0.x tablewriter API** (`NewWriter`, `SetHeader`, `[]string` rows)
+- **Do not add `tablewriter` imports** - the dependency was removed; use `output.New()` with lipgloss renderer
 - **Do not guess JSON field names** - always verify against the API docs
 - **Do not use em dashes** (`-`) in generated Markdown; use a regular hyphen (`-`) instead
 

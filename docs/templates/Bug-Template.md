@@ -157,7 +157,7 @@ internal/client/<resource>.go:<line>
 - Refactor, reformat, or add comments to code outside the fix scope
 - Change function signatures or struct names not directly involved in the bug
 - Add error handling for scenarios unrelated to this bug
-- Switch tablewriter to v0.x API patterns (always use v1.x: `NewTable`, `Header`, `Append([]interface{}{...})`, `Render() error`)
+- Add new `tablewriter` imports - use `output.New()` with the lipgloss renderer instead
 - Call `os.Exit()` - always return errors from `RunE`
 - Never Guess JSON field names - verify against the API docs or the raw response pasted in bug report
 
