@@ -24,13 +24,21 @@ type Column struct {
 	Func   func(v interface{}) string
 }
 
+// TableStyle carries resolved styling options for the table formatter.
+// Theme selects the visual style: "default", "minimal", "compact", or "plain".
+// NoColor disables all ANSI color and forces the "plain" theme.
+type TableStyle struct {
+	Theme   string
+	NoColor bool
+}
+
 // Formatter is the interface for rendering API results.
 type Formatter interface {
 	Format(data interface{}, columns []Column) error
 }
 
-// New returns a Formatter for the given format.
-func New(format Format, w io.Writer) Formatter {
+// New returns a Formatter for the given format and optional table style.
+func New(format Format, w io.Writer, style TableStyle) Formatter {
 	if w == nil {
 		w = os.Stdout
 	}
@@ -42,7 +50,7 @@ func New(format Format, w io.Writer) Formatter {
 	case FormatYAML:
 		return &yamlFormatter{w: w}
 	default:
-		return &tableFormatter{w: w}
+		return newTableFormatter(w, style)
 	}
 }
 

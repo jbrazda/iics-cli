@@ -299,13 +299,28 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 	return c, nil
 }
 
+// resolveTableStyle returns the effective TableStyle for the current invocation.
+// Precedence (highest first): --no-color flag / NO_COLOR env > config file settings.
+func resolveTableStyle(cfg *config.Config) output.TableStyle {
+	style := output.TableStyle{Theme: "default"}
+	if cfg != nil && cfg.Style.Theme != "" {
+		style.Theme = cfg.Style.Theme
+	}
+	if noColor || (cfg != nil && cfg.Style.NoColor) || os.Getenv("NO_COLOR") != "" {
+		style.NoColor = true
+		style.Theme = "plain"
+	}
+	return style
+}
+
 // getFormatter returns a formatter for the current output format.
 func getFormatter() (output.Formatter, error) {
 	f, err := output.ParseFormat(outputFmt)
 	if err != nil {
 		return nil, err
 	}
-	return output.New(f, os.Stdout), nil
+	cfg, _ := loadConfig() // best-effort; nil cfg falls back to defaults
+	return output.New(f, os.Stdout, resolveTableStyle(cfg)), nil
 }
 
 // saveSession saves the current session to the cache.

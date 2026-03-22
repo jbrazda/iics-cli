@@ -110,6 +110,9 @@ iics logout
 
 ```yaml
 defaultProfile: dev
+style:
+  theme: default     # default | minimal | compact | plain
+  noColor: false     # true = disable color permanently (same as --no-color)
 profiles:
   dev:
     name: "Development Org"
@@ -131,6 +134,18 @@ profiles:
 
 The `loginUrl`, `baseApiUrl`, and `caiUrl` fields are populated automatically after the first
 `iics login` - you do not need to set them manually.
+
+The `style` section controls table output appearance. Available themes:
+
+| Theme | Description |
+| ----- | ----------- |
+| `default` | Unicode rounded borders, cyan bold headers (TTY only) |
+| `minimal` | No borders, colored bold headers with unicode underline |
+| `compact` | No borders, bold headers, dense layout |
+| `plain` | ASCII borders, no color - used automatically for non-TTY output |
+
+Non-TTY output (piped, redirected) always uses `plain` regardless of the configured theme.
+The `NO_COLOR` environment variable is also respected.
 
 ### Environment variable overrides
 
@@ -197,14 +212,14 @@ Environment variables take precedence over config file values.
 
 ### Global flags
 
-| Flag         | Short | Description                                      |
-| ------------ | ----- | ------------------------------------------------ |
-| `--profile`  | `-p`  | Profile to use (overrides default)               |
-| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`  |
-| `--verbose`  | `-v`  | Enable verbose output                            |
-| `--no-color` |       | Disable colored output                           |
-| `--config`   |       | Config file path (default `~/.iics/config.yaml`) |
-| `--debug`    |       | Print request body to stderr on API errors       |
+| Flag         | Short | Description                                                        |
+| ------------ | ----- | ------------------------------------------------------------------ |
+| `--profile`  | `-p`  | Profile to use (overrides default)                                 |
+| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`            |
+| `--verbose`  | `-v`  | Enable verbose output                                              |
+| `--no-color` |       | Disable colored output and force `plain` table theme               |
+| `--config`   |       | Config file path (default `~/.iics/config.yaml`)                   |
+| `--debug`    |       | Print full HTTP request/response trace to stderr                   |
 
 ## Development
 

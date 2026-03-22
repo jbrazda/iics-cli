@@ -43,6 +43,15 @@ specifies a `username`, `password`, and either a `region` code (resolved to a lo
 the built-in POD registry) or an explicit `loginUrl`. The `baseApiUrl` and `caiUrl` fields
 are populated automatically after the first successful `iics login`.
 
+The optional top-level `style` key controls table output appearance and is shared across
+all profiles:
+
+```yaml
+style:
+  theme: default     # default | minimal | compact | plain
+  noColor: false     # true = disable color permanently (same as --no-color flag)
+```
+
 The `add` subcommand:
 
 - Prompts for `username`, `password` (input is masked), and `region` or custom login URL.

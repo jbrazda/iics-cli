@@ -9,7 +9,7 @@ import (
 
 func TestJSONFormatter(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatJSON, &buf)
+	f := New(FormatJSON, &buf, TableStyle{})
 
 	data := []map[string]interface{}{
 		{"id": "1", "name": "test"},
@@ -31,7 +31,7 @@ func TestJSONFormatter(t *testing.T) {
 
 func TestTableFormatter(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatTable, &buf)
+	f := New(FormatTable, &buf, TableStyle{})
 
 	data := []map[string]interface{}{
 		{"id": "abc123", "name": "My Connection", "type": "TOOLKIT"},
@@ -59,7 +59,7 @@ func TestTableFormatter(t *testing.T) {
 
 func TestTableFormatterEmptyData(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatTable, &buf)
+	f := New(FormatTable, &buf, TableStyle{})
 
 	data := []map[string]interface{}{}
 	columns := []Column{{Header: "ID", Field: "id"}}
@@ -76,7 +76,7 @@ func TestTableFormatterEmptyData(t *testing.T) {
 
 func TestTableFormatterNestedField(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatTable, &buf)
+	f := New(FormatTable, &buf, TableStyle{})
 
 	data := []map[string]interface{}{
 		{"id": "1", "status": map[string]interface{}{"state": "SUCCESSFUL"}},
@@ -99,7 +99,7 @@ func TestTableFormatterNestedField(t *testing.T) {
 
 func TestCSVFormatter(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatCSV, &buf)
+	f := New(FormatCSV, &buf, TableStyle{})
 
 	data := []map[string]interface{}{
 		{"id": "abc123", "name": "My Connection", "type": "TOOLKIT"},
@@ -131,7 +131,7 @@ func TestCSVFormatter(t *testing.T) {
 
 func TestCSVFormatterEmpty(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatCSV, &buf)
+	f := New(FormatCSV, &buf, TableStyle{})
 
 	columns := []Column{{Header: "ID", Field: "id"}}
 	if err := f.Format([]map[string]interface{}{}, columns); err != nil {
@@ -148,7 +148,7 @@ func TestCSVFormatterEmpty(t *testing.T) {
 
 func TestCSVFormatterNoColumns(t *testing.T) {
 	var buf bytes.Buffer
-	f := New(FormatCSV, &buf)
+	f := New(FormatCSV, &buf, TableStyle{})
 	err := f.Format([]map[string]interface{}{{"id": "1"}}, nil)
 	if err == nil {
 		t.Error("expected error when no columns defined")

@@ -179,7 +179,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 					fileRows[i] = objectToFilteredMap(obj, fileFields)
 				}
 
-				fileFmtr := output.New(fileFmt, fh)
+				fileFmtr := output.New(fileFmt, fh, output.TableStyle{NoColor: true})
 				fileCols := buildObjectColumns(fileFields)
 				if err := fileFmtr.Format(fileRows, fileCols); err != nil {
 					return fmt.Errorf("writing output file: %w", err)

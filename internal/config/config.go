@@ -10,10 +10,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+// StyleConfig holds user preferences for table output styling.
+type StyleConfig struct {
+	Theme   string `yaml:"theme,omitempty"   mapstructure:"theme"`
+	NoColor bool   `yaml:"noColor,omitempty" mapstructure:"noColor"`
+}
+
 // Config represents the full YAML configuration file.
 type Config struct {
 	DefaultProfile string              `yaml:"defaultProfile" mapstructure:"defaultProfile"`
-	Profiles       map[string]*Profile `yaml:"profiles" mapstructure:"profiles"`
+	Profiles       map[string]*Profile `yaml:"profiles"       mapstructure:"profiles"`
+	Style          StyleConfig         `yaml:"style,omitempty" mapstructure:"style"`
 }
 
 // Profile represents a single IICS org connection profile.
@@ -174,6 +181,9 @@ func (c *Config) Save(configPath string) error {
 	v := viper.New()
 	v.Set("defaultProfile", c.DefaultProfile)
 	v.Set("profiles", c.Profiles)
+	if c.Style.Theme != "" || c.Style.NoColor {
+		v.Set("style", c.Style)
+	}
 
 	v.SetConfigFile(configPath)
 	v.SetConfigType("yaml")
