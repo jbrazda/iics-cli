@@ -142,7 +142,12 @@ func (c *Client) getPublishOpStatus(ctx context.Context, caiURL, opType, jobID s
 	if base == "" {
 		return nil, fmt.Errorf("CAI URL not configured")
 	}
-	u := fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s/Status", strings.TrimRight(base, "/"), opType, jobID)
+	var u string
+	if full {
+		u = fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s", strings.TrimRight(base, "/"), opType, jobID)
+	} else {
+		u = fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s/Status", strings.TrimRight(base, "/"), opType, jobID)
+	}
 	var resp PublishJobResponse
 	if err := c.doCAIJSON(ctx, http.MethodGet, u, nil, &resp); err != nil {
 		return nil, err
@@ -163,7 +168,8 @@ func AssetPathFromObject(obj Object) (string, error) {
 		return obj.Location + ".xml", nil
 	}
 	switch obj.Type {
-	case "AI_SERVICE_CONNECTOR", "AI_CONNECTION", "PROCESS", "GUIDE", "TASKFLOW":
+	case "AI_SERVICE_CONNECTOR", "AI_CONNECTION", "PROCESS", "GUIDE", "TASKFLOW",
+		"DTEMPLATE", "PROCESS_OBJECT":
 		return fmt.Sprintf("Explore/%s.%s.xml", obj.Path, obj.Type), nil
 	default:
 		return "", fmt.Errorf("asset type %q is not publishable", obj.Type)
