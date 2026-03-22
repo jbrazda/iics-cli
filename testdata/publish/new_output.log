@@ -1,0 +1,130 @@
+[2026-03-22 17:46:44.600] Publishing 1 assets in 1 batch(es)...
+[2026-03-22 17:46:44.600] Submitting batch 1/1 (1 assets)...
+DEBUG > POST https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+Request Body:
+  {
+  "data": {
+    "type": "publish",
+    "attributes": {
+      "assetPaths": [
+        "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+      ]
+    }
+  }
+}
+DEBUG < 202 Accepted
+Response Headers:
+  Content-Type: application/vnd.api+json
+  Content-Length: 564
+  Referrer-Policy: strict-origin
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 18
+  Server: istio-envoy
+  Date: Sun, 22 Mar 2026 21:46:45 GMT
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Response Body:
+  {
+  "data": {
+    "type": "publish",
+    "id": "1220488798291750912",
+    "attributes": {
+      "jobState": "NOT_STARTED",
+      "jobStatusDetail": {},
+      "startedBy": "jaroslav.brazda.dev@natl.com",
+      "startDate": "2026-03-22T21:46:45.000+0000",
+      "totalCount": 1,
+      "processedCount": 0,
+      "assetPaths": [
+        "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+      ]
+    }
+  },
+  "links": {
+    "self": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220488798291750912",
+    "status": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220488798291750912/Status"
+  }
+}
+
+[2026-03-22 17:46:45.115] Batch 1/1 job ID: 1220488798291750912
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220488798291750912/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Referrer-Policy: strict-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Envoy-Upstream-Service-Time: 6
+  Content-Type: application/vnd.api+json
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  X-Frame-Options: SAMEORIGIN
+  Server: istio-envoy
+  Date: Sun, 22 Mar 2026 21:46:55 GMT
+  Content-Length: 829
+  Cache-Control: private
+Response Body:
+  {
+  "data": {
+    "type": "publishStatus",
+    "id": "1220488798291750912",
+    "attributes": {
+      "jobState": "SUCCESS",
+      "jobStatusDetail": {
+        "itemStateSummary": {
+          "SUCCESS": 1
+        }
+      },
+      "startedBy": "jaroslav.brazda.dev@natl.com",
+      "startDate": "2026-03-22T21:46:45.000+0000",
+      "endDate": "2026-03-22T21:46:46.000+0000",
+      "totalCount": 1,
+      "processedCount": 1,
+      "itemDetail": [
+        {
+          "itemIndex": 0,
+          "itemGUID": "3cnlhCxf4I5kGPJQoIZSMZ",
+          "itemState": "SUCCESS",
+          "itemStatusDetail": "",
+          "itemStartDate": "2026-03-22T21:46:45.000+0000",
+          "itemEndDate": "2026-03-22T21:46:46.000+0000",
+          "assetPath": "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+        }
+      ]
+    }
+  },
+  "links": {
+    "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220488798291750912/Status",
+    "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220488798291750912"
+  }
+}
+
+[2026-03-22 17:46:55.143] Published 1 out of 1 asset(s). State: SUCCESS elapsed: 11s
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220488798291750912          │
+│ State      │ SUCCESS                      │
+│ Start Date │ 2026-03-22T21:46:45.000+0000 │
+│ End Date   │ 2026-03-22T21:46:46.000+0000 │
+│ Duration   │ 1s                           │
+│ Total      │ 1                            │
+│ Published  │ 1                            │
+│ Errors     │ 0                            │
+└────────────┴──────────────────────────────┘
+
+Publish Items:
+┌───────┬────────────────────────┬──────────────────────────────────────────────────────┬─────────┬──────────────────────────────┬──────────────────────────────┬──────────┐
+│ INDEX │          GUID          │                      ASSET PATH                      │  STATE  │          START DATE          │           END DATE           │ DURATION │
+├───────┼────────────────────────┼──────────────────────────────────────────────────────┼─────────┼──────────────────────────────┼──────────────────────────────┼──────────┤
+│ 0     │ 3cnlhCxf4I5kGPJQoIZSMZ │ Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml │ SUCCESS │ 2026-03-22T21:46:45.000+0000 │ 2026-03-22T21:46:46.000+0000 │ 1s       │
+└───────┴────────────────────────┴──────────────────────────────────────────────────────┴─────────┴──────────────────────────────┴──────────────────────────────┴──────────┘
