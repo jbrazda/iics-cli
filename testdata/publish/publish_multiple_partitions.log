@@ -1,0 +1,132 @@
+cat testdata/publish/publish_process_long.csv| ./iics publish run --verbose --max-wait-time 3600
+[14:52:41] Publishing 407 assets in 3 batch(es)...
+[14:52:41] Submitting batch 1/3 (199 assets)...
+[14:52:41] Batch 1/3 job ID: 1220444995979706368
+[14:52:51] Published 12 out of 199 asset(s). State: IN_PROGRESS elapsed: 11s
+[14:53:02] Published 24 out of 199 asset(s). State: IN_PROGRESS elapsed: 21s
+[14:53:12] Published 36 out of 199 asset(s). State: IN_PROGRESS elapsed: 31s
+[14:53:22] Published 48 out of 199 asset(s). State: IN_PROGRESS elapsed: 41s
+[14:53:32] Published 60 out of 199 asset(s). State: IN_PROGRESS elapsed: 51s
+[14:53:42] Published 72 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m1s
+[14:53:52] Published 84 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m11s
+[14:54:02] Published 96 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m21s
+[14:54:12] Published 107 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m31s
+[14:54:22] Published 119 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m41s
+[14:54:32] Published 131 out of 199 asset(s). State: IN_PROGRESS elapsed: 1m51s
+[14:54:42] Published 143 out of 199 asset(s). State: IN_PROGRESS elapsed: 2m1s
+[14:54:52] Published 154 out of 199 asset(s). State: IN_PROGRESS elapsed: 2m11s
+[14:55:02] Published 166 out of 199 asset(s). State: IN_PROGRESS elapsed: 2m21s
+[14:55:12] Published 178 out of 199 asset(s). State: IN_PROGRESS elapsed: 2m31s
+[14:55:22] Published 189 out of 199 asset(s). State: IN_PROGRESS elapsed: 2m41s
+[14:55:32] Published 199 out of 199 asset(s). State: ERROR elapsed: 2m51s
+[14:55:32] Submitting batch 2/3 (199 assets)...
+[14:55:32] Batch 2/3 job ID: 1220445712022888448
+[14:55:42] Published 1 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m1s
+[14:55:52] Published 1 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m11s
+[14:56:02] Published 2 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m21s
+[14:56:12] Published 2 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m31s
+[14:56:22] Published 7 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m41s
+[14:56:32] Published 8 out of 199 asset(s). State: IN_PROGRESS elapsed: 3m52s
+[14:56:42] Published 12 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m2s
+[14:56:52] Published 13 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m12s
+[14:57:02] Published 14 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m22s
+[14:57:12] Published 16 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m32s
+[14:57:22] Published 16 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m42s
+[14:57:33] Published 17 out of 199 asset(s). State: IN_PROGRESS elapsed: 4m52s
+[14:57:43] Published 17 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m2s
+[14:57:53] Published 17 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m12s
+[14:58:03] Published 20 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m22s
+[14:58:13] Published 21 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m32s
+[14:58:23] Published 21 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m42s
+[14:58:33] Published 22 out of 199 asset(s). State: IN_PROGRESS elapsed: 5m52s
+[14:58:43] Published 23 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m2s
+[14:58:53] Published 24 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m12s
+[14:59:03] Published 24 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m22s
+[14:59:13] Published 25 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m32s
+[14:59:23] Published 25 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m42s
+[14:59:33] Published 32 out of 199 asset(s). State: IN_PROGRESS elapsed: 6m52s
+[14:59:43] Published 33 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m2s
+[14:59:53] Published 36 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m12s
+[15:00:03] Published 45 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m22s
+[15:00:13] Published 50 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m32s
+[15:00:23] Published 53 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m42s
+[15:00:33] Published 56 out of 199 asset(s). State: IN_PROGRESS elapsed: 7m52s
+[15:00:43] Published 56 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m2s
+[15:00:53] Published 57 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m12s
+[15:01:03] Published 61 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m22s
+[15:01:13] Published 61 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m32s
+[15:01:23] Published 61 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m42s
+[15:01:33] Published 66 out of 199 asset(s). State: IN_PROGRESS elapsed: 8m52s
+[15:01:43] Published 66 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m2s
+[15:01:53] Published 66 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m13s
+[15:02:03] Published 69 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m23s
+[15:02:13] Published 71 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m33s
+[15:02:23] Published 71 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m43s
+[15:02:33] Published 73 out of 199 asset(s). State: IN_PROGRESS elapsed: 9m53s
+[15:02:43] Published 73 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m3s
+[15:02:54] Published 77 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m13s
+[15:03:04] Published 79 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m23s
+[15:03:14] Published 80 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m33s
+[15:03:24] Published 80 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m43s
+[15:03:34] Published 81 out of 199 asset(s). State: IN_PROGRESS elapsed: 10m53s
+[15:03:44] Published 82 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m3s
+[15:03:54] Published 83 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m13s
+[15:04:04] Published 87 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m23s
+[15:04:14] Published 89 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m33s
+[15:04:24] Published 97 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m43s
+[15:04:34] Published 98 out of 199 asset(s). State: IN_PROGRESS elapsed: 11m53s
+[15:04:44] Published 98 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m3s
+[15:04:54] Published 99 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m13s
+[15:05:04] Published 99 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m23s
+[15:05:14] Published 100 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m33s
+[15:05:24] Published 100 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m43s
+[15:05:34] Published 101 out of 199 asset(s). State: IN_PROGRESS elapsed: 12m53s
+[15:05:44] Published 101 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m3s
+[15:05:54] Published 101 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m13s
+[15:06:04] Published 109 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m23s
+[15:06:14] Published 114 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m33s
+[15:06:24] Published 119 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m43s
+[15:06:34] Published 130 out of 199 asset(s). State: IN_PROGRESS elapsed: 13m53s
+[15:06:44] Published 142 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m3s
+[15:06:54] Published 147 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m14s
+[15:07:04] Published 152 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m24s
+[15:07:14] Published 153 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m34s
+[15:07:24] Published 156 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m44s
+[15:07:34] Published 156 out of 199 asset(s). State: IN_PROGRESS elapsed: 14m54s
+[15:07:44] Published 167 out of 199 asset(s). State: IN_PROGRESS elapsed: 15m4s
+[15:07:55] Published 178 out of 199 asset(s). State: IN_PROGRESS elapsed: 15m14s
+[15:08:05] Published 190 out of 199 asset(s). State: IN_PROGRESS elapsed: 15m24s
+[15:08:15] Published 199 out of 199 asset(s). State: ERROR elapsed: 15m34s
+[15:08:15] Submitting batch 3/3 (9 assets)...
+[15:08:15] Batch 3/3 job ID: 1220448910456508416
+[15:08:25] Published 9 out of 9 asset(s). State: SUCCESS elapsed: 15m44s
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220448910456508416          │
+│ State      │ SUCCESS                      │
+│ Start Date │ 2026-03-22T19:08:15.000+0000 │
+│ End Date   │ 2026-03-22T19:08:23.000+0000 │
+│ Duration   │ 8s                           │
+│ Total      │ 9                            │
+│ Published  │ 9                            │
+│ Errors     │ 0                            │
+└────────────┴──────────────────────────────┘
+
+Publish Items:
+┌───────┬────────────────────────┬───────────────────────────────────────────────────────────────────────────────┬─────────┬────────┬──────────────────────────────┬──────────────────────────────┬──────────┐
+│ INDEX │          GUID          │                                  ASSET PATH                                   │  STATE  │ DETAIL │          START DATE          │           END DATE           │ DURATION │
+├───────┼────────────────────────┼───────────────────────────────────────────────────────────────────────────────┼─────────┼────────┼──────────────────────────────┼──────────────────────────────┼──────────┤
+│ 0     │ lHJkytTEbKdc2vG1FhVtUn │ Explore/ZZ_JB/HereRouteMatching-Snowflake/Test-Here-RouteMatching.GUIDE.xml   │ SUCCESS │        │ 2026-03-22T19:08:15.000+0000 │ 2026-03-22T19:08:17.000+0000 │ 2s       │
+│ 1     │ jT4DluUgxi3cXl2G4kn1CA │ Explore/ZZ_JB/HumanTasks/TestCreateHumantask.GUIDE.xml                        │ SUCCESS │        │ 2026-03-22T19:08:17.000+0000 │ 2026-03-22T19:08:17.000+0000 │ < 1s     │
+│ 2     │ cIxOarK7VWsbDXBylmbMob │ Explore/ZZ_JB/HumanTasks/TestHumanTaskGuide.GUIDE.xml                         │ SUCCESS │        │ 2026-03-22T19:08:17.000+0000 │ 2026-03-22T19:08:18.000+0000 │ 1s       │
+│ 3     │ dHFap5juqoAhMzFl8w1ISw │ Explore/ZZ_JB/Processes/Test Demo Integration.GUIDE.xml                       │ SUCCESS │        │ 2026-03-22T19:08:18.000+0000 │ 2026-03-22T19:08:19.000+0000 │ 1s       │
+│ 4     │ 5w2aRPPL3qzkiA3I4avhao │ Explore/ZZ_JB/TaskFlowProcsessCallBug/Demo Read Configuration Guide.GUIDE.xml │ SUCCESS │        │ 2026-03-22T19:08:19.000+0000 │ 2026-03-22T19:08:20.000+0000 │ 1s       │
+│ 5     │ 1p7SMUwmVIpcjH2tJPFRCd │ Explore/ZZ_JB/TestAMQP/Test AMQP Errors.GUIDE.xml                             │ SUCCESS │        │ 2026-03-22T19:08:20.000+0000 │ 2026-03-22T19:08:21.000+0000 │ 1s       │
+│ 6     │ fJEHkrkWKkFiyOCpPPLckD │ Explore/ZZ_Subrat/xmltoJson.GUIDE.xml                                         │ SUCCESS │        │ 2026-03-22T19:08:21.000+0000 │ 2026-03-22T19:08:22.000+0000 │ 1s       │
+│ 7     │ 3sSitJsDn5odECT8qJMYut │ Explore/ZZ_TEST_CLI/Guides/Test Conversion Utility.GUIDE.xml                  │ SUCCESS │        │ 2026-03-22T19:08:22.000+0000 │ 2026-03-22T19:08:22.000+0000 │ < 1s     │
+│ 8     │ 9WuPOQqwGVfi4M1RQ1OVUZ │ Explore/ZZ_TEST_CLI/IssueGenerateRandomString/TestRandomString.GUIDE.xml      │ SUCCESS │        │ 2026-03-22T19:08:22.000+0000 │ 2026-03-22T19:08:23.000+0000 │ 1s       │
+└───────┴────────────────────────┴───────────────────────────────────────────────────────────────────────────────┴─────────┴────────┴──────────────────────────────┴──────────────────────────────┴──────────┘
+Error: batch 2: publish job 1220445712022888448 ended with status: ERROR

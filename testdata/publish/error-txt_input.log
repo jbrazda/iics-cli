@@ -1,0 +1,130 @@
+[11:12:06] Publishing 1 assets in 1 batch(es)...
+[11:12:06] Submitting batch 1/1 (1 assets)...
+DEBUG > POST https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+Request Body:
+  {
+    "data": {
+      "type": "publish",
+      "attributes": {
+        "assetPaths": [
+          "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS"
+        ]
+      }
+    }
+  }
+DEBUG < 202 Accepted
+Response Headers:
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 14
+  Date: Sun, 22 Mar 2026 15:12:07 GMT
+  Content-Type: application/vnd.api+json
+  Content-Length: 560
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Server: istio-envoy
+  Referrer-Policy: strict-origin
+Response Body:
+  {
+    "data": {
+      "type": "publish",
+      "id": "1220389485502910464",
+      "attributes": {
+        "jobState": "NOT_STARTED",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T15:12:07.000+0000",
+        "totalCount": 1,
+        "processedCount": 0,
+        "assetPaths": [
+          "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS"
+        ]
+      }
+    },
+    "links": {
+      "self": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220389485502910464",
+      "status": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220389485502910464/Status"
+    }
+  }
+
+[11:12:07] Batch 1/1 job ID: 1220389485502910464
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220389485502910464/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  X-Xss-Protection: 1; mode=block
+  Content-Type: application/vnd.api+json
+  Content-Length: 814
+  Cache-Control: private
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 7
+  Server: istio-envoy
+  Date: Sun, 22 Mar 2026 15:12:17 GMT
+  Referrer-Policy: strict-origin
+  X-Content-Type-Options: nosniff
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1220389485502910464",
+      "attributes": {
+        "jobState": "ERROR",
+        "jobStatusDetail": {
+          "itemStateSummary": {
+            "BAD_REQUEST": 1
+          }
+        },
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T15:12:07.000+0000",
+        "endDate": "2026-03-22T15:12:07.000+0000",
+        "totalCount": 1,
+        "processedCount": 1,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemState": "BAD_REQUEST",
+            "itemStatusDetail": "Invalid asset path.",
+            "itemStartDate": "2026-03-22T15:12:07.000+0000",
+            "itemEndDate": "2026-03-22T15:12:07.000+0000",
+            "assetPath": "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220389485502910464/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220389485502910464"
+    }
+  }
+
+[11:12:17] Published 1 out of 1 asset(s). State: ERROR elapsed: 11s
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220389485502910464          │
+│ State      │ ERROR                        │
+│ Start Date │ 2026-03-22T15:12:07.000+0000 │
+│ End Date   │ 2026-03-22T15:12:07.000+0000 │
+│ Duration   │ < 1s                         │
+│ Total      │ 1                            │
+│ Published  │ 0                            │
+│ Errors     │ 1                            │
+└────────────┴──────────────────────────────┘
+
+Publish Items:
+┌───────┬──────┬──────────────────────────────────────────────────┬─────────────┬─────────────────────┬──────────────────────────────┬──────────────────────────────┬──────────┐
+│ INDEX │ GUID │                    ASSET PATH                    │    STATE    │       DETAIL        │          START DATE          │           END DATE           │ DURATION │
+├───────┼──────┼──────────────────────────────────────────────────┼─────────────┼─────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────┤
+│ 0     │      │ Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS │ BAD_REQUEST │ Invalid asset path. │ 2026-03-22T15:12:07.000+0000 │ 2026-03-22T15:12:07.000+0000 │ < 1s     │
+└───────┴──────┴──────────────────────────────────────────────────┴─────────────┴─────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────┘
+Error: batch 1: publish job 1220389485502910464 ended with status: ERROR

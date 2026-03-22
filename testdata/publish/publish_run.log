@@ -1,0 +1,1311 @@
+[13:06:10] Publishing 31 assets in 1 batch(es)...
+[13:06:10] Submitting batch 1/1 (31 assets)...
+DEBUG > POST https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+Request Body:
+  {
+    "data": {
+      "type": "publish",
+      "attributes": {
+        "assetPaths": [
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+        ]
+      }
+    }
+  }
+DEBUG < 202 Accepted
+Response Headers:
+  Content-Type: application/vnd.api+json
+  Content-Length: 2896
+  Referrer-Policy: strict-origin
+  Server: istio-envoy
+  Date: Sun, 22 Mar 2026 17:06:10 GMT
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 58
+Response Body:
+  {
+    "data": {
+      "type": "publish",
+      "id": "1220418190405140480",
+      "attributes": {
+        "jobState": "NOT_STARTED",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T17:06:11.000+0000",
+        "totalCount": 31,
+        "processedCount": 0,
+        "assetPaths": [
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+        ]
+      }
+    },
+    "links": {
+      "self": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480",
+      "status": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480/Status"
+    }
+  }
+
+[13:06:10] Batch 1/1 job ID: 1220418190405140480
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220418190405140480/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Content-Type: application/vnd.api+json
+  Cache-Control: private
+  Referrer-Policy: strict-origin
+  X-Envoy-Upstream-Service-Time: 8
+  Date: Sun, 22 Mar 2026 17:06:20 GMT
+  Content-Length: 6344
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  Server: istio-envoy
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1220418190405140480",
+      "attributes": {
+        "jobState": "IN_PROGRESS",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T17:06:11.000+0000",
+        "totalCount": 31,
+        "processedCount": 8,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemGUID": "0HSc9npReWid1GnjsfOtKe",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:11.000+0000",
+            "itemEndDate": "2026-03-22T17:06:12.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 1,
+            "itemGUID": "2LVuoVDiMAObIT3wsw1iq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:12.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 2,
+            "itemGUID": "4439I7T6XMIf8RUt6r2iGF",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 3,
+            "itemGUID": "5dk0Psz46wZgVtRWOWPK0l",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:14.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 4,
+            "itemGUID": "9UCmB6n7hRei1Copv0PHGE",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:14.000+0000",
+            "itemEndDate": "2026-03-22T17:06:15.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 5,
+            "itemGUID": "1xaRXwRew0clzk8WwwOOWJ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:15.000+0000",
+            "itemEndDate": "2026-03-22T17:06:16.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 6,
+            "itemGUID": "012yvD1Mi2hjrqnwkRmv8j",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:16.000+0000",
+            "itemEndDate": "2026-03-22T17:06:18.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 7,
+            "itemGUID": "51YyTbasLPkln1I4QlG0Om",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:18.000+0000",
+            "itemEndDate": "2026-03-22T17:06:21.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 8,
+            "itemGUID": "4XJ26T9ZJYFhiF3g9nbHIP",
+            "itemState": "IN_PROGRESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:21.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 9,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 10,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 11,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 12,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 13,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 14,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 15,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 16,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 17,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 18,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 19,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml"
+          },
+          {
+            "itemIndex": 20,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 21,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 22,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 23,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 24,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 25,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml"
+          },
+          {
+            "itemIndex": 26,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 27,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 28,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml"
+          },
+          {
+            "itemIndex": 29,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml"
+          },
+          {
+            "itemIndex": 30,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220418190405140480"
+    }
+  }
+
+[13:06:20] Published 8 out of 31 asset(s). State: IN_PROGRESS elapsed: 11s
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220418190405140480/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Content-Length: 6929
+  X-Xss-Protection: 1; mode=block
+  X-Envoy-Upstream-Service-Time: 7
+  Server: istio-envoy
+  Date: Sun, 22 Mar 2026 17:06:30 GMT
+  Cache-Control: private
+  Referrer-Policy: strict-origin
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  Content-Type: application/vnd.api+json
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1220418190405140480",
+      "attributes": {
+        "jobState": "IN_PROGRESS",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T17:06:11.000+0000",
+        "totalCount": 31,
+        "processedCount": 13,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemGUID": "0HSc9npReWid1GnjsfOtKe",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:11.000+0000",
+            "itemEndDate": "2026-03-22T17:06:12.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 1,
+            "itemGUID": "2LVuoVDiMAObIT3wsw1iq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:12.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 2,
+            "itemGUID": "4439I7T6XMIf8RUt6r2iGF",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 3,
+            "itemGUID": "5dk0Psz46wZgVtRWOWPK0l",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:14.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 4,
+            "itemGUID": "9UCmB6n7hRei1Copv0PHGE",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:14.000+0000",
+            "itemEndDate": "2026-03-22T17:06:15.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 5,
+            "itemGUID": "1xaRXwRew0clzk8WwwOOWJ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:15.000+0000",
+            "itemEndDate": "2026-03-22T17:06:16.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 6,
+            "itemGUID": "012yvD1Mi2hjrqnwkRmv8j",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:16.000+0000",
+            "itemEndDate": "2026-03-22T17:06:18.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 7,
+            "itemGUID": "51YyTbasLPkln1I4QlG0Om",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:18.000+0000",
+            "itemEndDate": "2026-03-22T17:06:21.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 8,
+            "itemGUID": "4XJ26T9ZJYFhiF3g9nbHIP",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:21.000+0000",
+            "itemEndDate": "2026-03-22T17:06:23.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 9,
+            "itemGUID": "7A9o8Jku8vSbkti4l2Bu20",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:23.000+0000",
+            "itemEndDate": "2026-03-22T17:06:25.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 10,
+            "itemGUID": "8GB8OqLnjKkjmEVUHgZ9Yy",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:25.000+0000",
+            "itemEndDate": "2026-03-22T17:06:28.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 11,
+            "itemGUID": "l2cHOJ0iBACi4TNVuY6NSj",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:28.000+0000",
+            "itemEndDate": "2026-03-22T17:06:30.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 12,
+            "itemGUID": "1OR2QyflcRncfBTpm8y42y",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:30.000+0000",
+            "itemEndDate": "2026-03-22T17:06:31.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 13,
+            "itemState": "IN_PROGRESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:31.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 14,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 15,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 16,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 17,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 18,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 19,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml"
+          },
+          {
+            "itemIndex": 20,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 21,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 22,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 23,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 24,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 25,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml"
+          },
+          {
+            "itemIndex": 26,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 27,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 28,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml"
+          },
+          {
+            "itemIndex": 29,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml"
+          },
+          {
+            "itemIndex": 30,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220418190405140480"
+    }
+  }
+
+[13:06:30] Published 13 out of 31 asset(s). State: IN_PROGRESS elapsed: 21s
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220418190405140480/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Date: Sun, 22 Mar 2026 17:06:41 GMT
+  Content-Type: application/vnd.api+json
+  Cache-Control: private
+  Referrer-Policy: strict-origin
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 9
+  Server: istio-envoy
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1220418190405140480",
+      "attributes": {
+        "jobState": "IN_PROGRESS",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T17:06:11.000+0000",
+        "totalCount": 31,
+        "processedCount": 25,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemGUID": "0HSc9npReWid1GnjsfOtKe",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:11.000+0000",
+            "itemEndDate": "2026-03-22T17:06:12.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 1,
+            "itemGUID": "2LVuoVDiMAObIT3wsw1iq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:12.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 2,
+            "itemGUID": "4439I7T6XMIf8RUt6r2iGF",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 3,
+            "itemGUID": "5dk0Psz46wZgVtRWOWPK0l",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:14.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 4,
+            "itemGUID": "9UCmB6n7hRei1Copv0PHGE",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:14.000+0000",
+            "itemEndDate": "2026-03-22T17:06:15.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 5,
+            "itemGUID": "1xaRXwRew0clzk8WwwOOWJ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:15.000+0000",
+            "itemEndDate": "2026-03-22T17:06:16.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 6,
+            "itemGUID": "012yvD1Mi2hjrqnwkRmv8j",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:16.000+0000",
+            "itemEndDate": "2026-03-22T17:06:18.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 7,
+            "itemGUID": "51YyTbasLPkln1I4QlG0Om",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:18.000+0000",
+            "itemEndDate": "2026-03-22T17:06:21.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 8,
+            "itemGUID": "4XJ26T9ZJYFhiF3g9nbHIP",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:21.000+0000",
+            "itemEndDate": "2026-03-22T17:06:23.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 9,
+            "itemGUID": "7A9o8Jku8vSbkti4l2Bu20",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:23.000+0000",
+            "itemEndDate": "2026-03-22T17:06:25.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 10,
+            "itemGUID": "8GB8OqLnjKkjmEVUHgZ9Yy",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:25.000+0000",
+            "itemEndDate": "2026-03-22T17:06:28.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 11,
+            "itemGUID": "l2cHOJ0iBACi4TNVuY6NSj",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:28.000+0000",
+            "itemEndDate": "2026-03-22T17:06:30.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 12,
+            "itemGUID": "1OR2QyflcRncfBTpm8y42y",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:30.000+0000",
+            "itemEndDate": "2026-03-22T17:06:31.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 13,
+            "itemGUID": "1CpjaAdESLxdvQYwTlY84r",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:31.000+0000",
+            "itemEndDate": "2026-03-22T17:06:32.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 14,
+            "itemGUID": "0xLjr3kz2WpbMCKtZblqcl",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:32.000+0000",
+            "itemEndDate": "2026-03-22T17:06:32.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 15,
+            "itemGUID": "dlCVzKjMryvgwty1a1jeKS",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:32.000+0000",
+            "itemEndDate": "2026-03-22T17:06:33.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 16,
+            "itemGUID": "8cc3UfvwlKCe1oOYe6GiIR",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:33.000+0000",
+            "itemEndDate": "2026-03-22T17:06:34.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 17,
+            "itemGUID": "6muRaSyZ9CLfIjlYgaIueX",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:34.000+0000",
+            "itemEndDate": "2026-03-22T17:06:35.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 18,
+            "itemGUID": "lHFcSz5FkysktvPZySzmmc",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:35.000+0000",
+            "itemEndDate": "2026-03-22T17:06:36.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 19,
+            "itemGUID": "1BcUfD59KKnfvtX91wmtq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:36.000+0000",
+            "itemEndDate": "2026-03-22T17:06:37.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml"
+          },
+          {
+            "itemIndex": 20,
+            "itemGUID": "8fyAF5b1S0meTrGDyQve4k",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:37.000+0000",
+            "itemEndDate": "2026-03-22T17:06:37.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 21,
+            "itemGUID": "8fXolQa4po2hUFi2ehBvMk",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:37.000+0000",
+            "itemEndDate": "2026-03-22T17:06:38.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 22,
+            "itemGUID": "6Bwrg1jsK6ibk9RCfzN3AK",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:38.000+0000",
+            "itemEndDate": "2026-03-22T17:06:39.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 23,
+            "itemGUID": "3qP29us2x0fiVPblQjX5qd",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:39.000+0000",
+            "itemEndDate": "2026-03-22T17:06:40.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 24,
+            "itemGUID": "a9yim57ZtCreYMdpocoKaB",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:40.000+0000",
+            "itemEndDate": "2026-03-22T17:06:41.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 25,
+            "itemState": "IN_PROGRESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:41.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml"
+          },
+          {
+            "itemIndex": 26,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 27,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 28,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml"
+          },
+          {
+            "itemIndex": 29,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml"
+          },
+          {
+            "itemIndex": 30,
+            "itemState": "NOT_STARTED",
+            "itemStatusDetail": "",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220418190405140480"
+    }
+  }
+
+[13:06:41] Published 25 out of 31 asset(s). State: IN_PROGRESS elapsed: 31s
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220418190405140480/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Date: Sun, 22 Mar 2026 17:06:51 GMT
+  Content-Type: application/vnd.api+json
+  Referrer-Policy: strict-origin
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 7
+  Server: istio-envoy
+  Cache-Control: private
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1220418190405140480",
+      "attributes": {
+        "jobState": "SUCCESS",
+        "jobStatusDetail": {
+          "itemStateSummary": {
+            "SUCCESS": 31
+          }
+        },
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T17:06:11.000+0000",
+        "endDate": "2026-03-22T17:06:46.000+0000",
+        "totalCount": 31,
+        "processedCount": 31,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemGUID": "0HSc9npReWid1GnjsfOtKe",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:11.000+0000",
+            "itemEndDate": "2026-03-22T17:06:12.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 1,
+            "itemGUID": "2LVuoVDiMAObIT3wsw1iq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:12.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 2,
+            "itemGUID": "4439I7T6XMIf8RUt6r2iGF",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:13.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 3,
+            "itemGUID": "5dk0Psz46wZgVtRWOWPK0l",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:13.000+0000",
+            "itemEndDate": "2026-03-22T17:06:14.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 4,
+            "itemGUID": "9UCmB6n7hRei1Copv0PHGE",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:14.000+0000",
+            "itemEndDate": "2026-03-22T17:06:15.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 5,
+            "itemGUID": "1xaRXwRew0clzk8WwwOOWJ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:15.000+0000",
+            "itemEndDate": "2026-03-22T17:06:16.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml"
+          },
+          {
+            "itemIndex": 6,
+            "itemGUID": "012yvD1Mi2hjrqnwkRmv8j",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:16.000+0000",
+            "itemEndDate": "2026-03-22T17:06:18.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 7,
+            "itemGUID": "51YyTbasLPkln1I4QlG0Om",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:18.000+0000",
+            "itemEndDate": "2026-03-22T17:06:21.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 8,
+            "itemGUID": "4XJ26T9ZJYFhiF3g9nbHIP",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:21.000+0000",
+            "itemEndDate": "2026-03-22T17:06:23.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 9,
+            "itemGUID": "7A9o8Jku8vSbkti4l2Bu20",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:23.000+0000",
+            "itemEndDate": "2026-03-22T17:06:25.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 10,
+            "itemGUID": "8GB8OqLnjKkjmEVUHgZ9Yy",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:25.000+0000",
+            "itemEndDate": "2026-03-22T17:06:28.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 11,
+            "itemGUID": "l2cHOJ0iBACi4TNVuY6NSj",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:28.000+0000",
+            "itemEndDate": "2026-03-22T17:06:30.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml"
+          },
+          {
+            "itemIndex": 12,
+            "itemGUID": "1OR2QyflcRncfBTpm8y42y",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:30.000+0000",
+            "itemEndDate": "2026-03-22T17:06:31.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 13,
+            "itemGUID": "1CpjaAdESLxdvQYwTlY84r",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:31.000+0000",
+            "itemEndDate": "2026-03-22T17:06:32.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 14,
+            "itemGUID": "0xLjr3kz2WpbMCKtZblqcl",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:32.000+0000",
+            "itemEndDate": "2026-03-22T17:06:32.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 15,
+            "itemGUID": "dlCVzKjMryvgwty1a1jeKS",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:32.000+0000",
+            "itemEndDate": "2026-03-22T17:06:33.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 16,
+            "itemGUID": "8cc3UfvwlKCe1oOYe6GiIR",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:33.000+0000",
+            "itemEndDate": "2026-03-22T17:06:34.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 17,
+            "itemGUID": "6muRaSyZ9CLfIjlYgaIueX",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:34.000+0000",
+            "itemEndDate": "2026-03-22T17:06:35.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 18,
+            "itemGUID": "lHFcSz5FkysktvPZySzmmc",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:35.000+0000",
+            "itemEndDate": "2026-03-22T17:06:36.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 19,
+            "itemGUID": "1BcUfD59KKnfvtX91wmtq4",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:36.000+0000",
+            "itemEndDate": "2026-03-22T17:06:37.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml"
+          },
+          {
+            "itemIndex": 20,
+            "itemGUID": "8fyAF5b1S0meTrGDyQve4k",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:37.000+0000",
+            "itemEndDate": "2026-03-22T17:06:37.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 21,
+            "itemGUID": "8fXolQa4po2hUFi2ehBvMk",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:37.000+0000",
+            "itemEndDate": "2026-03-22T17:06:38.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 22,
+            "itemGUID": "6Bwrg1jsK6ibk9RCfzN3AK",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:38.000+0000",
+            "itemEndDate": "2026-03-22T17:06:39.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 23,
+            "itemGUID": "3qP29us2x0fiVPblQjX5qd",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:39.000+0000",
+            "itemEndDate": "2026-03-22T17:06:40.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 24,
+            "itemGUID": "a9yim57ZtCreYMdpocoKaB",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:40.000+0000",
+            "itemEndDate": "2026-03-22T17:06:41.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 25,
+            "itemGUID": "6gMAR8VqWm2jHn1vcJJ0We",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:41.000+0000",
+            "itemEndDate": "2026-03-22T17:06:42.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml"
+          },
+          {
+            "itemIndex": 26,
+            "itemGUID": "2e5L91L7XHCeFgklxs0XoJ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:42.000+0000",
+            "itemEndDate": "2026-03-22T17:06:42.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 27,
+            "itemGUID": "49NoyTUtcMzkjUlDWpGtAS",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:42.000+0000",
+            "itemEndDate": "2026-03-22T17:06:43.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml"
+          },
+          {
+            "itemIndex": 28,
+            "itemGUID": "6mduJNoiJ3HhoQBpe3VGih",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:43.000+0000",
+            "itemEndDate": "2026-03-22T17:06:44.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml"
+          },
+          {
+            "itemIndex": 29,
+            "itemGUID": "9Xhr7Wx2zWAlwuvJXUb8Kb",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:44.000+0000",
+            "itemEndDate": "2026-03-22T17:06:45.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml"
+          },
+          {
+            "itemIndex": 30,
+            "itemGUID": "9nJyMnU5DATbqSO7SbLGGn",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-22T17:06:45.000+0000",
+            "itemEndDate": "2026-03-22T17:06:46.000+0000",
+            "assetPath": "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220418190405140480/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1220418190405140480"
+    }
+  }
+
+[13:06:51] Published 31 out of 31 asset(s). State: SUCCESS elapsed: 41s
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220418190405140480          │
+│ State      │ SUCCESS                      │
+│ Start Date │ 2026-03-22T17:06:11.000+0000 │
+│ End Date   │ 2026-03-22T17:06:46.000+0000 │
+│ Duration   │ 35s                          │
+│ Total      │ 31                           │
+│ Published  │ 31                           │
+│ Errors     │ 0                            │
+└────────────┴──────────────────────────────┘
+
+Publish Items:
+┌───────┬────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────┬─────────┬────────┬──────────────────────────────┬──────────────────────────────┬──────────┐
+│ INDEX │          GUID          │                                          ASSET PATH                                          │  STATE  │ DETAIL │          START DATE          │           END DATE           │ DURATION │
+├───────┼────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────┼─────────┼────────┼──────────────────────────────┼──────────────────────────────┼──────────┤
+│ 0     │ 0HSc9npReWid1GnjsfOtKe │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml          │ SUCCESS │        │ 2026-03-22T17:06:11.000+0000 │ 2026-03-22T17:06:12.000+0000 │ 1s       │
+│ 1     │ 2LVuoVDiMAObIT3wsw1iq4 │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml      │ SUCCESS │        │ 2026-03-22T17:06:12.000+0000 │ 2026-03-22T17:06:13.000+0000 │ 1s       │
+│ 2     │ 4439I7T6XMIf8RUt6r2iGF │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml │ SUCCESS │        │ 2026-03-22T17:06:13.000+0000 │ 2026-03-22T17:06:13.000+0000 │ < 1s     │
+│ 3     │ 5dk0Psz46wZgVtRWOWPK0l │ Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml          │ SUCCESS │        │ 2026-03-22T17:06:13.000+0000 │ 2026-03-22T17:06:14.000+0000 │ 1s       │
+│ 4     │ 9UCmB6n7hRei1Copv0PHGE │ Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml              │ SUCCESS │        │ 2026-03-22T17:06:14.000+0000 │ 2026-03-22T17:06:15.000+0000 │ 1s       │
+│ 5     │ 1xaRXwRew0clzk8WwwOOWJ │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml           │ SUCCESS │        │ 2026-03-22T17:06:15.000+0000 │ 2026-03-22T17:06:16.000+0000 │ 1s       │
+│ 6     │ 012yvD1Mi2hjrqnwkRmv8j │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml                 │ SUCCESS │        │ 2026-03-22T17:06:16.000+0000 │ 2026-03-22T17:06:18.000+0000 │ 2s       │
+│ 7     │ 51YyTbasLPkln1I4QlG0Om │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml             │ SUCCESS │        │ 2026-03-22T17:06:18.000+0000 │ 2026-03-22T17:06:21.000+0000 │ 3s       │
+│ 8     │ 4XJ26T9ZJYFhiF3g9nbHIP │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml               │ SUCCESS │        │ 2026-03-22T17:06:21.000+0000 │ 2026-03-22T17:06:23.000+0000 │ 2s       │
+│ 9     │ 7A9o8Jku8vSbkti4l2Bu20 │ Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml                 │ SUCCESS │        │ 2026-03-22T17:06:23.000+0000 │ 2026-03-22T17:06:25.000+0000 │ 2s       │
+│ 10    │ 8GB8OqLnjKkjmEVUHgZ9Yy │ Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml                     │ SUCCESS │        │ 2026-03-22T17:06:25.000+0000 │ 2026-03-22T17:06:28.000+0000 │ 3s       │
+│ 11    │ l2cHOJ0iBACi4TNVuY6NSj │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml                  │ SUCCESS │        │ 2026-03-22T17:06:28.000+0000 │ 2026-03-22T17:06:30.000+0000 │ 2s       │
+│ 12    │ 1OR2QyflcRncfBTpm8y42y │ Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml                   │ SUCCESS │        │ 2026-03-22T17:06:30.000+0000 │ 2026-03-22T17:06:31.000+0000 │ 1s       │
+│ 13    │ 1CpjaAdESLxdvQYwTlY84r │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml                       │ SUCCESS │        │ 2026-03-22T17:06:31.000+0000 │ 2026-03-22T17:06:32.000+0000 │ 1s       │
+│ 14    │ 0xLjr3kz2WpbMCKtZblqcl │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml                │ SUCCESS │        │ 2026-03-22T17:06:32.000+0000 │ 2026-03-22T17:06:32.000+0000 │ < 1s     │
+│ 15    │ dlCVzKjMryvgwty1a1jeKS │ Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml                    │ SUCCESS │        │ 2026-03-22T17:06:32.000+0000 │ 2026-03-22T17:06:33.000+0000 │ 1s       │
+│ 16    │ 8cc3UfvwlKCe1oOYe6GiIR │ Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml                 │ SUCCESS │        │ 2026-03-22T17:06:33.000+0000 │ 2026-03-22T17:06:34.000+0000 │ 1s       │
+│ 17    │ 6muRaSyZ9CLfIjlYgaIueX │ Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml                        │ SUCCESS │        │ 2026-03-22T17:06:34.000+0000 │ 2026-03-22T17:06:35.000+0000 │ 1s       │
+│ 18    │ lHFcSz5FkysktvPZySzmmc │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml                       │ SUCCESS │        │ 2026-03-22T17:06:35.000+0000 │ 2026-03-22T17:06:36.000+0000 │ 1s       │
+│ 19    │ 1BcUfD59KKnfvtX91wmtq4 │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml                       │ SUCCESS │        │ 2026-03-22T17:06:36.000+0000 │ 2026-03-22T17:06:37.000+0000 │ 1s       │
+│ 20    │ 8fyAF5b1S0meTrGDyQve4k │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml                           │ SUCCESS │        │ 2026-03-22T17:06:37.000+0000 │ 2026-03-22T17:06:37.000+0000 │ < 1s     │
+│ 21    │ 8fXolQa4po2hUFi2ehBvMk │ Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml                    │ SUCCESS │        │ 2026-03-22T17:06:37.000+0000 │ 2026-03-22T17:06:38.000+0000 │ 1s       │
+│ 22    │ 6Bwrg1jsK6ibk9RCfzN3AK │ Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml                        │ SUCCESS │        │ 2026-03-22T17:06:38.000+0000 │ 2026-03-22T17:06:39.000+0000 │ 1s       │
+│ 23    │ 3qP29us2x0fiVPblQjX5qd │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml             │ SUCCESS │        │ 2026-03-22T17:06:39.000+0000 │ 2026-03-22T17:06:40.000+0000 │ 1s       │
+│ 24    │ a9yim57ZtCreYMdpocoKaB │ Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml              │ SUCCESS │        │ 2026-03-22T17:06:40.000+0000 │ 2026-03-22T17:06:41.000+0000 │ 1s       │
+│ 25    │ 6gMAR8VqWm2jHn1vcJJ0We │ Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml                   │ SUCCESS │        │ 2026-03-22T17:06:41.000+0000 │ 2026-03-22T17:06:42.000+0000 │ 1s       │
+│ 26    │ 2e5L91L7XHCeFgklxs0XoJ │ Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml                    │ SUCCESS │        │ 2026-03-22T17:06:42.000+0000 │ 2026-03-22T17:06:42.000+0000 │ < 1s     │
+│ 27    │ 49NoyTUtcMzkjUlDWpGtAS │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml                        │ SUCCESS │        │ 2026-03-22T17:06:42.000+0000 │ 2026-03-22T17:06:43.000+0000 │ 1s       │
+│ 28    │ 6mduJNoiJ3HhoQBpe3VGih │ Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml                                   │ SUCCESS │        │ 2026-03-22T17:06:43.000+0000 │ 2026-03-22T17:06:44.000+0000 │ 1s       │
+│ 29    │ 9Xhr7Wx2zWAlwuvJXUb8Kb │ Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml                                     │ SUCCESS │        │ 2026-03-22T17:06:44.000+0000 │ 2026-03-22T17:06:45.000+0000 │ 1s       │
+│ 30    │ 9nJyMnU5DATbqSO7SbLGGn │ Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml                                       │ SUCCESS │        │ 2026-03-22T17:06:45.000+0000 │ 2026-03-22T17:06:46.000+0000 │ 1s       │
+└───────┴────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────────┴─────────┴────────┴──────────────────────────────┴──────────────────────────────┴──────────┘

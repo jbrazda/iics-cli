@@ -1,0 +1,117 @@
+./iics publish run --from-file testdata/publish/publish_list.csv --verbose --detailed-polling --polling-interval 1 --debug 1>&2 > testdata/publish/publish.log
+[00:58:10] Publishing 1 assets in 1 batch(es)...
+[00:58:10] Submitting batch 1/1 (1 assets)...
+DEBUG > POST https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+Request Body:
+  {
+    "data": {
+      "type": "publish",
+      "attributes": {
+        "assetPaths": [
+          "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+        ]
+      }
+    }
+  }
+DEBUG < 202 Accepted
+Response Headers:
+  Referrer-Policy: strict-origin
+  X-Xss-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 15
+  Server: istio-envoy
+  Date: Sat, 21 Mar 2026 04:58:11 GMT
+  Content-Type: application/vnd.api+json
+  Content-Length: 564
+Response Body:
+  {
+    "data": {
+      "type": "publish",
+      "id": "1219872598620762112",
+      "attributes": {
+        "jobState": "NOT_STARTED",
+        "jobStatusDetail": {},
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-21T04:58:12.000+0000",
+        "totalCount": 1,
+        "processedCount": 0,
+        "assetPaths": [
+          "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+        ]
+      }
+    },
+    "links": {
+      "self": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1219872598620762112",
+      "status": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1219872598620762112/Status"
+    }
+  }
+
+[00:58:11] Batch 1/1 job ID: 1219872598620762112
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1219872598620762112/Status
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Cache-Control: private
+  Referrer-Policy: strict-origin
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 8
+  Date: Sat, 21 Mar 2026 04:58:12 GMT
+  Content-Length: 829
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Server: istio-envoy
+  Content-Type: application/vnd.api+json
+Response Body:
+  {
+    "data": {
+      "type": "publishStatus",
+      "id": "1219872598620762112",
+      "attributes": {
+        "jobState": "SUCCESS",
+        "jobStatusDetail": {
+          "itemStateSummary": {
+            "SUCCESS": 1
+          }
+        },
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-21T04:58:12.000+0000",
+        "endDate": "2026-03-21T04:58:13.000+0000",
+        "totalCount": 1,
+        "processedCount": 1,
+        "itemDetail": [
+          {
+            "itemIndex": 0,
+            "itemGUID": "3cnlhCxf4I5kGPJQoIZSMZ",
+            "itemState": "SUCCESS",
+            "itemStatusDetail": "",
+            "itemStartDate": "2026-03-21T04:58:12.000+0000",
+            "itemEndDate": "2026-03-21T04:58:13.000+0000",
+            "assetPath": "Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS.xml"
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1219872598620762112/Status",
+      "publish": "http://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/publish/1219872598620762112"
+    }
+  }
+
+[00:58:12] Status: SUCCESS (1/1 processed) elapsed: 2s
+
+Publish Summary:
+┌─────────────────────┬───────────────┬─────────┬───────┬───────────┬──────────────────────────────┬──────────────────────────────┐
+│         ID          │     TYPE      │  STATE  │ TOTAL │ PROCESSED │           STARTED            │              BY              │
+├─────────────────────┼───────────────┼─────────┼───────┼───────────┼──────────────────────────────┼──────────────────────────────┤
+│ 1219872598620762112 │ publishStatus │ SUCCESS │ 1     │ 1         │ 2026-03-21T04:58:12.000+0000 │ jaroslav.brazda.dev@natl.com │
+└─────────────────────┴───────────────┴─────────┴───────┴───────────┴──────────────────────────────┴──────────────────────────────┘

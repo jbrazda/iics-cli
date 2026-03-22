@@ -35,15 +35,33 @@ type PublishJobData struct {
 	Attributes PublishJobAttributes `json:"attributes"`
 }
 
+// PublishJobStatusDetail holds per-state asset counts from the job.
+type PublishJobStatusDetail struct {
+	ItemStateSummary map[string]int `json:"itemStateSummary,omitempty"`
+}
+
+// PublishItemDetail holds the per-asset result inside a publish/unpublish job status.
+type PublishItemDetail struct {
+	ItemIndex        int    `json:"itemIndex"`
+	ItemGUID         string `json:"itemGUID,omitempty"`
+	ItemState        string `json:"itemState,omitempty"`
+	ItemStatusDetail string `json:"itemStatusDetail,omitempty"`
+	ItemStartDate    string `json:"itemStartDate,omitempty"`
+	ItemEndDate      string `json:"itemEndDate,omitempty"`
+	AssetPath        string `json:"assetPath,omitempty"`
+}
+
 // PublishJobAttributes holds the status and progress fields.
 type PublishJobAttributes struct {
-	JobState        string      `json:"jobState"`
-	JobStatusDetail interface{} `json:"jobStatusDetail,omitempty"`
-	StartedBy       string      `json:"startedBy,omitempty"`
-	StartDate       string      `json:"startDate,omitempty"`
-	TotalCount      int         `json:"totalCount,omitempty"`
-	ProcessedCount  int         `json:"processedCount,omitempty"`
-	AssetPaths      []string    `json:"assetPaths,omitempty"`
+	JobState        string                 `json:"jobState"`
+	JobStatusDetail PublishJobStatusDetail `json:"jobStatusDetail,omitempty"`
+	StartedBy       string                 `json:"startedBy,omitempty"`
+	StartDate       string                 `json:"startDate,omitempty"`
+	EndDate         string                 `json:"endDate,omitempty"`
+	TotalCount      int                    `json:"totalCount,omitempty"`
+	ProcessedCount  int                    `json:"processedCount,omitempty"`
+	AssetPaths      []string               `json:"assetPaths,omitempty"`
+	ItemDetail      []PublishItemDetail    `json:"itemDetail,omitempty"`
 }
 
 // PublishLinks holds the self and status link URLs.
@@ -57,7 +75,7 @@ type PublishLinks struct {
 // PublishIsTerminal returns true when the jobState is a terminal state.
 func PublishIsTerminal(jobState string) bool {
 	switch jobState {
-	case "COMPLETED", "FAILED", "ERROR":
+	case "COMPLETED", "SUCCESS", "FAILED", "ERROR", "WARNING":
 		return true
 	}
 	return false
@@ -65,7 +83,7 @@ func PublishIsTerminal(jobState string) bool {
 
 // PublishIsInProgress returns true when the jobState means still running.
 func PublishIsInProgress(jobState string) bool {
-	return jobState == "NOT_STARTED" || jobState == "PROCESSING"
+	return jobState == "NOT_STARTED" || jobState == "PROCESSING" || jobState == "IN_PROGRESS"
 }
 
 // PublishMaxBatchSize is the maximum number of assets per publish/unpublish request.
@@ -124,12 +142,7 @@ func (c *Client) getPublishOpStatus(ctx context.Context, caiURL, opType, jobID s
 	if base == "" {
 		return nil, fmt.Errorf("CAI URL not configured")
 	}
-	var u string
-	if full {
-		u = fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s", strings.TrimRight(base, "/"), opType, jobID)
-	} else {
-		u = fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s/Status", strings.TrimRight(base, "/"), opType, jobID)
-	}
+	u := fmt.Sprintf("%s/active-bpel/asset/v1/%s/%s/Status", strings.TrimRight(base, "/"), opType, jobID)
 	var resp PublishJobResponse
 	if err := c.doCAIJSON(ctx, http.MethodGet, u, nil, &resp); err != nil {
 		return nil, err
@@ -137,11 +150,20 @@ func (c *Client) getPublishOpStatus(ctx context.Context, caiURL, opType, jobID s
 	return &resp, nil
 }
 
-// AssetPathFromObject builds a CAI asset path from an Object's path and type fields.
-// Returns an error if the type is not a supported publishable CAI asset type.
+// AssetPathFromObject builds a CAI asset path from an Object.
+//
+// Preferred source: the Location field, which the API returns in the form
+// "Explore/<path>.<TYPE>" - appending ".xml" gives the exact path the publish
+// API expects. When Location is non-empty it is used directly (+ ".xml").
+//
+// Fallback: if Location is empty, the path is built from Path + Type as
+// "Explore/<path>.<TYPE>.xml". Returns an error for non-publishable types.
 func AssetPathFromObject(obj Object) (string, error) {
+	if obj.Location != "" {
+		return obj.Location + ".xml", nil
+	}
 	switch obj.Type {
-	case "PROCESS", "AI_SERVICE_CONNECTOR", "AI_CONNECTION", "DTEMPLATE", "GUIDE", "PROCESS_OBJECT":
+	case "AI_SERVICE_CONNECTOR", "AI_CONNECTION", "PROCESS", "GUIDE", "TASKFLOW":
 		return fmt.Sprintf("Explore/%s.%s.xml", obj.Path, obj.Type), nil
 	default:
 		return "", fmt.Errorf("asset type %q is not publishable", obj.Type)

@@ -41,18 +41,41 @@ profiles:
 
 ## Asset Path Format
 
-Asset paths must follow the format: `Explore/<folder-path>/<asset-name>.<type-suffix>`
+Asset paths must follow the format: `Explore/<folder-path>/<asset-name>.<TYPE>.xml`
 
-### Supported asset type suffixes
+Example: `Explore/MyProject/Processes/OrderProcess.PROCESS.xml`
 
-| Suffix | Asset type |
-| ------ | ---------- |
-| `.PROCESS.xml` | Process |
-| `.AI_SERVICE_CONNECTOR.xml` | Service connector |
-| `.AI_CONNECTION.xml` | Application integration connection |
-| `.DTEMPLATE.xml` | Mapping |
-| `.GUIDE.xml` | Guide |
-| `.PROCESS_OBJECT.xml` | Process object |
+The `location` field returned by `iics objects list` already contains the
+`Explore/<path>.<TYPE>` prefix. Appending `.xml` gives the exact value the unpublish API
+expects. This is the recommended source for generating unpublish lists.
+
+### Supported asset types
+
+| Type suffix | Asset type |
+| ----------- | ---------- |
+| `AI_SERVICE_CONNECTOR` | Service connector |
+| `AI_CONNECTION` | Application integration connection |
+| `PROCESS` | Process |
+| `GUIDE` | Guide |
+| `TASKFLOW` | Taskflow |
+
+## Unpublish Order
+
+Assets are automatically sorted in reverse dependency order before being submitted to the API.
+This ensures that dependents are unpublished before the assets they depend on, avoiding
+failures caused by active dependencies. Note that unpublishing `AI_SERVICE_CONNECTOR` or
+`AI_CONNECTION` will fail if any published asset still depends on them.
+
+| Order | Type suffix | Asset type |
+| ----- | ----------- | ---------- |
+| 1 | `TASKFLOW` | Taskflow |
+| 2 | `GUIDE` | Guide |
+| 3 | `PROCESS` | Process |
+| 4 | `AI_CONNECTION` | Application integration connection |
+| 5 | `AI_SERVICE_CONNECTOR` | Service connector |
+
+Within each type group the original relative order from the input file is preserved
+(stable sort). Assets of unknown type are placed at the beginning.
 
 ## Batch Limit
 
@@ -82,22 +105,29 @@ is auto-detected from content.
 
 | Extension / source | Behaviour |
 | ------------------ | --------- |
-| `.txt` | One asset path per line, no header. Lines starting with `#` are comments. |
-| `.csv` | CSV with header row. `PATH` column required; `TYPE` column optional. When both are present rows are converted to `Explore/<PATH>.<TYPE>.xml` and non-publishable types are skipped silently. When only `PATH` is present the value is used as-is. |
-| `.json` | JSON array of strings (direct asset paths) or array of objects with `path` and optional `type` (output of `iics objects list -o json`). When `type` is present rows are converted; non-publishable types are skipped. |
+| `.txt` | One asset path per line, no header. Lines starting with `#` are comments. Paths without a `.xml` suffix have it appended automatically. |
+| `.csv` | CSV with header row. Resolution order per row: (1) `LOCATION` column - appends `.xml`; (2) `PATH` + `TYPE` - builds `Explore/<PATH>.<TYPE>.xml`; (3) `PATH` only - appends `.xml` if missing. At least one of `LOCATION` or `PATH` is required. Non-publishable types are skipped silently. |
+| `.json` | JSON array of strings (direct paths) or array of objects from `iics objects list -o json`. Per object: `location` field preferred (appends `.xml`); falls back to `path`+`type` conversion; then `path` with `.xml` appended if missing. |
 | `.yaml` / `.yml` | Same as `.json` but YAML format (output of `iics objects list -o yaml`). |
-| stdin | Auto-detected: starts with `[` - JSON; commas in first line or first line is `PATH` - CSV; otherwise plain text. |
+| stdin | Auto-detected: starts with `[` - JSON; commas in first line or first line is `PATH` or `LOCATION` - CSV; otherwise plain text. |
 
 #### Generating an asset list from `objects list`
 
+The `location` field is the recommended source. It is already in `Explore/<path>.<TYPE>`
+format - appending `.xml` gives the exact asset path the unpublish API expects.
+
 ```bash
-# CSV with automatic path conversion (PATH + TYPE both present)
-iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
+# Recommended: CSV using the location field
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields location \
   > assets.csv
 iics unpublish start --from-file assets.csv
 
-# Pipe directly (stdin auto-detect)
-iics objects list -q "type=='PROCESS'" -o csv | iics unpublish start
+# Pipe directly using location (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv --output-fields location | iics unpublish start
+
+# JSON (location field included by default)
+iics objects list -q "location==MyProject/Processes" -o json > assets.json
+iics unpublish start --from-file assets.json
 ```
 
 ### Examples
@@ -128,7 +158,7 @@ Retrieve the current status of an unpublish job.
 | ---- | ---- | ------- | ----------- | -------- |
 | `--id` | string | | Unpublish job ID | yes |
 | `--cai-url` | string | | CAI base URL override | |
-| `--full` | bool | false | Fetch full job object including asset list | |
+| `--full` | bool | false | Fetch and display per-asset item detail | |
 
 ### Output columns
 
@@ -167,15 +197,17 @@ and print a detailed summary.
 | `--name` | string | | Optional job label | |
 | `--polling-interval` | int | 10 | Seconds between status polls | |
 | `--max-wait-time` | int | 300 | Maximum seconds to wait for completion | |
-| `--detailed-polling` | bool | false | Print totalCount/processedCount on each poll | |
+| `--detailed-polling` | bool | false | Print per-asset item detail table on each poll (requires `--verbose`) | |
+| `--item-fields` | string | see publish run | Comma-separated item detail fields to display | |
 
 ### Input format
 
 Same as `unpublish start`. See the [Input format](#input-format) section above.
 
-### Output columns
+### Output
 
-Same as `unpublish status`.
+Same polling progress, summary, and item detail behaviour as `publish run`. See
+[publish run Output](publish.md#output) for field descriptions and `--item-fields` values.
 
 ### Exit codes
 

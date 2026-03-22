@@ -1,0 +1,66 @@
+[13:38:32] Publishing 38 assets in 1 batch(es)...
+[13:38:32] Submitting batch 1/1 (38 assets)...
+[13:38:32] Batch 1/1 job ID: 1220426335747698688
+[13:38:42] Published 8 out of 38 asset(s). State: IN_PROGRESS elapsed: 11s
+[13:38:52] Published 12 out of 38 asset(s). State: IN_PROGRESS elapsed: 21s
+[13:39:02] Published 23 out of 38 asset(s). State: IN_PROGRESS elapsed: 31s
+[13:39:13] Published 38 out of 38 asset(s). State: ERROR elapsed: 41s
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220426335747698688          │
+│ State      │ ERROR                        │
+│ Start Date │ 2026-03-22T17:38:33.000+0000 │
+│ End Date   │ 2026-03-22T17:39:10.000+0000 │
+│ Duration   │ 37s                          │
+│ Total      │ 38                           │
+│ Published  │ 31                           │
+│ Errors     │ 7                            │
+└────────────┴──────────────────────────────┘
+
+Publish Items:
+┌───────┬────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────┬─────────────┬─────────────────────┬──────────────────────────────┬──────────────────────────────┬──────────┐
+│ INDEX │          GUID          │                                          ASSET PATH                                          │    STATE    │       DETAIL        │          START DATE          │           END DATE           │ DURATION │
+├───────┼────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼─────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────┤
+│ 0     │ 0HSc9npReWid1GnjsfOtKe │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml          │ SUCCESS     │                     │ 2026-03-22T17:38:33.000+0000 │ 2026-03-22T17:38:34.000+0000 │ 1s       │
+│ 1     │ 2LVuoVDiMAObIT3wsw1iq4 │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml      │ SUCCESS     │                     │ 2026-03-22T17:38:34.000+0000 │ 2026-03-22T17:38:35.000+0000 │ 1s       │
+│ 2     │ 4439I7T6XMIf8RUt6r2iGF │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml │ SUCCESS     │                     │ 2026-03-22T17:38:35.000+0000 │ 2026-03-22T17:38:35.000+0000 │ < 1s     │
+│ 3     │ 5dk0Psz46wZgVtRWOWPK0l │ Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml          │ SUCCESS     │                     │ 2026-03-22T17:38:35.000+0000 │ 2026-03-22T17:38:36.000+0000 │ 1s       │
+│ 4     │ 9UCmB6n7hRei1Copv0PHGE │ Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml              │ SUCCESS     │                     │ 2026-03-22T17:38:36.000+0000 │ 2026-03-22T17:38:37.000+0000 │ 1s       │
+│ 5     │ 1xaRXwRew0clzk8WwwOOWJ │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml           │ SUCCESS     │                     │ 2026-03-22T17:38:37.000+0000 │ 2026-03-22T17:38:38.000+0000 │ 1s       │
+│ 6     │ 012yvD1Mi2hjrqnwkRmv8j │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml                 │ SUCCESS     │                     │ 2026-03-22T17:38:38.000+0000 │ 2026-03-22T17:38:40.000+0000 │ 2s       │
+│ 7     │ 51YyTbasLPkln1I4QlG0Om │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml             │ SUCCESS     │                     │ 2026-03-22T17:38:40.000+0000 │ 2026-03-22T17:38:43.000+0000 │ 3s       │
+│ 8     │ 4XJ26T9ZJYFhiF3g9nbHIP │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml               │ SUCCESS     │                     │ 2026-03-22T17:38:43.000+0000 │ 2026-03-22T17:38:45.000+0000 │ 2s       │
+│ 9     │ 7A9o8Jku8vSbkti4l2Bu20 │ Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml                 │ SUCCESS     │                     │ 2026-03-22T17:38:45.000+0000 │ 2026-03-22T17:38:48.000+0000 │ 3s       │
+│ 10    │ 8GB8OqLnjKkjmEVUHgZ9Yy │ Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml                     │ SUCCESS     │                     │ 2026-03-22T17:38:48.000+0000 │ 2026-03-22T17:38:50.000+0000 │ 2s       │
+│ 11    │ l2cHOJ0iBACi4TNVuY6NSj │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml                  │ SUCCESS     │                     │ 2026-03-22T17:38:50.000+0000 │ 2026-03-22T17:38:53.000+0000 │ 3s       │
+│ 12    │ 1OR2QyflcRncfBTpm8y42y │ Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml                   │ SUCCESS     │                     │ 2026-03-22T17:38:53.000+0000 │ 2026-03-22T17:38:54.000+0000 │ 1s       │
+│ 13    │ 1CpjaAdESLxdvQYwTlY84r │ Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml                       │ SUCCESS     │                     │ 2026-03-22T17:38:54.000+0000 │ 2026-03-22T17:38:54.000+0000 │ < 1s     │
+│ 14    │ 0xLjr3kz2WpbMCKtZblqcl │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml                │ SUCCESS     │                     │ 2026-03-22T17:38:54.000+0000 │ 2026-03-22T17:38:55.000+0000 │ 1s       │
+│ 15    │ dlCVzKjMryvgwty1a1jeKS │ Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml                    │ SUCCESS     │                     │ 2026-03-22T17:38:55.000+0000 │ 2026-03-22T17:38:56.000+0000 │ 1s       │
+│ 16    │ 8cc3UfvwlKCe1oOYe6GiIR │ Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml                 │ SUCCESS     │                     │ 2026-03-22T17:38:56.000+0000 │ 2026-03-22T17:38:57.000+0000 │ 1s       │
+│ 17    │ 6muRaSyZ9CLfIjlYgaIueX │ Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml                        │ SUCCESS     │                     │ 2026-03-22T17:38:57.000+0000 │ 2026-03-22T17:38:58.000+0000 │ 1s       │
+│ 18    │ lHFcSz5FkysktvPZySzmmc │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml                       │ SUCCESS     │                     │ 2026-03-22T17:38:58.000+0000 │ 2026-03-22T17:38:59.000+0000 │ 1s       │
+│ 19    │ 1BcUfD59KKnfvtX91wmtq4 │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml                       │ SUCCESS     │                     │ 2026-03-22T17:38:59.000+0000 │ 2026-03-22T17:39:00.000+0000 │ 1s       │
+│ 20    │ 8fyAF5b1S0meTrGDyQve4k │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml                           │ SUCCESS     │                     │ 2026-03-22T17:39:00.000+0000 │ 2026-03-22T17:39:01.000+0000 │ 1s       │
+│ 21    │ 8fXolQa4po2hUFi2ehBvMk │ Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml                    │ SUCCESS     │                     │ 2026-03-22T17:39:01.000+0000 │ 2026-03-22T17:39:01.000+0000 │ < 1s     │
+│ 22    │ 6Bwrg1jsK6ibk9RCfzN3AK │ Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml                        │ SUCCESS     │                     │ 2026-03-22T17:39:02.000+0000 │ 2026-03-22T17:39:02.000+0000 │ < 1s     │
+│ 23    │ 3qP29us2x0fiVPblQjX5qd │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml             │ SUCCESS     │                     │ 2026-03-22T17:39:02.000+0000 │ 2026-03-22T17:39:03.000+0000 │ 1s       │
+│ 24    │ a9yim57ZtCreYMdpocoKaB │ Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml              │ SUCCESS     │                     │ 2026-03-22T17:39:03.000+0000 │ 2026-03-22T17:39:04.000+0000 │ 1s       │
+│ 25    │ 6gMAR8VqWm2jHn1vcJJ0We │ Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml                   │ SUCCESS     │                     │ 2026-03-22T17:39:04.000+0000 │ 2026-03-22T17:39:05.000+0000 │ 1s       │
+│ 26    │ 2e5L91L7XHCeFgklxs0XoJ │ Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml                    │ SUCCESS     │                     │ 2026-03-22T17:39:05.000+0000 │ 2026-03-22T17:39:06.000+0000 │ 1s       │
+│ 27    │ 49NoyTUtcMzkjUlDWpGtAS │ Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml                        │ SUCCESS     │                     │ 2026-03-22T17:39:06.000+0000 │ 2026-03-22T17:39:07.000+0000 │ 1s       │
+│ 28    │ 6mduJNoiJ3HhoQBpe3VGih │ Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml                                   │ SUCCESS     │                     │ 2026-03-22T17:39:07.000+0000 │ 2026-03-22T17:39:08.000+0000 │ 1s       │
+│ 29    │ 9Xhr7Wx2zWAlwuvJXUb8Kb │ Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml                                     │ SUCCESS     │                     │ 2026-03-22T17:39:08.000+0000 │ 2026-03-22T17:39:09.000+0000 │ 1s       │
+│ 30    │ 9nJyMnU5DATbqSO7SbLGGn │ Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml                                       │ SUCCESS     │                     │ 2026-03-22T17:39:09.000+0000 │ 2026-03-22T17:39:09.000+0000 │ < 1s     │
+│ 31    │                        │ Explore/ClaimCenter_GW/Guides/TestBadGuide.GUIDE.xml                                         │ NOT_FOUND   │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 32    │                        │ LOCATION.xml                                                                                 │ BAD_REQUEST │ Invalid asset path. │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 33    │                        │ Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveParameters.PROCESS_OBJECT.xml         │ UNSUPPORTED │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 34    │                        │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchParameters.PROCESS_OBJECT.xml             │ UNSUPPORTED │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 35    │                        │ Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchRequest.PROCESS_OBJECT.xml                │ UNSUPPORTED │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 36    │                        │ Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieveParameters.PROCESS_OBJECT.xml             │ UNSUPPORTED │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+│ 37    │                        │ Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearchParameters.PROCESS_OBJECT.xml                 │ UNSUPPORTED │                     │ 2026-03-22T17:39:10.000+0000 │ 2026-03-22T17:39:10.000+0000 │ < 1s     │
+└───────┴────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────────┴─────────────┴─────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────┘
+Error: batch 1: publish job 1220426335747698688 ended with status: ERROR

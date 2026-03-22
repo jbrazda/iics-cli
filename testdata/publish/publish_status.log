@@ -1,0 +1,90 @@
+DEBUG > GET https://use4-cai.dm-us.informaticacloud.com/active-bpel/asset/v1/publish/1220406734074802176
+Request Headers:
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+  Infa-Session-Id: ***
+DEBUG < 200 OK
+Response Headers:
+  Date: Sun, 22 Mar 2026 16:44:19 GMT
+  Content-Length: 2967
+  Cache-Control: private
+  Referrer-Policy: strict-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  X-Envoy-Upstream-Service-Time: 7
+  Server: istio-envoy
+  Content-Type: application/vnd.api+json
+  X-Content-Type-Options: nosniff
+  X-Xss-Protection: 1; mode=block
+Response Body:
+  {
+    "data": {
+      "type": "publish",
+      "id": "1220406734074802176",
+      "attributes": {
+        "jobState": "SUCCESS",
+        "jobStatusDetail": {
+          "itemStateSummary": {
+            "SUCCESS": 31
+          }
+        },
+        "startedBy": "jaroslav.brazda.dev@natl.com",
+        "startDate": "2026-03-22T16:20:39.000+0000",
+        "endDate": "2026-03-22T16:23:53.000+0000",
+        "totalCount": 31,
+        "processedCount": 31,
+        "assetPaths": [
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE.xml",
+          "Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE.xml"
+        ]
+      }
+    },
+    "links": {
+      "self": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220406734074802176",
+      "status": "https://use4-cai.dm-us.informaticacloud.com/active-bpel/public/api/cai/v1/asset/v1/publish/1220406734074802176/Status"
+    }
+  }
+
+
+Publish Summary:
+┌────────────┬──────────────────────────────┐
+│   FIELD    │            VALUE             │
+├────────────┼──────────────────────────────┤
+│ Job ID     │ 1220406734074802176          │
+│ State      │ SUCCESS                      │
+│ Start Date │ 2026-03-22T16:20:39.000+0000 │
+│ End Date   │ 2026-03-22T16:23:53.000+0000 │
+│ Duration   │ 3m 14s                       │
+│ Total      │ 31                           │
+│ Published  │ 31                           │
+│ Errors     │ 0                            │
+└────────────┴──────────────────────────────┘

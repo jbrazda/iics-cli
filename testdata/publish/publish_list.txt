@@ -1,2 +1,1 @@
-LOCATION
 Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS

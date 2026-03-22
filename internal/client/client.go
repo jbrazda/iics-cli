@@ -209,6 +209,49 @@ func (c *Client) ensureSession(ctx context.Context) error {
 	return nil
 }
 
+// debugPrintHTTP writes a full request/response trace to stderr.
+// Session header values are masked. JSON bodies are pretty-printed when possible.
+func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, respData []byte) {
+	w := os.Stderr
+	_, _ = fmt.Fprintf(w, "DEBUG > %s %s\n", req.Method, req.URL)
+	_, _ = fmt.Fprintln(w, "Request Headers:")
+	for k, vs := range req.Header {
+		for _, v := range vs {
+			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
+				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
+			} else {
+				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
+			}
+		}
+	}
+	if len(reqData) > 0 {
+		_, _ = fmt.Fprintln(w, "Request Body:")
+		var buf bytes.Buffer
+		if json.Indent(&buf, reqData, "  ", "  ") == nil {
+			_, _ = fmt.Fprintf(w, "  %s\n", buf.Bytes())
+		} else {
+			_, _ = fmt.Fprintf(w, "  %s\n", reqData)
+		}
+	}
+	_, _ = fmt.Fprintf(w, "DEBUG < %s\n", resp.Status)
+	_, _ = fmt.Fprintln(w, "Response Headers:")
+	for k, vs := range resp.Header {
+		for _, v := range vs {
+			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
+		}
+	}
+	if len(respData) > 0 {
+		_, _ = fmt.Fprintln(w, "Response Body:")
+		var buf bytes.Buffer
+		if json.Indent(&buf, respData, "  ", "  ") == nil {
+			_, _ = fmt.Fprintf(w, "  %s\n", buf.Bytes())
+		} else {
+			_, _ = fmt.Fprintf(w, "  %s\n", respData)
+		}
+	}
+	_, _ = fmt.Fprintln(w)
+}
+
 // doJSON is a convenience method that sends a JSON request and decodes the response.
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
 	if err := c.ensureSession(ctx); err != nil {
@@ -243,10 +286,11 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 		return fmt.Errorf("reading response: %w", err)
 	}
 
+	if c.debug {
+		debugPrintHTTP(req, reqData, resp, respData)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if c.debug && len(reqData) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
-		}
 		return newAPIError(resp, respData)
 	}
 
@@ -301,10 +345,11 @@ func (c *Client) doJSONWithQuery(ctx context.Context, method, path string, query
 		return fmt.Errorf("reading response: %w", err)
 	}
 
+	if c.debug {
+		debugPrintHTTP(req, reqData, resp, respData)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if c.debug && len(reqData) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, path, reqData)
-		}
 		return newAPIError(resp, respData)
 	}
 
@@ -348,10 +393,10 @@ func (c *Client) doCAIJSON(ctx context.Context, method, absoluteURL string, reqB
 	if err != nil {
 		return fmt.Errorf("reading response: %w", err)
 	}
+	if c.debug {
+		debugPrintHTTP(req, reqData, resp, respData)
+	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if c.debug && len(reqData) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "DEBUG request body (%s %s):\n%s\n", method, absoluteURL, reqData)
-		}
 		return newAPIError(resp, respData)
 	}
 	if respBody != nil && len(respData) > 0 {

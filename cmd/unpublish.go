@@ -42,6 +42,8 @@ func newUnpublishStartCmd() *cobra.Command {
 			if len(paths) == 0 {
 				return fmt.Errorf("no asset paths provided; use --asset, --from-file, or pipe from stdin")
 			}
+			paths = filterPublishablePaths(paths)
+			paths = sortPathsForUnpublish(paths)
 
 			c, err := getClient(cmd)
 			if err != nil {
@@ -103,12 +105,7 @@ func newUnpublishStatusCmd() *cobra.Command {
 				return err
 			}
 
-			f, err := getFormatter()
-			if err != nil {
-				return err
-			}
-
-			return f.Format(publishJobToDisplay(resp), publishColumns)
+			return printPublishSummary(cmd, "unpublish", resp, defaultItemFields, full)
 		},
 	}
 
@@ -127,6 +124,7 @@ func newUnpublishRunCmd() *cobra.Command {
 		pollingInterval int
 		maxWaitTime     int
 		detailedPolling bool
+		itemFields      string
 	)
 
 	cmd := &cobra.Command{
@@ -136,7 +134,7 @@ func newUnpublishRunCmd() *cobra.Command {
 polls to completion, and prints a detailed summary.`,
 		Example: `  iics unpublish run --asset "Explore/Default/MyProcess.PROCESS.xml"
   iics unpublish run --from-file assets.txt --verbose
-  iics objects list -q "type=='PROCESS'" -o csv | iics unpublish run`,
+  iics objects list -q "type=='PROCESS'" -o csv --output-fields location | iics unpublish run`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			paths, err := resolvePublishAssets(assets, fromFile)
 			if err != nil {
@@ -145,6 +143,8 @@ polls to completion, and prints a detailed summary.`,
 			if len(paths) == 0 {
 				return fmt.Errorf("no asset paths provided; use --asset, --from-file, or pipe from stdin")
 			}
+			paths = filterPublishablePaths(paths)
+			paths = sortPathsForUnpublish(paths)
 
 			c, err := getClient(cmd)
 			if err != nil {
@@ -152,16 +152,17 @@ polls to completion, and prints a detailed summary.`,
 			}
 
 			return runPublishOp(cmd, c, paths, caiURL, name, "unpublish", pollingInterval, maxWaitTime, detailedPolling,
-				c.StartUnpublish, c.GetUnpublishStatus)
+				itemFields, c.StartUnpublish, c.GetUnpublishStatus)
 		},
 	}
 
 	cmd.Flags().StringArrayVar(&assets, "asset", nil, "asset path(s) to unpublish (repeatable)")
-	cmd.Flags().StringVar(&fromFile, "from-file", "", "file with asset paths (txt/json/csv); omit to read from stdin")
+	cmd.Flags().StringVar(&fromFile, "from-file", "", "file with asset paths (.txt/.csv/.json/.yaml); omit to read from stdin")
 	cmd.Flags().StringVar(&caiURL, "cai-url", "", "CAI base URL override")
 	cmd.Flags().StringVar(&name, "name", "", "optional job label")
 	cmd.Flags().IntVar(&pollingInterval, "polling-interval", 10, "seconds between status polls")
 	cmd.Flags().IntVar(&maxWaitTime, "max-wait-time", 300, "maximum seconds to wait for completion")
-	cmd.Flags().BoolVar(&detailedPolling, "detailed-polling", false, "print totalCount/processedCount on each poll")
+	cmd.Flags().BoolVar(&detailedPolling, "detailed-polling", false, "print item detail table on each poll (requires --verbose)")
+	cmd.Flags().StringVar(&itemFields, "item-fields", defaultItemFields, "comma-separated item detail fields to display")
 	return cmd
 }
