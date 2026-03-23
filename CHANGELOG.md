@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-03-23
+
+### Added
+
+- `profile edit` subcommand: interactively update credentials for an existing profile;
+  validates by logging in, derives org-specific `baseApiUrl`/`caiUrl` from the login
+  response, and refreshes the session cache
+
+### Fixed
+
+- `config.ResolveProfile` now returns a copy of the stored profile before applying
+  `IICS_*` env-var overrides; previously the mutation caused env-var values to be written
+  to `~/.iics/config.yaml` by `iics login`, potentially corrupting stored credentials
+  and causing account lock-outs (IICS error IDS_086)
+- `iics login`: discovered URLs (`loginUrl`, `baseApiUrl`, `caiUrl`) are now written to
+  the original stored profile, not to the env-var-overridden copy
+- `profile add` and `profile edit`: username and password prompts now always appear even
+  when an existing profile already has those fields populated (previously the loops were
+  skipped, so editing credentials was impossible without manual YAML editing)
+- Auto-setup wizard showed `""` instead of the actual profile name when credentials were
+  not configured for a named `--profile`
+
 ## [0.1.0-beta] - 2026-03-22
 
 ### Added

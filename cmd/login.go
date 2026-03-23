@@ -38,16 +38,22 @@ The session is cached locally so subsequent commands don't require re-authentica
 				return fmt.Errorf("login failed: %w", err)
 			}
 
-			// Persist discovered URLs back to profile so subsequent commands
-			// (e.g. publish, state) can find caiUrl without manual config.
+			// Persist discovered URLs back to the stored profile so subsequent
+			// commands (e.g. publish, state) can find them without manual config.
+			// Write directly to cfg.Profiles[profileName] (the original, unmodified
+			// entry) rather than to p, which may hold env-var-overridden credentials.
 			if len(loginResp.Products) > 0 {
 				baseAPIURL := loginResp.Products[0].BaseAPIURL
-				p.LoginURL = loginURL
-				p.BaseAPIURL = baseAPIURL
-				if p.CaiURL == "" {
-					p.CaiURL = config.DeriveCaiURL(baseAPIURL)
+				stored := cfg.Profiles[profileName]
+				if stored == nil {
+					stored = &config.Profile{}
+					cfg.Profiles[profileName] = stored
 				}
-				cfg.Profiles[profileName] = p
+				stored.LoginURL = loginURL
+				stored.BaseAPIURL = baseAPIURL
+				if stored.CaiURL == "" {
+					stored.CaiURL = config.DeriveCaiURL(baseAPIURL)
+				}
 				if saveErr := cfg.Save(cfgFile); saveErr != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update profile: %v\n", saveErr)
 				}

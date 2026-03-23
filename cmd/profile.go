@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
+	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
@@ -22,6 +24,7 @@ all configured profiles, and 'profile set-default' to choose the active one.`,
 
 	cmd.AddCommand(newProfileListCmd())
 	cmd.AddCommand(newProfileAddCmd())
+	cmd.AddCommand(newProfileEditCmd())
 	cmd.AddCommand(newProfileDeleteCmd())
 	cmd.AddCommand(newProfileSetDefaultCmd())
 	cmd.AddCommand(newProfileShowCmd())
@@ -118,6 +121,84 @@ If name is omitted, the profile is saved as "default".`,
 			}
 
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Profile %q saved.\n", name)
+			return nil
+		},
+	}
+}
+
+func newProfileEditCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "edit [name]",
+		Short: "Edit an existing profile interactively",
+		Long: `Interactively update credentials for an existing profile.
+Current values are shown as defaults; press Enter to keep them.
+After saving, validates the credentials by logging in and refreshes
+the session cache with the org-specific API URLs discovered from the response.`,
+		Example: `  iics profile edit
+  iics profile edit qa`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := "default"
+			if len(args) == 1 {
+				name = args[0]
+			}
+
+			cfg, err := loadConfig()
+			if err != nil {
+				return err
+			}
+			existing := cfg.Profiles[name]
+			if existing == nil {
+				return fmt.Errorf("profile %q not found; use 'profile add' to create it", name)
+			}
+
+			// Interactive prompt with existing values as defaults.
+			p, makeDefault, err := config.PromptProfile(existing, name)
+			if err != nil {
+				return err
+			}
+
+			// Validate credentials and discover org-specific URLs via login.
+			loginURL, err := p.GetLoginURL()
+			if err != nil {
+				return err
+			}
+			c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Validating credentials for %q...\n", p.Username)
+			loginResp, err := c.Login(context.Background())
+			if err != nil {
+				return fmt.Errorf("login validation failed: %w", err)
+			}
+
+			// Update URL fields from login response.
+			if len(loginResp.Products) > 0 {
+				baseAPIURL := loginResp.Products[0].BaseAPIURL
+				p.LoginURL = loginURL
+				p.BaseAPIURL = baseAPIURL
+				if p.CaiURL == "" {
+					p.CaiURL = config.DeriveCaiURL(baseAPIURL)
+				}
+			}
+
+			// Persist updated profile.
+			cfg.Profiles[name] = p
+			if makeDefault {
+				cfg.DefaultProfile = name
+			}
+			if err := cfg.Save(cfgFile); err != nil {
+				return fmt.Errorf("saving config: %w", err)
+			}
+
+			// Refresh session cache.
+			if err := saveSession(name, loginURL, c, loginResp); err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not cache session: %v\n", err)
+			}
+
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Profile %q updated and session refreshed.\n", name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  User:    %s\n", loginResp.UserInfo.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Org:     %s (%s)\n", loginResp.UserInfo.OrgName, loginResp.UserInfo.OrgID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  BaseURL: %s\n", c.BaseAPIURL())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  CAI URL: %s\n", c.CAIURL())
 			return nil
 		},
 	}

@@ -42,8 +42,8 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 
 	_, _ = fmt.Fprintf(os.Stderr, "Setting up profile %q\n\n", profileName)
 
-	// Username
-	for p.Username == "" {
+	// Username - always prompt at least once so existing profiles can be updated.
+	for {
 		if existing != nil && existing.Username != "" {
 			_, _ = fmt.Fprintf(os.Stderr, "Username [%s]: ", existing.Username)
 		} else {
@@ -59,13 +59,14 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		} else if existing != nil && existing.Username != "" {
 			p.Username = existing.Username
 		}
-		if p.Username == "" {
-			_, _ = fmt.Fprintln(os.Stderr, "Username is required.")
+		if p.Username != "" {
+			break
 		}
+		_, _ = fmt.Fprintln(os.Stderr, "Username is required.")
 	}
 
-	// Password
-	for p.Password == "" {
+	// Password - always prompt at least once so existing profiles can be updated.
+	for {
 		if existing != nil && existing.Password != "" {
 			_, _ = fmt.Fprint(os.Stderr, "Password [current: ***]: ")
 		} else {
@@ -81,9 +82,10 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		} else if existing != nil && existing.Password != "" {
 			p.Password = existing.Password
 		}
-		if p.Password == "" {
-			_, _ = fmt.Fprintln(os.Stderr, "Password is required.")
+		if p.Password != "" {
+			break
 		}
+		_, _ = fmt.Fprintln(os.Stderr, "Password is required.")
 	}
 
 	// Region or custom login URL

@@ -2688,6 +2688,38 @@ _iics_profile_delete()
     noun_aliases=()
 }
 
+_iics_profile_edit()
+{
+    last_command="iics_profile_edit"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_profile_list()
 {
     last_command="iics_profile_list"
@@ -2793,6 +2825,7 @@ _iics_profile()
     commands=()
     commands+=("add")
     commands+=("delete")
+    commands+=("edit")
     commands+=("list")
     commands+=("set-default")
     commands+=("show")

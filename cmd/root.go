@@ -209,7 +209,7 @@ func resolveProfile() (*config.Config, *config.Profile, string, error) {
 
 	p, err := cfg.ResolveProfile(profileName)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, profileName, err
 	}
 
 	return cfg, p, profileName, nil

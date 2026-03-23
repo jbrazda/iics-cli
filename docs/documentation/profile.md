@@ -17,6 +17,7 @@ iics profile <subcommand> [flags]
 | Subcommand    | Description                                    |
 | ------------- | ---------------------------------------------- |
 | `add`         | Add or update a profile interactively          |
+| `edit`        | Edit an existing profile interactively         |
 | `list`        | List all configured profiles                   |
 | `delete`      | Delete a profile                               |
 | `set-default` | Set the default profile used when no `--profile` flag is given |
@@ -25,6 +26,10 @@ iics profile <subcommand> [flags]
 ## Flags
 
 ### `add [name]`
+
+No command-specific flags. `name` defaults to `"default"` when omitted.
+
+### `edit [name]`
 
 No command-specific flags. `name` defaults to `"default"` when omitted.
 
@@ -58,13 +63,26 @@ The `add` subcommand:
 - Derives `loginUrl` from the region automatically (if a known region code is entered).
 - Derives `caiUrl` from the login URL and shows it as the default for the CAI URL prompt;
   the user can accept the derived value or type a custom URL.
-- When editing an existing profile, shows the current value in brackets so you can press
-  Enter to keep it.
+- When invoked on an existing profile name, shows the current value in brackets so you can
+  press Enter to keep it.
 - Asks whether to set the profile as the default.
 - Saves the result to `~/.iics/config.yaml`.
+- Does not validate credentials. Run `iics login --profile <name>` afterwards to verify and
+  populate `baseApiUrl` and `caiUrl`.
 
-On first `iics login` after creating a profile, the `baseApiUrl` (org-specific, not known
-before a real login) and any remaining derived URLs are written back to the profile automatically.
+The `edit` subcommand:
+
+- Requires the profile to already exist (use `profile add` to create new profiles).
+- Behaves identically to `add` for prompting - shows current values as defaults.
+- After the prompts, **validates credentials by logging in** immediately. If the login fails
+  the profile is not saved and the error is shown.
+- On success: saves the updated profile with org-specific `baseApiUrl` and `caiUrl` derived
+  from the login response, and refreshes the session cache. You do not need to run
+  `iics login` separately.
+
+On first `iics login` after creating a profile with `add`, the `baseApiUrl` (org-specific,
+not known before a real login) and any remaining derived URLs are written back to the profile
+automatically.
 
 The `delete` subcommand removes the profile from the config file and also clears any cached
 session for that profile from `~/.iics/sessions.yaml`.
@@ -89,6 +107,12 @@ iics profile add
 
 # Create a named profile for a production org
 iics profile add prod
+
+# Update credentials for an existing profile (validates by logging in)
+iics profile edit qa
+
+# Update the default profile
+iics profile edit
 
 # List all profiles (shows which one is the default)
 iics profile list

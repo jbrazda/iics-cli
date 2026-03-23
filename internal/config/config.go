@@ -121,37 +121,37 @@ func (c *Config) ResolveProfile(profileName string) (*Profile, error) {
 		profileName = "default"
 	}
 
-	profile, ok := c.Profiles[profileName]
-	if !ok {
-		// If no profiles exist, build one from env vars
-		profile = &Profile{}
+	// Copy the stored profile so env-var overrides never mutate cfg.Profiles.
+	var resolved Profile
+	if existing, ok := c.Profiles[profileName]; ok {
+		resolved = *existing
 	}
 
-	// Environment variable overrides
+	// Environment variable overrides (applied to copy only)
 	if v := os.Getenv("IICS_USERNAME"); v != "" {
-		profile.Username = v
+		resolved.Username = v
 	}
 	if v := os.Getenv("IICS_PASSWORD"); v != "" {
-		profile.Password = v
+		resolved.Password = v
 	}
 	if v := os.Getenv("IICS_REGION"); v != "" {
-		profile.Region = v
+		resolved.Region = v
 	}
 	if v := os.Getenv("IICS_LOGIN_URL"); v != "" {
-		profile.LoginURL = v
+		resolved.LoginURL = v
 	}
 	if v := os.Getenv("IICS_CAI_URL"); v != "" {
-		profile.CaiURL = v
+		resolved.CaiURL = v
 	}
 
-	if profile.Username == "" {
+	if resolved.Username == "" {
 		return nil, fmt.Errorf("username not configured for profile %q; set in config file or IICS_USERNAME env var", profileName)
 	}
-	if profile.Password == "" {
+	if resolved.Password == "" {
 		return nil, fmt.Errorf("password not configured for profile %q; set in config file or IICS_PASSWORD env var", profileName)
 	}
 
-	return profile, nil
+	return &resolved, nil
 }
 
 // GetLoginURL returns the login URL for the profile.
