@@ -100,6 +100,10 @@ func (c *Client) Login(ctx context.Context) (*LoginResponse, error) {
 	}
 	c.mu.Unlock()
 
+	if c.onLoginSuccess != nil {
+		c.onLoginSuccess(&loginResp)
+	}
+
 	return &loginResp, nil
 }
 

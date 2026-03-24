@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -52,10 +53,6 @@ func newProfileListCmd() *cobra.Command {
 			rows := make([]map[string]interface{}, 0, len(names))
 			for _, name := range names {
 				p := cfg.Profiles[name]
-				endpoint := p.Region
-				if p.LoginURL != "" {
-					endpoint = p.LoginURL
-				}
 				defaultMark := ""
 				if cfg.DefaultProfile == name {
 					defaultMark = "yes"
@@ -63,7 +60,8 @@ func newProfileListCmd() *cobra.Command {
 				rows = append(rows, map[string]interface{}{
 					"name":     name,
 					"default":  defaultMark,
-					"endpoint": endpoint,
+					"region":   p.Region,
+					"endpoint": p.LoginURL,
 					"username": p.Username,
 				})
 			}
@@ -75,6 +73,7 @@ func newProfileListCmd() *cobra.Command {
 			columns := []output.Column{
 				{Header: "NAME", Field: "name"},
 				{Header: "DEFAULT", Field: "default"},
+				{Header: "REGION", Field: "region"},
 				{Header: "ENDPOINT", Field: "endpoint"},
 				{Header: "USERNAME", Field: "username"},
 			}
@@ -325,6 +324,37 @@ func newProfileShowCmd() *cobra.Command {
 				{"field": "Username", "value": p.Username},
 				{"field": "Password", "value": maskedPassword},
 			}
+
+			// Append session-derived fields from the cache.
+			const noSession = "(no active session)"
+			orgName, orgID, sessionUser, lastLogin, sessionExpires := noSession, noSession, noSession, noSession, noSession
+			if cache, cacheErr := config.LoadSessionCache(""); cacheErr == nil {
+				if entry, ok := cache.Sessions[name]; ok && entry != nil {
+					orgName = entry.OrgName
+					orgID = entry.OrgID
+					sessionUser = entry.UserName
+					if !entry.LastLoginTime.IsZero() {
+						lastLogin = entry.LastLoginTime.UTC().Format("2006-01-02 15:04:05 UTC")
+					} else if !entry.CreatedAt.IsZero() {
+						lastLogin = entry.CreatedAt.UTC().Format("2006-01-02 15:04:05 UTC")
+					}
+					if !entry.CreatedAt.IsZero() {
+						exp := entry.CreatedAt.Add(30 * time.Minute)
+						expStr := exp.UTC().Format("2006-01-02 15:04:05 UTC")
+						if entry.IsExpired() {
+							expStr += " (expired)"
+						}
+						sessionExpires = expStr
+					}
+				}
+			}
+			rows = append(rows,
+				map[string]interface{}{"field": "Org Name", "value": orgName},
+				map[string]interface{}{"field": "Org ID", "value": orgID},
+				map[string]interface{}{"field": "Session User", "value": sessionUser},
+				map[string]interface{}{"field": "Last Login", "value": lastLogin},
+				map[string]interface{}{"field": "Session Expires", "value": sessionExpires},
+			)
 
 			f, err := getFormatter()
 			if err != nil {

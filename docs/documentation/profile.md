@@ -133,26 +133,48 @@ iics profile delete staging --yes
 iics --profile prod connection list
 ```
 
-## `profile show` output
+## `profile list` output
 
-`profile show` renders a vertical FIELD/VALUE table. Example:
+`profile list` renders a table with one row per profile. The REGION column shows the
+configured region code; the ENDPOINT column shows the discovered login URL (populated after
+the first `iics login`).
 
 ```text
-+--------------+----------------------------------------------------------+
-| FIELD        | VALUE                                                    |
-+--------------+----------------------------------------------------------+
-| Name         | prod                                                     |
-| Default      | yes                                                      |
-| Region       | USE4                                                     |
-| Login URL    | https://use4.dm-us.informaticacloud.com/saas/...         |
-| Base API URL | https://use4.dm-us.informaticacloud.com/saas             |
-| CAI URL      | https://use4-cai.dm-us.informaticacloud.com              |
-| Username     | admin@company.com                                        |
-| Password     | ***                                                      |
-+--------------+----------------------------------------------------------+
++--------+---------+--------+---------------------------------------------------+-------------------+
+| NAME   | DEFAULT | REGION | ENDPOINT                                          | USERNAME          |
++--------+---------+--------+---------------------------------------------------+-------------------+
+| prod   | yes     | USE4   | https://use4.dm-us.informaticacloud.com/saas/...  | admin@company.com |
+| qa     |         | EU1    | https://dm-em.informaticacloud.com/saas/...       | qa@company.com    |
++--------+---------+--------+---------------------------------------------------+-------------------+
 ```
 
-`Base API URL` and `CAI URL` are empty until after the first `iics login`.
+## `profile show` output
+
+`profile show` renders a vertical FIELD/VALUE table including both config-file fields and
+session-derived fields read from the local session cache. Session fields show
+`(no active session)` when the profile has never been used or after `iics logout`.
+
+```text
++----------------+----------------------------------------------------------+
+| FIELD          | VALUE                                                    |
++----------------+----------------------------------------------------------+
+| Name           | prod                                                     |
+| Default        | yes                                                      |
+| Region         | USE4                                                     |
+| Login URL      | https://use4.dm-us.informaticacloud.com/saas/...         |
+| Base API URL   | https://use4.dm-us.informaticacloud.com/saas             |
+| CAI URL        | https://use4-cai.dm-us.informaticacloud.com              |
+| Username       | admin@company.com                                        |
+| Password       | ***                                                      |
+| Org Name       | My Production Org                                        |
+| Org ID         | a1B2c3D4E5F6                                             |
+| Session User   | admin@company.com                                        |
+| Last Login     | 2026-03-23 14:05:00 UTC                                  |
+| Session Expires| 2026-03-23 14:35:00 UTC                                  |
++----------------+----------------------------------------------------------+
+```
+
+`Base API URL`, `CAI URL`, and session fields are empty until after the first `iics login`.
 
 ## See also
 

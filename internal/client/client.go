@@ -27,16 +27,17 @@ const (
 
 // Client is the IICS v3 API client with automatic session management.
 type Client struct {
-	httpClient *http.Client
-	loginURL   string
-	baseAPIURL string
-	caiURL     string
-	sessionID  string
-	username   string
-	password   string
-	verbose    bool
-	debug      bool
-	mu         sync.RWMutex
+	httpClient     *http.Client
+	loginURL       string
+	baseAPIURL     string
+	caiURL         string
+	sessionID      string
+	username       string
+	password       string
+	verbose        bool
+	debug          bool
+	onLoginSuccess func(*LoginResponse)
+	mu             sync.RWMutex
 }
 
 // ClientOption is a functional option for Client construction.
@@ -118,6 +119,12 @@ func (c *Client) SetCAIURL(url string) {
 	c.caiURL = url
 }
 
+// SetOnLoginSuccess registers a callback that is invoked after every successful
+// login (initial auto-login or 401 renewal). Use this to persist the session.
+func (c *Client) SetOnLoginSuccess(fn func(*LoginResponse)) {
+	c.onLoginSuccess = fn
+}
+
 // apiURL constructs a full API URL from a resource path.
 func (c *Client) apiURL(resourcePath string) string {
 	c.mu.RLock()
@@ -183,7 +190,7 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 		_ = resp.Body.Close()
 
 		if _, err := c.Login(ctx); err != nil {
-			return nil, &SessionExpiredError{Wrapped: err}
+			return nil, &SessionExpiredError{Wrapped: fmt.Errorf("%w; run 'iics login' to re-authenticate", err)}
 		}
 
 		// Rebuild the request with fresh body

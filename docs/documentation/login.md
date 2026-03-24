@@ -3,7 +3,8 @@
 Authenticate with IICS and cache the session for subsequent commands.
 
 The session token is stored in `~/.iics/sessions.yaml` and reused automatically for 30 minutes.
-After expiry the next command triggers a silent re-login.
+After expiry the next command triggers a silent re-login and refreshes the cache, so subsequent
+commands do not re-authenticate unnecessarily.
 
 On a successful login the command also writes the discovered `loginUrl`, `baseApiUrl`, and
 `caiUrl` back to the active profile in `~/.iics/config.yaml`. This means commands that require
@@ -29,6 +30,26 @@ Credentials are resolved in this order (highest to lowest priority):
 3. `defaultProfile` in `~/.iics/config.yaml`
 
 If no password is available, the command prompts interactively.
+
+## Creating a profile on first use
+
+If the named profile does not exist in `~/.iics/config.yaml` and stdin is a terminal, the
+command offers to create it interactively before proceeding with the login:
+
+```text
+Profile "prod" does not exist. Create it now? [Y/n]:
+```
+
+Pressing Enter (or entering `y`) launches the interactive setup wizard. The new profile is
+saved to the config file and the login continues immediately without a separate
+`iics profile add` step.
+
+In non-interactive environments (CI/CD, cron, piped input) or when the user declines, the
+command exits with:
+
+```text
+profile "prod" not found; run 'iics profile add prod' to create it
+```
 
 ## Profile enrichment after login
 

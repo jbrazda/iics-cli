@@ -284,6 +284,13 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 	}
 	c := client.NewClient(loginURL, p.Username, p.Password, opts...)
 
+	// Register a callback so every auto-login or 401 renewal persists the session.
+	c.SetOnLoginSuccess(func(loginResp *client.LoginResponse) {
+		if sessErr := saveSession(profileName, loginURL, c, loginResp); sessErr != nil {
+			slog.Warn("could not cache session", "error", sessErr)
+		}
+	})
+
 	// Try to load cached session
 	cache, err := config.LoadSessionCache("")
 	if err == nil {
@@ -330,14 +337,16 @@ func saveSession(profileName, loginURL string, c *client.Client, loginResp *clie
 		cache = &config.SessionCache{Sessions: make(map[string]*config.SessionEntry)}
 	}
 
+	now := time.Now()
 	cache.Set(profileName, &config.SessionEntry{
-		SessionID:  loginResp.UserInfo.SessionID,
-		BaseAPIURL: c.BaseAPIURL(),
-		CAIUrl:     c.CAIURL(),
-		LoginURL:   loginURL,
-		OrgID:      loginResp.UserInfo.OrgID,
-		OrgName:    loginResp.UserInfo.OrgName,
-		UserName:   loginResp.UserInfo.Name,
+		SessionID:     loginResp.UserInfo.SessionID,
+		BaseAPIURL:    c.BaseAPIURL(),
+		CAIUrl:        c.CAIURL(),
+		LoginURL:      loginURL,
+		OrgID:         loginResp.UserInfo.OrgID,
+		OrgName:       loginResp.UserInfo.OrgName,
+		UserName:      loginResp.UserInfo.Name,
+		LastLoginTime: now,
 	})
 
 	if err := cache.Save(""); err != nil {

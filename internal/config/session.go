@@ -13,14 +13,15 @@ const sessionTimeout = 30 * time.Minute
 
 // SessionEntry holds a cached session for a profile.
 type SessionEntry struct {
-	SessionID  string    `yaml:"sessionId"`
-	BaseAPIURL string    `yaml:"baseApiUrl"`
-	CAIUrl     string    `yaml:"caiUrl,omitempty"`
-	LoginURL   string    `yaml:"loginUrl,omitempty"`
-	OrgID      string    `yaml:"orgId"`
-	OrgName    string    `yaml:"orgName"`
-	UserName   string    `yaml:"userName"`
-	CreatedAt  time.Time `yaml:"createdAt"`
+	SessionID     string    `yaml:"sessionId"`
+	BaseAPIURL    string    `yaml:"baseApiUrl"`
+	CAIUrl        string    `yaml:"caiUrl,omitempty"`
+	LoginURL      string    `yaml:"loginUrl,omitempty"`
+	OrgID         string    `yaml:"orgId"`
+	OrgName       string    `yaml:"orgName"`
+	UserName      string    `yaml:"userName"`
+	CreatedAt     time.Time `yaml:"createdAt"`
+	LastLoginTime time.Time `yaml:"lastLoginTime,omitempty"`
 }
 
 // SessionCache stores active session data on disk.

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-23
+
+### Added
+
+- `iics login --profile <name>`: when the named profile does not exist in config and stdin is
+  a terminal, the command now offers to create it interactively before proceeding with login;
+  non-TTY environments receive a clear error with the `iics profile add` hint
+- `profile list` now includes a dedicated `REGION` column alongside the existing `ENDPOINT`
+  column so both fields are always visible regardless of whether a login URL has been discovered
+- `profile show` now includes session-derived fields read from the local cache: Org Name,
+  Org ID, Session User, Last Login, and Session Expires; shows `(no active session)` when
+  no cache entry exists
+- `SessionEntry` in `~/.iics/sessions.yaml` now persists a `lastLoginTime` field recording
+  when credentials were last used to authenticate
+
+### Fixed
+
+- Sessions were never written to `~/.iics/sessions.yaml` after auto-login or 401 renewal;
+  every non-`login` command re-authenticated from scratch on each invocation. Fixed by
+  wiring an `OnLoginSuccess` callback on `Client` that persists the session after every
+  successful login (initial, auto, or 401 renewal)
+- 401 renewal failure now surfaces a clear error: `session renewal failed: ...; run 'iics
+  login' to re-authenticate` instead of the generic `session expired: ...`
+
 ## [0.1.0] - 2026-03-23
 
 ### Added

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -19,7 +20,53 @@ The session is cached locally so subsequent commands don't require re-authentica
   iics login --profile prod
   IICS_USERNAME=user@company.com IICS_PASSWORD=secret IICS_REGION=USW3 iics login`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, p, profileName, err := resolveProfile()
+			// Determine profile name before resolving, so we can detect a missing profile.
+			cfg, err := loadConfig()
+			if err != nil {
+				return err
+			}
+			profileName := profile
+			if profileName == "" {
+				if v := os.Getenv("IICS_PROFILE"); v != "" {
+					profileName = v
+				} else {
+					profileName = cfg.DefaultProfile
+				}
+			}
+			if profileName == "" {
+				profileName = "default"
+			}
+
+			// If the profile key is absent from config, offer to create it.
+			if _, exists := cfg.Profiles[profileName]; !exists {
+				if !config.IsTerminal() {
+					return fmt.Errorf("profile %q not found; run 'iics profile add %s' to create it", profileName, profileName)
+				}
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Profile %q does not exist. Create it now? [Y/n]: ", profileName)
+				var answer string
+				_, _ = fmt.Scanln(&answer)
+				if answer != "" && answer != "y" && answer != "Y" {
+					return fmt.Errorf("profile %q not found; run 'iics profile add %s' to create it", profileName, profileName)
+				}
+				newProfile, makeDefault, promptErr := config.PromptProfile(nil, profileName)
+				if promptErr != nil {
+					return fmt.Errorf("profile setup: %w", promptErr)
+				}
+				if cfg.Profiles == nil {
+					cfg.Profiles = make(map[string]*config.Profile)
+				}
+				cfg.Profiles[profileName] = newProfile
+				if makeDefault {
+					cfg.DefaultProfile = profileName
+				}
+				if saveErr := cfg.Save(cfgFile); saveErr != nil {
+					return fmt.Errorf("saving profile: %w", saveErr)
+				}
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\nProfile %q saved.\n\n", profileName)
+			}
+
+			var p *config.Profile
+			cfg, p, profileName, err = resolveProfile()
 			if err != nil {
 				return err
 			}
