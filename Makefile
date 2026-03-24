@@ -32,4 +32,4 @@ completions:
 	go run . completion fish        > completions/iics.fish
 	go run . completion powershell  > completions/iics.ps1
 
-all: fmt vet test build completions
+all: fmt vet test clean build completions
