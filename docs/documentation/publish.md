@@ -158,6 +158,20 @@ iics publish start --from-file assets.json
 iics objects list -q "type=='PROCESS'" -o csv | iics publish start
 ```
 
+```powershell
+iics publish start --asset "Explore/Default/MyProcess.PROCESS.xml"
+
+iics publish start `
+  --asset "Explore/Default/MyProcess.PROCESS.xml" `
+  --asset "Explore/Default/MyConn.AI_CONNECTION.xml"
+
+iics publish start --from-file assets.txt
+iics publish start --from-file assets.csv
+iics publish start --from-file assets.json
+
+iics objects list -q "type=='PROCESS'" -o csv | iics publish start
+```
+
 ---
 
 ## publish status
@@ -190,6 +204,12 @@ Retrieve the current status of a publish job.
 iics publish status --id <job-id>
 iics publish status --id <job-id> --full
 iics publish status --id <job-id> --output json
+```
+
+```powershell
+iics publish status --id $jobId
+iics publish status --id $jobId --full
+iics publish status --id $jobId --output json
 ```
 
 ---
@@ -294,10 +314,28 @@ iics publish run --asset "Explore/Default/MyProcess.PROCESS.xml"
 
 # Publish from a text file with verbose progress and item details
 iics publish run --from-file assets.txt --verbose --detailed-polling
+```
+
+```powershell
+# Publish a single asset
+iics publish run --asset "Explore/Default/MyProcess.PROCESS.xml"
+
+# Publish from a text file with verbose progress and item details
+iics publish run --from-file assets.txt --verbose --detailed-polling
 
 # Recommended: publish from CSV using location field
 iics objects list -q "location==MyProject/Processes" -o csv --output-fields location \
   > assets.csv
+iics publish run --from-file assets.csv --verbose
+
+# Pipe directly from objects list (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv --output-fields location | iics publish run
+```
+
+```powershell
+# Recommended: publish from CSV using location field
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields location `
+  | Out-File assets.csv
 iics publish run --from-file assets.csv --verbose
 
 # Pipe directly from objects list (stdin auto-detect)
@@ -310,6 +348,20 @@ iics publish run \
   --max-wait-time 600 \
   --detailed-polling \
   --item-fields "itemIndex,assetPath,itemState,duration" \
+  --verbose
+
+# JSON output for CI/CD
+iics publish run --from-file assets.txt --output json
+```
+
+```powershell
+# Custom polling interval, timeout, and item field selection
+iics publish run `
+  --from-file assets.csv `
+  --polling-interval 15 `
+  --max-wait-time 600 `
+  --detailed-polling `
+  --item-fields "itemIndex,assetPath,itemState,duration" `
   --verbose
 
 # JSON output for CI/CD

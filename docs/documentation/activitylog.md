@@ -104,6 +104,39 @@ iics activitylog list \
   --output csv > task-history.csv
 ```
 
+```powershell
+# List recent activity log entries (default: up to 200)
+iics activitylog list
+
+# Filter by task ID
+iics activitylog list --task-id abc123
+
+# Filter by a specific run of a task
+iics activitylog list --task-id abc123 --run-id 42
+
+# Page through results
+iics activitylog list --offset 200 --limit 200
+
+# Select specific fields for table output
+iics activitylog list --fields id,objectName,state,errorMsg
+
+# Add row counts to the default columns
+iics activitylog list --fields id,objectName,state,runId,successTargetRows,failedTargetRows,startTimeUtc
+
+# As JSON for scripting (all fields always included)
+iics activitylog list --output json
+
+# Find failed jobs
+$logs = iics activitylog list --output json | ConvertFrom-Json
+$logs | Where-Object { $_.state -eq 3 }
+
+# Export to CSV with selected fields
+iics activitylog list `
+  --task-id abc123 `
+  --fields id,objectName,state,runId,startTimeUtc,endTimeUtc,errorMsg `
+  --output csv | Out-File task-history.csv
+```
+
 ---
 
 ## activitylog get
@@ -147,6 +180,15 @@ iics activitylog get abc123
 
 # Full JSON including all nested objects
 iics activitylog get abc123 --output json
+```
+
+```powershell
+# Get a specific log entry (table with nested sections)
+iics activitylog get abc123
+
+# Full JSON including all nested objects
+iics activitylog get abc123 --output json
+```
 
 # Table with additional row count fields
 iics activitylog get abc123 \

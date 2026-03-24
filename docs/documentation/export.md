@@ -96,6 +96,39 @@ iics export run \
   --max-wait-time 1800
 ```
 
+```powershell
+# Export with an artifacts file
+iics export run `
+  --artifacts-file my-objects.txt `
+  --export-file-path exports/my-export.zip
+
+# Export with verbose polling output
+iics export run `
+  --artifacts-file my-objects.txt `
+  --export-file-path exports/my-export.zip `
+  --verbose `
+  --expand-status
+
+# Get objects list and save to file, then export
+iics objects list -q "location==MY_PROJECT" -o csv | Out-File objects.csv
+iics export run --artifacts-file objects.csv --export-file-path my-project-export.zip
+
+# Export with a custom name and include tags
+iics export run `
+  --artifacts-file objects.txt `
+  --export-file-path release-v2.zip `
+  --name "Release v2.0" `
+  --include-tags `
+  --print-file-contents
+
+# Long-running export with extended timeout
+iics export run `
+  --artifacts-file big-project.txt `
+  --export-file-path big-project.zip `
+  --polling-interval 30 `
+  --max-wait-time 1800
+```
+
 ---
 
 ## export start
@@ -122,6 +155,16 @@ echo "Job started: $JOB_ID"
 
 # Check status separately
 iics export status --id "$JOB_ID"
+```
+
+```powershell
+# Start export and capture the job ID
+$job = iics export start --artifacts-file objects.txt --output json | ConvertFrom-Json
+$jobId = $job.id
+Write-Host "Job started: $jobId"
+
+# Check status separately
+iics export status --id $jobId
 ```
 
 ---
@@ -165,6 +208,22 @@ while true; do
 done
 ```
 
+```powershell
+iics export status --id <job-id>
+
+# Show per-object results
+iics export status --id <job-id> --expand
+
+# Poll until done (simple loop)
+do {
+  $status = iics export status --id $jobId --output json | ConvertFrom-Json
+  $state = $status.status.state
+  Write-Host "State: $state"
+  if ($state -eq "SUCCESSFUL" -or $state -eq "FAILED") { break }
+  Start-Sleep -Seconds 10
+} while ($true)
+```
+
 ---
 
 ## export download
@@ -183,6 +242,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics export download --id <job-id> --output-file release.zip
+```
+
+```powershell
 iics export download --id <job-id> --output-file release.zip
 ```
 

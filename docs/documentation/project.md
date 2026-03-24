@@ -37,6 +37,12 @@ iics project create --name "Data Engineering"
 iics project create --name "Finance ETL" --description "Finance team data pipelines"
 ```
 
+```powershell
+iics project create --name "Data Engineering"
+
+iics project create --name "Finance ETL" --description "Finance team data pipelines"
+```
+
 ---
 
 ## project update
@@ -54,6 +60,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics project update --id <project-id> --name "Finance Data Engineering"
+
+iics project update --id <project-id> --description "Updated description"
+```
+
+```powershell
 iics project update --id <project-id> --name "Finance Data Engineering"
 
 iics project update --id <project-id> --description "Updated description"
@@ -77,6 +89,14 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+# Interactive confirmation
+iics project delete --id <project-id>
+
+# Non-interactive (CI/CD)
+iics project delete --id <project-id> --yes
+```
+
+```powershell
 # Interactive confirmation
 iics project delete --id <project-id>
 

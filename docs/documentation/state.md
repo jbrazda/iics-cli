@@ -49,6 +49,24 @@ for ID in $(iics objects list --type MTT --output json | jq -r '.[].id'); do
 done
 ```
 
+```powershell
+# Print state to stdout
+iics state fetch --object-id <object-id>
+
+# Save state to a file
+iics state fetch --object-id <object-id> --output-file my-mapping.json
+
+# Resolve path to ID, then fetch
+$obj = iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+iics state fetch --object-id $obj.id --output-file LoadOrders-backup.json
+
+# Backup all mappings in a project
+$objs = iics objects list --type MTT --output json | ConvertFrom-Json
+foreach ($obj in $objs) {
+  iics state fetch --object-id $obj.id --output-file "backups/$($obj.id).json"
+}
+```
+
 ---
 
 ## state load
@@ -73,6 +91,13 @@ iics state load --object-id <object-id> --input-file my-mapping.json
 iics state load --object-id "$ID" --input-file backups/${ID}.json
 ```
 
+```powershell
+iics state load --object-id <object-id> --input-file my-mapping.json
+
+# Restore from backup
+iics state load --object-id $ID --input-file "backups/$ID.json"
+```
+
 ## Backup and restore pattern
 
 ```bash
@@ -82,6 +107,16 @@ iics state fetch --object-id "$ID" --output-file LoadLedger-$(date +%Y%m%d).json
 
 # Restore
 iics state load --object-id "$ID" --input-file LoadLedger-20260310.json
+```
+
+```powershell
+# Backup
+$obj = iics lookup --path "Finance/ETL/LoadLedger" --type MTT --output json | ConvertFrom-Json
+$date = Get-Date -Format "yyyyMMdd"
+iics state fetch --object-id $obj.id --output-file "LoadLedger-$date.json"
+
+# Restore
+iics state load --object-id $obj.id --input-file "LoadLedger-20260310.json"
 ```
 
 ## See also

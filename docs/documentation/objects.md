@@ -23,17 +23,17 @@ List assets in the organisation. Without `--limit` all pages are fetched automat
 
 ### Flags
 
-| Flag                   | Short | Type   | Default                          | Description                                                   |
-| ---------------------- | ----- | ------ | -------------------------------- | ------------------------------------------------------------- |
-| `--type`               |       | string |                                  | Filter by object type (see [types](#object-types))            |
-| `--tag`                |       | string |                                  | Filter by tag name                                            |
-| `-q, --query`          | `-q`  | string |                                  | Raw query filter, e.g. `location==ZZ_TEST_CLI`                |
-| `--limit`              |       | int    | 0 (all)                          | Max results; 0 fetches all pages                              |
-| `--skip`               |       | int    | 0                                | Results to skip (only meaningful with `--limit`)              |
-| `--output-fields`      |       | string | `id,path,type,updatedBy,updateTime` | Comma-separated fields shown on console                    |
-| `--output-file`        |       | string |                                  | Write output to this file path                                |
-| `--output-file-format` |       | string | `yaml`                           | Format of the output file: `yaml`, `json`, `csv`, `table`    |
-| `--output-file-fields` |       | string |                                  | Comma-separated fields written to the output file             |
+| Flag                   | Short | Type   | Default                             | Description                                               |
+| ---------------------- | ----- | ------ | ----------------------------------- | --------------------------------------------------------- |
+| `--type`               |       | string |                                     | Filter by object type (see [types](#object-types))        |
+| `--tag`                |       | string |                                     | Filter by tag name                                        |
+| `-q, --query`          | `-q`  | string |                                     | Raw query filter, e.g. `location==ZZ_TEST_CLI`            |
+| `--limit`              |       | int    | 0 (all)                             | Max results; 0 fetches all pages                          |
+| `--skip`               |       | int    | 0                                   | Results to skip (only meaningful with `--limit`)          |
+| `--output-fields`      |       | string | `id,path,type,updatedBy,updateTime` | Comma-separated fields shown on console                   |
+| `--output-file`        |       | string |                                     | Write output to this file path                            |
+| `--output-file-format` |       | string | `yaml`                              | Format of the output file: `yaml`, `json`, `csv`, `table` |
+| `--output-file-fields` |       | string |                                     | Comma-separated fields written to the output file         |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -98,6 +98,38 @@ iics objects list -q "location==ZZ_TEST_CLI" -o csv \
 iics objects list --output json | jq 'group_by(.type) | map({type: .[0].type, count: length})'
 ```
 
+```powershell
+# List all objects (auto-paginated)
+iics objects list
+
+# List all mappings
+iics objects list --type MTT
+
+# Filter by a query expression
+iics objects list -q "location==ZZ_TEST_CLI"
+
+# First 50 objects, skip 100
+iics objects list --type MTT --limit 50 --skip 100
+
+# Output as JSON
+iics objects list --type DTEMPLATE --output json
+
+# Save a full CSV inventory to a file
+iics objects list --output-file inventory.csv --output-file-format csv
+
+# Save YAML with specific fields
+iics objects list --output-file objects.yaml `
+  --output-file-format yaml `
+  --output-file-fields id,path,type,description
+
+# Get IDs for piping into export
+iics objects list -q "location==ZZ_TEST_CLI" -o csv
+
+# Count objects by type using JSON output
+$objs = iics objects list --output json | ConvertFrom-Json
+$objs | Group-Object -Property type | ForEach-Object { [PSCustomObject]@{type=$_.Name; count=$_.Count} }
+```
+
 ---
 
 ## objects dependencies
@@ -136,6 +168,18 @@ iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
 # Resolve ID first, then find dependencies
 ID=$(iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | jq -r '.id')
 iics objects dependencies --id "$ID" --ref-type uses --output json
+```
+
+```powershell
+# Find everything an object depends on
+iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type uses
+
+# Find what depends on an object (impact analysis)
+iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
+
+# Resolve ID first, then find dependencies
+$obj = iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+iics objects dependencies --id $obj.id --ref-type uses --output json
 ```
 
 ## See also

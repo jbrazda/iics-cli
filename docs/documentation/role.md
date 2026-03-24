@@ -52,6 +52,17 @@ iics role list --output json
 iics role list --output json | jq '.[] | select(.systemRole == false)'
 ```
 
+```powershell
+iics role list
+
+# List as JSON
+iics role list --output json
+
+# List only custom (non-system) roles
+$roles = iics role list --output json | ConvertFrom-Json
+$roles | Where-Object { $_.systemRole -eq $false }
+```
+
 ---
 
 ## role get
@@ -67,6 +78,13 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics role get --id <role-id>
+
+# JSON to see all role fields including privileges
+iics role get --id <role-id> --output json
+```
+
+```powershell
 iics role get --id <role-id>
 
 # JSON to see all role fields including privileges
@@ -108,6 +126,10 @@ Use `iics privilege list` to find available privilege IDs.
 iics role create --from-file etl-developer-role.json
 ```
 
+```powershell
+iics role create --from-file etl-developer-role.json
+```
+
 ---
 
 ## role update
@@ -124,6 +146,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics role update --id <role-id> --from-file updated-role.json
+```
+
+```powershell
 iics role update --id <role-id> --from-file updated-role.json
 ```
 
@@ -148,6 +174,13 @@ All [global flags](../../README.md#global-flags) apply.
 iics role delete --id <role-id>
 
 iics role delete --id <role-id> --yes
+```
+
+```powershell
+iics role delete --id <role-id>
+
+iics role delete --id <role-id> --yes
+```
 ```
 
 ## See also

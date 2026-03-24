@@ -22,6 +22,14 @@ iics logout
 iics logout --profile prod
 ```
 
+```powershell
+# Logout from the default profile
+iics logout
+
+# Logout from a named profile
+iics logout --profile prod
+```
+
 ## See also
 
 - [login](login.md)

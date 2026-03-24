@@ -53,6 +53,17 @@ iics metering get --type IPU --start 2026-01-01 --end 2026-03-31
 iics metering get --output json
 ```
 
+```powershell
+# Get all metering data
+iics metering get
+
+# Filter by type and date range
+iics metering get --type IPU --start 2026-01-01 --end 2026-03-31
+
+# Output as JSON
+iics metering get --output json
+```
+
 ---
 
 ## metering download
@@ -80,6 +91,18 @@ iics metering download --id <report-id> --output-file reports/ipu-q1-2026.csv
 # Get report ID then download
 REPORT_ID=$(iics metering get --type IPU --output json | jq -r '.[0].id')
 iics metering download --id "$REPORT_ID" --output-file ipu-report.csv
+```
+
+```powershell
+# Download with default filename
+iics metering download --id <report-id>
+
+# Download to a specific path
+iics metering download --id <report-id> --output-file reports/ipu-q1-2026.csv
+
+# Get report ID then download
+$report = iics metering get --type IPU --output json | ConvertFrom-Json | Select-Object -First 1
+iics metering download --id $report.id --output-file ipu-report.csv
 ```
 
 ## See also

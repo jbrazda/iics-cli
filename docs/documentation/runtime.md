@@ -53,6 +53,16 @@ iics rt list --output json
 iics runtime list --output json | jq '.[] | select(.type == "HYBRID")'
 ```
 
+```powershell
+iics runtime list
+
+iics rt list --output json
+
+# List only HYBRID environments
+$runtimes = iics runtime list --output json | ConvertFrom-Json
+$runtimes | Where-Object { $_.type -eq "HYBRID" }
+```
+
 ---
 
 ## runtime get
@@ -78,6 +88,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics runtime get --id <runtime-id>
+
+iics rt get --id <runtime-id> --output json
+```
+
+```powershell
 iics runtime get --id <runtime-id>
 
 iics rt get --id <runtime-id> --output json

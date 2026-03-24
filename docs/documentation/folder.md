@@ -45,6 +45,18 @@ iics folder create --name "Staging" --project-name "Finance ETL" \
   --description "Staging area for raw data loads"
 ```
 
+```powershell
+# Create folder using project ID
+iics folder create --name "Staging" --project-id <project-id>
+
+# Create folder using project name
+iics folder create --name "Staging" --project-name "Finance ETL"
+
+# With description
+iics folder create --name "Staging" --project-name "Finance ETL" `
+  --description "Staging area for raw data loads"
+```
+
 ---
 
 ## folder update
@@ -73,6 +85,15 @@ iics folder update --project-name "Finance ETL" --folder-name "Staging" \
   --name "Prod" --description "Production-ready pipelines"
 ```
 
+```powershell
+# Update by folder ID
+iics folder update --id <folder-id> --name "Production"
+
+# Update by project and folder name
+iics folder update --project-name "Finance ETL" --folder-name "Staging" `
+  --name "Prod" --description "Production-ready pipelines"
+```
+
 ---
 
 ## folder delete
@@ -91,6 +112,13 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics folder delete --id <folder-id>
+
+# Non-interactive
+iics folder delete --id <folder-id> --yes
+```
+
+```powershell
 iics folder delete --id <folder-id>
 
 # Non-interactive

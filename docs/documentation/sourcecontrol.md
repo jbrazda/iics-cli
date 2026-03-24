@@ -54,6 +54,16 @@ ID=$(iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | j
 iics sc checkout --object-id "$ID"
 ```
 
+```powershell
+iics sourcecontrol checkout --object-id <object-id>
+
+iics sc checkout --object-id <object-id>
+
+# Resolve path to ID, then checkout
+$obj = iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+iics sc checkout --object-id $obj.id
+```
+
 ---
 
 ## sourcecontrol checkin
@@ -85,6 +95,12 @@ iics sourcecontrol checkin --object-id <object-id> --comment "Fix null handling 
 iics sc checkin --object-id <object-id>
 ```
 
+```powershell
+iics sourcecontrol checkin --object-id <object-id> --comment "Fix null handling in filter step"
+
+iics sc checkin --object-id <object-id>
+```
+
 ---
 
 ## sourcecontrol pull
@@ -105,6 +121,12 @@ No command-specific flags. All [global flags](../../README.md#global-flags) appl
 ### Examples
 
 ```bash
+iics sourcecontrol pull
+
+iics sc pull --verbose
+```
+
+```powershell
 iics sourcecontrol pull
 
 iics sc pull --verbose
@@ -134,6 +156,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics sourcecontrol commit --comment "Release v2.0 changes"
+
+iics sc commit --comment "Deploy Finance ETL pipeline"
+```
+
+```powershell
 iics sourcecontrol commit --comment "Release v2.0 changes"
 
 iics sc commit --comment "Deploy Finance ETL pipeline"

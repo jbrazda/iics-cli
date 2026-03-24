@@ -54,6 +54,16 @@ ID=$(iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | j
 iics permission get --object-id "$ID"
 ```
 
+```powershell
+iics permission get --object-id <object-id>
+
+iics perm get --object-id <object-id> --output json
+
+# Resolve object ID from path first
+$obj = iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+iics permission get --object-id $obj.id
+```
+
 ---
 
 ## permission set
@@ -94,6 +104,12 @@ iics permission set --object-id <object-id> --from-file permissions.json
 iics perm set --object-id <object-id> --from-file permissions.json
 ```
 
+```powershell
+iics permission set --object-id <object-id> --from-file permissions.json
+
+iics perm set --object-id <object-id> --from-file permissions.json
+```
+
 ---
 
 ## permission delete
@@ -112,6 +128,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics permission delete --object-id <object-id>
+
+iics perm delete --object-id <object-id> --yes
+```
+
+```powershell
 iics permission delete --object-id <object-id>
 
 iics perm delete --object-id <object-id> --yes

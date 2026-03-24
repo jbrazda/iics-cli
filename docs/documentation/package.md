@@ -101,6 +101,31 @@ iics package expand \
   --recursive --verbose
 ```
 
+```powershell
+# Basic expand
+iics package expand `
+  --file exports/my-project.zip `
+  --target src/iics
+
+# Expand and overwrite an existing directory (with confirmation)
+iics package expand `
+  --file exports/my-project.zip `
+  --target src/iics `
+  --clean
+
+# Non-interactive expand (CI/CD)
+iics package expand `
+  --file exports/my-project.zip `
+  --target src/iics `
+  --clean --yes
+
+# Recursively expand all nested ZIPs (e.g. DTEMPLATE, MTT assets)
+iics package expand `
+  --file exports/my-project.zip `
+  --target src/iics `
+  --recursive --verbose
+```
+
 ---
 
 ## package create
@@ -152,6 +177,19 @@ iics package create \
   --force --verbose
 ```
 
+```powershell
+# Basic create
+iics package create `
+  --source src/iics `
+  --target dist/my-project-reimported.zip
+
+# Overwrite existing output
+iics package create `
+  --source src/iics `
+  --target dist/my-project.zip `
+  --force --verbose
+```
+
 ---
 
 ## Round-trip workflow
@@ -182,6 +220,35 @@ iics package create \
 # 5. Import to target org
 iics import run \
   --zip-file dist/import.zip \
+  --profile prod
+```
+
+```powershell
+# 1. Export from source org
+iics export run `
+  --artifacts-file objects.txt `
+  --export-file-path dist/export.zip `
+  --profile dev
+
+# 2. Expand to versioned directory
+iics package expand `
+  --file dist/export.zip `
+  --target src/iics `
+  --clean --yes
+
+# 3. Commit to git
+git add src/iics
+git commit -m "Update IICS assets"
+
+# 4. Reassemble package from versioned sources
+iics package create `
+  --source src/iics `
+  --target dist/import.zip `
+  --force
+
+# 5. Import to target org
+iics import run `
+  --zip-file dist/import.zip `
   --profile prod
 ```
 

@@ -31,6 +31,10 @@ iics completion <shell>
 source <(iics completion bash)
 ```
 
+```powershell
+iics completion powershell | Out-String | Invoke-Expression
+```
+
 ### Permanent installation - Linux
 
 ```bash

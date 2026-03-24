@@ -133,6 +133,38 @@ iics profile delete staging --yes
 iics --profile prod connection list
 ```
 
+```powershell
+# First-time setup - create the default profile interactively
+iics profile add
+
+# Create a named profile for a production org
+iics profile add prod
+
+# Update credentials for an existing profile (validates by logging in)
+iics profile edit qa
+
+# Update the default profile
+iics profile edit
+
+# List all profiles (shows which one is the default)
+iics profile list
+
+# Show full details of a specific profile (password is masked)
+iics profile show prod
+
+# Switch the default profile
+iics profile set-default prod
+
+# Delete a profile (prompts for confirmation)
+iics profile delete staging
+
+# Delete without confirmation
+iics profile delete staging --yes
+
+# Use a specific profile for a single command (without changing the default)
+iics --profile prod connection list
+```
+
 ## `profile list` output
 
 `profile list` renders a table with one row per profile. The REGION column shows the

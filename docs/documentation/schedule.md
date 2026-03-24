@@ -52,6 +52,16 @@ iics schedule list --output json
 iics schedule list --output json | jq '.[] | select(.status == "Active")'
 ```
 
+```powershell
+iics schedule list
+
+iics schedule list --output json
+
+# Find all active schedules
+$schedules = iics schedule list --output json | ConvertFrom-Json
+$schedules | Where-Object { $_.status -eq "Active" }
+```
+
 ---
 
 ## schedule get
@@ -77,6 +87,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics schedule get --id <schedule-id>
+```
+
+```powershell
 iics schedule get --id <schedule-id>
 ```
 
@@ -114,6 +128,10 @@ All [global flags](../../README.md#global-flags) apply.
 iics schedule create --from-file nightly-etl.json
 ```
 
+```powershell
+iics schedule create --from-file nightly-etl.json
+```
+
 ---
 
 ## schedule update
@@ -130,6 +148,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics schedule update --id <schedule-id> --from-file updated-schedule.json
+```
+
+```powershell
 iics schedule update --id <schedule-id> --from-file updated-schedule.json
 ```
 
@@ -151,6 +173,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics schedule delete --id <schedule-id>
+
+iics schedule delete --id <schedule-id> --yes
+```
+
+```powershell
 iics schedule delete --id <schedule-id>
 
 iics schedule delete --id <schedule-id> --yes

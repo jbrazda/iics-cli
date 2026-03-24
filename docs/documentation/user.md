@@ -54,6 +54,16 @@ iics user list --output json
 iics user list --output json | jq '.[] | select(.userName | test("john"))'
 ```
 
+```powershell
+iics user list
+
+iics user list --output json
+
+# Find users by name using PowerShell
+$users = iics user list --output json | ConvertFrom-Json
+$users | Where-Object { $_.userName -match "john" }
+```
+
 ---
 
 ## user get
@@ -69,6 +79,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics user get --id <user-id>
+
+iics user get --id <user-id> --output json
+```
+
+```powershell
 iics user get --id <user-id>
 
 iics user get --id <user-id> --output json
@@ -113,6 +129,10 @@ All [global flags](../../README.md#global-flags) apply.
 iics user create --from-file new-user.json
 ```
 
+```powershell
+iics user create --from-file new-user.json
+```
+
 ---
 
 ## user update
@@ -129,6 +149,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics user update --id <user-id> --from-file updated-user.json
+```
+
+```powershell
 iics user update --id <user-id> --from-file updated-user.json
 ```
 
@@ -150,6 +174,13 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics user delete --id <user-id>
+
+# Non-interactive
+iics user delete --id <user-id> --yes
+```
+
+```powershell
 iics user delete --id <user-id>
 
 # Non-interactive
@@ -189,6 +220,14 @@ iics user change-password --old-password <current> --new-password <new>
 iics user change-password --id <user-id> --new-password <new>
 ```
 
+```powershell
+# Change your own password
+iics user change-password --old-password <current> --new-password <new>
+
+# Admin changes another user's password
+iics user change-password --id <user-id> --new-password <new>
+```
+
 ---
 
 ## user reset-password
@@ -212,6 +251,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics user reset-password --id <user-id> --security-answer <answer> --new-password <new>
+```
+
+```powershell
 iics user reset-password --id <user-id> --security-answer <answer> --new-password <new>
 ```
 

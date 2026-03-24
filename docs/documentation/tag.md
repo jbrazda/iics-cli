@@ -44,6 +44,18 @@ ID=$(iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | jq -r 
 iics tag assign --object-id "$ID" --tags "sales,etl"
 ```
 
+```powershell
+# Assign a single tag
+iics tag assign --object-id aLX7qnviqxJdmqpVsd17SG --tags "prod"
+
+# Assign multiple tags at once
+iics tag assign --object-id aLX7qnviqxJdmqpVsd17SG --tags "prod,reviewed,v2"
+
+# Resolve object ID from path first, then tag
+$obj = iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+iics tag assign --object-id $obj.id --tags "sales,etl"
+```
+
 ---
 
 ## tag remove
@@ -62,6 +74,14 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+# Remove a single tag
+iics tag remove --object-id aLX7qnviqxJdmqpVsd17SG --tags "draft"
+
+# Remove multiple tags
+iics tag remove --object-id aLX7qnviqxJdmqpVsd17SG --tags "draft,wip"
+```
+
+```powershell
 # Remove a single tag
 iics tag remove --object-id aLX7qnviqxJdmqpVsd17SG --tags "draft"
 

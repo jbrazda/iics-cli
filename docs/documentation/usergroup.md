@@ -71,6 +71,23 @@ iics ug list --output csv --fields id,userGroupName,description,countMembers,cou
 iics ug list --fields id,userGroupName,countMembers,countRoles
 ```
 
+```powershell
+# List all user groups (table, default columns)
+iics usergroup list
+
+# Filter by name using server-side query
+iics ug list --query 'userGroupName=="Administrator"'
+
+# JSON output (all fields available)
+iics ug list --output json
+
+# CSV export with custom fields
+iics ug list --output csv --fields id,userGroupName,description,countMembers,countRoles
+
+# Show member and role counts
+iics ug list --fields id,userGroupName,countMembers,countRoles
+```
+
 ---
 
 ## usergroup get
@@ -86,6 +103,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics usergroup get --id <group-id>
+
+iics usergroup get --id <group-id> --output json
+```
+
+```powershell
 iics usergroup get --id <group-id>
 
 iics usergroup get --id <group-id> --output json
@@ -126,6 +149,10 @@ All [global flags](../../README.md#global-flags) apply.
 iics usergroup create --from-file data-engineering-group.json
 ```
 
+```powershell
+iics usergroup create --from-file data-engineering-group.json
+```
+
 ---
 
 ## usergroup update
@@ -142,6 +169,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics usergroup update --id <group-id> --from-file updated-group.json
+```
+
+```powershell
 iics usergroup update --id <group-id> --from-file updated-group.json
 ```
 

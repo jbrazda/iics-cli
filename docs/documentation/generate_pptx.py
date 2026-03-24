@@ -265,7 +265,7 @@ problems = [
     ("No environment profiles – must retype credentials for every org/env switch", False, DARK_GRAY),
     ("Authenticates on every invocation – no session reuse", False, DARK_GRAY),
     ("Only 3 hardcoded regions: us / eu / ap – many IICS pods not covered", False, DARK_GRAY),
-    ("Java-based – requires JVM on every machine / Docker image", False, DARK_GRAY),
+    ("Limited to export/import/publish operations only – no user, role, connection, or schedule management", False, DARK_GRAY),
     ("Flat command model – no subcommand hierarchy, poor discoverability", False, DARK_GRAY),
 ]
 bullet_list(s, problems, Inches(0.5), Inches(1.25), Inches(12.5), Inches(5.8),
@@ -558,32 +558,32 @@ code_block(s, (
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 11 – Single Binary
+# SLIDE 11 – Modern Design & Broad Platform Support
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
-slide_header(s, "Single Binary – No JVM Required", "Go binary vs. Java application")
+slide_header(s, "Modern Design & Broad Platform Support", "Built for today's DevOps toolchains")
 footer(s)
 
-add_text_box(s, "Official CLI – Java application",
+add_text_box(s, "Official CLI – Limited and outdated",
              Inches(0.5), Inches(1.2), Inches(5.8), Inches(0.4),
              font_size=14, bold=True, color=RED)
 bullet_list(s, [
-    "Requires JRE installed on every machine",
-    "JVM startup overhead on every invocation",
-    "Larger Docker images (JRE ~200-400 MB)",
-    "Version conflicts between projects",
-    "Complex installation procedure",
+    "No longer maintained – frozen in time",
+    "Covers only export/import/publish operations",
+    "Limited region support (us/eu/ap only)",
+    "Complex credential and profile management",
+    "No modern automation-friendly features",
 ], Inches(0.5), Inches(1.7), Inches(5.8), Inches(3.5), font_size=15, color=RED)
 
-add_text_box(s, "iics-cli – compiled Go binary",
+add_text_box(s, "iics-cli – Modern, actively maintained",
              Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.4),
              font_size=14, bold=True, color=GREEN)
 bullet_list(s, [
-    "Single statically compiled binary – no dependencies",
-    "Linux, macOS, Windows (amd64 and arm64)",
-    "Copy to PATH and run immediately",
-    "~8 MB binary – tiny Docker layer",
-    "Instant startup – no JVM warmup",
+    "Actively maintained with regular updates",
+    "20+ resource types with full CRUD operations",
+    "All IICS pod regions supported",
+    "Named profiles and session caching",
+    "~8 MB statically-linked Go binary",
 ], Inches(7.0), Inches(1.7), Inches(5.8), Inches(3.5), font_size=15, color=GREEN)
 
 code_block(s, (
@@ -699,7 +699,7 @@ add_table(s,
         ["Agent & runtime management",       "No",      "Yes"],
         ["Source control operations",        "No",      "Yes"],
         ["All IICS regions",                 "No",      "Yes"],
-        ["Single binary – no JVM",           "No",      "Yes"],
+        ["Structured subcommands",           "No",      "Yes"],
         ["Built-in contextual help",         "Minimal", "Yes"],
     ],
     Inches(0.4), Inches(1.2), Inches(12.5), Inches(5.95))

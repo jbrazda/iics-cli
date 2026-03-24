@@ -63,6 +63,24 @@ iics connection list --output json
 iics connection list --type Snowflake --output json | jq -r '.[].id'
 ```
 
+```powershell
+# List all connections
+iics connection list
+
+# Filter by type
+iics connection list --type Salesforce
+
+# Filter by name substring
+iics connection list --name "Prod"
+
+# Output as JSON
+iics connection list --output json
+
+# Get IDs of all Snowflake connections
+$conns = iics connection list --type Snowflake --output json | ConvertFrom-Json
+$conns | ForEach-Object { $_.id }
+```
+
 ---
 
 ## connection get
@@ -80,6 +98,13 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics connection get --id abc123
+
+# View as JSON to see all fields
+iics connection get --id abc123 --output json
+```
+
+```powershell
 iics connection get --id abc123
 
 # View as JSON to see all fields
@@ -124,6 +149,10 @@ All [global flags](../../README.md#global-flags) apply.
 iics connection create --from-file snowflake_prod.json
 ```
 
+```powershell
+iics connection create --from-file snowflake_prod.json
+```
+
 ---
 
 ## connection update
@@ -142,6 +171,10 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics connection update --id abc123 --from-file snowflake_prod_updated.json
+```
+
+```powershell
 iics connection update --id abc123 --from-file snowflake_prod_updated.json
 ```
 

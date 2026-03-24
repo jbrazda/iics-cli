@@ -59,6 +59,19 @@ iics agent list --output json | jq '.[] | select(.active == true and .readyToRun
 iics agent list --unassigned
 ```
 
+```powershell
+iics agent list
+
+iics agent list --output json
+
+# Find agents that are active and ready
+$agents = iics agent list --output json | ConvertFrom-Json
+$agents | Where-Object { $_.active -eq $true -and $_.readyToRun -eq $true }
+
+# List unassigned agents
+iics agent list --unassigned
+```
+
 ---
 
 ## agent get
@@ -93,6 +106,12 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics agent get --id <agent-id>
+
+iics agent get --id <agent-id> --output json
+```
+
+```powershell
 iics agent get --id <agent-id>
 
 iics agent get --id <agent-id> --output json
@@ -133,6 +152,13 @@ iics agent details --id <agent-id>
 iics agent details --id <agent-id> --verbose
 ```
 
+```powershell
+iics agent details --id <agent-id>
+
+# Show all service statuses for a specific agent
+iics agent details --id <agent-id> --verbose
+```
+
 ---
 
 ## agent start
@@ -155,6 +181,11 @@ All [global flags](../../README.md#global-flags) apply.
 iics agent start --id <agent-id> --service "Data Integration Server"
 ```
 
+```powershell
+# Start the Data Integration Server service
+iics agent start --id <agent-id> --service "Data Integration Server"
+```
+
 ---
 
 ## agent stop
@@ -173,6 +204,14 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+iics agent stop --id <agent-id> --service "Data Integration Server"
+
+# Restart a service (stop then start)
+iics agent stop  --id <agent-id> --service "Data Integration Server"
+iics agent start --id <agent-id> --service "Data Integration Server"
+```
+
+```powershell
 iics agent stop --id <agent-id> --service "Data Integration Server"
 
 # Restart a service (stop then start)

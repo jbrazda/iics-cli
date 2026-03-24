@@ -110,6 +110,40 @@ iics import run \
   --profile prod
 ```
 
+```powershell
+# Basic import
+iics import run --zip-file release-v2.zip
+
+# Overwrite existing objects
+iics import run --zip-file release-v2.zip --conflict-resolution OVERWRITE
+
+# With verbose polling and log output
+iics import run `
+  --zip-file release-v2.zip `
+  --verbose `
+  --detailed-polling `
+  --print-import-log `
+  --expand
+
+# Custom job name with extended timeout
+iics import run `
+  --zip-file big-package.zip `
+  --name "Release 3.0 - Full Deploy" `
+  --polling-interval 30 `
+  --max-wait-time 1800
+
+# Using a full import specification JSON
+iics import run --from-file import-spec.json --zip-file package.zip
+
+# CI/CD pipeline pattern
+iics import run `
+  --zip-file $env:ARTIFACT_PATH `
+  --conflict-resolution OVERWRITE `
+  --print-import-log `
+  --expand `
+  --profile prod
+```
+
 ---
 
 ## import upload
@@ -131,6 +165,14 @@ iics import upload --file release.zip
 
 # Capture the job ID for subsequent commands
 JOB_ID=$(iics import upload --file release.zip --output json | jq -r '.id')
+```
+
+```powershell
+iics import upload --file release.zip
+
+# Capture the job ID for subsequent commands
+$job = iics import upload --file release.zip --output json | ConvertFrom-Json
+$jobId = $job.id
 ```
 
 ---
@@ -155,6 +197,10 @@ All [global flags](../../README.md#global-flags) apply.
 
 ```bash
 iics import start --id "$JOB_ID" --conflict-resolution OVERWRITE --wait
+```
+
+```powershell
+iics import start --id $jobId --conflict-resolution OVERWRITE --wait
 ```
 
 ---
@@ -190,6 +236,16 @@ fields specified by `--object-status-fields` (default: `sourceId,sourcePath,sour
 ### Examples
 
 ```bash
+iics import status --id <job-id>
+
+# Show per-object results with default columns
+iics import status --id <job-id> --expand
+
+# Show only name and state columns
+iics import status --id <job-id> --expand --object-status-fields sourceName,targetName,state,message
+```
+
+```powershell
 iics import status --id <job-id>
 
 # Show per-object results with default columns

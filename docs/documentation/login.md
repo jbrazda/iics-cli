@@ -95,6 +95,28 @@ export IICS_PASSWORD=$SECRET_PASSWORD
 iics login --profile prod
 ```
 
+```powershell
+# Login with the default profile
+iics login
+
+# Login with a named profile
+iics login --profile prod
+
+# Login using environment variable overrides
+$env:IICS_USERNAME='ops@company.com'
+$env:IICS_PASSWORD='s3cret'
+iics login
+
+# Login to a specific region by overriding the login URL
+$env:IICS_LOGIN_URL='https://dm-em.informaticacloud.com/saas/public/core/v3/login'
+iics login
+
+# CI/CD: non-interactive login
+$env:IICS_USERNAME='svc-account@company.com'
+$env:IICS_PASSWORD=$SecretPassword
+iics login --profile prod
+```
+
 ## Output
 
 On success the command prints the authenticated user, org info, base API URL, and derived CAI URL:

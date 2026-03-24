@@ -130,6 +130,20 @@ iics objects list -q "location==MyProject/Processes" -o json > assets.json
 iics unpublish start --from-file assets.json
 ```
 
+```powershell
+# Recommended: CSV using the location field
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields location `
+  | Out-File assets.csv
+iics unpublish start --from-file assets.csv
+
+# Pipe directly using location (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv --output-fields location | iics unpublish start
+
+# JSON (location field included by default)
+iics objects list -q "location==MyProject/Processes" -o json | Out-File assets.json
+iics unpublish start --from-file assets.json
+```
+
 ### Examples
 
 ```bash
@@ -137,6 +151,20 @@ iics unpublish start --asset "Explore/Default/MyProcess.PROCESS.xml"
 
 iics unpublish start \
   --asset "Explore/Default/MyProcess.PROCESS.xml" \
+  --asset "Explore/Default/MyConn.AI_CONNECTION.xml"
+
+iics unpublish start --from-file assets.txt
+iics unpublish start --from-file assets.csv
+iics unpublish start --from-file assets.json
+
+iics objects list -q "type=='PROCESS'" -o csv | iics unpublish start
+```
+
+```powershell
+iics unpublish start --asset "Explore/Default/MyProcess.PROCESS.xml"
+
+iics unpublish start `
+  --asset "Explore/Default/MyProcess.PROCESS.xml" `
   --asset "Explore/Default/MyConn.AI_CONNECTION.xml"
 
 iics unpublish start --from-file assets.txt
@@ -178,6 +206,12 @@ Retrieve the current status of an unpublish job.
 iics unpublish status --id <job-id>
 iics unpublish status --id <job-id> --full
 iics unpublish status --id <job-id> --output json
+```
+
+```powershell
+iics unpublish status --id $jobId
+iics unpublish status --id $jobId --full
+iics unpublish status --id $jobId --output json
 ```
 
 ---
@@ -222,6 +256,14 @@ iics unpublish run --asset "Explore/Default/MyProcess.PROCESS.xml"
 
 # Unpublish from a text file (pre-formatted Explore/...xml paths)
 iics unpublish run --from-file assets.txt --verbose
+```
+
+```powershell
+# Unpublish a single asset
+iics unpublish run --asset "Explore/Default/MyProcess.PROCESS.xml"
+
+# Unpublish from a text file (pre-formatted Explore/...xml paths)
+iics unpublish run --from-file assets.txt --verbose
 
 # Unpublish from CSV with automatic path conversion (PATH + TYPE)
 iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type \
@@ -234,6 +276,20 @@ iics unpublish run --from-file assets.json
 
 # Pipe directly from objects list (stdin auto-detect)
 iics objects list -q "type=='PROCESS'" -o csv | iics unpublish run
+```
+
+```powershell
+# Unpublish from CSV with automatic path conversion (PATH + TYPE)
+iics objects list -q "location==MyProject/Processes" -o csv --output-fields path,type `
+  | Out-File assets.csv
+iics unpublish run --from-file assets.csv
+
+# Unpublish from JSON
+iics objects list -q "location==MyProject/Processes" -o json | Out-File assets.json
+iics unpublish run --from-file assets.json
+
+# Pipe directly from objects list (stdin auto-detect)
+iics objects list -q "type=='PROCESS'" -o csv | iics unpublish run
 
 # Custom polling and timeout
 iics unpublish run \
@@ -241,6 +297,19 @@ iics unpublish run \
   --polling-interval 15 \
   --max-wait-time 600 \
   --detailed-polling \
+  --verbose
+
+# JSON output for CI/CD
+iics unpublish run --from-file assets.txt --output json
+```
+
+```powershell
+# Custom polling and timeout
+iics unpublish run `
+  --from-file assets.txt `
+  --polling-interval 15 `
+  --max-wait-time 600 `
+  --detailed-polling `
   --verbose
 
 # JSON output for CI/CD

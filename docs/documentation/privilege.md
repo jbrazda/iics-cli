@@ -42,6 +42,18 @@ iics privilege list --output json
 iics privilege list --output json | jq '.[] | select(.service == "DataIntegration")'
 ```
 
+```powershell
+# List all privileges in table format
+iics privilege list
+
+# List as JSON for scripting
+iics privilege list --output json
+
+# Find privileges for a specific service
+$privileges = iics privilege list --output json | ConvertFrom-Json
+$privileges | Where-Object { $_.service -eq "DataIntegration" }
+```
+
 ## See also
 
 - [role](role.md)
