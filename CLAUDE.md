@@ -6,6 +6,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Project Structure
+
+This is a Go CLI project using Cobra. Key paths:
+
+- `cmd/` - command definitions (thin wiring only)
+- `internal/` - core logic (HTTP client, config, output)
+- `docs/` - documentation and Change Requests (CRs)
+
+Change Requests live in `docs/ChangeRequests/` as markdown files and must be referenced when implementing features.
+
+---
+
+## Git Workflow
+
+- Always work on the `dev` branch. Never commit directly to `main`.
+- Before making any commits, verify the current branch with `git branch --show-current`.
+
+---
+
+## Build & Validation
+
+After implementing changes, run the following before committing:
+
+```bash
+/opt/local/bin/go build ./...
+/opt/local/bin/go vet ./...
+```
+
+Also verify that the Go version in `go.mod` matches the version used in `.github/workflows/` CI files to avoid version mismatch failures.
+
+---
+
+## API Integration
+
+When modifying API request/response structs:
+
+- Always verify field names and types against actual API responses - never guess.
+- Check for type mismatches (e.g., `string` vs `int`) by referencing existing working examples in `internal/client/`.
+- Test with a real API call or review existing client code before committing struct changes.
+
+---
+
 ## Common Commands
 
 ```bash
