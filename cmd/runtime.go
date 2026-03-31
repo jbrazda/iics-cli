@@ -5,11 +5,92 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
+
+// rtAttr is used to render runtime environment fields as an attribute-value table.
+type rtAttr struct {
+	Attribute string `json:"attribute"`
+	Value     string `json:"value"`
+}
+
+var rtAttrCols = []output.Column{
+	{Header: "ATTRIBUTE", Field: "attribute", Width: 20},
+	{Header: "VALUE", Field: "value", Width: 60},
+}
+
+var runtimeAgentCols = []output.Column{
+	{Header: "NAME", Field: "name", Width: 25},
+	{Header: "HOST", Field: "agentHost", Width: 20},
+	{Header: "PLATFORM", Field: "platform", Width: 10},
+	{Header: "VERSION", Field: "agentVersion", Width: 10},
+	{Header: "ACTIVE", Field: "active", Width: 8, Func: agentActiveFunc},
+	{Header: "READY", Field: "readyToRun", Width: 8, Func: agentReadyFunc},
+}
+
+func agentActiveFunc(v interface{}) string {
+	row, _ := v.(map[string]interface{})
+	active, _ := row["active"].(bool)
+	if active {
+		if noColor {
+			return "yes"
+		}
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).Render("yes")
+	}
+	if noColor {
+		return "no"
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("no")
+}
+
+func agentReadyFunc(v interface{}) string {
+	row, _ := v.(map[string]interface{})
+	ready, _ := row["readyToRun"].(bool)
+	if ready {
+		if noColor {
+			return "yes"
+		}
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).Render("yes")
+	}
+	if noColor {
+		return "no"
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("no")
+}
+
+func agentCountFunc(v interface{}) string {
+	row, ok := v.(map[string]interface{})
+	if !ok {
+		return "0"
+	}
+	agents, ok := row["agents"].([]interface{})
+	if !ok {
+		return "0"
+	}
+	return strconv.Itoa(len(agents))
+}
+
+func runtimeEnvAttrs(rt *client.RuntimeEnvironment) []rtAttr {
+	shared := "false"
+	if rt.IsShared {
+		shared = "true"
+	}
+	return []rtAttr{
+		{"id", rt.ID},
+		{"orgId", rt.OrgID},
+		{"federatedId", rt.FederatedID},
+		{"isShared", shared},
+		{"createdBy", rt.CreatedBy},
+		{"updatedBy", rt.UpdatedBy},
+		{"createTime", rt.CreateTime},
+		{"updateTime", rt.UpdateTime},
+	}
+}
 
 func newRuntimeCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -43,10 +124,12 @@ func newRuntimeListCmd() *cobra.Command {
 				return err
 			}
 			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
+				{Header: "ID", Field: "id", Width: 22},
 				{Header: "NAME", Field: "name", Width: 30},
-				{Header: "TYPE", Field: "type", Width: 12},
-				{Header: "STATUS", Field: "status", Width: 12},
+				{Header: "FEDERATED ID", Field: "federatedId", Width: 24},
+				{Header: "SHARED", Field: "isShared", Width: 8},
+				{Header: "AGENTS", Field: "agents", Width: 7, Func: agentCountFunc},
+				{Header: "UPDATED", Field: "updateTime", Width: 22},
 			}
 			return f.Format(runtimes, columns)
 		},
@@ -57,37 +140,58 @@ func newRuntimeListCmd() *cobra.Command {
 }
 
 func newRuntimeGetCmd() *cobra.Command {
-	var id string
+	var (
+		id   string
+		name string
+	)
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get runtime environment details",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
+			if id == "" && name == "" {
+				return fmt.Errorf("either --id or --name is required")
 			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			rt, err := c.GetRuntimeEnvironment(context.Background(), id)
+
+			var rt *client.RuntimeEnvironment
+			if id != "" {
+				rt, err = c.GetRuntimeEnvironment(context.Background(), id)
+			} else {
+				rt, err = c.GetRuntimeEnvironmentByName(context.Background(), name)
+			}
 			if err != nil {
 				return err
 			}
+
 			f, err := getFormatter()
 			if err != nil {
 				return err
 			}
-			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
-				{Header: "TYPE", Field: "type", Width: 12},
-				{Header: "STATUS", Field: "status", Width: 12},
-				{Header: "DESCRIPTION", Field: "description"},
+
+			// Non-table formats: let the formatter render the full nested struct.
+			if outputFmt != "" && outputFmt != "table" {
+				return f.Format(rt, nil)
 			}
-			return f.Format(rt, columns)
+
+			// Table mode: tree-style view.
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Runtime Environment: %s\n\n", rt.Name)
+			if err := f.Format(runtimeEnvAttrs(rt), rtAttrCols); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\nAgents (%d):\n", len(rt.Agents))
+			if len(rt.Agents) > 0 {
+				return f.Format(rt.Agents, runtimeAgentCols)
+			}
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  (none)")
+			return nil
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "runtime environment ID (required)")
+	cmd.Flags().StringVar(&id, "id", "", "runtime environment ID")
+	cmd.Flags().StringVar(&name, "name", "", "runtime environment name")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
 }
 
