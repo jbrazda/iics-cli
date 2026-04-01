@@ -167,6 +167,38 @@ func (p *Profile) GetLoginURL() (string, error) {
 	return LoginURL(p.Region)
 }
 
+// ResolveTargetProfile returns the profile for the given name, applying IICS_TARGET_* env vars.
+// Unlike ResolveProfile, it does not fall back to IICS_PROFILE or defaultProfile;
+// profileName is required.
+func (c *Config) ResolveTargetProfile(profileName string) (*Profile, error) {
+	var resolved Profile
+	if existing, ok := c.Profiles[profileName]; ok {
+		resolved = *existing
+	}
+
+	if v := os.Getenv("IICS_TARGET_USERNAME"); v != "" {
+		resolved.Username = v
+	}
+	if v := os.Getenv("IICS_TARGET_PASSWORD"); v != "" {
+		resolved.Password = v
+	}
+	if v := os.Getenv("IICS_TARGET_REGION"); v != "" {
+		resolved.Region = v
+	}
+	if v := os.Getenv("IICS_TARGET_LOGIN_URL"); v != "" {
+		resolved.LoginURL = v
+	}
+
+	if resolved.Username == "" {
+		return nil, fmt.Errorf("username not configured for target profile %q; set in config file or IICS_TARGET_USERNAME env var", profileName)
+	}
+	if resolved.Password == "" {
+		return nil, fmt.Errorf("password not configured for target profile %q; set in config file or IICS_TARGET_PASSWORD env var", profileName)
+	}
+
+	return &resolved, nil
+}
+
 // Save writes the configuration to disk.
 func (c *Config) Save(configPath string) error {
 	if configPath == "" {

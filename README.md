@@ -187,7 +187,7 @@ Environment variables take precedence over config file values.
 | [import](docs/documentation/import.md) | `imp` | `run`, `upload`, `start`, `status`, `download-log` | Import asset packages |
 | [publish](docs/documentation/publish.md) | | `start`, `status`, `run` | Publish CAI assets to the runtime |
 | [unpublish](docs/documentation/unpublish.md) | | `start`, `status`, `run` | Unpublish CAI assets from the runtime |
-| [package](docs/documentation/package.md) | | `expand`, `create` | Extract or assemble IICS export package files (local, no API) |
+| [package](docs/documentation/package.md) | | `expand`, `create`, `dependencies` | Extract, assemble, or inspect dependencies of IICS export packages |
 | [project](docs/documentation/project.md) | | `create`, `update`, `delete` | Manage projects |
 | [folder](docs/documentation/folder.md) | | `create`, `update`, `delete` | Manage folders |
 | [schedule](docs/documentation/schedule.md) | | `list`, `get`, `create`, `update`, `delete` | Manage schedules |

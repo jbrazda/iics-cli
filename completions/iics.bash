@@ -2310,6 +2310,68 @@ _iics_package_create()
     noun_aliases=()
 }
 
+_iics_package_dependencies()
+{
+    last_command="iics_package_dependencies"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--exclude=")
+    two_word_flags+=("--exclude")
+    two_word_flags+=("-e")
+    local_nonpersistent_flags+=("--exclude")
+    local_nonpersistent_flags+=("--exclude=")
+    local_nonpersistent_flags+=("-e")
+    flags+=("--file=")
+    two_word_flags+=("--file")
+    two_word_flags+=("-f")
+    local_nonpersistent_flags+=("--file")
+    local_nonpersistent_flags+=("--file=")
+    local_nonpersistent_flags+=("-f")
+    flags+=("--filter=")
+    two_word_flags+=("--filter")
+    local_nonpersistent_flags+=("--filter")
+    local_nonpersistent_flags+=("--filter=")
+    flags+=("--publish")
+    local_nonpersistent_flags+=("--publish")
+    flags+=("--target-profile=")
+    two_word_flags+=("--target-profile")
+    two_word_flags+=("-t")
+    local_nonpersistent_flags+=("--target-profile")
+    local_nonpersistent_flags+=("--target-profile=")
+    local_nonpersistent_flags+=("-t")
+    flags+=("--workspace=")
+    two_word_flags+=("--workspace")
+    two_word_flags+=("-w")
+    local_nonpersistent_flags+=("--workspace")
+    local_nonpersistent_flags+=("--workspace=")
+    local_nonpersistent_flags+=("-w")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_package_expand()
 {
     last_command="iics_package_expand"
@@ -2378,6 +2440,7 @@ _iics_package()
 
     commands=()
     commands+=("create")
+    commands+=("dependencies")
     commands+=("expand")
 
     flags=()
