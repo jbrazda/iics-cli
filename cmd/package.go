@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -610,6 +611,10 @@ func resolveDependencies(
 	}
 
 	// Phase 1: process all package objects.
+	slog.Info("resolving dependencies: phase 1 - scanning package objects",
+		"total", len(meta.ExportedObjects),
+		"publishMode", publishMode,
+	)
 	externalGUIDs := make(map[string]bool)
 	for i := range meta.ExportedObjects {
 		obj := &meta.ExportedObjects[i]
@@ -644,8 +649,16 @@ func resolveDependencies(
 		}
 	}
 
+	slog.Info("resolving dependencies: phase 1 complete",
+		"packageObjects", len(resultMap),
+		"externalGUIDs", len(externalGUIDs),
+	)
+
 	// Phase 2: BFS on external GUIDs using the source org API.
 	if c != nil && len(externalGUIDs) > 0 {
+		slog.Info("resolving dependencies: phase 2 - resolving external GUIDs via source org API",
+			"externalGUIDs", len(externalGUIDs),
+		)
 		visited := make(map[string]bool)
 
 		currentQueue := make([]string, 0, len(externalGUIDs))
@@ -666,6 +679,11 @@ func resolveDependencies(
 			if len(toProcess) == 0 {
 				break
 			}
+
+			slog.Info("resolving dependencies: BFS depth level",
+				"depth", depth,
+				"guids", len(toProcess),
+			)
 
 			// Batch lookup by GUID.
 			lookupObjs := make([]client.LookupObject, len(toProcess))
@@ -791,8 +809,15 @@ func resolveDependencies(
 	return items, edges, nil
 }
 
-// validateTargetDependencies looks up each dependency in the target org and sets
-// TargetStatus ("found" or "missing") and Warning on items in place.
+// validateTargetDependencies looks up each dependency individually in the target org
+// and sets TargetStatus ("found" or "missing") and Warning on items in place.
+//
+// Per-object lookups are used instead of a single batch because:
+//   - Some asset types (e.g. Connection/SAAS_CONNECTION, AgentGroup) use different
+//     path and type representations in the Lookup API than in the export metadata.
+//   - The Lookup API returns V3API_LookupError_012 for the entire batch when ANY item
+//     is not found or has an unresolvable path, making batch results unreliable for
+//     mixed-type packages.
 func validateTargetDependencies(ctx context.Context, targetProfileName string, deps []dependencyItem) error {
 	cfg, err := config.Load("")
 	if err != nil {
@@ -807,43 +832,50 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 		return fmt.Errorf("resolving target login URL: %w", err)
 	}
 
-	tc := client.NewClient(loginURL, targetProfile.Username, targetProfile.Password)
+	tc := client.NewClient(loginURL, targetProfile.Username, targetProfile.Password,
+		client.WithDebug(debug), client.WithVerbose(verbose))
 
-	// Build lookup request for all deps.
-	lookupObjs := make([]client.LookupObject, len(deps))
-	for i, d := range deps {
-		lookupObjs[i] = client.LookupObject{Path: d.Path, Type: d.Type}
-	}
-	resp, lookupErr := tc.Lookup(ctx, lookupObjs)
-	if lookupErr != nil {
-		// V3API_LookupError_012: none of the requested objects exist in the target org.
-		// The IICS API nests the error code under "error"."code" in the response body,
-		// so APIError.Code is empty; check the raw response body directly.
-		var apiErr *client.APIError
-		if errors.As(lookupErr, &apiErr) &&
-			bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
-			// All deps are missing; treat as empty result so the loop below marks them.
-			resp = &client.LookupResponse{}
-		} else {
-			return fmt.Errorf("validating dependencies against target org: %w", lookupErr)
-		}
-	}
-
-	// Build set of found paths.
-	foundKeys := make(map[string]bool, len(resp.Objects))
-	for _, r := range resp.Objects {
-		p := strings.TrimPrefix(r.Path, "/")
-		p = strings.TrimPrefix(p, "Explore/")
-		foundKeys[p+"."+r.Type] = true
-	}
+	slog.Info("validating dependencies against target org",
+		"profile", targetProfileName,
+		"count", len(deps),
+	)
 
 	for i := range deps {
-		key := deps[i].Path + "." + deps[i].Type
-		if foundKeys[key] {
-			deps[i].TargetStatus = "found"
+		d := &deps[i]
+		slog.Debug("looking up dependency in target org",
+			"path", d.Path,
+			"type", d.Type,
+		)
+
+		resp, lookupErr := tc.Lookup(ctx, []client.LookupObject{{Path: d.Path, Type: d.Type}})
+		if lookupErr != nil {
+			var apiErr *client.APIError
+			// V3API_LookupError_012: the Lookup API nests error code under "error"."code"
+			// so APIError.Code is empty; detect it by scanning the raw response body.
+			if errors.As(lookupErr, &apiErr) &&
+				bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
+				d.TargetStatus = "missing"
+				d.Warning = "asset not found in target org"
+				slog.Debug("dependency missing in target org", "path", d.Path, "type", d.Type)
+			} else {
+				// Other errors (unsupported type, network, auth) - report but continue.
+				d.TargetStatus = "unknown"
+				d.Warning = fmt.Sprintf("lookup error: %v", lookupErr)
+				slog.Warn("dependency lookup failed", "path", d.Path, "type", d.Type, "error", lookupErr)
+			}
+			continue
+		}
+
+		// Any non-empty result means the object exists in the target org.
+		// We intentionally do NOT match by path because some types (AgentGroup,
+		// Connection) return a different path format than what we sent.
+		if len(resp.Objects) > 0 {
+			d.TargetStatus = "found"
+			slog.Debug("dependency found in target org", "path", d.Path, "type", d.Type)
 		} else {
-			deps[i].TargetStatus = "missing"
-			deps[i].Warning = "asset not found in target org"
+			d.TargetStatus = "missing"
+			d.Warning = "asset not found in target org"
+			slog.Debug("dependency missing in target org (empty result)", "path", d.Path, "type", d.Type)
 		}
 	}
 	return nil
