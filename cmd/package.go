@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -572,21 +573,40 @@ func resolveDependencies(
 	}
 
 	// guidToMatchKey maps every resolved GUID to its normalized matchKey.
-	// matchKey format: "Explore/Project/Folder/Name.TYPE" (no leading slash)
+	// matchKey format: "Project/Folder/Name.TYPE" (no leading slash, no "Explore/" prefix).
+	// Export metadata paths are "/Explore/Project/Folder"; the V3 API uses "Project/Folder".
 	guidToMatchKey := make(map[string]string)
 	// resultMap: matchKey -> dependencyItem
 	resultMap := make(map[string]dependencyItem)
 	// rawEdges: (fromGUID, toGUID) to be filtered at the end
 	var rawEdges [][2]string
 
-	// mkFromPkg builds a matchKey from a package object.
+	// apiPath strips the leading "/" and "Explore/" prefix from an export-metadata path
+	// to produce the V3 API path format used by Lookup.
+	// "/Explore/ZZ_TEST_CLI/Connections" -> "ZZ_TEST_CLI/Connections"
+	// "/Explore" -> "" (projects live directly under Explore root)
+	// "/SYS/CDI-G01" -> "SYS/CDI-G01"
+	apiPath := func(p string) string {
+		p = strings.TrimPrefix(p, "/")
+		if p == "Explore" {
+			return ""
+		}
+		p = strings.TrimPrefix(p, "Explore/")
+		return p
+	}
+
+	// mkFromPkg builds a matchKey from a package object using the V3 API path format.
 	mkFromPkg := func(obj *exportedObject) string {
-		return strings.TrimPrefix(obj.Path, "/") + "/" + obj.ObjectName + "." + obj.ObjectType
+		base := apiPath(obj.Path)
+		if base == "" {
+			return obj.ObjectName + "." + obj.ObjectType
+		}
+		return base + "/" + obj.ObjectName + "." + obj.ObjectType
 	}
 	// mkFromLookup builds a matchKey from a Lookup API result.
-	// Lookup result.Path already contains the object name.
+	// Lookup result.Path already contains the object name; strip leading "/" and "Explore/".
 	mkFromLookup := func(r client.LookupResult) string {
-		return strings.TrimPrefix(r.Path, "/") + "." + r.Type
+		return apiPath(r.Path) + "." + r.Type
 	}
 
 	// Phase 1: process all package objects.
@@ -602,9 +622,16 @@ func resolveDependencies(
 			continue
 		}
 
+		base := apiPath(obj.Path)
+		var fullPath string
+		if base == "" {
+			fullPath = obj.ObjectName
+		} else {
+			fullPath = base + "/" + obj.ObjectName
+		}
 		guidToMatchKey[obj.ObjectGUID] = mk
 		resultMap[mk] = dependencyItem{
-			Path:   strings.TrimPrefix(obj.Path, "/") + "/" + obj.ObjectName,
+			Path:   fullPath,
 			Type:   obj.ObjectType,
 			Source: "package",
 		}
@@ -669,7 +696,7 @@ func resolveDependencies(
 
 				guidToMatchKey[result.ID] = mk
 				resultMap[mk] = dependencyItem{
-					Path:   strings.TrimPrefix(result.Path, "/"),
+					Path:   apiPath(result.Path),
 					Type:   result.Type,
 					Source: "external",
 				}
@@ -703,7 +730,7 @@ func resolveDependencies(
 					}
 					// Record edges and enqueue newly discovered GUIDs.
 					for _, pr := range allRefs {
-						refKey := strings.TrimPrefix(pr.path, "/") + "." + pr.refType
+						refKey := apiPath(pr.path) + "." + pr.refType
 						if childGUID, ok := ptToGUID[refKey]; ok {
 							rawEdges = append(rawEdges, [2]string{pr.parentGUID, childGUID})
 							if !visited[childGUID] {
@@ -787,15 +814,27 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 	for i, d := range deps {
 		lookupObjs[i] = client.LookupObject{Path: d.Path, Type: d.Type}
 	}
-	resp, err := tc.Lookup(ctx, lookupObjs)
-	if err != nil {
-		return fmt.Errorf("validating dependencies against target org: %w", err)
+	resp, lookupErr := tc.Lookup(ctx, lookupObjs)
+	if lookupErr != nil {
+		// V3API_LookupError_012: none of the requested objects exist in the target org.
+		// The IICS API nests the error code under "error"."code" in the response body,
+		// so APIError.Code is empty; check the raw response body directly.
+		var apiErr *client.APIError
+		if errors.As(lookupErr, &apiErr) &&
+			bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
+			// All deps are missing; treat as empty result so the loop below marks them.
+			resp = &client.LookupResponse{}
+		} else {
+			return fmt.Errorf("validating dependencies against target org: %w", lookupErr)
+		}
 	}
 
 	// Build set of found paths.
 	foundKeys := make(map[string]bool, len(resp.Objects))
 	for _, r := range resp.Objects {
-		foundKeys[strings.TrimPrefix(r.Path, "/")+"."+r.Type] = true
+		p := strings.TrimPrefix(r.Path, "/")
+		p = strings.TrimPrefix(p, "Explore/")
+		foundKeys[p+"."+r.Type] = true
 	}
 
 	for i := range deps {
