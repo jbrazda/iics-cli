@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -59,6 +60,19 @@ func (c *Client) ListConnections(ctx context.Context, opts ConnectionListOptions
 func (c *Client) GetConnection(ctx context.Context, id string) (*Connection, error) {
 	var resp Connection
 	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/connection/%s", BaseAPIPathV2, id), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// GetConnectionByName retrieves a single connection by name.
+// Spaces in the name are percent-encoded as required by the V2 Connection API:
+// GET /api/v2/connection/name/<name>
+func (c *Client) GetConnectionByName(ctx context.Context, name string) (*Connection, error) {
+	encoded := url.PathEscape(name)
+	var resp Connection
+	if err := c.doJSON(ctx, http.MethodGet,
+		fmt.Sprintf("%s/connection/name/%s", BaseAPIPathV2, encoded), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
