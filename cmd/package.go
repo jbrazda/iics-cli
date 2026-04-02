@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/client"
@@ -857,6 +858,7 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 		targetOrgName = resp.UserInfo.OrgName
 	})
 
+	start := time.Now()
 	slog.Info("validating dependencies against target org",
 		"profile", targetProfileName,
 		"count", len(deps),
@@ -929,6 +931,25 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 			slog.Debug("dependency missing in target org (empty result)", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 		}
 	}
+
+	var found, missing, unknown int
+	for _, d := range deps {
+		switch d.TargetStatus {
+		case "found":
+			found++
+		case "missing":
+			missing++
+		default:
+			unknown++
+		}
+	}
+	slog.Info("dependencies validated",
+		"profile", targetProfileName,
+		"found", found,
+		"missing", missing,
+		"unknown", unknown,
+		"elapsed", time.Since(start).Round(time.Millisecond).String(),
+	)
 	return nil
 }
 

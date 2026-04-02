@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -263,7 +264,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			defer func() { _ = f.Close() }()
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sUploading %s...\n", ts(), zipFile)
+				slog.Info("uploading package", "file", zipFile)
 			}
 
 			uploadResp, err := c.UploadImportPackage(context.Background(), filepath.Base(zipFile), f)
@@ -272,8 +273,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sUpload complete — job ID: %s, checksum valid: %v\n",
-					ts(), uploadResp.JobID, uploadResp.ChecksumValid)
+				slog.Info("upload complete", "job", uploadResp.JobID, "checksumValid", uploadResp.ChecksumValid)
 			}
 
 			// --- Step 2: Build start request ---
@@ -302,7 +302,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			// --- Step 3: Start ---
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sStarting import job \"%s\"...\n", ts(), startReq.Name)
+				slog.Info("starting import", "name", startReq.Name)
 			}
 
 			job, err := c.StartImport(context.Background(), uploadResp.JobID, &startReq)
@@ -311,11 +311,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 			}
 
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sImport job started — ID: %s, status: %s\n",
-					ts(), job.ID, job.Status.State)
-				if job.StartTime != "" {
-					_, _ = fmt.Fprintf(out, "%sStart time: %s\n", ts(), job.StartTime)
-				}
+				slog.Info("import job started", "job", job.ID, "state", job.Status.State)
 			}
 
 			// --- Step 4: Poll ---
@@ -334,9 +330,8 @@ the import log automatically on failure or when --print-import-log is set.`,
 					return fmt.Errorf("polling status: %w", err)
 				}
 
-				elapsed := time.Since(startWall).Round(time.Second)
 				if verbose {
-					_, _ = fmt.Fprintf(out, "%sStatus: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+					slog.Info("import status", "state", job.Status.State, "elapsed", time.Since(startWall).Round(time.Second).String())
 				}
 
 				if detailedPolling && len(job.Objects) > 0 {
@@ -344,10 +339,8 @@ the import log automatically on failure or when --print-import-log is set.`,
 				}
 			}
 
-			elapsed := time.Since(startWall).Round(time.Second)
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sImport finished — status: %s, total time: %s\n",
-					ts(), job.Status.State, elapsed)
+				slog.Info("import complete", "state", job.Status.State, "elapsed", time.Since(startWall).Round(time.Second).String())
 			}
 
 			// --- Step 5: Final status output ---

@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
@@ -44,17 +47,46 @@ func logLevel() slog.Level {
 	return slog.LevelWarn
 }
 
+// cliHandler is a minimal slog.Handler that formats log records as:
+//
+//	[2006-01-02 15:04:05.000][LEVEL] message key=value key=value...
+type cliHandler struct {
+	w     io.Writer
+	level slog.Level
+	mu    sync.Mutex
+}
+
+func (h *cliHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+func (h *cliHandler) Handle(_ context.Context, r slog.Record) error {
+	var sb strings.Builder
+	sb.WriteString(r.Time.Format("[2006-01-02 15:04:05.000]"))
+	sb.WriteString("[")
+	sb.WriteString(r.Level.String())
+	sb.WriteString("] ")
+	sb.WriteString(r.Message)
+	r.Attrs(func(a slog.Attr) bool {
+		sb.WriteString(" ")
+		sb.WriteString(a.Key)
+		sb.WriteString("=")
+		_, _ = fmt.Fprint(&sb, a.Value.Any())
+		return true
+	})
+	sb.WriteString("\n")
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	_, _ = io.WriteString(h.w, sb.String())
+	return nil
+}
+
+func (h *cliHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }
+func (h *cliHandler) WithGroup(_ string) slog.Handler      { return h }
+
 // initLogger configures the package-level slog logger and sets it as the default.
 func initLogger() {
-	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logLevel(),
-		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				a.Value = slog.StringValue(time.Now().Format("[2006-01-02 15:04:05.000]"))
-			}
-			return a
-		},
-	})
+	h := &cliHandler{w: os.Stderr, level: logLevel()}
 	logger = slog.New(h)
 	slog.SetDefault(logger)
 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -228,7 +229,7 @@ func newExportStartCmd() *cobra.Command {
 				return err
 			}
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sRead %d artifact entries\n", ts(), len(entries))
+				slog.Info("artifacts read", "count", len(entries))
 			}
 
 			objects, enrichedEntries, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
@@ -247,10 +248,9 @@ func newExportStartCmd() *cobra.Command {
 
 			if verbose {
 				stderr := cmd.ErrOrStderr()
-				_, _ = fmt.Fprintf(stderr, "%sObjects to export:\n", ts())
+				slog.Info("starting export", "name", jobName, "objects", len(objects), "includeDeps", !excludeDependencies)
+				_, _ = fmt.Fprintf(stderr, "Objects to export:\n")
 				printArtifactTable(enrichedEntries, stderr)
-				_, _ = fmt.Fprintf(stderr, "%sStarting export job \"%s\" with %d objects...\n",
-					ts(), jobName, len(objects))
 			}
 
 			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
@@ -313,7 +313,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				return err
 			}
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sRead %d artifact entries\n", ts(), len(entries))
+				slog.Info("artifacts read", "count", len(entries))
 			}
 
 			objects, enrichedEntries, err := resolveExportObjects(ctx, c, entries, !excludeDependencies, out)
@@ -332,16 +332,12 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 			}
 			if verbose {
 				stderr := cmd.ErrOrStderr()
-				_, _ = fmt.Fprintf(stderr, "%sExport request: name=%q, objects=%d, includeDeps=%v\n",
-					ts(), req.Name, len(req.Objects), !excludeDependencies)
-				_, _ = fmt.Fprintf(stderr, "%sObjects to export:\n", ts())
+				slog.Info("starting export", "name", req.Name, "objects", len(req.Objects), "includeDeps", !excludeDependencies)
+				_, _ = fmt.Fprintf(stderr, "Objects to export:\n")
 				printArtifactTable(enrichedEntries, stderr)
 			}
 
 			// Step 5: Start export job.
-			if verbose {
-				_, _ = fmt.Fprintf(out, "%sStarting export job...\n", ts())
-			}
 			job, err := c.StartExport(ctx, req, client.ExportCreateOptions{IncludeTags: includeTags})
 			if err != nil {
 				return fmt.Errorf("starting export: %w", err)
@@ -363,16 +359,14 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 				if err != nil {
 					return fmt.Errorf("polling export status: %w", err)
 				}
-				elapsed := time.Since(startWall).Round(time.Second)
 				if verbose {
-					_, _ = fmt.Fprintf(out, "%sStatus: %-15s elapsed: %s\n", ts(), job.Status.State, elapsed)
+					slog.Info("export status", "state", job.Status.State, "elapsed", time.Since(startWall).Round(time.Second).String())
 				}
 			}
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sExport finished — status: %s, total time: %s\n",
-					ts(), job.Status.State, elapsed)
+				slog.Info("export complete", "state", job.Status.State, "elapsed", elapsed.String())
 			}
 
 			// Fetch final status with expanded objects if requested.
@@ -405,7 +399,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 
 			// Step 7: Download the export package.
 			if verbose {
-				_, _ = fmt.Fprintf(out, "%sDownloading export package to %s...\n", ts(), exportFilePath)
+				slog.Info("downloading export package", "path", exportFilePath)
 			}
 
 			zipFile, err := os.Create(exportFilePath)
@@ -441,7 +435,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 					logPath = strings.TrimSuffix(exportFilePath, ext) + ".log"
 				}
 				if verbose {
-					_, _ = fmt.Fprintf(out, "%sDownloading export log to %s...\n", ts(), logPath)
+					slog.Info("downloading export log", "path", logPath)
 				}
 				logFile, err := os.Create(logPath)
 				if err != nil {
@@ -550,7 +544,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 	// Perform lookup for entries without IDs.
 	if len(lookupObjs) > 0 {
 		if verbose {
-			_, _ = fmt.Fprintf(out, "%sLooking up IDs for %d objects...\n", ts(), len(lookupObjs))
+			slog.Info("looking up object IDs", "count", len(lookupObjs))
 		}
 		resp, err := c.Lookup(ctx, lookupObjs)
 		if err != nil {
@@ -569,7 +563,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 			}
 		}
 		if verbose {
-			_, _ = fmt.Fprintf(out, "%sLookup complete: %d resolved\n", ts(), len(resp.Objects))
+			slog.Info("lookup complete", "resolved", len(resp.Objects))
 		}
 	}
 

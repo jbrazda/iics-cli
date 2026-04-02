@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -64,9 +65,9 @@ func newPublishStartCmd() *cobra.Command {
 
 			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
-				_, _ = fmt.Fprintf(out, "%sPublishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
+				slog.Info("publishing assets", "count", len(paths), "batches", len(batches), "name", name)
 			} else if verbose {
-				_, _ = fmt.Fprintf(out, "%sPublishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
+				slog.Info("publishing assets", "count", len(paths), "batches", len(batches))
 			}
 
 			for i, batch := range batches {
@@ -215,17 +216,12 @@ func runPublishOp(
 	statusFn func(context.Context, string, string, bool) (*client.PublishJobResponse, error),
 ) error {
 	ctx := context.Background()
-	out := cmd.OutOrStdout()
 
 	batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
-	verbLabel := titleCase(verb) + "ing"
-	if verbose {
-		label := ""
-		if name != "" {
-			label = " - " + name
-		}
-		_, _ = fmt.Fprintf(out, "%s%s %d assets in %d batch(es)%s...\n",
-			ts(), verbLabel, len(paths), len(batches), label)
+	if verbose && name != "" {
+		slog.Info(verb+"ing assets", "count", len(paths), "batches", len(batches), "name", name)
+	} else if verbose {
+		slog.Info(verb+"ing assets", "count", len(paths), "batches", len(batches))
 	}
 
 	interval := time.Duration(pollingInterval) * time.Second
@@ -233,26 +229,24 @@ func runPublishOp(
 
 	var results []batchResult
 	for batchIdx, batch := range batches {
-		if verbose {
-			_, _ = fmt.Fprintf(out, "%sSubmitting batch %d/%d (%d assets)...\n",
-				ts(), batchIdx+1, len(batches), len(batch))
-		}
+		batchLabel := fmt.Sprintf("%d/%d", batchIdx+1, len(batches))
 
 		resp, err := startFn(ctx, caiURL, batch)
 		if err != nil {
 			return fmt.Errorf("batch %d: submitting: %w", batchIdx+1, err)
 		}
 		jobID := resp.Data.ID
-		_, _ = fmt.Fprintf(out, "%sBatch %d/%d job ID: %s\n", ts(), batchIdx+1, len(batches), jobID)
+		slog.Info("batch submitted", "batch", batchLabel, "job", jobID, "assets", len(batch))
 
 		// Poll until terminal or timeout.
 		timedOut := false
 		deadline := time.Now().Add(time.Duration(maxWaitTime) * time.Second)
 		for !client.PublishIsTerminal(resp.Data.Attributes.JobState) {
 			if time.Now().After(deadline) {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
-					"%swarning: timed out after %ds waiting for %s job %s (last state: %s)\n",
-					ts(), maxWaitTime, verb, jobID, resp.Data.Attributes.JobState)
+				slog.Warn("timed out waiting for job",
+					"verb", verb, "job", jobID, "batch", batchLabel,
+					"elapsed", fmt.Sprintf("%ds", maxWaitTime),
+					"state", resp.Data.Attributes.JobState)
 				timedOut = true
 				break
 			}
@@ -265,8 +259,11 @@ func runPublishOp(
 
 			elapsed := time.Since(startWall).Round(time.Second)
 			attrs := resp.Data.Attributes
-			_, _ = fmt.Fprintf(out, "%s%s %d out of %d asset(s). State: %s elapsed: %s\n",
-				ts(), titleCase(verb)+"ed", attrs.ProcessedCount, attrs.TotalCount, attrs.JobState, elapsed)
+			slog.Info(verb+" progress",
+				"processed", attrs.ProcessedCount,
+				"total", attrs.TotalCount,
+				"state", attrs.JobState,
+				"elapsed", elapsed.String())
 
 			if verbose && detailedPolling && len(attrs.ItemDetail) > 0 {
 				printPublishItems(cmd, attrs.ItemDetail, itemFields)

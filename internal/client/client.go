@@ -234,9 +234,10 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	if !slog.Default().Enabled(req.Context(), slog.LevelDebug) {
 		return
 	}
+	now := time.Now().Format("[2006-01-02 15:04:05.000]")
 	w := os.Stderr
-	_, _ = fmt.Fprintf(w, "DEBUG > %s %s\n", req.Method, req.URL)
-	_, _ = fmt.Fprintln(w, "Request Headers:")
+	_, _ = fmt.Fprintf(w, "%s[DEBUG] > %s %s\n", now, req.Method, req.URL)
+	_, _ = fmt.Fprintf(w, "%s[DEBUG] Request Headers:\n", now)
 	for k, vs := range req.Header {
 		for _, v := range vs {
 			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
@@ -247,18 +248,18 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 		}
 	}
 	if len(reqData) > 0 {
-		_, _ = fmt.Fprintln(w, "Request Body:")
+		_, _ = fmt.Fprintf(w, "%s[DEBUG] Request Body:\n", now)
 		_, _ = fmt.Fprintf(w, "  %s\n", prettyJSONString(reqData))
 	}
-	_, _ = fmt.Fprintf(w, "DEBUG < %s\n", resp.Status)
-	_, _ = fmt.Fprintln(w, "Response Headers:")
+	_, _ = fmt.Fprintf(w, "%s[DEBUG] < HTTP %s\n", now, resp.Status)
+	_, _ = fmt.Fprintf(w, "%s[DEBUG] Response Headers:\n", now)
 	for k, vs := range resp.Header {
 		for _, v := range vs {
 			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
 		}
 	}
 	if len(respData) > 0 {
-		_, _ = fmt.Fprintln(w, "Response Body:")
+		_, _ = fmt.Fprintf(w, "%s[DEBUG] Response Body:\n", now)
 		_, _ = fmt.Fprintf(w, "  %s\n", prettyJSONString(respData))
 	}
 	_, _ = fmt.Fprintln(w)

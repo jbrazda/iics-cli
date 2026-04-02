@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/spf13/cobra"
@@ -54,9 +55,9 @@ func newUnpublishStartCmd() *cobra.Command {
 
 			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
-				_, _ = fmt.Fprintf(out, "%sUnpublishing %d assets (%d batch(es)) — %s\n", ts(), len(paths), len(batches), name)
+				slog.Info("unpublishing assets", "count", len(paths), "batches", len(batches), "name", name)
 			} else if verbose {
-				_, _ = fmt.Fprintf(out, "%sUnpublishing %d assets in %d batch(es)...\n", ts(), len(paths), len(batches))
+				slog.Info("unpublishing assets", "count", len(paths), "batches", len(batches))
 			}
 
 			for i, batch := range batches {
