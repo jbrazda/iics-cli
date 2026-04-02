@@ -16,11 +16,28 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
+
+func targetStatusFunc(v interface{}) string {
+	row, _ := v.(map[string]interface{})
+	status, _ := row["targetStatus"].(string)
+	if noColor {
+		return status
+	}
+	switch status {
+	case "found":
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).Render(status)
+	case "missing":
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render(status)
+	default:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(status)
+	}
+}
 
 func newPackageCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -835,6 +852,11 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 	tc := client.NewClient(loginURL, targetProfile.Username, targetProfile.Password,
 		client.WithDebug(debug), client.WithVerbose(verbose))
 
+	var targetOrgName string
+	tc.SetOnLoginSuccess(func(resp *client.LoginResponse) {
+		targetOrgName = resp.UserInfo.OrgName
+	})
+
 	slog.Info("validating dependencies against target org",
 		"profile", targetProfileName,
 		"count", len(deps),
@@ -843,9 +865,38 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 	for i := range deps {
 		d := &deps[i]
 		slog.Debug("looking up dependency in target org",
+			"profile", targetProfileName,
+			"org", targetOrgName,
 			"path", d.Path,
 			"type", d.Type,
 		)
+
+		// CDI connections live under SYS/ and must be looked up via the V2
+		// Connection API by name; the V3 Lookup API returns V3API_LookupError_012
+		// for Connection type.
+		if d.Type == "Connection" {
+			name := d.Path
+			if idx := strings.LastIndex(d.Path, "/"); idx >= 0 {
+				name = d.Path[idx+1:]
+			}
+			_, connErr := tc.GetConnectionByName(ctx, name)
+			if connErr == nil {
+				d.TargetStatus = "found"
+				slog.Debug("connection found in target org", "profile", targetProfileName, "org", targetOrgName, "name", name)
+			} else {
+				var apiErr *client.APIError
+				if errors.As(connErr, &apiErr) && apiErr.IsNotFound() {
+					d.TargetStatus = "missing"
+					d.Warning = "connection not found in target org"
+					slog.Debug("connection missing in target org", "profile", targetProfileName, "org", targetOrgName, "name", name)
+				} else {
+					d.TargetStatus = "unknown"
+					d.Warning = fmt.Sprintf("lookup error: %v", connErr)
+					slog.Warn("connection lookup failed", "profile", targetProfileName, "org", targetOrgName, "name", name, "error", connErr)
+				}
+			}
+			continue
+		}
 
 		resp, lookupErr := tc.Lookup(ctx, []client.LookupObject{{Path: d.Path, Type: d.Type}})
 		if lookupErr != nil {
@@ -856,12 +907,12 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 				bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
 				d.TargetStatus = "missing"
 				d.Warning = "asset not found in target org"
-				slog.Debug("dependency missing in target org", "path", d.Path, "type", d.Type)
+				slog.Debug("dependency missing in target org", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 			} else {
 				// Other errors (unsupported type, network, auth) - report but continue.
 				d.TargetStatus = "unknown"
 				d.Warning = fmt.Sprintf("lookup error: %v", lookupErr)
-				slog.Warn("dependency lookup failed", "path", d.Path, "type", d.Type, "error", lookupErr)
+				slog.Warn("dependency lookup failed", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type, "error", lookupErr)
 			}
 			continue
 		}
@@ -871,11 +922,11 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 		// Connection) return a different path format than what we sent.
 		if len(resp.Objects) > 0 {
 			d.TargetStatus = "found"
-			slog.Debug("dependency found in target org", "path", d.Path, "type", d.Type)
+			slog.Debug("dependency found in target org", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 		} else {
 			d.TargetStatus = "missing"
 			d.Warning = "asset not found in target org"
-			slog.Debug("dependency missing in target org (empty result)", "path", d.Path, "type", d.Type)
+			slog.Debug("dependency missing in target org (empty result)", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 		}
 	}
 	return nil
@@ -1037,14 +1088,14 @@ func newPackageDependenciesCmd() *cobra.Command {
 			}
 
 			columns := []output.Column{
-				{Header: "PATH", Field: "path", Width: 70},
-				{Header: "TYPE", Field: "type", Width: 22},
-				{Header: "SOURCE", Field: "source", Width: 10},
+				{Header: "PATH", Field: "path"},
+				{Header: "TYPE", Field: "type"},
+				{Header: "SOURCE", Field: "source"},
 			}
 			if targetProfile != "" {
 				columns = append(columns,
-					output.Column{Header: "TARGET", Field: "targetStatus", Width: 10},
-					output.Column{Header: "WARNING", Field: "warning", Width: 50},
+					output.Column{Header: "TARGET", Field: "targetStatus", Func: targetStatusFunc},
+					output.Column{Header: "WARNING", Field: "warning"},
 				)
 			}
 
