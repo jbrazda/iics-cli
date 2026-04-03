@@ -752,7 +752,7 @@ func resolveDependencies(
 	}
 
 	// Phase 1: process all package objects.
-	slog.Info("resolving dependencies: phase 1 - scanning package objects",
+	slog.Info("resolving dependencies: scanning package objects",
 		"total", len(meta.ExportedObjects),
 		"publishMode", publishMode,
 	)
@@ -789,14 +789,14 @@ func resolveDependencies(
 		}
 	}
 
-	slog.Info("resolving dependencies: phase 1 complete",
+	slog.Info("resolving dependencies: complete",
 		"packageObjects", len(resultMap),
 		"externalGUIDs", len(externalGUIDs),
 	)
 
 	// Phase 2: BFS on external GUIDs using the source org API.
 	if c != nil && len(externalGUIDs) > 0 {
-		slog.Info("resolving dependencies: phase 2 - resolving external GUIDs via source org API",
+		slog.Info("resolving dependencies: resolving external GUIDs via source org API",
 			"externalGUIDs", len(externalGUIDs),
 		)
 		visited := make(map[string]bool)
@@ -1272,14 +1272,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 					return id
 				}
 				cols := []output.Column{
-					{Header: "PATH", Field: "id", Width: 90, Func: pathFunc},
+					{Header: "PATH", Field: "id", Func: pathFunc},
 				}
 				for _, prof := range reportProfiles {
 					key := strings.ReplaceAll(prof, "-", "_")
 					cols = append(cols, output.Column{
 						Header: fmt.Sprintf("STATUS (%s)", prof),
 						Field:  "status_" + key,
-						Width:  10 + len(prof),
 						Func:   makeProfileStatusFunc(key),
 					})
 				}
@@ -1319,14 +1318,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 				return path + "." + typ
 			}
 			columns := []output.Column{
-				{Header: "PATH", Field: "path", Width: 90, Func: pathFunc},
+				{Header: "PATH", Field: "path", Func: pathFunc},
 			}
 			if targetProfile != "" {
 				columns = append(columns,
 					output.Column{
 						Header: fmt.Sprintf("STATUS (%s)", targetProfile),
 						Field:  "status",
-						Width:  10 + len(targetProfile),
 						Func:   targetStatusFunc,
 					},
 				)

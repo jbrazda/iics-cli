@@ -6,12 +6,21 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-isatty"
 )
+
+// ansiEscape matches ANSI CSI escape sequences (colors, cursor moves, etc.).
+var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;]*[A-Za-z]`)
+
+// visibleLen returns the number of visible runes in s, ignoring ANSI escape sequences.
+func visibleLen(s string) int {
+	return utf8.RuneCountInString(ansiEscape.ReplaceAllString(s, ""))
+}
 
 const (
 	cellPad = 1 // spaces of padding on each side of a bordered cell
@@ -83,7 +92,7 @@ func computeColWidths(rows []map[string]interface{}, columns []Column) []int {
 	}
 	for _, row := range rows {
 		for i, col := range columns {
-			l := utf8.RuneCountInString(extractField(row, col))
+			l := visibleLen(extractField(row, col))
 			if l > widths[i] {
 				widths[i] = l
 			}
@@ -94,7 +103,7 @@ func computeColWidths(rows []map[string]interface{}, columns []Column) []int {
 
 // padRight right-pads s to exactly width visible runes.
 func padRight(s string, width int) string {
-	l := utf8.RuneCountInString(s)
+	l := visibleLen(s)
 	if l >= width {
 		return s
 	}
