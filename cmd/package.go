@@ -482,10 +482,12 @@ var publishableTypes = map[string]bool{
 	"TASKFLOW":             true,
 }
 
-// typePriority controls sort order for dependency output (0 = unknown/sort last).
+// typePriority controls sort order for publish-mode dependency output (0 = unknown/sort last).
+// Order reflects the publish dependency chain: connectors must exist before connections,
+// connections before processes, etc.
 var typePriority = map[string]int{
-	"AI_CONNECTION":        1,
-	"AI_SERVICE_CONNECTOR": 2,
+	"AI_SERVICE_CONNECTOR": 1,
+	"AI_CONNECTION":        2,
 	"PROCESS":              3,
 	"GUIDE":                4,
 	"TASKFLOW":             5,
@@ -520,6 +522,24 @@ type dependencyItem struct {
 	Source       string `json:"source"`
 	TargetStatus string `json:"targetStatus,omitempty"`
 	Warning      string `json:"warning,omitempty"`
+}
+
+// depField returns the named field of a dependencyItem as a string for sorting.
+func depField(item dependencyItem, field string) string {
+	switch field {
+	case "path":
+		return item.Path
+	case "type":
+		return item.Type
+	case "source":
+		return item.Source
+	case "targetStatus":
+		return item.TargetStatus
+	case "warning":
+		return item.Warning
+	default:
+		return ""
+	}
 }
 
 // dependencyEdge represents a directed dependency between two assets (for Mermaid output).
@@ -582,6 +602,7 @@ func resolveDependencies(
 	meta *exportMetadata,
 	c *client.Client,
 	publishMode bool,
+	orderBy string,
 	excludeRe *regexp.Regexp,
 ) ([]dependencyItem, []dependencyEdge, error) {
 
@@ -808,18 +829,24 @@ func resolveDependencies(
 		items = append(items, item)
 	}
 	sort.Slice(items, func(i, j int) bool {
-		pi, pj := typePriority[items[i].Type], typePriority[items[j].Type]
-		if pi != pj {
-			if pi == 0 {
-				return false
+		if orderBy != "" {
+			vi, vj := depField(items[i], orderBy), depField(items[j], orderBy)
+			if vi != vj {
+				return vi < vj
 			}
-			if pj == 0 {
-				return true
-			}
-			return pi < pj
+			return items[i].Path < items[j].Path
 		}
-		if items[i].Type != items[j].Type {
-			return items[i].Type < items[j].Type
+		if publishMode {
+			pi, pj := typePriority[items[i].Type], typePriority[items[j].Type]
+			if pi != pj {
+				if pi == 0 {
+					return false
+				}
+				if pj == 0 {
+					return true
+				}
+				return pi < pj
+			}
 		}
 		return items[i].Path < items[j].Path
 	})
@@ -1025,10 +1052,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 		file           string
 		workspace      string
 		publishMode    bool
+		orderBy        string
 		excludePattern string
 		filterPattern  string
 		targetProfile  string
 	)
+
+	validOrderByFields := []string{"path", "type", "source", "targetStatus", "warning"}
 
 	cmd := &cobra.Command{
 		Use:   "dependencies",
@@ -1043,6 +1073,18 @@ func newPackageDependenciesCmd() *cobra.Command {
 			}
 			if publishMode && targetProfile == "" {
 				return fmt.Errorf("--target-profile is required when --publish is set")
+			}
+			if orderBy != "" {
+				valid := false
+				for _, f := range validOrderByFields {
+					if f == orderBy {
+						valid = true
+						break
+					}
+				}
+				if !valid {
+					return fmt.Errorf("invalid --order-by value %q: must be one of %s", orderBy, strings.Join(validOrderByFields, ", "))
+				}
 			}
 
 			// Compile exclude regex.
@@ -1078,7 +1120,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 			}
 
 			// Resolve dependency graph.
-			deps, edges, err := resolveDependencies(ctx, meta, srcClient, publishMode, excludeRe)
+			deps, edges, err := resolveDependencies(ctx, meta, srcClient, publishMode, orderBy, excludeRe)
 			if err != nil {
 				return err
 			}
@@ -1127,6 +1169,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&file, "file", "f", "", "path to IICS export ZIP package (mutually exclusive with --workspace)")
 	cmd.Flags().StringVarP(&workspace, "workspace", "w", "", "path to expanded workspace directory (mutually exclusive with --file)")
 	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only; requires --target-profile")
+	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, source, targetStatus, warning (overrides default sort)")
 	cmd.Flags().StringVarP(&excludePattern, "exclude", "e", "", "regex matched against path/name.type to exclude assets from resolution")
 	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against path/name.type to filter final output (does not affect resolution)")
 	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (required with --publish)")

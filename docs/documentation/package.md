@@ -295,11 +295,22 @@ The command operates in two modes:
 **Default mode** (no `--publish`): lists ALL dependencies regardless of type, including
 Folder, Project, Connection, AgentGroup, MTT assets, and more. Useful for auditing the full
 dependency graph. `--target-profile` is optional; when provided, each dependency is validated
-against the target org and missing assets are flagged.
+against the target org and missing assets are flagged. Output is sorted by `path`.
 
 **Publish mode** (`--publish`): restricts output to publishable types only:
 `AI_SERVICE_CONNECTOR`, `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`.
-`--target-profile` is required in this mode.
+`--target-profile` is required in this mode. Output is sorted by publish dependency order
+(primary) then `path` (secondary):
+
+| Order | Type |
+| ----- | ---- |
+| 1 | `AI_SERVICE_CONNECTOR` |
+| 2 | `AI_CONNECTION` |
+| 3 | `PROCESS` |
+| 4 | `GUIDE` |
+| 5 | `TASKFLOW` |
+
+Use `--order-by` to override the default sort in either mode.
 
 ### Flags
 
@@ -308,12 +319,16 @@ against the target org and missing assets are flagged.
 | `--file` | `-f` | string | yes* | | Path to IICS export ZIP package |
 | `--workspace` | `-w` | string | yes* | | Path to expanded workspace directory |
 | `--publish` | | bool | | false | Restrict to publishable types; makes `--target-profile` mandatory |
+| `--order-by` | | string | | | Sort output by field: `path`, `type`, `source`, `targetStatus`, `warning` |
 | `--exclude` | `-e` | string | | | Regex matched against `path/name.type` - excludes from BFS resolution |
 | `--filter` | | string | | | Regex matched against `path/name.type` - filters final output only |
 | `--target-profile` | `-t` | string | yes** | | Profile name for target org validation |
 
 \* `--file` and `--workspace` are mutually exclusive; exactly one is required.
 \** Required when `--publish` is set.
+
+When `--order-by` is provided it overrides the default sort (path-only or publish-priority).
+The secondary sort key is always `path`.
 
 All [global flags](../../README.md#global-flags) apply, including `--output` / `-o`.
 
@@ -362,6 +377,15 @@ iics package dependencies -f pkg.zip --publish --target-profile prod -o csv | ii
 # Exclude system connections, filter to a specific project
 iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'ZZ_TEST_CLI'
 
+# Sort by asset type instead of default path order
+iics package dependencies -f pkg.zip --order-by type
+
+# Sort publish-mode output by path (overrides default type-priority order)
+iics package dependencies -f pkg.zip --publish --target-profile prod --order-by path
+
+# Sort by target validation status to review missing assets first
+iics package dependencies -f pkg.zip --target-profile prod --order-by targetStatus
+
 # Render dependency graph as Mermaid diagram
 iics package dependencies -f pkg.zip -o mermaid
 
@@ -384,6 +408,12 @@ iics package dependencies -f pkg.zip --publish --target-profile prod -o csv | ii
 
 # Exclude system connections, filter to a specific project
 iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'ZZ_TEST_CLI'
+
+# Sort by asset type instead of default path order
+iics package dependencies -f pkg.zip --order-by type
+
+# Sort publish-mode output by path (overrides default type-priority order)
+iics package dependencies -f pkg.zip --publish --target-profile prod --order-by path
 
 # Render dependency graph as Mermaid diagram
 iics package dependencies -f pkg.zip -o mermaid
