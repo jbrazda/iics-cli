@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -26,7 +27,7 @@ import (
 
 func targetStatusFunc(v interface{}) string {
 	row, _ := v.(map[string]interface{})
-	status, _ := row["targetStatus"].(string)
+	status, _ := row["status"].(string)
 	if noColor {
 		return status
 	}
@@ -517,11 +518,24 @@ type exportedObjMeta struct {
 
 // dependencyItem is one row in the dependency output.
 type dependencyItem struct {
-	Path         string `json:"path"`
-	Type         string `json:"type"`
-	Source       string `json:"source"`
-	TargetStatus string `json:"targetStatus,omitempty"`
-	Warning      string `json:"warning,omitempty"`
+	Path    string `json:"path"`
+	Type    string `json:"type"`
+	Status  string `json:"status,omitempty"`
+	Warning string `json:"warning,omitempty"`
+}
+
+// reportItem is one row in multi-profile report output (--report flag).
+type reportItem struct {
+	ID       string                   `json:"id"`
+	Path     string                   `json:"path"`
+	Type     string                   `json:"type"`
+	Profiles map[string]profileResult `json:"profiles"`
+}
+
+// profileResult holds the validation result for one profile.
+type profileResult struct {
+	Status  string `json:"status"`
+	Warning string `json:"warning,omitempty"`
 }
 
 // depField returns the named field of a dependencyItem as a string for sorting.
@@ -531,15 +545,103 @@ func depField(item dependencyItem, field string) string {
 		return item.Path
 	case "type":
 		return item.Type
-	case "source":
-		return item.Source
-	case "targetStatus":
-		return item.TargetStatus
+	case "status":
+		return item.Status
 	case "warning":
 		return item.Warning
 	default:
 		return ""
 	}
+}
+
+// makeProfileStatusFunc returns a column Func that color-codes a per-profile status cell.
+func makeProfileStatusFunc(profileKey string) func(interface{}) string {
+	return func(v interface{}) string {
+		row, _ := v.(map[string]interface{})
+		status, _ := row["status_"+profileKey].(string)
+		if noColor {
+			return status
+		}
+		switch status {
+		case "found":
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).Render(status)
+		case "missing":
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render(status)
+		default:
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(status)
+		}
+	}
+}
+
+// validateMultiProfile validates deps against multiple profiles in parallel.
+// Returns a map of profileName -> validated copy of deps.
+func validateMultiProfile(ctx context.Context, profiles []string, deps []dependencyItem) (map[string][]dependencyItem, error) {
+	results := make(map[string][]dependencyItem, len(profiles))
+	errs := make([]error, len(profiles))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for idx, prof := range profiles {
+		wg.Add(1)
+		go func(i int, profileName string) {
+			defer wg.Done()
+			depsCopy := make([]dependencyItem, len(deps))
+			copy(depsCopy, deps)
+			slog.Info("report: starting validation", "profile", profileName, "total", len(depsCopy))
+			if err := validateTargetDependencies(ctx, profileName, depsCopy); err != nil {
+				errs[i] = fmt.Errorf("profile %q: %w", profileName, err)
+				return
+			}
+			mu.Lock()
+			results[profileName] = depsCopy
+			mu.Unlock()
+		}(idx, prof)
+	}
+
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+	return results, nil
+}
+
+// buildReportRows builds output rows for multi-profile report mode.
+// Returns table rows ([]map[string]interface{}) and JSON rows ([]reportItem).
+func buildReportRows(deps []dependencyItem, profiles []string, profileResults map[string][]dependencyItem) ([]map[string]interface{}, []reportItem) {
+	tableRows := make([]map[string]interface{}, len(deps))
+	jsonRows := make([]reportItem, len(deps))
+
+	for i, dep := range deps {
+		id := dep.Path + "." + dep.Type
+		row := map[string]interface{}{
+			"id":   id,
+			"path": dep.Path,
+			"type": dep.Type,
+		}
+		ri := reportItem{
+			ID:       id,
+			Path:     dep.Path,
+			Type:     dep.Type,
+			Profiles: make(map[string]profileResult, len(profiles)),
+		}
+		for _, prof := range profiles {
+			profDeps := profileResults[prof]
+			var status, warning string
+			if i < len(profDeps) {
+				status = profDeps[i].Status
+				warning = profDeps[i].Warning
+			}
+			key := strings.ReplaceAll(prof, "-", "_")
+			row["status_"+key] = status
+			row["warning_"+key] = warning
+			ri.Profiles[prof] = profileResult{Status: status, Warning: warning}
+		}
+		tableRows[i] = row
+		jsonRows[i] = ri
+	}
+	return tableRows, jsonRows
 }
 
 // dependencyEdge represents a directed dependency between two assets (for Mermaid output).
@@ -675,9 +777,8 @@ func resolveDependencies(
 		}
 		guidToMatchKey[obj.ObjectGUID] = mk
 		resultMap[mk] = dependencyItem{
-			Path:   fullPath,
-			Type:   obj.ObjectType,
-			Source: "package",
+			Path: fullPath,
+			Type: obj.ObjectType,
 		}
 
 		for _, refGUID := range obj.Metadata.ObjectRefs {
@@ -753,9 +854,8 @@ func resolveDependencies(
 
 				guidToMatchKey[result.ID] = mk
 				resultMap[mk] = dependencyItem{
-					Path:   apiPath(result.Path),
-					Type:   result.Type,
-					Source: "external",
+					Path: apiPath(result.Path),
+					Type: result.Type,
 				}
 
 				// Fetch this object's uses dependencies for further BFS levels.
@@ -893,6 +993,13 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 
 	for i := range deps {
 		d := &deps[i]
+		if i > 0 && i%50 == 0 {
+			slog.Debug("validating dependencies progress",
+				"profile", targetProfileName,
+				"processed", i,
+				"total", len(deps),
+			)
+		}
 		slog.Debug("looking up dependency in target org",
 			"profile", targetProfileName,
 			"org", targetOrgName,
@@ -910,16 +1017,16 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 			}
 			_, connErr := tc.GetConnectionByName(ctx, name)
 			if connErr == nil {
-				d.TargetStatus = "found"
+				d.Status = "found"
 				slog.Debug("connection found in target org", "profile", targetProfileName, "org", targetOrgName, "name", name)
 			} else {
 				var apiErr *client.APIError
 				if errors.As(connErr, &apiErr) && apiErr.IsNotFound() {
-					d.TargetStatus = "missing"
+					d.Status = "missing"
 					d.Warning = "connection not found in target org"
 					slog.Debug("connection missing in target org", "profile", targetProfileName, "org", targetOrgName, "name", name)
 				} else {
-					d.TargetStatus = "unknown"
+					d.Status = "unknown"
 					d.Warning = fmt.Sprintf("lookup error: %v", connErr)
 					slog.Warn("connection lookup failed", "profile", targetProfileName, "org", targetOrgName, "name", name, "error", connErr)
 				}
@@ -934,12 +1041,12 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 			// so APIError.Code is empty; detect it by scanning the raw response body.
 			if errors.As(lookupErr, &apiErr) &&
 				bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
-				d.TargetStatus = "missing"
+				d.Status = "missing"
 				d.Warning = "asset not found in target org"
 				slog.Debug("dependency missing in target org", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 			} else {
 				// Other errors (unsupported type, network, auth) - report but continue.
-				d.TargetStatus = "unknown"
+				d.Status = "unknown"
 				d.Warning = fmt.Sprintf("lookup error: %v", lookupErr)
 				slog.Warn("dependency lookup failed", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type, "error", lookupErr)
 			}
@@ -950,10 +1057,10 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 		// We intentionally do NOT match by path because some types (AgentGroup,
 		// Connection) return a different path format than what we sent.
 		if len(resp.Objects) > 0 {
-			d.TargetStatus = "found"
+			d.Status = "found"
 			slog.Debug("dependency found in target org", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 		} else {
-			d.TargetStatus = "missing"
+			d.Status = "missing"
 			d.Warning = "asset not found in target org"
 			slog.Debug("dependency missing in target org (empty result)", "profile", targetProfileName, "org", targetOrgName, "path", d.Path, "type", d.Type)
 		}
@@ -961,7 +1068,7 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 
 	var found, missing, unknown int
 	for _, d := range deps {
-		switch d.TargetStatus {
+		switch d.Status {
 		case "found":
 			found++
 		case "missing":
@@ -1020,7 +1127,7 @@ func renderMermaid(items []dependencyItem, edges []dependencyEdge, w io.Writer) 
 		}
 
 		label := item.Type + ": " + name
-		if item.TargetStatus == "missing" {
+		if item.Status == "missing" {
 			hasMissing = true
 			fmt.Fprintf(&sb, "    %s:::missing[\"%s\"]\n", id, label)
 		} else {
@@ -1053,12 +1160,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 		workspace      string
 		publishMode    bool
 		orderBy        string
+		reportProfiles []string
 		excludePattern string
 		filterPattern  string
 		targetProfile  string
 	)
 
-	validOrderByFields := []string{"path", "type", "source", "targetStatus", "warning"}
+	validOrderByFields := []string{"path", "type", "status", "warning"}
 
 	cmd := &cobra.Command{
 		Use:   "dependencies",
@@ -1071,8 +1179,11 @@ func newPackageDependenciesCmd() *cobra.Command {
 			if file != "" && workspace != "" {
 				return fmt.Errorf("--file and --workspace are mutually exclusive")
 			}
-			if publishMode && targetProfile == "" {
-				return fmt.Errorf("--target-profile is required when --publish is set")
+			if targetProfile != "" && len(reportProfiles) > 0 {
+				return fmt.Errorf("--target-profile and --report are mutually exclusive")
+			}
+			if publishMode && targetProfile == "" && len(reportProfiles) == 0 {
+				return fmt.Errorf("--target-profile or --report is required when --publish is set")
 			}
 			if orderBy != "" {
 				valid := false
@@ -1133,7 +1244,58 @@ func newPackageDependenciesCmd() *cobra.Command {
 				}
 			}
 
-			// Validate against target org if requested.
+			// Multi-profile report mode.
+			if len(reportProfiles) > 0 {
+				if outputFmt == "mermaid" {
+					return fmt.Errorf("--output mermaid is not supported with --report")
+				}
+
+				profileResults, reportErr := validateMultiProfile(ctx, reportProfiles, deps)
+				if reportErr != nil {
+					return reportErr
+				}
+
+				tableRows, jsonRows := buildReportRows(deps, reportProfiles, profileResults)
+
+				f, fErr := getFormatter()
+				if fErr != nil {
+					return fErr
+				}
+
+				if outputFmt == "json" || outputFmt == "yaml" {
+					return f.Format(jsonRows, nil)
+				}
+
+				pathFunc := func(v interface{}) string {
+					row, _ := v.(map[string]interface{})
+					id, _ := row["id"].(string)
+					return id
+				}
+				cols := []output.Column{
+					{Header: "PATH", Field: "id", Width: 90, Func: pathFunc},
+				}
+				for _, prof := range reportProfiles {
+					key := strings.ReplaceAll(prof, "-", "_")
+					cols = append(cols, output.Column{
+						Header: fmt.Sprintf("STATUS (%s)", prof),
+						Field:  "status_" + key,
+						Width:  10 + len(prof),
+						Func:   makeProfileStatusFunc(key),
+					})
+				}
+				if outputFmt == "csv" {
+					for _, prof := range reportProfiles {
+						key := strings.ReplaceAll(prof, "-", "_")
+						cols = append(cols, output.Column{
+							Header: fmt.Sprintf("WARNING (%s)", prof),
+							Field:  "warning_" + key,
+						})
+					}
+				}
+				return f.Format(tableRows, cols)
+			}
+
+			// Single-profile validation.
 			if targetProfile != "" {
 				if valErr := validateTargetDependencies(ctx, targetProfile, deps); valErr != nil {
 					return valErr
@@ -1150,16 +1312,36 @@ func newPackageDependenciesCmd() *cobra.Command {
 				return err
 			}
 
+			pathFunc := func(v interface{}) string {
+				row, _ := v.(map[string]interface{})
+				path, _ := row["path"].(string)
+				typ, _ := row["type"].(string)
+				return path + "." + typ
+			}
 			columns := []output.Column{
-				{Header: "PATH", Field: "path"},
-				{Header: "TYPE", Field: "type"},
-				{Header: "SOURCE", Field: "source"},
+				{Header: "PATH", Field: "path", Width: 90, Func: pathFunc},
 			}
 			if targetProfile != "" {
 				columns = append(columns,
-					output.Column{Header: "TARGET", Field: "targetStatus", Func: targetStatusFunc},
-					output.Column{Header: "WARNING", Field: "warning"},
+					output.Column{
+						Header: fmt.Sprintf("STATUS (%s)", targetProfile),
+						Field:  "status",
+						Width:  10 + len(targetProfile),
+						Func:   targetStatusFunc,
+					},
 				)
+				hasWarnings := false
+				for _, d := range deps {
+					if d.Warning != "" {
+						hasWarnings = true
+						break
+					}
+				}
+				if hasWarnings {
+					columns = append(columns,
+						output.Column{Header: "WARNING", Field: "warning", Width: 40},
+					)
+				}
 			}
 
 			return f.Format(deps, columns)
@@ -1168,11 +1350,12 @@ func newPackageDependenciesCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&file, "file", "f", "", "path to IICS export ZIP package (mutually exclusive with --workspace)")
 	cmd.Flags().StringVarP(&workspace, "workspace", "w", "", "path to expanded workspace directory (mutually exclusive with --file)")
-	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only; requires --target-profile")
-	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, source, targetStatus, warning (overrides default sort)")
+	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only; requires --target-profile or --report")
+	cmd.Flags().StringSliceVar(&reportProfiles, "report", nil, "compare dependencies across one or more target profiles (mutually exclusive with --target-profile); accepts comma-separated values or repeated flags")
+	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, status, warning (overrides default sort)")
 	cmd.Flags().StringVarP(&excludePattern, "exclude", "e", "", "regex matched against path/name.type to exclude assets from resolution")
 	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against path/name.type to filter final output (does not affect resolution)")
-	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (required with --publish)")
+	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (mutually exclusive with --report)")
 
 	return cmd
 }

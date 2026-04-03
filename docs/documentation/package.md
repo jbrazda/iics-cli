@@ -299,8 +299,8 @@ against the target org and missing assets are flagged. Output is sorted by `path
 
 **Publish mode** (`--publish`): restricts output to publishable types only:
 `AI_SERVICE_CONNECTOR`, `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`.
-`--target-profile` is required in this mode. Output is sorted by publish dependency order
-(primary) then `path` (secondary):
+`--target-profile` or `--report` is required in this mode. Output is sorted by publish
+dependency order (primary) then `path` (secondary):
 
 | Order | Type |
 | ----- | ---- |
@@ -318,14 +318,14 @@ Use `--order-by` to override the default sort in either mode.
 | ---- | ----- | ---- | -------- | ------- | ----------- |
 | `--file` | `-f` | string | yes* | | Path to IICS export ZIP package |
 | `--workspace` | `-w` | string | yes* | | Path to expanded workspace directory |
-| `--publish` | | bool | | false | Restrict to publishable types; makes `--target-profile` mandatory |
-| `--order-by` | | string | | | Sort output by field: `path`, `type`, `source`, `targetStatus`, `warning` |
-| `--exclude` | `-e` | string | | | Regex matched against `path/name.type` - excludes from BFS resolution |
-| `--filter` | | string | | | Regex matched against `path/name.type` - filters final output only |
-| `--target-profile` | `-t` | string | yes** | | Profile name for target org validation |
+| `--publish` | | bool | | false | Restrict to publishable types; requires `--target-profile` or `--report` |
+| `--report` | | string list | | | Compare dependencies across one or more target profiles (mutually exclusive with `--target-profile`) |
+| `--target-profile` | `-t` | string | | | Profile name for single-profile target org validation (mutually exclusive with `--report`) |
+| `--order-by` | | string | | | Sort output by field: `path`, `type`, `status`, `warning` |
+| `--exclude` | `-e` | string | | | Regex matched against `path.type` - excludes from BFS resolution |
+| `--filter` | | string | | | Regex matched against `path.type` - filters final output only |
 
 \* `--file` and `--workspace` are mutually exclusive; exactly one is required.
-\** Required when `--publish` is set.
 
 When `--order-by` is provided it overrides the default sort (path-only or publish-priority).
 The secondary sort key is always `path`.
@@ -334,13 +334,47 @@ All [global flags](../../README.md#global-flags) apply, including `--output` / `
 
 ### Output columns
 
-| Column | Field | Description |
-| ------ | ----- | ----------- |
-| `PATH` | `path` | Full asset path (e.g. `Explore/MyProject/Conn1`) |
-| `TYPE` | `type` | Asset type (e.g. `AI_CONNECTION`) |
-| `SOURCE` | `source` | `package` if in the export, `external` if resolved via API |
-| `TARGET` | `targetStatus` | `found` or `missing` (only when `--target-profile` is set) |
-| `WARNING` | `warning` | Human-readable warning for missing assets |
+The PATH column always shows `path.type` concatenated (e.g.
+`MyProject/Connections/MyConn.AI_CONNECTION`). The underlying `path` and `type` fields
+are available in JSON, YAML, and CSV output.
+
+#### Single-profile mode (no `--target-profile` or `--report`)
+
+| Column | JSON field | Description |
+| ------ | ---------- | ----------- |
+| `PATH` | `path` + `type` | Asset identifier as `path.type` |
+
+#### With `--target-profile <name>`
+
+| Column | JSON field | Description |
+| ------ | ---------- | ----------- |
+| `PATH` | `path` + `type` | Asset identifier as `path.type` |
+| `STATUS (name)` | `status` | `found`, `missing`, or `unknown`; color-coded |
+| `WARNING` | `warning` | Only shown when at least one warning exists |
+
+#### With `--report <profiles>`
+
+| Column | JSON field | Description |
+| ------ | ---------- | ----------- |
+| `PATH` | `id` | Asset identifier as `path.type` |
+| `STATUS (dev)` | `status_dev` | Per-profile status; color-coded |
+| `STATUS (qa)` | `status_qa` | Per-profile status; color-coded |
+| `WARNING (dev)` | `warning_dev` | CSV only - warning text per profile |
+| `WARNING (qa)` | `warning_qa` | CSV only - warning text per profile |
+
+JSON and YAML output for `--report` uses a nested `profiles` map:
+
+```json
+{
+  "id": "MyProject/MyConn.AI_CONNECTION",
+  "path": "MyProject/MyConn",
+  "type": "AI_CONNECTION",
+  "profiles": {
+    "dev": { "status": "found" },
+    "qa":  { "status": "missing", "warning": "asset not found in target org" }
+  }
+}
+```
 
 ### Output formats
 
@@ -348,12 +382,14 @@ Supports all standard formats via `--output` / `-o`: `table`, `json`, `csv`, `ya
 
 Additionally, `-o mermaid` renders the dependency graph as a Mermaid `graph TD` diagram
 (no extra Go dependencies - pure text generation). Missing assets (when `--target-profile`
-is set) are highlighted in red using a `classDef missing` style.
+is set) are highlighted in red using a `classDef missing` style. Mermaid output is not
+supported with `--report`.
 
 ### CI/CD environment variables
 
 These environment variables override the target profile settings without modifying
-`~/.iics/config.yaml`, which is useful in CI/CD pipelines:
+`~/.iics/config.yaml`, which is useful in CI/CD pipelines. Applies to `--target-profile`
+only; `--report` uses named profiles from the config file.
 
 | Variable | Overrides |
 | -------- | --------- |
@@ -371,29 +407,32 @@ iics package dependencies --file mypackage.zip
 # Inspect from an expanded workspace
 iics package dependencies --workspace ./src/iics
 
-# Publish mode: resolve publishable deps, validate target, pipe to publish
+# Single-profile: validate publish deps and pipe to publish
 iics package dependencies -f pkg.zip --publish --target-profile prod -o csv | iics publish run
 
+# Single-profile: sort missing assets to the top
+iics package dependencies -f pkg.zip --target-profile qa --order-by status
+
+# Multi-profile: compare dev and qa side-by-side
+iics package dependencies -f pkg.zip --report dev,qa
+
+# Multi-profile: publish mode comparison across three orgs
+iics package dependencies -f pkg.zip --publish --report dev,qa,prod
+
+# Multi-profile: export comparison as JSON for downstream processing
+iics package dependencies -f pkg.zip --report dev,qa -o json
+
+# Multi-profile: export comparison as CSV for spreadsheet review
+iics package dependencies -f pkg.zip --report dev,qa -o csv
+
 # Exclude system connections, filter to a specific project
-iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'ZZ_TEST_CLI'
-
-# Sort by asset type instead of default path order
-iics package dependencies -f pkg.zip --order-by type
-
-# Sort publish-mode output by path (overrides default type-priority order)
-iics package dependencies -f pkg.zip --publish --target-profile prod --order-by path
-
-# Sort by target validation status to review missing assets first
-iics package dependencies -f pkg.zip --target-profile prod --order-by targetStatus
+iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'MyProject'
 
 # Render dependency graph as Mermaid diagram
 iics package dependencies -f pkg.zip -o mermaid
 
 # Render publish-only graph with target validation for review
 iics package dependencies -f pkg.zip --publish --target-profile prod -o mermaid
-
-# Export as JSON for further processing
-iics package dependencies --workspace ./src/iics -o json
 ```
 
 ```powershell
@@ -403,23 +442,20 @@ iics package dependencies --file mypackage.zip
 # Inspect from an expanded workspace
 iics package dependencies --workspace ./src/iics
 
-# Publish mode: resolve publishable deps, validate target, pipe to publish
+# Single-profile: validate publish deps and pipe to publish
 iics package dependencies -f pkg.zip --publish --target-profile prod -o csv | iics publish run
 
-# Exclude system connections, filter to a specific project
-iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'ZZ_TEST_CLI'
+# Multi-profile: compare dev and qa side-by-side
+iics package dependencies -f pkg.zip --report dev,qa
 
-# Sort by asset type instead of default path order
-iics package dependencies -f pkg.zip --order-by type
+# Multi-profile: publish mode comparison
+iics package dependencies -f pkg.zip --publish --report dev,qa,prod
 
-# Sort publish-mode output by path (overrides default type-priority order)
-iics package dependencies -f pkg.zip --publish --target-profile prod --order-by path
+# Multi-profile: export as CSV for spreadsheet review
+iics package dependencies -f pkg.zip --report dev,qa -o csv
 
 # Render dependency graph as Mermaid diagram
 iics package dependencies -f pkg.zip -o mermaid
-
-# Export as JSON for further processing
-iics package dependencies --workspace ./src/iics -o json
 ```
 
 ---
