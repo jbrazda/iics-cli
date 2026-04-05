@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-05
+
+### Added
+
+- `package dependencies` subcommand: validates package assets against a target org, checking
+  whether each referenced connection, runtime environment, and schedule exists (CR-0011)
+- `package dependencies --report`: multi-profile dependency report across several orgs at once;
+  renders a per-profile summary table (CR-0014)
+- `auditlog list` command for the V2 audit log endpoint with field selection and filtering (CR-0015)
+- Table output themes `markdown` (GitHub-flavored markdown) and `gh` (GitHub CLI style);
+  row-count footer on all table output; `--theme` global flag and `IICS_THEME` environment
+  variable for CI-friendly theme override; `style.headerColor` config field for custom header
+  color (CR-0016)
+- Secure credential storage via OS keychain using sentinel `password: "@keyring"` in config;
+  `profile set-password` subcommand to migrate existing plaintext passwords to keychain;
+  `profile add` and `profile edit` offer keyring storage as the last prompt step; `IICS_PASSWORD`
+  env var always takes precedence over keychain (CR-0017)
+- Consistent `[timestamp][LEVEL] message key=value` log format across all commands via a custom
+  `slog.Handler`; `--verbose` enables INFO-level, `--debug` enables DEBUG-level (CR-0013)
+- Connection lookup: auto-size table columns to content width; color-coded `TARGET STATUS`
+  column (green/red/yellow); fixed `GetConnectionByName` lookup (CR-0012)
+
+### Fixed
+
+- Correct publish/unpublish sort order for dependent assets; added `--order-by` flag for
+  `package dependencies` output (BUG-0001)
+- Table column misalignment when cell content contained ANSI escape codes; column widths now
+  measured on the visible (stripped) string length (BUG-0002)
+- Runtime commands now use the V2 API with correct structs; added `--name` flag and tree-view
+  output for runtime environments
+
 ## [0.2.0] - 2026-03-23
 
 ### Added
