@@ -53,8 +53,9 @@ all profiles:
 
 ```yaml
 style:
-  theme: default     # default | minimal | compact | plain
+  theme: default     # default | minimal | compact | plain | markdown | gh
   noColor: false     # true = disable color permanently (same as --no-color flag)
+  headerColor: ""    # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex
 ```
 
 The `add` subcommand:
@@ -66,6 +67,9 @@ The `add` subcommand:
 - When invoked on an existing profile name, shows the current value in brackets so you can
   press Enter to keep it.
 - Asks whether to set the profile as the default.
+- Presents a live preview of all available table themes and prompts you to select one.
+  The selected theme is saved to the global `style.theme` in `~/.iics/config.yaml`.
+  Press Enter to keep the current theme.
 - Saves the result to `~/.iics/config.yaml`.
 - Does not validate credentials. Run `iics login --profile <name>` afterwards to verify and
   populate `baseApiUrl` and `caiUrl`.
@@ -79,6 +83,7 @@ The `edit` subcommand:
 - On success: saves the updated profile with org-specific `baseApiUrl` and `caiUrl` derived
   from the login response, and refreshes the session cache. You do not need to run
   `iics login` separately.
+- Presents the same live theme preview and selection menu as `add`.
 
 On first `iics login` after creating a profile with `add`, the `baseApiUrl` (org-specific,
 not known before a real login) and any remaining derived URLs are written back to the profile

@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
@@ -11,6 +14,72 @@ import (
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
+
+// sampleThemeCols and sampleThemeData provide a fixed two-row preview table
+// rendered for each theme during interactive theme selection.
+var sampleThemeCols = []output.Column{
+	{Header: "NAME", Field: "name", Width: 12},
+	{Header: "REGION", Field: "region", Width: 6},
+	{Header: "STATUS", Field: "status", Width: 8},
+}
+
+var sampleThemeData = []map[string]interface{}{
+	{"name": "dev-org", "region": "USW3", "status": "active"},
+	{"name": "prod-org", "region": "EMEA", "status": "active"},
+}
+
+// promptThemeSelection renders a live sample for each theme and presents a numbered
+// menu. currentTheme is shown as the default; pressing Enter keeps it.
+// All output goes to stderr so stdout piping is not contaminated.
+// Returns the selected theme name, or currentTheme if the user pressed Enter.
+func promptThemeSelection(currentTheme string) (string, error) {
+	themes := []string{"default", "minimal", "compact", "plain", "markdown", "gh"}
+
+	_, _ = fmt.Fprint(os.Stderr, "\nTable theme selection - preview of each theme:\n\n")
+
+	for i, theme := range themes {
+		_, _ = fmt.Fprintf(os.Stderr, "  [%d] %s\n", i+1, theme)
+		f := output.New(output.FormatTable, os.Stderr, output.TableStyle{Theme: theme})
+		_ = f.Format(sampleThemeData, sampleThemeCols)
+		_, _ = fmt.Fprintln(os.Stderr)
+	}
+
+	currentIdx := 0
+	for i, t := range themes {
+		if t == currentTheme {
+			currentIdx = i + 1
+			break
+		}
+	}
+
+	r := bufio.NewReader(os.Stdin)
+	for {
+		if currentIdx > 0 {
+			_, _ = fmt.Fprintf(os.Stderr,
+				"Select theme [1-%d, current: %d (%s), Enter to keep]: ",
+				len(themes), currentIdx, currentTheme)
+		} else {
+			_, _ = fmt.Fprintf(os.Stderr, "Select theme [1-%d]: ", len(themes))
+		}
+
+		line, err := r.ReadString('\n')
+		if err != nil {
+			return "", fmt.Errorf("reading theme selection: %w", err)
+		}
+		line = strings.TrimSpace(line)
+
+		if line == "" {
+			return currentTheme, nil
+		}
+
+		var n int
+		if _, scanErr := fmt.Sscanf(line, "%d", &n); scanErr == nil && n >= 1 && n <= len(themes) {
+			return themes[n-1], nil
+		}
+		_, _ = fmt.Fprintf(os.Stderr,
+			"Invalid selection %q. Enter a number from 1 to %d.\n", line, len(themes))
+	}
+}
 
 func newProfileCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -115,6 +184,17 @@ If name is omitted, the profile is saved as "default".`,
 				cfg.DefaultProfile = name
 			}
 
+			// Interactive theme selection (terminal only)
+			if config.IsTerminal() {
+				selected, styleErr := promptThemeSelection(cfg.Style.Theme)
+				if styleErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+						"Warning: theme selection skipped: %v\n", styleErr)
+				} else if selected != "" {
+					cfg.Style.Theme = selected
+				}
+			}
+
 			if err := cfg.Save(cfgFile); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}
@@ -184,6 +264,18 @@ the session cache with the org-specific API URLs discovered from the response.`,
 			if makeDefault {
 				cfg.DefaultProfile = name
 			}
+
+			// Interactive theme selection (terminal only)
+			if config.IsTerminal() {
+				selected, styleErr := promptThemeSelection(cfg.Style.Theme)
+				if styleErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+						"Warning: theme selection skipped: %v\n", styleErr)
+				} else if selected != "" {
+					cfg.Style.Theme = selected
+				}
+			}
+
 			if err := cfg.Save(cfgFile); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}

@@ -24,6 +24,7 @@ var (
 	verbose    bool
 	noColor    bool
 	debug      bool
+	themeFlag  string
 	versionStr = "dev"
 	commitStr  = "none"
 	dateStr    = "unknown"
@@ -183,6 +184,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFmt, "output", "o", "table", "output format: table|json|csv")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
+	rootCmd.PersistentFlags().StringVar(&themeFlag, "theme", "", "table theme: default|minimal|compact|plain|markdown|gh (overrides config)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "print request body to stderr on API error")
 
 	rootCmd.AddCommand(newLoginCmd())
@@ -340,16 +342,45 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 }
 
 // resolveTableStyle returns the effective TableStyle for the current invocation.
-// Precedence (highest first): --no-color flag / NO_COLOR env > config file settings.
+// Precedence (highest first):
+//
+//	--no-color flag / NO_COLOR env > --theme flag > IICS_THEME env >
+//	config style.noColor > config style.theme > "default"
 func resolveTableStyle(cfg *config.Config) output.TableStyle {
 	style := output.TableStyle{Theme: "default"}
-	if cfg != nil && cfg.Style.Theme != "" {
-		style.Theme = cfg.Style.Theme
+
+	// Config-level preferences (lowest named precedence)
+	if cfg != nil {
+		if cfg.Style.Theme != "" {
+			style.Theme = cfg.Style.Theme
+		}
+		if cfg.Style.HeaderColor != "" {
+			style.HeaderColor = cfg.Style.HeaderColor
+		}
 	}
-	if noColor || (cfg != nil && cfg.Style.NoColor) || os.Getenv("NO_COLOR") != "" {
+
+	// IICS_THEME env var (overrides config)
+	if v := os.Getenv("IICS_THEME"); v != "" {
+		style.Theme = v
+	}
+
+	// --theme flag (overrides env var)
+	if themeFlag != "" {
+		style.Theme = themeFlag
+	}
+
+	// config.noColor (overrides theme, but below --no-color flag)
+	if cfg != nil && cfg.Style.NoColor {
 		style.NoColor = true
 		style.Theme = "plain"
 	}
+
+	// --no-color flag / NO_COLOR env (highest precedence)
+	if noColor || os.Getenv("NO_COLOR") != "" {
+		style.NoColor = true
+		style.Theme = "plain"
+	}
+
 	return style
 }
 

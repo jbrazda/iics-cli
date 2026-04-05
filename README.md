@@ -111,8 +111,9 @@ iics logout
 ```yaml
 defaultProfile: dev
 style:
-  theme: default     # default | minimal | compact | plain
+  theme: default     # default | minimal | compact | plain | markdown | gh
   noColor: false     # true = disable color permanently (same as --no-color)
+  headerColor: ""    # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex (empty = theme default)
 profiles:
   dev:
     name: "Development Org"
@@ -141,11 +142,19 @@ The `style` section controls table output appearance. Available themes:
 | ----- | ----------- |
 | `default` | Unicode rounded borders, cyan bold headers (TTY only) |
 | `minimal` | No borders, colored bold headers with unicode underline |
-| `compact` | No borders, bold headers, dense layout |
+| `compact` | No borders, gray bold headers, 1-space column gap (TTY only) |
 | `plain` | ASCII borders, no color - used automatically for non-TTY output |
+| `markdown` | GitHub-flavored markdown table, no color, always rendered regardless of TTY |
+| `gh` | GitHub CLI-style: no borders, no separator, plain headers, no color, always rendered regardless of TTY |
 
 Non-TTY output (piped, redirected) always uses `plain` regardless of the configured theme.
+The `markdown` and `gh` themes are exceptions - they always render as-is even when output
+is piped, since they are already colorless.
 The `NO_COLOR` environment variable is also respected.
+
+The `style.headerColor` field accepts a lipgloss color string (`"6"` for cyan, `"244"` for
+gray, `"#FF0000"` for hex) and overrides the built-in header color for `default` and `minimal`
+themes. Leave empty to use the theme default.
 
 ### Environment variable overrides
 
@@ -158,6 +167,7 @@ The `NO_COLOR` environment variable is also respected.
 | `IICS_LOGIN_URL` | Override computed login URL              |
 | `IICS_CAI_URL`   | Override profile `caiUrl`                |
 | `IICS_OUTPUT`    | Override default output format           |
+| `IICS_THEME`     | Override table theme (same values as `--theme` flag) |
 
 Environment variables take precedence over config file values.
 
@@ -219,6 +229,7 @@ Environment variables take precedence over config file values.
 | `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`            |
 | `--verbose`  | `-v`  | Enable verbose output                                              |
 | `--no-color` |       | Disable colored output and force `plain` table theme               |
+| `--theme`    |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config) |
 | `--config`   |       | Config file path (default `~/.iics/config.yaml`)                   |
 | `--debug`    |       | Print full HTTP request/response trace to stderr                   |
 

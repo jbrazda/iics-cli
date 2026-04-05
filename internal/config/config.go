@@ -12,8 +12,9 @@ import (
 
 // StyleConfig holds user preferences for table output styling.
 type StyleConfig struct {
-	Theme   string `yaml:"theme,omitempty"   mapstructure:"theme"`
-	NoColor bool   `yaml:"noColor,omitempty" mapstructure:"noColor"`
+	Theme       string `yaml:"theme,omitempty"       mapstructure:"theme"`
+	NoColor     bool   `yaml:"noColor,omitempty"     mapstructure:"noColor"`
+	HeaderColor string `yaml:"headerColor,omitempty" mapstructure:"headerColor"`
 }
 
 // Config represents the full YAML configuration file.
@@ -213,7 +214,7 @@ func (c *Config) Save(configPath string) error {
 	v := viper.New()
 	v.Set("defaultProfile", c.DefaultProfile)
 	v.Set("profiles", c.Profiles)
-	if c.Style.Theme != "" || c.Style.NoColor {
+	if c.Style.Theme != "" || c.Style.NoColor || c.Style.HeaderColor != "" {
 		v.Set("style", c.Style)
 	}
 

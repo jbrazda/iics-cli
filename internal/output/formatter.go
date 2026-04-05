@@ -25,11 +25,14 @@ type Column struct {
 }
 
 // TableStyle carries resolved styling options for the table formatter.
-// Theme selects the visual style: "default", "minimal", "compact", or "plain".
+// Theme selects the visual style: "default", "minimal", "compact", "plain", "markdown", or "gh".
 // NoColor disables all ANSI color and forces the "plain" theme.
+// HeaderColor is a lipgloss color string (e.g. "6", "244", "#FF0000").
+// Empty string means use the theme built-in default.
 type TableStyle struct {
-	Theme   string
-	NoColor bool
+	Theme       string
+	NoColor     bool
+	HeaderColor string
 }
 
 // Formatter is the interface for rendering API results.

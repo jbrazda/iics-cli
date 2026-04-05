@@ -23,8 +23,9 @@ func visibleLen(s string) int {
 }
 
 const (
-	cellPad = 1 // spaces of padding on each side of a bordered cell
-	colGap  = 2 // spaces between columns in borderless themes
+	cellPad       = 1 // spaces of padding on each side of a bordered cell
+	colGap        = 2 // spaces between columns in borderless themes (minimal, gh)
+	compactColGap = 1 // spaces between columns in compact theme
 )
 
 type tableFormatter struct {
@@ -55,13 +56,34 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 
 	theme := effectiveTheme(f.w, f.style)
 	widths := computeColWidths(rows, columns)
-	renderTable(f.w, rows, columns, widths, theme)
+	renderTable(f.w, rows, columns, widths, theme, f.style)
+
+	// Row count footer
+	n := len(rows)
+	if theme == "markdown" {
+		if n == 1 {
+			_, _ = fmt.Fprintln(f.w, "<!-- 1 row -->")
+		} else {
+			_, _ = fmt.Fprintf(f.w, "<!-- %d rows -->\n", n)
+		}
+	} else {
+		if n == 1 {
+			_, _ = fmt.Fprintln(f.w, "1 row")
+		} else {
+			_, _ = fmt.Fprintf(f.w, "%d rows\n", n)
+		}
+	}
+
 	return nil
 }
 
 // effectiveTheme resolves the theme to use, downgrading to "plain" when
 // no-color is set or the output writer is not a TTY.
+// The "markdown" and "gh" themes are always colorless and bypass the TTY check.
 func effectiveTheme(w io.Writer, style TableStyle) string {
+	if style.Theme == "markdown" || style.Theme == "gh" {
+		return style.Theme
+	}
 	if style.NoColor || !isTerminal(w) {
 		return "plain"
 	}
@@ -162,28 +184,17 @@ func borderedRow(b borderSet, cells []string, widths []int, styleFn func(string)
 	return sb.String()
 }
 
-func renderTable(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, theme string) {
-	switch theme {
-	case "minimal":
-		renderMinimal(w, rows, columns, widths)
-	case "compact":
-		renderCompact(w, rows, columns, widths)
-	case "plain":
-		renderPlain(w, rows, columns, widths)
-	default:
-		renderDefault(w, rows, columns, widths)
+// makeHeaderStyle returns a lipgloss.Style for header cells.
+// color is a lipgloss color string. If empty, only Bold is applied (no color).
+func makeHeaderStyle(color string) lipgloss.Style {
+	s := lipgloss.NewStyle().Bold(true)
+	if color != "" {
+		s = s.Foreground(lipgloss.Color(color))
 	}
+	return s
 }
 
-// Predefined lipgloss header styles.
-var (
-	colorHeaderStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
-	boldHeaderStyle  = lipgloss.NewStyle().Bold(true)
-)
-
-func noStyle(s string) string     { return s }
-func colorHeader(s string) string { return colorHeaderStyle.Render(s) }
-func boldHeader(s string) string  { return boldHeaderStyle.Render(s) }
+func noStyle(s string) string { return s }
 
 func headerStrings(columns []Column) []string {
 	h := make([]string, len(columns))
@@ -201,12 +212,37 @@ func dataCells(row map[string]interface{}, columns []Column) []string {
 	return cells
 }
 
-// renderDefault renders with unicode rounded borders and cyan bold headers.
-func renderDefault(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int) {
+func renderTable(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, theme string, style TableStyle) {
+	switch theme {
+	case "minimal":
+		renderMinimal(w, rows, columns, widths, style)
+	case "compact":
+		renderCompact(w, rows, columns, widths, style)
+	case "plain":
+		renderPlain(w, rows, columns, widths)
+	case "markdown":
+		renderMarkdown(w, rows, columns, widths)
+	case "gh":
+		renderGH(w, rows, columns, widths)
+	default:
+		renderDefault(w, rows, columns, widths, style)
+	}
+}
+
+// renderDefault renders with unicode rounded borders and configurable bold headers.
+// Defaults to cyan ("6") when no HeaderColor is set.
+func renderDefault(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, style TableStyle) {
 	b := unicodeBorders
+	color := style.HeaderColor
+	if color == "" {
+		color = "6" // built-in default: cyan
+	}
+	hStyle := makeHeaderStyle(color)
+	headerFn := func(s string) string { return hStyle.Render(s) }
+
 	headers := headerStrings(columns)
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.topLeft, b.topMid, b.topRight))
-	_, _ = fmt.Fprintln(w, borderedRow(b, headers, widths, colorHeader))
+	_, _ = fmt.Fprintln(w, borderedRow(b, headers, widths, headerFn))
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.midLeft, b.midMid, b.midRight))
 	for _, row := range rows {
 		_, _ = fmt.Fprintln(w, borderedRow(b, dataCells(row, columns), widths, noStyle))
@@ -227,13 +263,21 @@ func renderPlain(w io.Writer, rows []map[string]interface{}, columns []Column, w
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.botLeft, b.botMid, b.botRight))
 }
 
-// renderMinimal renders with no box borders, cyan bold headers, and a unicode underline separator.
-func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int) {
+// renderMinimal renders with no box borders, configurable bold headers, and a unicode underline separator.
+// Defaults to cyan ("6") when no HeaderColor is set.
+func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, style TableStyle) {
+	color := style.HeaderColor
+	if color == "" {
+		color = "6" // built-in default: cyan
+	}
+	hStyle := makeHeaderStyle(color)
+	headerFn := func(s string) string { return hStyle.Render(s) }
+
 	headers := headerStrings(columns)
 
 	var hdr strings.Builder
 	for i, h := range headers {
-		hdr.WriteString(colorHeader(padRight(h, widths[i])))
+		hdr.WriteString(headerFn(padRight(h, widths[i])))
 		if i < len(widths)-1 {
 			hdr.WriteString(strings.Repeat(" ", colGap))
 		}
@@ -262,13 +306,94 @@ func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column,
 	}
 }
 
-// renderCompact renders with no borders, bold headers, and 2-space column gaps.
-func renderCompact(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int) {
+// renderCompact renders with no borders, gray bold headers (default), and 1-space column gaps.
+// Defaults to gray ("244") when no HeaderColor is set.
+func renderCompact(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, style TableStyle) {
+	color := style.HeaderColor
+	if color == "" {
+		color = "244" // built-in default for compact: gray
+	}
+	hStyle := makeHeaderStyle(color)
+	headerFn := func(s string) string { return hStyle.Render(s) }
+
+	headers := headerStrings(columns)
+	var hdr strings.Builder
+	for i, h := range headers {
+		hdr.WriteString(headerFn(padRight(h, widths[i])))
+		if i < len(widths)-1 {
+			hdr.WriteString(strings.Repeat(" ", compactColGap))
+		}
+	}
+	_, _ = fmt.Fprintln(w, hdr.String())
+
+	for _, row := range rows {
+		cells := dataCells(row, columns)
+		var rb strings.Builder
+		for i, cell := range cells {
+			rb.WriteString(padRight(cell, widths[i]))
+			if i < len(widths)-1 {
+				rb.WriteString(strings.Repeat(" ", compactColGap))
+			}
+		}
+		_, _ = fmt.Fprintln(w, rb.String())
+	}
+}
+
+// renderMarkdown renders a GitHub-Flavored Markdown table.
+// No ANSI color is used regardless of TTY or style settings.
+// Column widths are padded for alignment in raw source.
+func renderMarkdown(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int) {
+	headers := headerStrings(columns)
+
+	// Header row
+	var hdr strings.Builder
+	hdr.WriteString("| ")
+	for i, h := range headers {
+		hdr.WriteString(padRight(h, widths[i]))
+		if i < len(widths)-1 {
+			hdr.WriteString(" | ")
+		}
+	}
+	hdr.WriteString(" |")
+	_, _ = fmt.Fprintln(w, hdr.String())
+
+	// Separator row
+	var sep strings.Builder
+	sep.WriteString("| ")
+	for i, wd := range widths {
+		sep.WriteString(strings.Repeat("-", wd))
+		if i < len(widths)-1 {
+			sep.WriteString(" | ")
+		}
+	}
+	sep.WriteString(" |")
+	_, _ = fmt.Fprintln(w, sep.String())
+
+	// Data rows
+	for _, row := range rows {
+		cells := dataCells(row, columns)
+		var rb strings.Builder
+		rb.WriteString("| ")
+		for i, cell := range cells {
+			rb.WriteString(padRight(cell, widths[i]))
+			if i < len(widths)-1 {
+				rb.WriteString(" | ")
+			}
+		}
+		rb.WriteString(" |")
+		_, _ = fmt.Fprintln(w, rb.String())
+	}
+}
+
+// renderGH renders a plain space-padded table with no borders or decorations,
+// matching the GitHub CLI (gh) table output style.
+// No ANSI color is used regardless of TTY or style settings.
+func renderGH(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int) {
 	headers := headerStrings(columns)
 
 	var hdr strings.Builder
 	for i, h := range headers {
-		hdr.WriteString(boldHeader(padRight(h, widths[i])))
+		hdr.WriteString(padRight(h, widths[i]))
 		if i < len(widths)-1 {
 			hdr.WriteString(strings.Repeat(" ", colGap))
 		}
