@@ -21,18 +21,19 @@ func IsTerminal() bool {
 // PromptProfile interactively collects profile credentials from the user.
 // existing may be nil when creating a new profile; its values are used as defaults.
 // profileName is used only in display messages.
-// Returns the filled profile, whether the user wants it as the default, and any error.
+// Returns the filled profile, whether the user wants it as the default, whether to store
+// the password in the OS keychain, and any error.
 // Returns an error immediately if stdin is not a terminal.
-func PromptProfile(existing *Profile, profileName string) (*Profile, bool, error) {
+func PromptProfile(existing *Profile, profileName string) (*Profile, bool, bool, error) {
 	if !IsTerminal() {
-		return nil, false, errors.New("stdin is not a terminal; use --profile flag or IICS_* env vars")
+		return nil, false, false, errors.New("stdin is not a terminal; use --profile flag or IICS_* env vars")
 	}
 	return promptProfileInternal(existing, profileName)
 }
 
 // promptProfileInternal contains the prompting logic. Separated from PromptProfile
 // so tests can exercise it via a pipe-based stdin without a real TTY.
-func promptProfileInternal(existing *Profile, profileName string) (*Profile, bool, error) {
+func promptProfileInternal(existing *Profile, profileName string) (*Profile, bool, bool, error) {
 	p := &Profile{}
 	if existing != nil {
 		*p = *existing
@@ -51,7 +52,7 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		}
 		line, err := r.ReadString('\n')
 		if err != nil {
-			return nil, false, fmt.Errorf("reading username: %w", err)
+			return nil, false, false, fmt.Errorf("reading username: %w", err)
 		}
 		line = strings.TrimSpace(line)
 		if line != "" {
@@ -75,7 +76,7 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		pw, err := readPassword(int(os.Stdin.Fd()))
 		_, _ = fmt.Fprintln(os.Stderr)
 		if err != nil {
-			return nil, false, fmt.Errorf("reading password: %w", err)
+			return nil, false, false, fmt.Errorf("reading password: %w", err)
 		}
 		if len(pw) > 0 {
 			p.Password = string(pw)
@@ -100,7 +101,7 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 	}
 	line, err := r.ReadString('\n')
 	if err != nil {
-		return nil, false, fmt.Errorf("reading region: %w", err)
+		return nil, false, false, fmt.Errorf("reading region: %w", err)
 	}
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -136,7 +137,7 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 	}
 	line, err = r.ReadString('\n')
 	if err != nil {
-		return nil, false, fmt.Errorf("reading CAI URL: %w", err)
+		return nil, false, false, fmt.Errorf("reading CAI URL: %w", err)
 	}
 	line = strings.TrimSpace(line)
 	if line != "" {
@@ -149,10 +150,24 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 	_, _ = fmt.Fprint(os.Stderr, "Set as default profile? [Y/n]: ")
 	line, err = r.ReadString('\n')
 	if err != nil {
-		return nil, false, fmt.Errorf("reading default choice: %w", err)
+		return nil, false, false, fmt.Errorf("reading default choice: %w", err)
 	}
 	line = strings.TrimSpace(strings.ToLower(line))
 	makeDefault := line == "" || line == "y" || line == "yes"
 
-	return p, makeDefault, nil
+	// Keychain storage offer (default: yes).
+	existingIsKeyring := existing != nil && IsKeyringSentinel(existing.Password)
+	if existingIsKeyring {
+		_, _ = fmt.Fprint(os.Stderr, "Store password in OS keychain? [Y/n]: ")
+	} else {
+		_, _ = fmt.Fprint(os.Stderr, "Store password in OS keychain (recommended)? [Y/n]: ")
+	}
+	line, err = r.ReadString('\n')
+	if err != nil {
+		return nil, false, false, fmt.Errorf("reading keyring choice: %w", err)
+	}
+	line = strings.TrimSpace(strings.ToLower(line))
+	storeInKeyring := line == "" || line == "y" || line == "yes"
+
+	return p, makeDefault, storeInKeyring, nil
 }

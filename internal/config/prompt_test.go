@@ -18,7 +18,7 @@ func TestPromptProfile_NonTerminalReturnsError(t *testing.T) {
 	if IsTerminal() {
 		t.Skip("test requires non-terminal stdin")
 	}
-	_, _, err := PromptProfile(nil, "test")
+	_, _, _, err := PromptProfile(nil, "test")
 	if err == nil {
 		t.Fatal("expected error when stdin is not a terminal")
 	}
@@ -73,9 +73,9 @@ func TestPromptProfile_KeepsExistingOnEmptyInput(t *testing.T) {
 		Region:   "USW3",
 	}
 	stubReadPassword(t, "") // empty — should keep existing password
-	// inputs: username(keep), region(keep), caiUrl(keep derived), default(y)
-	withFakeStdin(t, "\n\n\n\n", func() {
-		p, makeDefault, err := promptProfileInternal(existing, "test")
+	// inputs: username(keep), region(keep), caiUrl(keep derived), default(y), keyring(y)
+	withFakeStdin(t, "\n\n\n\n\n", func() {
+		p, makeDefault, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -102,10 +102,10 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 	}
 	customURL := "https://custom.example.com/saas/public/core/v3/login"
 	stubReadPassword(t, "newpass")
-	// stdin needs: username(keep=\n), region line, caiUrl line, default line.
+	// stdin needs: username(keep=\n), region line, caiUrl line, default line, keyring line.
 	// password is handled by stubReadPassword (no stdin line needed).
-	withFakeStdin(t, "\n"+customURL+"\n\n\n", func() {
-		p, _, err := promptProfileInternal(existing, "test")
+	withFakeStdin(t, "\n"+customURL+"\n\n\n\n", func() {
+		p, _, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -121,15 +121,45 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 func TestPromptProfile_RegionUppercased(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")
-	// stdin needs: username(keep=\n), region, caiUrl, default.
+	// stdin needs: username(keep=\n), region, caiUrl, default, keyring.
 	// password is handled by stubReadPassword (no stdin line needed).
-	withFakeStdin(t, "\nusw3\n\n\n", func() {
-		p, _, err := promptProfileInternal(existing, "test")
+	withFakeStdin(t, "\nusw3\n\n\n\n", func() {
+		p, _, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if p.Region != "USW3" {
 			t.Errorf("Region = %q; want USW3", p.Region)
+		}
+	})
+}
+
+func TestPromptProfile_KeyringDefaultYes(t *testing.T) {
+	existing := &Profile{Username: "u@example.com", Password: "pass"}
+	stubReadPassword(t, "pass")
+	// Empty answer to keyring prompt means yes (default).
+	withFakeStdin(t, "\nusw3\n\n\n\n", func() {
+		_, _, storeInKeyring, err := promptProfileInternal(existing, "test")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !storeInKeyring {
+			t.Errorf("storeInKeyring should be true when user presses Enter (default=yes)")
+		}
+	})
+}
+
+func TestPromptProfile_KeyringExplicitNo(t *testing.T) {
+	existing := &Profile{Username: "u@example.com", Password: "pass"}
+	stubReadPassword(t, "pass")
+	// Explicit "n" answer to keyring prompt means no.
+	withFakeStdin(t, "\nusw3\n\n\nn\n", func() {
+		_, _, storeInKeyring, err := promptProfileInternal(existing, "test")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if storeInKeyring {
+			t.Errorf("storeInKeyring should be false when user answers 'n'")
 		}
 	})
 }

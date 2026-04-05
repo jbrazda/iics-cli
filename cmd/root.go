@@ -284,10 +284,22 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 			if loadErr != nil {
 				return nil, err
 			}
-			newProfile, makeDefault, promptErr := config.PromptProfile(cfg.Profiles[profileName], profileName)
+			newProfile, makeDefault, storeInKeyring, promptErr := config.PromptProfile(cfg.Profiles[profileName], profileName)
 			if promptErr != nil {
 				return nil, fmt.Errorf("profile setup: %w", promptErr)
 			}
+
+			// Keyring storage: save password in OS keychain and write sentinel to config.
+			if storeInKeyring {
+				if keyErr := config.SetKeychainPassword(profileName, newProfile.Password); keyErr != nil {
+					_, _ = fmt.Fprintf(os.Stderr,
+						"Warning: could not store password in keychain: %v\n"+
+							"  Storing password in config file instead.\n", keyErr)
+				} else {
+					newProfile.Password = config.KeyringSentinel
+				}
+			}
+
 			if cfg.Profiles == nil {
 				cfg.Profiles = make(map[string]*config.Profile)
 			}

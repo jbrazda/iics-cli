@@ -127,7 +127,7 @@ profiles:
     name: "Production Org"
     region: "EMEA"
     username: "admin@company.com"
-    password: ""
+    password: "@keyring"   # real password stored in OS keychain
     loginUrl: "https://dm-em.informaticacloud.com/saas/public/core/v3/login"
     baseApiUrl: "https://dm-em.informaticacloud.com/saas"
     caiUrl: "https://dm-em-cai.informaticacloud.com"
@@ -162,7 +162,7 @@ themes. Leave empty to use the theme default.
 | ---------------- | ---------------------------------------- |
 | `IICS_PROFILE`   | Override default profile                 |
 | `IICS_USERNAME`  | Override profile username                |
-| `IICS_PASSWORD`  | Override profile password                |
+| `IICS_PASSWORD`  | Override profile password (takes precedence over keychain) |
 | `IICS_REGION`    | Override profile region                  |
 | `IICS_LOGIN_URL` | Override computed login URL              |
 | `IICS_CAI_URL`   | Override profile `caiUrl`                |
@@ -183,11 +183,41 @@ Environment variables take precedence over config file values.
 | APNE1                                  | dm1-ap.informaticacloud.com |
 | EMEA, EMWE1                            | dm-em.informaticacloud.com  |
 
+## Security
+
+Passwords stored in `~/.iics/config.yaml` can be protected using the OS keychain instead of
+keeping them in plaintext. When you add or edit a profile interactively, iics-cli offers to
+store the password in the OS keychain and writes the sentinel value `@keyring` in the config
+file instead of the real password.
+
+Supported backends:
+
+| Platform | Backend |
+| -------- | ------- |
+| macOS | macOS Keychain (`security` framework) |
+| Linux | D-Bus Secret Service (e.g. GNOME Keyring, KWallet) |
+| Windows | Windows Credential Manager |
+
+To store a password for an existing profile:
+
+```bash
+iics profile set-password <profile-name>
+```
+
+To move a profile's password into the keychain after manual config edits:
+
+```bash
+iics profile set-password dev
+```
+
+`IICS_PASSWORD` always takes precedence over both the keychain and plaintext config, making
+it easy to override credentials in CI pipelines without touching the config file.
+
 ## Commands
 
 | Command | Alias | Subcommands | Description |
 | ------- | ----- | ----------- | ----------- |
-| [profile](docs/documentation/profile.md) | | `add`, `list`, `delete`, `set-default`, `show` | Manage connection profiles |
+| [profile](docs/documentation/profile.md) | | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles |
 | [login](docs/documentation/login.md) | | | Authenticate and cache session |
 | [logout](docs/documentation/logout.md) | | | Invalidate session |
 | [objects](docs/documentation/objects.md) | | `list`, `dependencies` | List/search assets, find dependencies |

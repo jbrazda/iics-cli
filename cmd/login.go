@@ -48,9 +48,18 @@ The session is cached locally so subsequent commands don't require re-authentica
 				if answer != "" && answer != "y" && answer != "Y" {
 					return fmt.Errorf("profile %q not found; run 'iics profile add %s' to create it", profileName, profileName)
 				}
-				newProfile, makeDefault, promptErr := config.PromptProfile(nil, profileName)
+				newProfile, makeDefault, storeInKeyring, promptErr := config.PromptProfile(nil, profileName)
 				if promptErr != nil {
 					return fmt.Errorf("profile setup: %w", promptErr)
+				}
+				if storeInKeyring {
+					if keyErr := config.SetKeychainPassword(profileName, newProfile.Password); keyErr != nil {
+						_, _ = fmt.Fprintf(os.Stderr,
+							"Warning: could not store password in keychain: %v\n"+
+								"  Storing password in config file instead.\n", keyErr)
+					} else {
+						newProfile.Password = config.KeyringSentinel
+					}
 				}
 				if cfg.Profiles == nil {
 					cfg.Profiles = make(map[string]*config.Profile)

@@ -13,6 +13,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // sampleThemeCols and sampleThemeData provide a fixed two-row preview table
@@ -98,6 +99,7 @@ all configured profiles, and 'profile set-default' to choose the active one.`,
 	cmd.AddCommand(newProfileDeleteCmd())
 	cmd.AddCommand(newProfileSetDefaultCmd())
 	cmd.AddCommand(newProfileShowCmd())
+	cmd.AddCommand(newProfileSetPasswordCmd())
 
 	return cmd
 }
@@ -171,9 +173,21 @@ If name is omitted, the profile is saved as "default".`,
 
 			existing := cfg.Profiles[name] // nil if not found
 
-			p, makeDefault, err := config.PromptProfile(existing, name)
+			p, makeDefault, storeInKeyring, err := config.PromptProfile(existing, name)
 			if err != nil {
 				return err
+			}
+
+			// Keyring storage: save password in OS keychain and write sentinel to config.
+			plainPassword := p.Password
+			if storeInKeyring {
+				if keyErr := config.SetKeychainPassword(name, plainPassword); keyErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+						"Warning: could not store password in keychain: %v\n"+
+							"  Storing password in config file instead.\n", keyErr)
+				} else {
+					p.Password = config.KeyringSentinel
+				}
 			}
 
 			if cfg.Profiles == nil {
@@ -232,17 +246,30 @@ the session cache with the org-specific API URLs discovered from the response.`,
 			}
 
 			// Interactive prompt with existing values as defaults.
-			p, makeDefault, err := config.PromptProfile(existing, name)
+			p, makeDefault, storeInKeyring, err := config.PromptProfile(existing, name)
 			if err != nil {
 				return err
 			}
 
+			// Keyring storage: save password in OS keychain and write sentinel to config.
+			plainPassword := p.Password
+			if storeInKeyring {
+				if keyErr := config.SetKeychainPassword(name, plainPassword); keyErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+						"Warning: could not store password in keychain: %v\n"+
+							"  Storing password in config file instead.\n", keyErr)
+				} else {
+					p.Password = config.KeyringSentinel
+				}
+			}
+
 			// Validate credentials and discover org-specific URLs via login.
+			// Use the plain password for login even if the sentinel will be stored.
 			loginURL, err := p.GetLoginURL()
 			if err != nil {
 				return err
 			}
-			c := client.NewClient(loginURL, p.Username, p.Password, client.WithVerbose(verbose))
+			c := client.NewClient(loginURL, p.Username, plainPassword, client.WithVerbose(verbose))
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Validating credentials for %q...\n", p.Username)
 			loginResp, err := c.Login(context.Background())
 			if err != nil {
@@ -339,6 +366,11 @@ func newProfileDeleteCmd() *cobra.Command {
 				if err := cache.Save(""); err != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not remove cached session: %v\n", err)
 				}
+			}
+
+			// Best-effort: remove keychain entry for the deleted profile.
+			if err := config.DeleteKeychainPassword(name); err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not remove keychain entry: %v\n", err)
 			}
 
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Profile %q deleted.\n", name)
@@ -457,6 +489,55 @@ func newProfileShowCmd() *cobra.Command {
 				{Header: "VALUE", Field: "value"},
 			}
 			return f.Format(rows, columns)
+		},
+	}
+}
+
+func newProfileSetPasswordCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-password [name]",
+		Short: "Store the profile password in the OS keychain",
+		Long: `Prompts for a password and stores it in the OS keychain (macOS Keychain,
+Windows Credential Manager, or Linux Secret Service). The config file is
+updated to use the "@keyring" sentinel so the plaintext password is no
+longer stored on disk.`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := "default"
+			if len(args) == 1 {
+				name = args[0]
+			}
+
+			cfg, err := loadConfig()
+			if err != nil {
+				return err
+			}
+			if cfg.Profiles[name] == nil {
+				return fmt.Errorf("profile %q not found; use 'profile add' to create it first", name)
+			}
+
+			_, _ = fmt.Fprintf(os.Stderr, "Enter new password for profile %q (input is masked): ", name)
+			pw, err := term.ReadPassword(int(os.Stdin.Fd()))
+			_, _ = fmt.Fprintln(os.Stderr)
+			if err != nil {
+				return fmt.Errorf("reading password: %w", err)
+			}
+			if len(pw) == 0 {
+				return fmt.Errorf("password must not be empty")
+			}
+
+			if err := config.SetKeychainPassword(name, string(pw)); err != nil {
+				return fmt.Errorf("keychain store failed: %w\n  Use 'iics profile edit' to update the password in the config file instead", err)
+			}
+
+			cfg.Profiles[name].Password = config.KeyringSentinel
+			if err := cfg.Save(cfgFile); err != nil {
+				return fmt.Errorf("saving config: %w", err)
+			}
+
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"Password for profile %q stored in OS keychain.\n", name)
+			return nil
 		},
 	}
 }

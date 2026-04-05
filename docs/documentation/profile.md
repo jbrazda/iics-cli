@@ -14,14 +14,15 @@ iics profile <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand    | Description                                    |
-| ------------- | ---------------------------------------------- |
-| `add`         | Add or update a profile interactively          |
-| `edit`        | Edit an existing profile interactively         |
-| `list`        | List all configured profiles                   |
-| `delete`      | Delete a profile                               |
-| `set-default` | Set the default profile used when no `--profile` flag is given |
-| `show`        | Show the details of a single profile           |
+| Subcommand      | Description                                    |
+| --------------- | ---------------------------------------------- |
+| `add`           | Add or update a profile interactively          |
+| `edit`          | Edit an existing profile interactively         |
+| `list`          | List all configured profiles                   |
+| `delete`        | Delete a profile                               |
+| `set-default`   | Set the default profile used when no `--profile` flag is given |
+| `set-password`  | Store a profile's password in the OS keychain  |
+| `show`          | Show the details of a single profile           |
 
 ## Flags
 
@@ -38,6 +39,10 @@ No command-specific flags. `name` defaults to `"default"` when omitted.
 | Flag       | Short | Description              |
 | ---------- | ----- | ------------------------ |
 | `--yes`    | `-y`  | Skip confirmation prompt |
+
+### `set-password <name>`
+
+No command-specific flags. `name` is required.
 
 All other subcommands accept only the [global flags](../../README.md#global-flags).
 
@@ -67,6 +72,10 @@ The `add` subcommand:
 - When invoked on an existing profile name, shows the current value in brackets so you can
   press Enter to keep it.
 - Asks whether to set the profile as the default.
+- **Offers to store the password in the OS keychain** (default: yes). When accepted, writes
+  `password: "@keyring"` to the config file instead of the plaintext password, and stores
+  the real password in the native OS keychain (macOS Keychain, Windows Credential Manager,
+  or Linux D-Bus Secret Service).
 - Presents a live preview of all available table themes and prompts you to select one.
   The selected theme is saved to the global `style.theme` in `~/.iics/config.yaml`.
   Press Enter to keep the current theme.
@@ -84,13 +93,45 @@ The `edit` subcommand:
   from the login response, and refreshes the session cache. You do not need to run
   `iics login` separately.
 - Presents the same live theme preview and selection menu as `add`.
+- Also offers keyring storage as the last prompt.
 
 On first `iics login` after creating a profile with `add`, the `baseApiUrl` (org-specific,
 not known before a real login) and any remaining derived URLs are written back to the profile
 automatically.
 
-The `delete` subcommand removes the profile from the config file and also clears any cached
-session for that profile from `~/.iics/sessions.yaml`.
+The `delete` subcommand removes the profile from the config file, clears any cached session
+for that profile from `~/.iics/sessions.yaml`, and also removes any stored keychain entry for
+that profile.
+
+The `set-password` subcommand stores a password directly into the OS keychain for a profile
+that already exists in the config file. It:
+
+- Prompts for the new password (masked input).
+- Stores it in the OS keychain under the profile name.
+- Writes `password: "@keyring"` to the profile in `~/.iics/config.yaml`.
+
+Use this to migrate a profile that has a plaintext password in the config file to keychain
+storage without going through the full `edit` flow.
+
+### Credential security
+
+Passwords stored in `~/.iics/config.yaml` can be kept out of the config file using OS-native
+secure storage. When a profile uses keychain storage, the config file contains:
+
+```yaml
+profiles:
+  prod:
+    username: "admin@company.com"
+    password: "@keyring"
+```
+
+The real password is retrieved from the OS keychain at runtime. The `IICS_PASSWORD` environment
+variable always takes precedence over both the keychain and plaintext config, making it easy to
+override in CI/CD pipelines:
+
+```bash
+IICS_PASSWORD=secret iics --profile prod objects list
+```
 
 ### Auto-trigger on missing credentials
 
@@ -134,6 +175,9 @@ iics profile delete staging
 # Delete without confirmation
 iics profile delete staging --yes
 
+# Migrate a plaintext password to OS keychain storage
+iics profile set-password prod
+
 # Use a specific profile for a single command (without changing the default)
 iics --profile prod connection list
 ```
@@ -165,6 +209,9 @@ iics profile delete staging
 
 # Delete without confirmation
 iics profile delete staging --yes
+
+# Migrate a plaintext password to OS keychain storage
+iics profile set-password prod
 
 # Use a specific profile for a single command (without changing the default)
 iics --profile prod connection list
