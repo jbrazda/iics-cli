@@ -200,7 +200,8 @@ Environment variables take precedence over config file values.
 | [tag](docs/documentation/tag.md) | | `assign`, `remove` | Assign/remove tags on objects |
 | [permission](docs/documentation/permission.md) | `perm` | `get`, `set`, `delete` | Manage object-level permissions |
 | [activitylog](docs/documentation/activitylog.md) | | `list`, `get` | Query activity logs for completed jobs |
-| [securitylog](docs/documentation/securitylog.md) | `auditlog` | `list` | Query security audit log |
+| [auditlog](docs/documentation/auditlog.md) | | `list` | Query organization audit log (V2 API) |
+| [securitylog](docs/documentation/securitylog.md) | | `list` | Query security audit log |
 | [metering](docs/documentation/metering.md) | | `get`, `download` | Query usage and metering data |
 | [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc` | `checkout`, `checkin`, `pull`, `commit` | Source control operations |
 | [state](docs/documentation/state.md) | | `fetch`, `load` | Fetch/load object state snapshots |

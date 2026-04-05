@@ -10,9 +10,8 @@ import (
 
 func newSecuritylogCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "securitylog",
-		Aliases: []string{"auditlog"},
-		Short:   "View security logs",
+		Use:   "securitylog",
+		Short: "View security logs",
 	}
 	cmd.AddCommand(newSecuritylogListCmd())
 	return cmd

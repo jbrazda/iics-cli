@@ -713,6 +713,83 @@ _iics_agent()
     noun_aliases=()
 }
 
+_iics_auditlog_list()
+{
+    last_command="iics_auditlog_list"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--fields=")
+    two_word_flags+=("--fields")
+    local_nonpersistent_flags+=("--fields")
+    local_nonpersistent_flags+=("--fields=")
+    flags+=("--limit=")
+    two_word_flags+=("--limit")
+    local_nonpersistent_flags+=("--limit")
+    local_nonpersistent_flags+=("--limit=")
+    flags+=("--skip=")
+    two_word_flags+=("--skip")
+    local_nonpersistent_flags+=("--skip")
+    local_nonpersistent_flags+=("--skip=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_auditlog()
+{
+    last_command="iics_auditlog"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("list")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_completion_bash()
 {
     last_command="iics_completion_bash"
@@ -5168,6 +5245,7 @@ _iics_root_command()
     commands=()
     commands+=("activitylog")
     commands+=("agent")
+    commands+=("auditlog")
     commands+=("completion")
     commands+=("connection")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
@@ -5205,10 +5283,6 @@ _iics_root_command()
     fi
     commands+=("schedule")
     commands+=("securitylog")
-    if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
-        command_aliases+=("auditlog")
-        aliashash["auditlog"]="securitylog"
-    fi
     commands+=("sourcecontrol")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
         command_aliases+=("sc")

@@ -1,6 +1,6 @@
 # securitylog
 
-Query the IICS security audit log. Alias: `auditlog`.
+Query the IICS security audit log (V3 API).
 
 The security log records authentication events, object changes, and administrative actions.
 
@@ -8,7 +8,6 @@ The security log records authentication events, object changes, and administrati
 
 ```bash
 iics securitylog <subcommand> [flags]
-iics auditlog <subcommand> [flags]
 ```
 
 ## Subcommands
@@ -68,7 +67,7 @@ iics securitylog list \
   | jq '.[] | select(.userName == "jane.smith@company.com")'
 
 # Export to CSV for compliance reporting
-iics auditlog list \
+iics securitylog list \
   --start "2026-01-01T00:00:00Z" \
   --end   "2026-03-31T23:59:59Z" \
   --output csv > security-audit-q1-2026.csv
@@ -97,7 +96,7 @@ $logs = iics securitylog list `
 $logs | Where-Object { $_.userName -eq "jane.smith@company.com" }
 
 # Export to CSV for compliance reporting
-iics auditlog list `
+iics securitylog list `
   --start "2026-01-01T00:00:00Z" `
   --end   "2026-03-31T23:59:59Z" `
   --output csv | Out-File security-audit-q1-2026.csv
@@ -105,4 +104,5 @@ iics auditlog list `
 
 ## See also
 
+- [auditlog](auditlog.md) - query organization audit log (V2 API)
 - [metering](metering.md) - query usage and consumption data

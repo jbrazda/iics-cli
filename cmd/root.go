@@ -210,6 +210,7 @@ func init() {
 	rootCmd.AddCommand(newProfileCmd())
 	rootCmd.AddCommand(newPackageCmd())
 	rootCmd.AddCommand(newActivitylogCmd())
+	rootCmd.AddCommand(newAuditlogCmd())
 	rootCmd.AddCommand(newPublishCmd())
 	rootCmd.AddCommand(newUnpublishCmd())
 	rootCmd.AddCommand(newCompletionCmd())
