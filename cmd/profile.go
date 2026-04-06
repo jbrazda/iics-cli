@@ -128,12 +128,17 @@ func newProfileListCmd() *cobra.Command {
 				if cfg.DefaultProfile == name {
 					defaultMark = "yes"
 				}
+				keychain := ""
+				if config.IsKeyringSentinel(p.Password) {
+					keychain = "yes"
+				}
 				rows = append(rows, map[string]interface{}{
 					"name":     name,
 					"default":  defaultMark,
 					"region":   p.Region,
 					"endpoint": p.LoginURL,
 					"username": p.Username,
+					"keychain": keychain,
 				})
 			}
 
@@ -147,6 +152,7 @@ func newProfileListCmd() *cobra.Command {
 				{Header: "REGION", Field: "region"},
 				{Header: "ENDPOINT", Field: "endpoint"},
 				{Header: "USERNAME", Field: "username"},
+				{Header: "KEYCHAIN", Field: "keychain", Width: 8},
 			}
 			return f.Format(rows, columns)
 		},
@@ -179,8 +185,13 @@ If name is omitted, the profile is saved as "default".`,
 			}
 
 			// Keyring storage: save password in OS keychain and write sentinel to config.
+			// Guard: if the user kept an existing @keyring sentinel unchanged, do not
+			// pass it to SetKeychainPassword - that would corrupt the keychain entry.
 			plainPassword := p.Password
-			if storeInKeyring {
+			if config.IsKeyringSentinel(plainPassword) {
+				// Existing keychain entry is intact; just preserve the sentinel.
+				p.Password = config.KeyringSentinel
+			} else if storeInKeyring {
 				if keyErr := config.SetKeychainPassword(name, plainPassword); keyErr != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
 						"Warning: could not store password in keychain: %v\n"+
@@ -252,8 +263,13 @@ the session cache with the org-specific API URLs discovered from the response.`,
 			}
 
 			// Keyring storage: save password in OS keychain and write sentinel to config.
+			// Guard: if the user kept an existing @keyring sentinel unchanged, do not
+			// pass it to SetKeychainPassword - that would corrupt the keychain entry.
 			plainPassword := p.Password
-			if storeInKeyring {
+			if config.IsKeyringSentinel(plainPassword) {
+				// Existing keychain entry is intact; just preserve the sentinel.
+				p.Password = config.KeyringSentinel
+			} else if storeInKeyring {
 				if keyErr := config.SetKeychainPassword(name, plainPassword); keyErr != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
 						"Warning: could not store password in keychain: %v\n"+
@@ -264,12 +280,19 @@ the session cache with the org-specific API URLs discovered from the response.`,
 			}
 
 			// Validate credentials and discover org-specific URLs via login.
-			// Use the plain password for login even if the sentinel will be stored.
+			// When the password is the sentinel (user kept existing keychain password),
+			// retrieve the real password from the keychain for the login call.
+			passwordForLogin := plainPassword
+			if config.IsKeyringSentinel(passwordForLogin) {
+				if kp, kerr := config.GetKeychainPassword(name); kerr == nil {
+					passwordForLogin = kp
+				}
+			}
 			loginURL, err := p.GetLoginURL()
 			if err != nil {
 				return err
 			}
-			c := client.NewClient(loginURL, p.Username, plainPassword, client.WithVerbose(verbose))
+			c := client.NewClient(loginURL, p.Username, passwordForLogin, client.WithVerbose(verbose))
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Validating credentials for %q...\n", p.Username)
 			loginResp, err := c.Login(context.Background())
 			if err != nil {
@@ -429,8 +452,11 @@ func newProfileShowCmd() *cobra.Command {
 				return fmt.Errorf("profile %q not found", name)
 			}
 
-			maskedPassword := ""
-			if p.Password != "" {
+			var maskedPassword string
+			switch {
+			case config.IsKeyringSentinel(p.Password):
+				maskedPassword = "*** (keychain)"
+			case p.Password != "":
 				maskedPassword = "***"
 			}
 			defaultMark := ""

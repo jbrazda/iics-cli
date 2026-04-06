@@ -134,6 +134,31 @@ func TestPromptProfile_RegionUppercased(t *testing.T) {
 	})
 }
 
+func TestPromptProfile_KeepsExistingKeyringUnchanged(t *testing.T) {
+	// When existing profile already uses @keyring and user keeps the password unchanged,
+	// the keyring re-offer prompt should be skipped and storeInKeyring must be false.
+	existing := &Profile{
+		Username: "u@example.com",
+		Password: KeyringSentinel,
+		Region:   "USW3",
+	}
+	stubReadPassword(t, "") // empty - keep existing (which is sentinel)
+	// inputs: username(keep), region(keep), caiUrl(keep), default(y)
+	// NO keyring line - the prompt is skipped when password kept as sentinel
+	withFakeStdin(t, "\n\n\n\n", func() {
+		p, _, storeInKeyring, err := promptProfileInternal(existing, "test")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if p.Password != KeyringSentinel {
+			t.Errorf("password = %q; want %q", p.Password, KeyringSentinel)
+		}
+		if storeInKeyring {
+			t.Errorf("storeInKeyring should be false when sentinel kept unchanged")
+		}
+	})
+}
+
 func TestPromptProfile_KeyringDefaultYes(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")

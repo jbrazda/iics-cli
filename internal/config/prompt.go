@@ -69,7 +69,11 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 	// Password - always prompt at least once so existing profiles can be updated.
 	for {
 		if existing != nil && existing.Password != "" {
-			_, _ = fmt.Fprint(os.Stderr, "Password [current: ***]: ")
+			if IsKeyringSentinel(existing.Password) {
+				_, _ = fmt.Fprint(os.Stderr, "Password [current: keychain]: ")
+			} else {
+				_, _ = fmt.Fprint(os.Stderr, "Password [current: ***]: ")
+			}
 		} else {
 			_, _ = fmt.Fprint(os.Stderr, "Password: ")
 		}
@@ -156,7 +160,15 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 	makeDefault := line == "" || line == "y" || line == "yes"
 
 	// Keychain storage offer (default: yes).
+	// Skip the offer when the user kept an existing keychain-backed password unchanged -
+	// the keychain entry is already correct; re-offering would risk overwriting it with
+	// the sentinel literal string.
 	existingIsKeyring := existing != nil && IsKeyringSentinel(existing.Password)
+	passwordUnchanged := existingIsKeyring && IsKeyringSentinel(p.Password)
+	if passwordUnchanged {
+		return p, makeDefault, false, nil
+	}
+
 	if existingIsKeyring {
 		_, _ = fmt.Fprint(os.Stderr, "Store password in OS keychain? [Y/n]: ")
 	} else {
