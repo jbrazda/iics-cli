@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-06
+
+### Fixed
+
+- `profile edit` and `profile add` on a keychain-backed profile (`password: "@keyring"`)
+  corrupted the OS keychain by storing the literal sentinel string `"@keyring"` as the
+  password value when the user pressed Enter to keep the existing password; subsequent
+  login attempts returned HTTP 400 and could trigger IICS account lockout (BUG-0003)
+- `profile edit` login validation used the sentinel string `"@keyring"` as the IICS
+  password instead of retrieving the real password from the keychain first (BUG-0003)
+- `package dependencies --target-profile` and `--report` now resolve the keychain sentinel
+  in `ResolveTargetProfile`, fixing HTTP 401 on every dependency lookup for keychain-backed
+  profiles (BUG-0003)
+- `ResolveTargetProfile` now returns `profile "X" not found` instead of the misleading
+  `username not configured` error when the profile name does not exist in the config file
+  (BUG-0003)
+- `package dependencies --report` now returns a clear error when pflag silently consumes
+  the next flag token as its value (e.g. `--report --target-profile dev,qa`), with a hint
+  pointing to the correct `--report=dev,qa` syntax (BUG-0003)
+- `profile list` now shows a `KEYCHAIN` column indicating which profiles use OS keychain
+  storage; `profile show` displays `*** (keychain)` for the password field (BUG-0003)
+- Interactive password prompt now shows `[keychain]` instead of `[***]` when editing a
+  keychain-backed profile, and skips the keyring re-offer when the password is kept
+  unchanged (BUG-0003)
+
 ## [0.3.0] - 2026-04-05
 
 ### Added
