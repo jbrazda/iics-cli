@@ -185,10 +185,11 @@ func (p *Profile) GetLoginURL() (string, error) {
 // Unlike ResolveProfile, it does not fall back to IICS_PROFILE or defaultProfile;
 // profileName is required.
 func (c *Config) ResolveTargetProfile(profileName string) (*Profile, error) {
-	var resolved Profile
-	if existing, ok := c.Profiles[profileName]; ok {
-		resolved = *existing
+	existing, ok := c.Profiles[profileName]
+	if !ok {
+		return nil, fmt.Errorf("profile %q not found; run 'iics profile list' to see available profiles", profileName)
 	}
+	resolved := *existing
 
 	if v := os.Getenv("IICS_TARGET_USERNAME"); v != "" {
 		resolved.Username = v
