@@ -203,6 +203,19 @@ func (c *Config) ResolveTargetProfile(profileName string) (*Profile, error) {
 		resolved.LoginURL = v
 	}
 
+	// Keychain resolution: IICS_TARGET_PASSWORD already wins above; only check the
+	// sentinel when the password was not overridden by the env var.
+	if IsKeyringSentinel(resolved.Password) {
+		pw, err := GetKeychainPassword(profileName)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"target profile %q uses keychain storage but keychain lookup failed: %w\n"+
+					"  Set IICS_TARGET_PASSWORD env var to override, or run 'iics profile set-password %s' to re-store",
+				profileName, err, profileName)
+		}
+		resolved.Password = pw
+	}
+
 	if resolved.Username == "" {
 		return nil, fmt.Errorf("username not configured for target profile %q; set in config file or IICS_TARGET_USERNAME env var", profileName)
 	}
