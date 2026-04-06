@@ -1179,6 +1179,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 			if file != "" && workspace != "" {
 				return fmt.Errorf("--file and --workspace are mutually exclusive")
 			}
+			for _, rp := range reportProfiles {
+				if strings.HasPrefix(rp, "-") {
+					return fmt.Errorf(
+						"--report requires a profile name, not a flag (%q);\n"+
+							"  correct usage: --report=dev,qa or --report dev,qa", rp)
+				}
+			}
 			if targetProfile != "" && len(reportProfiles) > 0 {
 				return fmt.Errorf("--target-profile and --report are mutually exclusive")
 			}
