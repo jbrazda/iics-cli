@@ -1,0 +1,4 @@
+userName,firstName,lastName,email,phone,title,description,state,timeZoneId,authentication,forcePasswordChange,groups,roles
+alice.smith@example.com,Alice,Smith,alice.smith@example.com,555-0101,Developer,,Active,America/New_York,Native,false,Developer,Developer
+bob.jones@example.com,Bob,Jones,bob.jones@example.com,555-0102,Developer,,Active,America/Chicago,Native,false,Developer,Developer
+carol.white@example.com,Carol,White,carol.white@example.com,555-0103,Analyst,,Active,America/Los_Angeles,Native,true,Developer|Analyst,Developer

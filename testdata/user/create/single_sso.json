@@ -1,0 +1,17 @@
+{
+  "userName": "john.doe@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "title": "Analyst",
+  "description": "Sample SSO user for testing",
+  "state": "Active",
+  "timeZoneId": "America/Chicago",
+  "authentication": "SSO",
+  "groups": [
+    {"id": "REPLACE_WITH_GROUP_ID", "userGroupName": "Analyst"}
+  ],
+  "roles": [
+    {"id": "REPLACE_WITH_ROLE_ID", "roleName": "Data Preview"}
+  ]
+}

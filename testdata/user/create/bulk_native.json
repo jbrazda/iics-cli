@@ -1,0 +1,32 @@
+[
+  {
+    "userName": "alice.smith@example.com",
+    "firstName": "Alice",
+    "lastName": "Smith",
+    "email": "alice.smith@example.com",
+    "state": "Active",
+    "authentication": "Native",
+    "groups": [{"id": "REPLACE_WITH_GROUP_ID", "userGroupName": "Developer"}],
+    "roles":  [{"id": "REPLACE_WITH_ROLE_ID",  "roleName": "Developer"}]
+  },
+  {
+    "userName": "bob.jones@example.com",
+    "firstName": "Bob",
+    "lastName": "Jones",
+    "email": "bob.jones@example.com",
+    "state": "Active",
+    "authentication": "Native",
+    "groups": [{"id": "REPLACE_WITH_GROUP_ID", "userGroupName": "Developer"}],
+    "roles":  [{"id": "REPLACE_WITH_ROLE_ID",  "roleName": "Developer"}]
+  },
+  {
+    "userName": "carol.white@example.com",
+    "firstName": "Carol",
+    "lastName": "White",
+    "email": "carol.white@example.com",
+    "state": "Active",
+    "authentication": "Native",
+    "groups": [{"id": "REPLACE_WITH_GROUP_ID", "userGroupName": "Developer"}],
+    "roles":  [{"id": "REPLACE_WITH_ROLE_ID",  "roleName": "Developer"}]
+  }
+]

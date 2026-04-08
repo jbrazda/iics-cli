@@ -38,12 +38,15 @@ func TestGetUser(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("expected GET, got %s", r.Method)
 		}
-		if r.URL.Path != "/public/core/v3/users/u123" {
+		if r.URL.Path != "/public/core/v3/users" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
-		user := User{ID: "u123", UserName: "alice", Email: "alice@example.com"}
+		users := []User{
+			{ID: "u999", UserName: "bob", Email: "bob@example.com"},
+			{ID: "u123", UserName: "alice", Email: "alice@example.com"},
+		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		json.NewEncoder(w).Encode(users)
 	})
 
 	c := newTestClient(handler)
@@ -53,6 +56,76 @@ func TestGetUser(t *testing.T) {
 	}
 	if user.ID != "u123" {
 		t.Errorf("expected ID u123, got %s", user.ID)
+	}
+	if user.UserName != "alice" {
+		t.Errorf("expected userName alice, got %s", user.UserName)
+	}
+}
+
+func TestGetUserNotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]User{})
+	})
+
+	c := newTestClient(handler)
+	_, err := c.GetUser(context.Background(), "missing")
+	if err == nil {
+		t.Fatal("expected error for missing user, got nil")
+	}
+}
+
+func TestGetUserByName(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		users := []User{
+			{ID: "u1", UserName: "alice@example.com"},
+			{ID: "u2", UserName: "bob@example.com"},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(users)
+	})
+
+	c := newTestClient(handler)
+	user, err := c.GetUserByName(context.Background(), "alice@example.com")
+	if err != nil {
+		t.Fatalf("GetUserByName() error: %v", err)
+	}
+	if user.ID != "u1" {
+		t.Errorf("expected ID u1, got %s", user.ID)
+	}
+}
+
+func TestGetUserByNameNotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]User{})
+	})
+
+	c := newTestClient(handler)
+	_, err := c.GetUserByName(context.Background(), "nobody@example.com")
+	if err == nil {
+		t.Fatal("expected error for missing user, got nil")
+	}
+}
+
+func TestSearchUsers(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		users := []User{
+			{ID: "u1", UserName: "alice@example.com"},
+			{ID: "u2", UserName: "bob@example.com"},
+			{ID: "u3", UserName: "alice.smith@example.com"},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(users)
+	})
+
+	c := newTestClient(handler)
+	results, err := c.SearchUsers(context.Background(), "alice")
+	if err != nil {
+		t.Fatalf("SearchUsers() error: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 results for 'alice', got %d", len(results))
 	}
 }
 

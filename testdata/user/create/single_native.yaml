@@ -1,0 +1,17 @@
+userName: jane.doe@example.com
+firstName: Jane
+lastName: Doe
+email: jane.doe@example.com
+phone: "555-0100"
+title: Developer
+description: Sample native user for testing
+state: Active
+timeZoneId: America/New_York
+authentication: Native
+forcePasswordChange: true
+groups:
+  - id: REPLACE_WITH_GROUP_ID
+    userGroupName: Developer
+roles:
+  - id: REPLACE_WITH_ROLE_ID
+    roleName: Developer

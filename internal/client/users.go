@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // UserRole is a role reference as returned within a User object.
@@ -72,13 +73,70 @@ func (c *Client) ListUsers(ctx context.Context, opts UserListOptions) ([]User, e
 	return resp, nil
 }
 
-// GetUser retrieves a single user by ID.
+// GetUser retrieves a single user by ID by scanning the users list.
+// The IICS v3 API does not support GET /users/{id}; only DELETE is allowed on that path.
 func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
-	var resp User
-	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/users/%s", BaseAPIPathV3, id), nil, &resp); err != nil {
-		return nil, err
+	opts := UserListOptions{Limit: 200}
+	for {
+		users, err := c.ListUsers(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		for i := range users {
+			if users[i].ID == id {
+				return &users[i], nil
+			}
+		}
+		if len(users) < opts.Limit {
+			break
+		}
+		opts.Skip += opts.Limit
 	}
-	return &resp, nil
+	return nil, fmt.Errorf("user %q not found", id)
+}
+
+// GetUserByName finds a user by exact userName match.
+func (c *Client) GetUserByName(ctx context.Context, userName string) (*User, error) {
+	opts := UserListOptions{Limit: 200}
+	for {
+		users, err := c.ListUsers(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		for i := range users {
+			if users[i].UserName == userName {
+				return &users[i], nil
+			}
+		}
+		if len(users) < opts.Limit {
+			break
+		}
+		opts.Skip += opts.Limit
+	}
+	return nil, fmt.Errorf("user %q not found", userName)
+}
+
+// SearchUsers returns all users whose userName contains the given substring (case-insensitive).
+func (c *Client) SearchUsers(ctx context.Context, substring string) ([]User, error) {
+	lower := strings.ToLower(substring)
+	opts := UserListOptions{Limit: 200}
+	var matches []User
+	for {
+		users, err := c.ListUsers(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			if strings.Contains(strings.ToLower(u.UserName), lower) {
+				matches = append(matches, u)
+			}
+		}
+		if len(users) < opts.Limit {
+			break
+		}
+		opts.Skip += opts.Limit
+	}
+	return matches, nil
 }
 
 // CreateUser creates a new user.
