@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-04-09
+
+### Added
+
+- `user create` and `user update` interactive wizard (`--interactive`) with prompts for all
+  user fields including authentication type, roles, and groups (CR-0018)
+- `user list` now supports `--limit` and `--skip` for pagination (CR-0018)
+- `user get` supports `--username` flag for lookup by userName (CR-0018)
+
+### Fixed
+
+- `user list` and `role list` capped at 200 results with automatic pagination to avoid
+  exceeding the API maximum `limit` parameter (BUG-0005)
+- Interactive user wizard `State` prompt no longer shadows the outer `err` variable,
+  eliminating a golangci-lint warning
+
 ## [0.3.1] - 2026-04-06
 
 ### Fixed
