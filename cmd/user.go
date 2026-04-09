@@ -630,7 +630,8 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 			stateDefault = 1
 		}
 		stateOptions := []string{"Active", "Disabled"}
-		sIdx, err := promptSelect("State", stateOptions)
+		var sIdx int
+		sIdx, err = promptSelect("State", stateOptions)
 		if err != nil {
 			return nil, err
 		}
