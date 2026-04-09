@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
@@ -309,6 +310,61 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 
 	if respBody != nil && len(respData) > 0 {
 		if err := json.Unmarshal(respData, respBody); err != nil {
+			return fmt.Errorf("parsing response: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// doXML sends an XML-encoded request and optionally decodes an XML response.
+// Used for legacy V2 endpoints that require application/xml (e.g. user update).
+func (c *Client) doXML(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
+	var body io.Reader
+	var reqData []byte
+	if reqBody != nil {
+		var err error
+		reqData, err = xml.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("marshaling request: %w", err)
+		}
+		reqData = append([]byte(xml.Header), reqData...)
+		body = bytes.NewReader(reqData)
+	}
+
+	url := c.apiURL(path)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/xml")
+	req.Header.Set("Accept", "application/xml")
+
+	resp, err := c.do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+
+	if c.debug {
+		debugPrintHTTP(req, reqData, resp, respData)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return newAPIError(resp, respData)
+	}
+
+	if respBody != nil && len(respData) > 0 {
+		if err := xml.Unmarshal(respData, respBody); err != nil {
 			return fmt.Errorf("parsing response: %w", err)
 		}
 	}

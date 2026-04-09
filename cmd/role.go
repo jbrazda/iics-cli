@@ -44,7 +44,7 @@ func newRoleListCmd() *cobra.Command {
 			}
 			columns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
+				{Header: "NAME", Field: "roleName", Width: 30},
 				{Header: "SYSTEM", Field: "systemRole", Width: 8},
 				{Header: "DESCRIPTION", Field: "description"},
 			}
@@ -79,7 +79,7 @@ func newRoleGetCmd() *cobra.Command {
 			}
 			columns := []output.Column{
 				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
+				{Header: "NAME", Field: "roleName", Width: 30},
 				{Header: "SYSTEM", Field: "systemRole", Width: 8},
 				{Header: "DESCRIPTION", Field: "description"},
 			}
@@ -116,7 +116,7 @@ func newRoleCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s)\n", created.Name, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s)\n", created.RoleName, created.ID)
 			return nil
 		},
 	}
@@ -156,7 +156,7 @@ func newRoleUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role updated: %s (ID: %s)\n", updated.Name, updated.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role updated: %s (ID: %s)\n", updated.RoleName, updated.ID)
 			return nil
 		},
 	}

@@ -255,6 +255,96 @@ func promptUserSearch(ctx context.Context, c *client.Client) (*client.User, erro
 
 // resolveUser returns the user identified by id or userName flags, falling back to
 // interactive search when both are empty and stdin is a terminal.
+// iicsTimezones is the complete list of timezone IDs accepted by the IICS v3 API.
+// Source: https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/rest-api-codes/time-zone-codes.html
+var iicsTimezones = []string{
+	"ACT", "AET", "Africa/Cairo", "Africa/Casablanca", "Africa/Johannesburg",
+	"Africa/Nairobi", "America/Barbados", "America/Bogota", "America/Buenos_Aires",
+	"America/Caracas", "America/Chicago", "America/Costa_Rica", "America/Dawson_Creek",
+	"America/Denver", "America/Dominica", "America/El_Salvador", "America/Guadeloupe",
+	"America/Halifax", "America/Havana", "America/Jamaica", "America/La_Paz",
+	"America/Los_Angeles", "America/Mexico_City", "America/Montreal", "America/New_York",
+	"America/Panama", "America/Phoenix", "America/Puerto_Rico", "America/Santiago",
+	"America/Tijuana", "America/Vancouver", "Asia/Baghdad", "Asia/Bahrain", "Asia/Dubai",
+	"Asia/Hong_Kong", "Asia/Jerusalem", "Asia/Karachi", "Asia/Katmandu",
+	"Asia/Kuala_Lumpur", "Asia/Kuwait", "Asia/Magadan", "Asia/Muscat", "Asia/Qatar",
+	"Asia/Rangoon", "Asia/Riyadh", "Asia/Seoul", "Asia/Singapore", "AST",
+	"Atlantic/Cape_Verde", "Atlantic/South_Georgia", "Australia/Lord_Howe",
+	"Australia/Perth", "Brazil/Acre", "Brazil/DeNoronha", "Brazil/East", "Brazil/West",
+	"BST", "CNT", "CTT", "Europe/Amsterdam", "Europe/Athens", "Europe/Belgrade",
+	"Europe/Berlin", "Europe/Brussels", "Europe/Bucharest", "Europe/Budapest",
+	"Europe/Copenhagen", "Europe/Istanbul", "Europe/London", "Europe/Luxembourg",
+	"Europe/Madrid", "Europe/Moscow", "Europe/Paris", "Europe/Prague", "Europe/Rome",
+	"Europe/Stockholm", "Europe/Vienna", "Europe/Warsaw", "Europe/Zurich",
+	"GMT", "HST", "Indian/Mauritius", "IST", "JST", "Pacific/Apia", "Pacific/Auckland",
+	"Pacific/Chatham", "Pacific/Enderbury", "Pacific/Fiji", "Pacific/Gambier",
+	"Pacific/Kiritimati", "Pacific/Norfolk", "Pacific/Tahiti", "UTC", "VST",
+}
+
+// promptTimezone prompts for a timezone with substring search over iicsTimezones.
+// The user types a search term; matching entries are shown as a numbered list.
+// Enter with no input keeps the current value; "0" clears it.
+func promptTimezone(current string) (string, error) {
+	r := bufio.NewReader(os.Stdin)
+	for {
+		if current != "" {
+			_, _ = fmt.Fprintf(os.Stderr, "Time Zone ID [%s] (type to search, Enter to keep, 0 to clear): ", current)
+		} else {
+			_, _ = fmt.Fprint(os.Stderr, "Time Zone ID (type to search, e.g. New_York, Europe, or 0 to skip): ")
+		}
+
+		line, err := r.ReadString('\n')
+		if err != nil {
+			return "", fmt.Errorf("reading input: %w", err)
+		}
+		line = strings.TrimSpace(line)
+
+		if line == "" {
+			return current, nil
+		}
+		if line == "0" {
+			return "", nil
+		}
+
+		lower := strings.ToLower(line)
+		var matches []string
+		for _, tz := range iicsTimezones {
+			if strings.Contains(strings.ToLower(tz), lower) {
+				matches = append(matches, tz)
+			}
+		}
+
+		if len(matches) == 0 {
+			_, _ = fmt.Fprintf(os.Stderr, "No matching timezone for %q. Try again.\n", line)
+			continue
+		}
+		if len(matches) == 1 {
+			_, _ = fmt.Fprintf(os.Stderr, "Selected: %s\n", matches[0])
+			return matches[0], nil
+		}
+
+		_, _ = fmt.Fprintf(os.Stderr, "Matches for %q:\n", line)
+		for i, tz := range matches {
+			_, _ = fmt.Fprintf(os.Stderr, "  [%d] %s\n", i+1, tz)
+		}
+		_, _ = fmt.Fprint(os.Stderr, "Selection (0 to search again): ")
+		selLine, selErr := r.ReadString('\n')
+		if selErr != nil {
+			return "", fmt.Errorf("reading selection: %w", selErr)
+		}
+		selLine = strings.TrimSpace(selLine)
+		if selLine == "0" || selLine == "" {
+			continue
+		}
+		n, convErr := strconv.Atoi(selLine)
+		if convErr != nil || n < 1 || n > len(matches) {
+			_, _ = fmt.Fprintln(os.Stderr, "Invalid selection. Try again.")
+			continue
+		}
+		return matches[n-1], nil
+	}
+}
+
 func resolveUser(ctx context.Context, c *client.Client, id, userName string) (*client.User, error) {
 	switch {
 	case id != "":

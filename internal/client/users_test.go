@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -134,15 +135,15 @@ func TestCreateUser(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
-		var u User
-		json.NewDecoder(r.Body).Decode(&u)
-		if u.UserName != "newuser" {
-			t.Errorf("expected userName 'newuser', got %s", u.UserName)
+		var req createUserRequest
+		json.NewDecoder(r.Body).Decode(&req)
+		if req.Name != "newuser" {
+			t.Errorf("expected name 'newuser', got %q", req.Name)
 		}
-		u.ID = "new123"
+		resp := User{ID: "new123", UserName: req.Name, Email: req.Email}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(u)
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	c := newTestClient(handler)
@@ -156,15 +157,23 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
+	// UpdateUser makes multiple requests: GET (current state), POST v2 (scalar update),
+	// optional PUT (group/role diff), GET (final state). The handler tracks call order.
+	callCount := 0
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPut {
-			t.Errorf("expected PUT, got %s", r.Method)
-		}
-		var u User
-		json.NewDecoder(r.Body).Decode(&u)
-		u.ID = "u123"
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(u)
+		callCount++
+		switch {
+		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/v3/users"):
+			// GET list for GetUser (called twice: fetch current + fetch final)
+			json.NewEncoder(w).Encode([]User{{ID: "u123", OrgID: "org1", UserName: "test@example.com", Email: "old@example.com"}})
+		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/v2/user"):
+			// V2 scalar update
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]string{"id": "u123"})
+		default:
+			w.WriteHeader(http.StatusNoContent)
+		}
 	})
 
 	c := newTestClient(handler)

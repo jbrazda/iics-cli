@@ -9,16 +9,19 @@ import (
 
 // Role represents an IICS role.
 type Role struct {
-	ID          string   `json:"id,omitempty"`
-	OrgID       string   `json:"orgId,omitempty"`
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	CreateTime  string   `json:"createTime,omitempty"`
-	UpdateTime  string   `json:"updateTime,omitempty"`
-	CreatedBy   string   `json:"createdBy,omitempty"`
-	UpdatedBy   string   `json:"updatedBy,omitempty"`
-	SystemRole  bool     `json:"systemRole,omitempty"`
-	Privileges  []string `json:"privileges,omitempty"`
+	ID                 string   `json:"id,omitempty"`
+	OrgID              string   `json:"orgId,omitempty"`
+	RoleName           string   `json:"roleName"`
+	Description        string   `json:"description,omitempty"`
+	DisplayName        string   `json:"displayName,omitempty"`
+	DisplayDescription string   `json:"displayDescription,omitempty"`
+	Status             string   `json:"status,omitempty"`
+	CreateTime         string   `json:"createTime,omitempty"`
+	UpdateTime         string   `json:"updateTime,omitempty"`
+	CreatedBy          string   `json:"createdBy,omitempty"`
+	UpdatedBy          string   `json:"updatedBy,omitempty"`
+	SystemRole         bool     `json:"systemRole,omitempty"`
+	Privileges         []string `json:"privileges,omitempty"`
 }
 
 // RoleListOptions holds query parameters for listing roles.

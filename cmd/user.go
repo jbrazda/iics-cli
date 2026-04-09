@@ -338,7 +338,7 @@ func buildRoleMap(ctx context.Context, c *client.Client) (map[string]string, err
 			return nil, fmt.Errorf("fetching roles: %w", err)
 		}
 		for _, r := range batch {
-			m[r.Name] = r.ID
+			m[r.RoleName] = r.ID
 		}
 		if len(batch) < opts.Limit {
 			break
@@ -346,6 +346,14 @@ func buildRoleMap(ctx context.Context, c *client.Client) (map[string]string, err
 		opts.Skip += opts.Limit
 	}
 	return m, nil
+}
+
+// truncate shortens s to at most max bytes, appending "..." if truncated.
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
 }
 
 // detectInputFormat infers the file format from extension or content.
@@ -611,24 +619,26 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 	if u.Description, err = promptText("Description (optional)", u.Description); err != nil {
 		return nil, err
 	}
-	if u.TimeZoneID, err = promptText("Time Zone ID (optional, e.g. America/New_York)", u.TimeZoneID); err != nil {
+	if u.TimeZoneID, err = promptTimezone(u.TimeZoneID); err != nil {
 		return nil, err
 	}
 
-	// State
-	stateDefault := 0
-	if u.State == "Disabled" {
-		stateDefault = 1
-	}
-	stateOptions := []string{"Active", "Disabled"}
-	sIdx, err := promptSelect("State", stateOptions)
-	if err != nil {
-		return nil, err
-	}
-	if sIdx >= 0 {
-		u.State = stateOptions[sIdx]
-	} else if u.State == "" {
-		u.State = stateOptions[stateDefault]
+	// State is only settable on update, not create
+	if existing != nil {
+		stateDefault := 0
+		if u.State == "Disabled" {
+			stateDefault = 1
+		}
+		stateOptions := []string{"Active", "Disabled"}
+		sIdx, err := promptSelect("State", stateOptions)
+		if err != nil {
+			return nil, err
+		}
+		if sIdx >= 0 {
+			u.State = stateOptions[sIdx]
+		} else if u.State == "" {
+			u.State = stateOptions[stateDefault]
+		}
 	}
 
 	// Force password change
@@ -651,7 +661,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 			currentGroupIDs[g.ID] = true
 		}
 		for i, g := range allGroups {
-			groupOpts[i] = fmt.Sprintf("%s - %s", g.UserGroupName, g.Description)
+			groupOpts[i] = fmt.Sprintf("%s - %s", g.UserGroupName, truncate(g.Description, 100))
 			if currentGroupIDs[g.ID] {
 				groupDefaults = append(groupDefaults, i)
 			}
@@ -683,7 +693,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 			currentRoleIDs[r.ID] = true
 		}
 		for i, r := range allRoles {
-			roleOpts[i] = fmt.Sprintf("%s - %s", r.Name, r.Description)
+			roleOpts[i] = fmt.Sprintf("%s - %s", r.RoleName, truncate(r.Description, 100))
 			if currentRoleIDs[r.ID] {
 				roleDefaults = append(roleDefaults, i)
 			}
@@ -697,7 +707,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 			r := allRoles[idx]
 			u.Roles = append(u.Roles, client.UserRole{
 				ID:       r.ID,
-				RoleName: r.Name,
+				RoleName: r.RoleName,
 			})
 		}
 	}

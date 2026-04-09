@@ -137,23 +137,42 @@ iics user create --from-file new-user.json
 
 ## user update
 
+> **NOTE: This command is currently not supported and will fail at runtime.**
+>
+> The IICS REST API does not provide a working endpoint for updating user scalar
+> properties (name, email, title, timezone, etc.):
+>
+> - The V3 API (`PUT /public/core/v3/users/{id}`) returns HTTP 405 - only `DELETE`
+>   is allowed on that path.
+> - The V2 API (`POST /api/v2/user/{id}`) uses XML and returns HTTP 400 "Internal
+>   error" in testing, with no public documentation confirming the request format.
+>
+> Group and role assignment via the V3 `addGroups`/`removeGroups`/`addRoles`/`removeRoles`
+> endpoints may work, but scalar property update does not. This command will be
+> re-enabled once a working API endpoint is confirmed.
+>
+> To update a user's group or role membership in the meantime, use the IICS
+> Administrator UI.
+
 ### Flags
 
-| Flag          | Type   | Required | Description                   |
-| ------------- | ------ | -------- | ----------------------------- |
-| `--id`        | string | yes      | User ID                       |
-| `--from-file` | string | yes      | JSON file with updated fields |
+| Flag            | Short | Type   | Required | Description                              |
+| --------------- | ----- | ------ | -------- | ---------------------------------------- |
+| `--id`          |       | string |          | User ID                                  |
+| `--username`    |       | string |          | User name (exact match)                  |
+| `--from-file`   |       | string |          | JSON, YAML, or CSV file with user fields |
+| `--interactive` |       | bool   |          | Launch interactive update wizard         |
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
 
 ```bash
-iics user update --id <user-id> --from-file updated-user.json
+iics user update --username user@example.com --from-file updated-user.json
 ```
 
 ```powershell
-iics user update --id <user-id> --from-file updated-user.json
+iics user update --username user@example.com --from-file updated-user.json
 ```
 
 ---
