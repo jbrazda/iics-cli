@@ -308,28 +308,42 @@ func newUserGetCmd() *cobra.Command {
 // helpers shared by create / update
 // ---------------------------------------------------------------------------
 
-// buildGroupMap fetches all user groups and returns a name->ID map.
+// buildGroupMap fetches all user groups (paginated) and returns a name->ID map.
 func buildGroupMap(ctx context.Context, c *client.Client) (map[string]string, error) {
-	groups, err := c.ListUserGroups(ctx, client.UserGroupListOptions{Limit: 1000})
-	if err != nil {
-		return nil, fmt.Errorf("fetching groups: %w", err)
-	}
-	m := make(map[string]string, len(groups))
-	for _, g := range groups {
-		m[g.UserGroupName] = g.ID
+	m := make(map[string]string)
+	opts := client.UserGroupListOptions{Limit: 200}
+	for {
+		batch, err := c.ListUserGroups(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("fetching groups: %w", err)
+		}
+		for _, g := range batch {
+			m[g.UserGroupName] = g.ID
+		}
+		if len(batch) < opts.Limit {
+			break
+		}
+		opts.Skip += opts.Limit
 	}
 	return m, nil
 }
 
-// buildRoleMap fetches all roles and returns a name->ID map.
+// buildRoleMap fetches all roles (paginated) and returns a name->ID map.
 func buildRoleMap(ctx context.Context, c *client.Client) (map[string]string, error) {
-	roles, err := c.ListRoles(ctx, client.RoleListOptions{Limit: 1000})
-	if err != nil {
-		return nil, fmt.Errorf("fetching roles: %w", err)
-	}
-	m := make(map[string]string, len(roles))
-	for _, r := range roles {
-		m[r.Name] = r.ID
+	m := make(map[string]string)
+	opts := client.RoleListOptions{Limit: 200}
+	for {
+		batch, err := c.ListRoles(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("fetching roles: %w", err)
+		}
+		for _, r := range batch {
+			m[r.Name] = r.ID
+		}
+		if len(batch) < opts.Limit {
+			break
+		}
+		opts.Skip += opts.Limit
 	}
 	return m, nil
 }
@@ -625,7 +639,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 	u.ForcePasswordChange = forceChange
 
 	// Groups
-	allGroups, err := c.ListUserGroups(ctx, client.UserGroupListOptions{Limit: 1000})
+	allGroups, err := c.ListUserGroups(ctx, client.UserGroupListOptions{Limit: 200})
 	if err != nil {
 		return nil, fmt.Errorf("fetching groups: %w", err)
 	}
@@ -657,7 +671,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 	}
 
 	// Roles
-	allRoles, err := c.ListRoles(ctx, client.RoleListOptions{Limit: 1000})
+	allRoles, err := c.ListRoles(ctx, client.RoleListOptions{Limit: 200})
 	if err != nil {
 		return nil, fmt.Errorf("fetching roles: %w", err)
 	}
