@@ -138,24 +138,38 @@ Find what objects a given asset depends on, or which assets depend on it.
 
 ### Flags
 
-| Flag         | Short | Type   | Required | Default    | Description                                              |
-| ------------ | ----- | ------ | -------- | ---------- | -------------------------------------------------------- |
-| `--id`       |       | string | yes      |            | Object ID to inspect                                     |
-| `--ref-type` |       | string |          |            | Reference direction: `uses` or `usedBy`                  |
-| `--limit`    |       | int    |          | 0 (all)    | Max results; 0 fetches all pages in batches of 50        |
-| `--skip`     |       | int    |          | 0          | Results to skip (only meaningful with `--limit`)         |
+| Flag          | Short | Type     | Required | Default | Description                                                            |
+| ------------- | ----- | -------- | -------- | ------- | ---------------------------------------------------------------------- |
+| `--id`        |       | string   |          |         | Object ID to inspect (or pipe a JSON array from `objects list`)        |
+| `--ref-type`  |       | string   |          |         | Reference direction: `uses` or `usedBy` (default: both)                |
+| `--limit`     |       | int      |          | 0 (all) | Max results; 0 fetches all pages in batches of 50                      |
+| `--skip`      |       | int      |          | 0       | Results to skip (only meaningful with `--limit`)                       |
+| `--targets`   |       | []string |          |         | Comma-separated profiles to validate dependencies against              |
+| `--publish`   |       | bool     |          | false   | Restrict output to publishable types only; sort by publish order       |
 
 All [global flags](../../README.md#global-flags) apply.
 
-### Output columns
+When `--id` is omitted and stdin is not a terminal, a JSON array is read from stdin
+(e.g. piped from `objects list --output json`). Dependencies for all input objects
+are collected and deduplicated.
 
-| Column         | Description                                     |
-| -------------- | ----------------------------------------------- |
-| `appContextId` | Dependent object ID                             |
-| `type`         | Object type                                     |
-| `path`         | Full path of the dependent object               |
-| `location`     | Computed publish path: `Explore/<path>.<TYPE>`  |
-| `updatedBy`    | Last modifier                                   |
+### Output columns (standard mode)
+
+| Column         | Description                                    |
+| -------------- | ---------------------------------------------- |
+| `appContextId` | Dependent object ID                            |
+| `type`         | Object type                                    |
+| `path`         | Full path of the dependent object              |
+| `location`     | Computed publish path: `Explore/<path>.<TYPE>` |
+| `updatedBy`    | Last modifier                                  |
+
+### Output columns (--targets report mode)
+
+| Column              | Description                                      |
+| ------------------- | ------------------------------------------------ |
+| `PATH.TYPE`         | Dependency path and type combined                |
+| `STATUS (<profile>)`| `found`, `missing`, or `unknown` per profile     |
+| `WARNING (<profile>)`| Lookup warning message (CSV output only)        |
 
 ### Examples
 
@@ -170,6 +184,28 @@ iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
 # Note: lookup returns a JSON array - use .[0].id to extract the first result
 ID=$(iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | jq -r '.[0].id')
 iics objects dependencies --id "$ID" --ref-type uses --output json
+
+# Find all dependencies of tagged objects (multi-object mode via stdin pipe)
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses
+
+# Validate dependencies across multiple target environments
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses --targets dev,qa
+
+# Validate as JSON for scripting
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses --targets dev,qa --output json
+
+# Find publishable dependencies and pipe directly to publish
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses --publish \
+  | iics publish run
+
+# Check which publishable dependencies are missing in QA, then publish them
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses --targets qa --publish \
+  | iics publish run --profile qa
 ```
 
 ```powershell
@@ -183,6 +219,24 @@ iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
 # Note: lookup returns a JSON array - index [0] to get the first result
 $obj = (iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json)[0]
 iics objects dependencies --id $obj.id --ref-type uses --output json
+
+# Find all dependencies of tagged objects (multi-object mode via stdin pipe)
+iics objects list -q "tag==Project_sprint_9" --output json `
+  | iics objects dependencies --ref-type uses
+
+# Validate dependencies across multiple target environments
+iics objects list -q "tag==Project_sprint_9" --output json `
+  | iics objects dependencies --ref-type uses --targets dev,qa
+
+# Find publishable dependencies and pipe directly to publish
+iics objects list -q "tag==Project_sprint_9" --output json `
+  | iics objects dependencies --ref-type uses --publish `
+  | iics publish run
+
+# Check which publishable dependencies are missing in QA, then publish them
+iics objects list -q "tag==Project_sprint_9" --output json `
+  | iics objects dependencies --ref-type uses --targets qa --publish `
+  | iics publish run --profile qa
 ```
 
 ## See also

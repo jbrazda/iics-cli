@@ -2,11 +2,15 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -218,36 +222,131 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 
 func newObjectsDependenciesCmd() *cobra.Command {
 	var (
-		objectID string
-		refType  string
-		limit    int
-		skip     int
+		objectID    string
+		refType     string
+		limit       int
+		skip        int
+		targets     []string
+		publishMode bool
 	)
 
 	cmd := &cobra.Command{
 		Use:   "dependencies",
 		Short: "Find asset dependencies",
-		Example: `  iics objects dependencies --id <object-id>
-  iics objects dependencies --id <object-id> --ref-type uses`,
+		Long: `Find what objects a given asset depends on, or which assets depend on it.
+
+When --id is omitted and stdin is not a terminal, a JSON array of objects is read
+from stdin (e.g. piped from "objects list --output json"). Dependencies for all
+input objects are collected and deduplicated by appContextId.
+
+Without --limit all dependency pages are fetched automatically in batches of 50.
+
+Use --targets to validate each dependency against one or more target profiles and
+produce a cross-profile status report (found/missing/unknown).
+
+Use --publish to restrict output to publishable asset types only, sorted in the
+correct publish dependency order (connectors before connections before processes).`,
+		Example: `  iics objects dependencies --id <id>
+  iics objects dependencies --id <id> --ref-type uses
+  iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses
+  iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --targets dev,qa
+  iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --publish | iics publish run
+  iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --targets qa --publish | iics publish run --profile qa`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if objectID == "" {
-				return fmt.Errorf("--id is required")
+			ctx := context.Background()
+
+			// Collect input IDs from --id or stdin JSON array.
+			var ids []string
+			if objectID != "" {
+				ids = []string{objectID}
+			} else if !config.IsTerminal() {
+				data, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					return fmt.Errorf("reading stdin: %w", err)
+				}
+				var objs []struct {
+					ID string `json:"id"`
+				}
+				if err := json.Unmarshal(data, &objs); err != nil {
+					return fmt.Errorf("parsing stdin as JSON array: %w", err)
+				}
+				for _, o := range objs {
+					if o.ID != "" {
+						ids = append(ids, o.ID)
+					}
+				}
+			} else {
+				return fmt.Errorf("--id is required (or pipe a JSON array from objects list)")
 			}
 
-			ctx := context.Background()
+			if len(ids) == 0 {
+				return fmt.Errorf("no object IDs provided")
+			}
+
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
 
-			var resp *client.ObjectDependenciesResponse
-			if limit == 0 {
-				resp, err = c.GetAllObjectDependencies(ctx, objectID, refType)
-			} else {
-				resp, err = c.GetObjectDependencies(ctx, objectID, refType, limit, skip)
+			// Collect and deduplicate all references across all input IDs.
+			seen := make(map[string]struct{})
+			var allRefs []client.ObjectReference
+
+			for _, id := range ids {
+				var resp *client.ObjectDependenciesResponse
+				if limit == 0 {
+					resp, err = c.GetAllObjectDependencies(ctx, id, refType)
+				} else {
+					resp, err = c.GetObjectDependencies(ctx, id, refType, limit, skip)
+				}
+				if err != nil {
+					return fmt.Errorf("fetching dependencies for %s: %w", id, err)
+				}
+				for _, ref := range resp.Uses {
+					if _, ok := seen[ref.AppContextID]; !ok {
+						seen[ref.AppContextID] = struct{}{}
+						allRefs = append(allRefs, ref)
+					}
+				}
+				for _, ref := range resp.UsedBy {
+					if _, ok := seen[ref.AppContextID]; !ok {
+						seen[ref.AppContextID] = struct{}{}
+						allRefs = append(allRefs, ref)
+					}
+				}
 			}
-			if err != nil {
-				return err
+
+			if len(allRefs) == 0 {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No dependencies found.")
+				return nil
+			}
+
+			// Apply --publish filter then sort by typePriority.
+			if publishMode {
+				filtered := allRefs[:0:0]
+				for _, r := range allRefs {
+					if publishableTypes[r.Type] {
+						filtered = append(filtered, r)
+					}
+				}
+				allRefs = filtered
+				sort.Slice(allRefs, func(i, j int) bool {
+					pi, pj := typePriority[allRefs[i].Type], typePriority[allRefs[j].Type]
+					if pi != pj {
+						if pi == 0 {
+							return false
+						}
+						if pj == 0 {
+							return true
+						}
+						return pi < pj
+					}
+					return allRefs[i].Path < allRefs[j].Path
+				})
+				if len(allRefs) == 0 {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No publishable dependencies found.")
+					return nil
+				}
 			}
 
 			f, err := getFormatter()
@@ -255,6 +354,43 @@ func newObjectsDependenciesCmd() *cobra.Command {
 				return err
 			}
 
+			// Multi-target report mode: validate each dependency against each profile.
+			if len(targets) > 0 {
+				deps := objectRefsToDeps(allRefs)
+				profileResults, err := validateMultiProfile(ctx, targets, deps)
+				if err != nil {
+					return err
+				}
+				tableRows, jsonRows := buildReportRows(deps, targets, profileResults)
+
+				if outputFmt == "json" || outputFmt == "yaml" {
+					return f.Format(jsonRows, nil)
+				}
+
+				cols := []output.Column{
+					{Header: "PATH.TYPE", Field: "id"},
+				}
+				for _, prof := range targets {
+					key := strings.ReplaceAll(prof, "-", "_")
+					cols = append(cols, output.Column{
+						Header: fmt.Sprintf("STATUS (%s)", prof),
+						Field:  "status_" + key,
+						Func:   makeProfileStatusFunc(key),
+					})
+				}
+				if outputFmt == "csv" {
+					for _, prof := range targets {
+						key := strings.ReplaceAll(prof, "-", "_")
+						cols = append(cols, output.Column{
+							Header: fmt.Sprintf("WARNING (%s)", prof),
+							Field:  "warning_" + key,
+						})
+					}
+				}
+				return f.Format(tableRows, cols)
+			}
+
+			// Standard output.
 			columns := []output.Column{
 				{Header: "ID", Field: "appContextId", Width: 24},
 				{Header: "TYPE", Field: "type", Width: 12},
@@ -262,22 +398,26 @@ func newObjectsDependenciesCmd() *cobra.Command {
 				{Header: "LOCATION", Field: "location"},
 				{Header: "UPDATED BY", Field: "updatedBy", Width: 20},
 			}
-
-			if len(resp.Uses) > 0 {
-				return f.Format(resp.Uses, columns)
-			}
-			if len(resp.UsedBy) > 0 {
-				return f.Format(resp.UsedBy, columns)
-			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No dependencies found.")
-			return nil
+			return f.Format(allRefs, columns)
 		},
 	}
 
-	cmd.Flags().StringVar(&objectID, "id", "", "object ID (required)")
+	cmd.Flags().StringVar(&objectID, "id", "", "object ID (or pipe a JSON array from objects list)")
 	cmd.Flags().StringVar(&refType, "ref-type", "", "reference type: uses or usedBy")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results; 0 fetches all pages in batches of 50")
 	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip (only used with --limit)")
+	cmd.Flags().StringSliceVar(&targets, "targets", nil, "comma-separated profiles to validate dependencies against")
+	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only and sort by publish dependency order")
 
 	return cmd
+}
+
+// objectRefsToDeps converts ObjectReference items to dependencyItem for use with
+// the shared validateTargetDependencies and buildReportRows functions.
+func objectRefsToDeps(refs []client.ObjectReference) []dependencyItem {
+	deps := make([]dependencyItem, len(refs))
+	for i, r := range refs {
+		deps[i] = dependencyItem{Path: r.Path, Type: r.Type}
+	}
+	return deps
 }
