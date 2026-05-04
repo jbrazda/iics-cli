@@ -253,8 +253,6 @@ func promptUserSearch(ctx context.Context, c *client.Client) (*client.User, erro
 	}
 }
 
-// resolveUser returns the user identified by id or userName flags, falling back to
-// interactive search when both are empty and stdin is a terminal.
 // iicsTimezones is the complete list of timezone IDs accepted by the IICS v3 API.
 // Source: https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/rest-api-codes/time-zone-codes.html
 var iicsTimezones = []string{
@@ -345,6 +343,8 @@ func promptTimezone(current string) (string, error) {
 	}
 }
 
+// resolveUser returns the user identified by id or userName flags, falling back to
+// interactive search when both are empty and stdin is a terminal.
 func resolveUser(ctx context.Context, c *client.Client, id, userName string) (*client.User, error) {
 	switch {
 	case id != "":

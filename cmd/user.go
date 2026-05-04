@@ -650,9 +650,18 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 	u.ForcePasswordChange = forceChange
 
 	// Groups
-	allGroups, err := c.ListUserGroups(ctx, client.UserGroupListOptions{Limit: 200})
-	if err != nil {
-		return nil, fmt.Errorf("fetching groups: %w", err)
+	var allGroups []client.UserGroup
+	grpOpts := client.UserGroupListOptions{Limit: 200}
+	for {
+		batch, err := c.ListUserGroups(ctx, grpOpts)
+		if err != nil {
+			return nil, fmt.Errorf("fetching groups: %w", err)
+		}
+		allGroups = append(allGroups, batch...)
+		if len(batch) < grpOpts.Limit {
+			break
+		}
+		grpOpts.Skip += grpOpts.Limit
 	}
 	if len(allGroups) > 0 {
 		groupOpts := make([]string, len(allGroups))
@@ -682,9 +691,18 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 	}
 
 	// Roles
-	allRoles, err := c.ListRoles(ctx, client.RoleListOptions{Limit: 200})
-	if err != nil {
-		return nil, fmt.Errorf("fetching roles: %w", err)
+	var allRoles []client.Role
+	roleOpts := client.RoleListOptions{Limit: 200}
+	for {
+		batch, err := c.ListRoles(ctx, roleOpts)
+		if err != nil {
+			return nil, fmt.Errorf("fetching roles: %w", err)
+		}
+		allRoles = append(allRoles, batch...)
+		if len(batch) < roleOpts.Limit {
+			break
+		}
+		roleOpts.Skip += roleOpts.Limit
 	}
 	if len(allRoles) > 0 {
 		roleOpts := make([]string, len(allRoles))

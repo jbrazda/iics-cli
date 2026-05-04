@@ -196,16 +196,16 @@ func (c *Client) CreateUser(ctx context.Context, user *User) (*User, error) {
 // and requires application/xml content type.
 type updateUserV2Request struct {
 	XMLName             xml.Name `xml:"user" json:"-"`
-	OrgID               string   `xml:"orgId" json:"orgId"`
-	Name                string   `xml:"name" json:"name"`
-	FirstName           string   `xml:"firstName" json:"firstName"`
-	LastName            string   `xml:"lastName" json:"lastName"`
-	Title               string   `xml:"title,omitempty" json:"title,omitempty"`
-	Phone               string   `xml:"phone,omitempty" json:"phone,omitempty"`
-	Emails              string   `xml:"emails,omitempty" json:"emails,omitempty"`
-	Description         string   `xml:"description,omitempty" json:"description,omitempty"`
-	Timezone            string   `xml:"timezone,omitempty" json:"timezone,omitempty"`
-	ForceChangePassword bool     `xml:"forceChangePassword,omitempty" json:"forceChangePassword,omitempty"`
+	OrgID               string   `xml:"orgId"`
+	Name                string   `xml:"name"`
+	FirstName           string   `xml:"firstName"`
+	LastName            string   `xml:"lastName"`
+	Title               string   `xml:"title,omitempty"`
+	Phone               string   `xml:"phone,omitempty"`
+	Emails              string   `xml:"emails,omitempty"`
+	Description         string   `xml:"description,omitempty"`
+	Timezone            string   `xml:"timezone,omitempty"`
+	ForceChangePassword bool     `xml:"forceChangePassword,omitempty"`
 }
 
 type groupNamesRequest struct {
@@ -313,7 +313,6 @@ func (c *Client) UpdateUser(ctx context.Context, id string, user *User) (*User, 
 		}
 	}
 
-	// Return the updated user state.
 	return c.GetUser(ctx, id)
 }
 
