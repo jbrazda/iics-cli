@@ -861,7 +861,7 @@ func resolveDependencies(
 				// Fetch this object's uses dependencies for further BFS levels.
 				depsResp, dErr := c.GetObjectDependencies(ctx, result.ID, "uses", 200, 0)
 				if dErr == nil {
-					for _, ref := range depsResp.Uses {
+					for _, ref := range depsResp.References {
 						allRefs = append(allRefs, parentedRef{
 							parentGUID: result.ID,
 							path:       ref.Path,

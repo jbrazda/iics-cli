@@ -189,7 +189,9 @@ func TestGetObjectDependencies(t *testing.T) {
 			t.Errorf("expected refType=uses, got %s", r.URL.Query().Get("refType"))
 		}
 		resp := ObjectDependenciesResponse{
-			Uses: []ObjectReference{
+			ID:    "obj1",
+			Count: 1,
+			References: []ObjectReference{
 				{AppContextID: "dep1", Path: "Sales/Mapping1", Type: "MTT"},
 			},
 		}
@@ -202,10 +204,10 @@ func TestGetObjectDependencies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetObjectDependencies() error: %v", err)
 	}
-	if len(resp.Uses) != 1 {
-		t.Fatalf("expected 1 Uses entry, got %d", len(resp.Uses))
+	if len(resp.References) != 1 {
+		t.Fatalf("expected 1 References entry, got %d", len(resp.References))
 	}
-	got := resp.Uses[0]
+	got := resp.References[0]
 	if got.AppContextID != "dep1" {
 		t.Errorf("expected AppContextID dep1, got %s", got.AppContextID)
 	}
@@ -235,7 +237,7 @@ func TestGetAllObjectDependencies(t *testing.T) {
 				Type:         "MTT",
 			}
 		}
-		resp := ObjectDependenciesResponse{Uses: refs}
+		resp := ObjectDependenciesResponse{ID: "obj1", Count: count, References: refs}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
 	})
@@ -246,14 +248,14 @@ func TestGetAllObjectDependencies(t *testing.T) {
 		t.Fatalf("GetAllObjectDependencies() error: %v", err)
 	}
 	want := depPageSize + 10
-	if len(resp.Uses) != want {
-		t.Errorf("expected %d Uses entries, got %d", want, len(resp.Uses))
+	if len(resp.References) != want {
+		t.Errorf("expected %d References entries, got %d", want, len(resp.References))
 	}
 	if calls != 2 {
 		t.Errorf("expected 2 API calls, got %d", calls)
 	}
 	// Verify Location is populated on paginated results
-	for _, ref := range resp.Uses {
+	for _, ref := range resp.References {
 		wantLoc := "Explore/" + ref.Path + "." + ref.Type
 		if ref.Location != wantLoc {
 			t.Errorf("expected Location %q, got %q", wantLoc, ref.Location)

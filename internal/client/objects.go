@@ -59,20 +59,25 @@ type ObjectsListResponse struct {
 	Objects []Object `json:"objects"`
 }
 
-// ObjectReference is used in dependency lookups.
+// ObjectReference is one item in an object dependency result.
 type ObjectReference struct {
+	ID           string `json:"id,omitempty"`
 	AppContextID string `json:"appContextId"`
 	Path         string `json:"path"`
 	Type         string `json:"type"`
-	UpdatedBy    string `json:"updatedBy"`
-	UpdateTime   string `json:"updateTime"`
+	Description  string `json:"description,omitempty"`
+	UpdatedBy    string `json:"updatedBy,omitempty"`
+	UpdateTime   string `json:"updateTime,omitempty"`
 	Location     string `json:"location,omitempty"` // computed: "Explore/<path>.<TYPE>"
 }
 
-// ObjectDependenciesResponse holds object dependency results.
+// ObjectDependenciesResponse is the response from GET /objects/{id}/references.
+// The refType query parameter (uses|usedBy) controls which direction is returned;
+// all matching references appear in the References slice regardless of direction.
 type ObjectDependenciesResponse struct {
-	Uses   []ObjectReference `json:"uses,omitempty"`
-	UsedBy []ObjectReference `json:"usedBy,omitempty"`
+	ID         string            `json:"id"`
+	Count      int               `json:"count"`
+	References []ObjectReference `json:"references"`
 }
 
 // ListObjects retrieves organization assets with optional filtering.
@@ -162,11 +167,8 @@ func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, ref
 	if err := c.doJSONWithQuery(ctx, http.MethodGet, path, query, nil, &resp); err != nil {
 		return nil, err
 	}
-	for i := range resp.Uses {
-		resp.Uses[i].Location = "Explore/" + resp.Uses[i].Path + "." + resp.Uses[i].Type
-	}
-	for i := range resp.UsedBy {
-		resp.UsedBy[i].Location = "Explore/" + resp.UsedBy[i].Path + "." + resp.UsedBy[i].Type
+	for i := range resp.References {
+		resp.References[i].Location = "Explore/" + resp.References[i].Path + "." + resp.References[i].Type
 	}
 	return &resp, nil
 }
@@ -181,9 +183,8 @@ func (c *Client) GetAllObjectDependencies(ctx context.Context, objectID string, 
 		if err != nil {
 			return nil, err
 		}
-		result.Uses = append(result.Uses, page.Uses...)
-		result.UsedBy = append(result.UsedBy, page.UsedBy...)
-		if len(page.Uses)+len(page.UsedBy) < depPageSize {
+		result.References = append(result.References, page.References...)
+		if len(page.References) < depPageSize {
 			break
 		}
 		skip += depPageSize

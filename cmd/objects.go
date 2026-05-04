@@ -302,13 +302,7 @@ correct publish dependency order (connectors before connections before processes
 				if err != nil {
 					return fmt.Errorf("fetching dependencies for %s: %w", id, err)
 				}
-				for _, ref := range resp.Uses {
-					if _, ok := seen[ref.AppContextID]; !ok {
-						seen[ref.AppContextID] = struct{}{}
-						allRefs = append(allRefs, ref)
-					}
-				}
-				for _, ref := range resp.UsedBy {
+				for _, ref := range resp.References {
 					if _, ok := seen[ref.AppContextID]; !ok {
 						seen[ref.AppContextID] = struct{}{}
 						allRefs = append(allRefs, ref)
