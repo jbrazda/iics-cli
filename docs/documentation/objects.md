@@ -157,11 +157,10 @@ are collected and deduplicated.
 
 | Column         | Description                                    |
 | -------------- | ---------------------------------------------- |
-| `appContextId` | Dependent object ID                            |
-| `type`         | Object type                                    |
+| `id`           | Dependent object ID                            |
+| `documentType` | Object type (e.g. PROCESS, GUIDE, PROCESS_OBJECT) |
 | `path`         | Full path of the dependent object              |
 | `location`     | Computed publish path: `Explore/<path>.<TYPE>` |
-| `updatedBy`    | Last modifier                                  |
 
 ### Output columns (--targets report mode)
 

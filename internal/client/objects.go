@@ -62,13 +62,12 @@ type ObjectsListResponse struct {
 // ObjectReference is one item in an object dependency result.
 type ObjectReference struct {
 	ID           string `json:"id,omitempty"`
-	AppContextID string `json:"appContextId"`
+	AppContextID string `json:"appContextId,omitempty"` // null in most API responses; use ID for dedup
 	Path         string `json:"path"`
-	Type         string `json:"type"`
+	Type         string `json:"documentType"` // API field name is documentType, not type
 	Description  string `json:"description,omitempty"`
-	UpdatedBy    string `json:"updatedBy,omitempty"`
-	UpdateTime   string `json:"updateTime,omitempty"`
-	Location     string `json:"location,omitempty"` // computed: "Explore/<path>.<TYPE>"
+	UpdateTime   string `json:"lastUpdatedTime,omitempty"` // API field name is lastUpdatedTime
+	Location     string `json:"location,omitempty"`        // computed: "Explore/<path>.<TYPE>"
 }
 
 // ObjectDependenciesResponse is the response from GET /objects/{id}/references.

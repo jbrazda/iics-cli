@@ -303,8 +303,13 @@ correct publish dependency order (connectors before connections before processes
 					return fmt.Errorf("fetching dependencies for %s: %w", id, err)
 				}
 				for _, ref := range resp.References {
-					if _, ok := seen[ref.AppContextID]; !ok {
-						seen[ref.AppContextID] = struct{}{}
+					// Use ID as dedup key; appContextId is null in most API responses.
+					key := ref.ID
+					if key == "" {
+						key = ref.AppContextID
+					}
+					if _, ok := seen[key]; !ok {
+						seen[key] = struct{}{}
 						allRefs = append(allRefs, ref)
 					}
 				}
@@ -386,11 +391,10 @@ correct publish dependency order (connectors before connections before processes
 
 			// Standard output.
 			columns := []output.Column{
-				{Header: "ID", Field: "appContextId", Width: 24},
-				{Header: "TYPE", Field: "type", Width: 12},
+				{Header: "ID", Field: "id", Width: 24},
+				{Header: "TYPE", Field: "documentType", Width: 20},
 				{Header: "PATH", Field: "path"},
 				{Header: "LOCATION", Field: "location"},
-				{Header: "UPDATED BY", Field: "updatedBy", Width: 20},
 			}
 			return f.Format(allRefs, columns)
 		},
