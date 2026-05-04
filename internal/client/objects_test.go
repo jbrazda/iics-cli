@@ -176,3 +176,87 @@ func TestListObjectsAutoLogin(t *testing.T) {
 		t.Errorf("expected at least 3 calls (401 + login + retry), got %d", callCount)
 	}
 }
+
+func TestGetObjectDependencies(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/public/core/v3/objects/obj1/references" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("refType") != "uses" {
+			t.Errorf("expected refType=uses, got %s", r.URL.Query().Get("refType"))
+		}
+		resp := ObjectDependenciesResponse{
+			Uses: []ObjectReference{
+				{AppContextID: "dep1", Path: "Sales/Mapping1", Type: "MTT"},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	c := newTestClient(handler)
+	resp, err := c.GetObjectDependencies(context.Background(), "obj1", "uses", 50, 0)
+	if err != nil {
+		t.Fatalf("GetObjectDependencies() error: %v", err)
+	}
+	if len(resp.Uses) != 1 {
+		t.Fatalf("expected 1 Uses entry, got %d", len(resp.Uses))
+	}
+	got := resp.Uses[0]
+	if got.AppContextID != "dep1" {
+		t.Errorf("expected AppContextID dep1, got %s", got.AppContextID)
+	}
+	wantLocation := "Explore/Sales/Mapping1.MTT"
+	if got.Location != wantLocation {
+		t.Errorf("expected Location %q, got %q", wantLocation, got.Location)
+	}
+}
+
+func TestGetAllObjectDependencies(t *testing.T) {
+	// Simulate 2 pages: first full (50 items), second short (10 items). Total: 60.
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		skip := 0
+		fmt.Sscanf(r.URL.Query().Get("skip"), "%d", &skip)
+
+		count := depPageSize
+		if skip >= depPageSize {
+			count = 10
+		}
+		refs := make([]ObjectReference, count)
+		for i := range refs {
+			refs[i] = ObjectReference{
+				AppContextID: fmt.Sprintf("dep-%d", skip+i),
+				Path:         fmt.Sprintf("Sales/Obj%d", skip+i),
+				Type:         "MTT",
+			}
+		}
+		resp := ObjectDependenciesResponse{Uses: refs}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	c := newTestClient(handler)
+	resp, err := c.GetAllObjectDependencies(context.Background(), "obj1", "uses")
+	if err != nil {
+		t.Fatalf("GetAllObjectDependencies() error: %v", err)
+	}
+	want := depPageSize + 10
+	if len(resp.Uses) != want {
+		t.Errorf("expected %d Uses entries, got %d", want, len(resp.Uses))
+	}
+	if calls != 2 {
+		t.Errorf("expected 2 API calls, got %d", calls)
+	}
+	// Verify Location is populated on paginated results
+	for _, ref := range resp.Uses {
+		wantLoc := "Explore/" + ref.Path + "." + ref.Type
+		if ref.Location != wantLoc {
+			t.Errorf("expected Location %q, got %q", wantLoc, ref.Location)
+		}
+	}
+}

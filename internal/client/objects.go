@@ -10,6 +10,10 @@ import (
 
 const defaultPageSize = 200
 
+// depPageSize is the batch size for auto-paginating object dependency results.
+// The IICS v3 references API defaults to 50 results per page.
+const depPageSize = 50
+
 // ObjectSourceControl holds source control metadata for an asset.
 type ObjectSourceControl struct {
 	CheckedOutBy     string `json:"checkedOutBy,omitempty"`
@@ -62,6 +66,7 @@ type ObjectReference struct {
 	Type         string `json:"type"`
 	UpdatedBy    string `json:"updatedBy"`
 	UpdateTime   string `json:"updateTime"`
+	Location     string `json:"location,omitempty"` // computed: "Explore/<path>.<TYPE>"
 }
 
 // ObjectDependenciesResponse holds object dependency results.
@@ -157,5 +162,31 @@ func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, ref
 	if err := c.doJSONWithQuery(ctx, http.MethodGet, path, query, nil, &resp); err != nil {
 		return nil, err
 	}
+	for i := range resp.Uses {
+		resp.Uses[i].Location = "Explore/" + resp.Uses[i].Path + "." + resp.Uses[i].Type
+	}
+	for i := range resp.UsedBy {
+		resp.UsedBy[i].Location = "Explore/" + resp.UsedBy[i].Path + "." + resp.UsedBy[i].Type
+	}
 	return &resp, nil
+}
+
+// GetAllObjectDependencies fetches all dependency references for an object by
+// auto-paginating in batches of depPageSize (50), matching the API default page size.
+func (c *Client) GetAllObjectDependencies(ctx context.Context, objectID string, refType string) (*ObjectDependenciesResponse, error) {
+	var result ObjectDependenciesResponse
+	skip := 0
+	for {
+		page, err := c.GetObjectDependencies(ctx, objectID, refType, depPageSize, skip)
+		if err != nil {
+			return nil, err
+		}
+		result.Uses = append(result.Uses, page.Uses...)
+		result.UsedBy = append(result.UsedBy, page.UsedBy...)
+		if len(page.Uses)+len(page.UsedBy) < depPageSize {
+			break
+		}
+		skip += depPageSize
+	}
+	return &result, nil
 }

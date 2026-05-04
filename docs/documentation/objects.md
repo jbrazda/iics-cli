@@ -138,23 +138,24 @@ Find what objects a given asset depends on, or which assets depend on it.
 
 ### Flags
 
-| Flag         | Short | Type   | Required | Default | Description                                |
-| ------------ | ----- | ------ | -------- | ------- | ------------------------------------------ |
-| `--id`       |       | string | yes      |         | Object ID to inspect                       |
-| `--ref-type` |       | string |          |         | Reference direction: `uses` or `usedBy`    |
-| `--limit`    |       | int    |          | 200     | Max results                                |
-| `--skip`     |       | int    |          | 0       | Results to skip                            |
+| Flag         | Short | Type   | Required | Default    | Description                                              |
+| ------------ | ----- | ------ | -------- | ---------- | -------------------------------------------------------- |
+| `--id`       |       | string | yes      |            | Object ID to inspect                                     |
+| `--ref-type` |       | string |          |            | Reference direction: `uses` or `usedBy`                  |
+| `--limit`    |       | int    |          | 0 (all)    | Max results; 0 fetches all pages in batches of 50        |
+| `--skip`     |       | int    |          | 0          | Results to skip (only meaningful with `--limit`)         |
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column         | Description                          |
-| -------------- | ------------------------------------ |
-| `appContextId` | Dependent object ID                  |
-| `type`         | Object type                          |
-| `path`         | Full path of the dependent object    |
-| `updatedBy`    | Last modifier                        |
+| Column         | Description                                     |
+| -------------- | ----------------------------------------------- |
+| `appContextId` | Dependent object ID                             |
+| `type`         | Object type                                     |
+| `path`         | Full path of the dependent object               |
+| `location`     | Computed publish path: `Explore/<path>.<TYPE>`  |
+| `updatedBy`    | Last modifier                                   |
 
 ### Examples
 
@@ -166,7 +167,8 @@ iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type uses
 iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
 
 # Resolve ID first, then find dependencies
-ID=$(iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | jq -r '.id')
+# Note: lookup returns a JSON array - use .[0].id to extract the first result
+ID=$(iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | jq -r '.[0].id')
 iics objects dependencies --id "$ID" --ref-type uses --output json
 ```
 
@@ -178,7 +180,8 @@ iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type uses
 iics objects dependencies --id aLX7qnviqxJdmqpVsd17SG --ref-type usedBy
 
 # Resolve ID first, then find dependencies
-$obj = iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
+# Note: lookup returns a JSON array - index [0] to get the first result
+$obj = (iics lookup --path "Sales/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json)[0]
 iics objects dependencies --id $obj.id --ref-type uses --output json
 ```
 

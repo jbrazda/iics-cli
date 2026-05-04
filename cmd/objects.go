@@ -234,12 +234,18 @@ func newObjectsDependenciesCmd() *cobra.Command {
 				return fmt.Errorf("--id is required")
 			}
 
+			ctx := context.Background()
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
 
-			resp, err := c.GetObjectDependencies(context.Background(), objectID, refType, limit, skip)
+			var resp *client.ObjectDependenciesResponse
+			if limit == 0 {
+				resp, err = c.GetAllObjectDependencies(ctx, objectID, refType)
+			} else {
+				resp, err = c.GetObjectDependencies(ctx, objectID, refType, limit, skip)
+			}
 			if err != nil {
 				return err
 			}
@@ -253,10 +259,10 @@ func newObjectsDependenciesCmd() *cobra.Command {
 				{Header: "ID", Field: "appContextId", Width: 24},
 				{Header: "TYPE", Field: "type", Width: 12},
 				{Header: "PATH", Field: "path"},
+				{Header: "LOCATION", Field: "location"},
 				{Header: "UPDATED BY", Field: "updatedBy", Width: 20},
 			}
 
-			// Show uses or usedBy depending on what's returned
 			if len(resp.Uses) > 0 {
 				return f.Format(resp.Uses, columns)
 			}
@@ -270,8 +276,8 @@ func newObjectsDependenciesCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&objectID, "id", "", "object ID (required)")
 	cmd.Flags().StringVar(&refType, "ref-type", "", "reference type: uses or usedBy")
-	cmd.Flags().IntVar(&limit, "limit", 200, "max results")
-	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results; 0 fetches all pages in batches of 50")
+	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip (only used with --limit)")
 
 	return cmd
 }
