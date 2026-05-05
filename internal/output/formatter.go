@@ -47,11 +47,11 @@ func New(format Format, w io.Writer, style TableStyle) Formatter {
 	}
 	switch format {
 	case FormatJSON:
-		return &jsonFormatter{w: w}
+		return &jsonFormatter{w: w, noColor: style.NoColor}
 	case FormatCSV:
-		return &csvFormatter{w: w}
+		return &csvFormatter{w: w, noColor: style.NoColor}
 	case FormatYAML:
-		return &yamlFormatter{w: w}
+		return &yamlFormatter{w: w, noColor: style.NoColor}
 	default:
 		return newTableFormatter(w, style)
 	}

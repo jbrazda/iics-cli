@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -14,12 +13,9 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-// ansiEscape matches ANSI CSI escape sequences (colors, cursor moves, etc.).
-var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;]*[A-Za-z]`)
-
 // visibleLen returns the number of visible runes in s, ignoring ANSI escape sequences.
 func visibleLen(s string) int {
-	return utf8.RuneCountInString(ansiEscape.ReplaceAllString(s, ""))
+	return utf8.RuneCountInString(stripANSIText(s))
 }
 
 const (
@@ -212,6 +208,14 @@ func dataCells(row map[string]interface{}, columns []Column) []string {
 	return cells
 }
 
+func sanitizedDataCells(row map[string]interface{}, columns []Column) []string {
+	cells := make([]string, len(columns))
+	for i, col := range columns {
+		cells[i] = stripANSIText(extractField(row, col))
+	}
+	return cells
+}
+
 func renderTable(w io.Writer, rows []map[string]interface{}, columns []Column, widths []int, theme string, style TableStyle) {
 	switch theme {
 	case "minimal":
@@ -258,7 +262,7 @@ func renderPlain(w io.Writer, rows []map[string]interface{}, columns []Column, w
 	_, _ = fmt.Fprintln(w, borderedRow(b, headers, widths, noStyle))
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.midLeft, b.midMid, b.midRight))
 	for _, row := range rows {
-		_, _ = fmt.Fprintln(w, borderedRow(b, dataCells(row, columns), widths, noStyle))
+		_, _ = fmt.Fprintln(w, borderedRow(b, sanitizedDataCells(row, columns), widths, noStyle))
 	}
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.botLeft, b.botMid, b.botRight))
 }
@@ -294,7 +298,7 @@ func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, ul.String())
 
 	for _, row := range rows {
-		cells := dataCells(row, columns)
+		cells := sanitizedDataCells(row, columns)
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))
@@ -327,7 +331,7 @@ func renderCompact(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, hdr.String())
 
 	for _, row := range rows {
-		cells := dataCells(row, columns)
+		cells := sanitizedDataCells(row, columns)
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))
@@ -371,7 +375,7 @@ func renderMarkdown(w io.Writer, rows []map[string]interface{}, columns []Column
 
 	// Data rows
 	for _, row := range rows {
-		cells := dataCells(row, columns)
+		cells := sanitizedDataCells(row, columns)
 		var rb strings.Builder
 		rb.WriteString("| ")
 		for i, cell := range cells {
@@ -401,7 +405,7 @@ func renderGH(w io.Writer, rows []map[string]interface{}, columns []Column, widt
 	_, _ = fmt.Fprintln(w, hdr.String())
 
 	for _, row := range rows {
-		cells := dataCells(row, columns)
+		cells := sanitizedDataCells(row, columns)
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))

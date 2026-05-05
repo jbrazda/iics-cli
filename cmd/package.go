@@ -21,6 +21,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
+	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -518,18 +519,23 @@ type exportedObjMeta struct {
 
 // dependencyItem is one row in the dependency output.
 type dependencyItem struct {
-	Path    string `json:"path"`
-	Type    string `json:"type"`
-	Status  string `json:"status,omitempty"`
-	Warning string `json:"warning,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Path       string `json:"path"`
+	Type       string `json:"type"`
+	Location   string `json:"location"`
+	Dependency string `json:"dependency"`
+	Status     string `json:"status,omitempty"`
+	Warning    string `json:"warning,omitempty"`
 }
 
 // reportItem is one row in multi-profile report output (--report flag).
 type reportItem struct {
-	ID       string                   `json:"id"`
-	Path     string                   `json:"path"`
-	Type     string                   `json:"type"`
-	Profiles map[string]profileResult `json:"profiles"`
+	ID         string                   `json:"id"`
+	Path       string                   `json:"path"`
+	Type       string                   `json:"type"`
+	Location   string                   `json:"location"`
+	Dependency string                   `json:"dependency"`
+	Profiles   map[string]profileResult `json:"profiles"`
 }
 
 // profileResult holds the validation result for one profile.
@@ -549,6 +555,10 @@ func depField(item dependencyItem, field string) string {
 		return item.Status
 	case "warning":
 		return item.Warning
+	case "location":
+		return item.Location
+	case "dependency":
+		return item.Dependency
 	default:
 		return ""
 	}
@@ -614,17 +624,21 @@ func buildReportRows(deps []dependencyItem, profiles []string, profileResults ma
 	jsonRows := make([]reportItem, len(deps))
 
 	for i, dep := range deps {
-		id := dep.Path + "." + dep.Type
+		id := dep.Location
 		row := map[string]interface{}{
-			"id":   id,
-			"path": dep.Path,
-			"type": dep.Type,
+			"id":         id,
+			"path":       dep.Path,
+			"type":       dep.Type,
+			"location":   dep.Location,
+			"dependency": dep.Dependency,
 		}
 		ri := reportItem{
-			ID:       id,
-			Path:     dep.Path,
-			Type:     dep.Type,
-			Profiles: make(map[string]profileResult, len(profiles)),
+			ID:         id,
+			Path:       dep.Path,
+			Type:       dep.Type,
+			Location:   dep.Location,
+			Dependency: dep.Dependency,
+			Profiles:   make(map[string]profileResult, len(profiles)),
 		}
 		for _, prof := range profiles {
 			profDeps := profileResults[prof]
@@ -689,16 +703,43 @@ func readExportMetadata(filePath, workspace string) (*exportMetadata, error) {
 	return nil, fmt.Errorf("exportMetadata.v2.json not found in package")
 }
 
-// resolveDependencies performs a BFS over the package metadata to produce a flat
-// dependency list and a set of directed edges for graph rendering.
+func readExportChecksumEntries(filePath, workspace string) (map[string]bool, error) {
+	if workspace != "" {
+		data, err := os.ReadFile(filepath.Join(workspace, "exportPackage.chksum"))
+		if err != nil {
+			return nil, fmt.Errorf("reading exportPackage.chksum: %w", err)
+		}
+		return dependencies.ParseChecksumEntries(string(data)), nil
+	}
+	r, err := zip.OpenReader(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("opening package file: %w", err)
+	}
+	defer func() { _ = r.Close() }()
+	for _, f := range r.File {
+		if f.Name == "exportPackage.chksum" {
+			rc, oErr := f.Open()
+			if oErr != nil {
+				return nil, fmt.Errorf("opening exportPackage.chksum in ZIP: %w", oErr)
+			}
+			data, rErr := io.ReadAll(rc)
+			_ = rc.Close()
+			if rErr != nil {
+				return nil, fmt.Errorf("reading exportPackage.chksum from ZIP: %w", rErr)
+			}
+			return dependencies.ParseChecksumEntries(string(data)), nil
+		}
+	}
+	return nil, fmt.Errorf("exportPackage.chksum not found in package")
+}
+
+// resolveDependencies performs a BFS over package metadata plus source-org lookups
+// to produce a flat dependency list and directed edges for graph rendering.
 //
-// When c is non-nil, external GUIDs (not present in the package) are resolved via
-// the source org API up to 5 BFS depth levels. When c is nil, only assets present
-// in the package metadata are included.
-//
-// publishMode restricts the result to publishableTypes only.
-// excludeRe, when non-nil, is matched against "path/name.type" to skip assets
-// and stop recursion through them.
+// Traversal continues until queue exhaustion. publishMode filters output rows but
+// traversal still walks through all types so deeper publishable assets are found.
+// excludeRe, when non-nil, is matched against "path/name.type" to skip both output
+// and recursion through matching assets.
 func resolveDependencies(
 	ctx context.Context,
 	meta *exportMetadata,
@@ -706,28 +747,17 @@ func resolveDependencies(
 	publishMode bool,
 	orderBy string,
 	excludeRe *regexp.Regexp,
+	explicitInPackage map[string]bool,
 ) ([]dependencyItem, []dependencyEdge, error) {
-
-	// Build pkgMap: GUID -> *exportedObject
 	pkgMap := make(map[string]*exportedObject, len(meta.ExportedObjects))
 	for i := range meta.ExportedObjects {
 		pkgMap[meta.ExportedObjects[i].ObjectGUID] = &meta.ExportedObjects[i]
 	}
 
-	// guidToMatchKey maps every resolved GUID to its normalized matchKey.
-	// matchKey format: "Project/Folder/Name.TYPE" (no leading slash, no "Explore/" prefix).
-	// Export metadata paths are "/Explore/Project/Folder"; the V3 API uses "Project/Folder".
 	guidToMatchKey := make(map[string]string)
-	// resultMap: matchKey -> dependencyItem
 	resultMap := make(map[string]dependencyItem)
-	// rawEdges: (fromGUID, toGUID) to be filtered at the end
 	var rawEdges [][2]string
 
-	// apiPath strips the leading "/" and "Explore/" prefix from an export-metadata path
-	// to produce the V3 API path format used by Lookup.
-	// "/Explore/ZZ_TEST_CLI/Connections" -> "ZZ_TEST_CLI/Connections"
-	// "/Explore" -> "" (projects live directly under Explore root)
-	// "/SYS/CDI-G01" -> "SYS/CDI-G01"
 	apiPath := func(p string) string {
 		p = strings.TrimPrefix(p, "/")
 		if p == "Explore" {
@@ -737,7 +767,6 @@ func resolveDependencies(
 		return p
 	}
 
-	// mkFromPkg builds a matchKey from a package object using the V3 API path format.
 	mkFromPkg := func(obj *exportedObject) string {
 		base := apiPath(obj.Path)
 		if base == "" {
@@ -745,159 +774,125 @@ func resolveDependencies(
 		}
 		return base + "/" + obj.ObjectName + "." + obj.ObjectType
 	}
-	// mkFromLookup builds a matchKey from a Lookup API result.
-	// Lookup result.Path already contains the object name; strip leading "/" and "Explore/".
 	mkFromLookup := func(r client.LookupResult) string {
 		return apiPath(r.Path) + "." + r.Type
 	}
 
-	// Phase 1: process all package objects.
+	shouldInclude := func(typ string) bool {
+		return !publishMode || publishableTypes[typ]
+	}
+	shouldExclude := func(matchKey string) bool {
+		return excludeRe != nil && excludeRe.MatchString(matchKey)
+	}
+
 	slog.Info("resolving dependencies: scanning package objects",
 		"total", len(meta.ExportedObjects),
 		"publishMode", publishMode,
 	)
-	externalGUIDs := make(map[string]bool)
+
+	queue := make([]string, 0, len(meta.ExportedObjects))
 	for i := range meta.ExportedObjects {
-		obj := &meta.ExportedObjects[i]
-		mk := mkFromPkg(obj)
-
-		if excludeRe != nil && excludeRe.MatchString(mk) {
-			continue
-		}
-		if publishMode && !publishableTypes[obj.ObjectType] {
-			continue
-		}
-
-		base := apiPath(obj.Path)
-		var fullPath string
-		if base == "" {
-			fullPath = obj.ObjectName
-		} else {
-			fullPath = base + "/" + obj.ObjectName
-		}
-		guidToMatchKey[obj.ObjectGUID] = mk
-		resultMap[mk] = dependencyItem{
-			Path: fullPath,
-			Type: obj.ObjectType,
-		}
-
-		for _, refGUID := range obj.Metadata.ObjectRefs {
-			rawEdges = append(rawEdges, [2]string{obj.ObjectGUID, refGUID})
-			if _, inPkg := pkgMap[refGUID]; !inPkg {
-				externalGUIDs[refGUID] = true
-			}
+		if meta.ExportedObjects[i].ObjectGUID != "" {
+			queue = append(queue, meta.ExportedObjects[i].ObjectGUID)
 		}
 	}
+	visited := make(map[string]bool, len(queue))
+	externalResolved := make(map[string]bool)
 
-	slog.Info("resolving dependencies: complete",
-		"packageObjects", len(resultMap),
-		"externalGUIDs", len(externalGUIDs),
-	)
+	for len(queue) > 0 {
+		current := queue
+		queue = nil
 
-	// Phase 2: BFS on external GUIDs using the source org API.
-	if c != nil && len(externalGUIDs) > 0 {
-		slog.Info("resolving dependencies: resolving external GUIDs via source org API",
-			"externalGUIDs", len(externalGUIDs),
-		)
-		visited := make(map[string]bool)
+		pkgGUIDs := make([]string, 0, len(current))
+		externalGUIDs := make([]string, 0, len(current))
 
-		currentQueue := make([]string, 0, len(externalGUIDs))
-		for g := range externalGUIDs {
-			currentQueue = append(currentQueue, g)
+		for _, guid := range current {
+			if guid == "" || visited[guid] {
+				continue
+			}
+			visited[guid] = true
+			if _, ok := pkgMap[guid]; ok {
+				pkgGUIDs = append(pkgGUIDs, guid)
+			} else {
+				externalGUIDs = append(externalGUIDs, guid)
+			}
 		}
 
-		for depth := 0; depth < 5 && len(currentQueue) > 0; depth++ {
-			// Deduplicate and skip already-visited GUIDs.
-			toProcess := make([]string, 0, len(currentQueue))
-			for _, g := range currentQueue {
-				if !visited[g] {
-					visited[g] = true
-					toProcess = append(toProcess, g)
+		for _, guid := range pkgGUIDs {
+			obj := pkgMap[guid]
+			mk := mkFromPkg(obj)
+			guidToMatchKey[guid] = mk
+
+			if shouldExclude(mk) {
+				continue
+			}
+
+			if shouldInclude(obj.ObjectType) {
+				base := apiPath(obj.Path)
+				fullPath := obj.ObjectName
+				if base != "" {
+					fullPath = base + "/" + obj.ObjectName
 				}
-			}
-			currentQueue = nil
-			if len(toProcess) == 0 {
-				break
-			}
-
-			slog.Info("resolving dependencies: BFS depth level",
-				"depth", depth,
-				"guids", len(toProcess),
-			)
-
-			// Batch lookup by GUID.
-			lookupObjs := make([]client.LookupObject, len(toProcess))
-			for i, g := range toProcess {
-				lookupObjs[i] = client.LookupObject{ID: g}
-			}
-			resp, err := c.Lookup(ctx, lookupObjs)
-			if err != nil {
-				return nil, nil, fmt.Errorf("looking up external dependencies (depth %d): %w", depth, err)
-			}
-
-			// For each resolved external object, collect its uses refs.
-			type parentedRef struct {
-				parentGUID string
-				path       string
-				refType    string
-			}
-			var allRefs []parentedRef
-
-			for _, result := range resp.Objects {
-				mk := mkFromLookup(result)
-				if excludeRe != nil && excludeRe.MatchString(mk) {
-					continue
+				depClass := "transitive"
+				if explicitInPackage[guid] {
+					depClass = "explicit"
 				}
-				if publishMode && !publishableTypes[result.Type] {
-					continue
-				}
-
-				guidToMatchKey[result.ID] = mk
 				resultMap[mk] = dependencyItem{
-					Path: apiPath(result.Path),
-					Type: result.Type,
+					Path:       fullPath,
+					Type:       obj.ObjectType,
+					Location:   "Explore/" + fullPath + "." + obj.ObjectType,
+					Dependency: depClass,
 				}
-
-				// Fetch this object's uses dependencies for further BFS levels.
-				depsResp, dErr := c.GetObjectDependencies(ctx, result.ID, "uses", 200, 0)
-				if dErr == nil {
-					for _, ref := range depsResp.References {
-						allRefs = append(allRefs, parentedRef{
-							parentGUID: result.ID,
-							path:       ref.Path,
-							refType:    ref.Type,
-						})
-					}
-				}
-				// Non-fatal: skip objects whose deps cannot be fetched.
 			}
 
-			// Batch-lookup all uses refs by path+type to get GUIDs.
-			if len(allRefs) > 0 {
-				ptObjs := make([]client.LookupObject, len(allRefs))
-				for i, pr := range allRefs {
-					ptObjs[i] = client.LookupObject{Path: pr.path, Type: pr.refType}
+			for _, refGUID := range obj.Metadata.ObjectRefs {
+				rawEdges = append(rawEdges, [2]string{guid, refGUID})
+				if refGUID != "" && !visited[refGUID] {
+					queue = append(queue, refGUID)
 				}
-				ptResp, ptErr := c.Lookup(ctx, ptObjs)
-				if ptErr == nil {
-					// Build (path.type) -> GUID map from results.
-					ptToGUID := make(map[string]string, len(ptResp.Objects))
-					for _, r := range ptResp.Objects {
-						ptToGUID[mkFromLookup(r)] = r.ID
-					}
-					// Record edges and enqueue newly discovered GUIDs.
-					for _, pr := range allRefs {
-						refKey := apiPath(pr.path) + "." + pr.refType
-						if childGUID, ok := ptToGUID[refKey]; ok {
-							rawEdges = append(rawEdges, [2]string{pr.parentGUID, childGUID})
-							if !visited[childGUID] {
-								currentQueue = append(currentQueue, childGUID)
-							}
-						}
-					}
-				}
-				// Non-fatal: if path+type lookup fails we just miss those edges.
 			}
+		}
+
+		if c == nil || len(externalGUIDs) == 0 {
+			continue
+		}
+		seedExternal := make([]string, 0, len(externalGUIDs))
+		for _, guid := range externalGUIDs {
+			if !externalResolved[guid] {
+				seedExternal = append(seedExternal, guid)
+			}
+		}
+		if len(seedExternal) == 0 {
+			continue
+		}
+
+		graph, err := dependencies.TraverseByIDs(ctx, c, seedExternal, "uses", 0, 0)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resolving transitive external dependencies: %w", err)
+		}
+		for id, n := range graph.Nodes {
+			externalResolved[id] = true
+			if id == "" || n.Type == "" {
+				continue
+			}
+			result := client.LookupResult{ID: n.ID, Path: n.Path, Type: n.Type}
+			mk := mkFromLookup(result)
+			guidToMatchKey[id] = mk
+			if shouldExclude(mk) {
+				continue
+			}
+			if shouldInclude(n.Type) {
+				pathOnly := apiPath(n.Path)
+				resultMap[mk] = dependencyItem{
+					Path:       pathOnly,
+					Type:       n.Type,
+					Location:   "Explore/" + pathOnly + "." + n.Type,
+					Dependency: "transitive",
+				}
+			}
+		}
+		for _, e := range graph.Edges {
+			rawEdges = append(rawEdges, [2]string{e.FromID, e.ToID})
 		}
 	}
 
@@ -1087,7 +1082,7 @@ func validateTargetDependencies(ctx context.Context, targetProfileName string, d
 	return nil
 }
 
-// applyFilter returns only the dependency items whose "path.type" matches pattern.
+// applyFilter returns only the dependency items whose "location" matches pattern.
 func applyFilter(deps []dependencyItem, pattern string) ([]dependencyItem, error) {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
@@ -1095,11 +1090,56 @@ func applyFilter(deps []dependencyItem, pattern string) ([]dependencyItem, error
 	}
 	filtered := deps[:0:0]
 	for _, d := range deps {
-		if re.MatchString(d.Path + "." + d.Type) {
+		if re.MatchString(d.Location) {
 			filtered = append(filtered, d)
 		}
 	}
 	return filtered, nil
+}
+
+func dependencyItemToFieldMap(item dependencyItem) map[string]interface{} {
+	return map[string]interface{}{
+		"id":         item.ID,
+		"path":       item.Path,
+		"type":       item.Type,
+		"location":   item.Location,
+		"dependency": item.Dependency,
+		"status":     item.Status,
+		"warning":    item.Warning,
+	}
+}
+
+func dependencyItemsForOutputFile(items []dependencyItem, fields []string) []map[string]interface{} {
+	rows := make([]map[string]interface{}, len(items))
+	for i, item := range items {
+		all := dependencyItemToFieldMap(item)
+		row := make(map[string]interface{}, len(fields))
+		for _, f := range fields {
+			if v, ok := all[f]; ok {
+				row[f] = v
+			}
+		}
+		rows[i] = row
+	}
+	return rows
+}
+
+func writeOutputFile(rows interface{}, columns []output.Column, filePath, format string) error {
+	fileFmt, err := output.ParseFormat(format)
+	if err != nil {
+		return fmt.Errorf("--output-file-format: %w", err)
+	}
+	fh, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("creating output file %s: %w", filePath, err)
+	}
+	defer func() { _ = fh.Close() }()
+
+	fileFmtr := output.New(fileFmt, fh, output.TableStyle{NoColor: true})
+	if err := fileFmtr.Format(rows, columns); err != nil {
+		return fmt.Errorf("writing output file: %w", err)
+	}
+	return nil
 }
 
 // renderMermaid writes a Mermaid graph TD diagram to w.
@@ -1164,9 +1204,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 		excludePattern string
 		filterPattern  string
 		targetProfile  string
+		outputFile     string
+		outputFileFmt  string
+		outputFileRows string
 	)
 
-	validOrderByFields := []string{"path", "type", "status", "warning"}
+	validOrderByFields := []string{"path", "type", "status", "warning", "location", "dependency"}
+	defaultOutputFileFields := "location,dependency,type,path,status,warning"
 
 	cmd := &cobra.Command{
 		Use:   "dependencies",
@@ -1220,6 +1264,17 @@ func newPackageDependenciesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			checksumEntries, err := readExportChecksumEntries(file, workspace)
+			if err != nil {
+				return err
+			}
+			explicitInPackage := make(map[string]bool, len(meta.ExportedObjects))
+			for i := range meta.ExportedObjects {
+				obj := meta.ExportedObjects[i]
+				explicitInPackage[obj.ObjectGUID] = dependencies.IsObjectChecksumBacked(
+					obj.Path, obj.ObjectName, obj.ObjectType, checksumEntries,
+				)
+			}
 
 			ctx := context.Background()
 
@@ -1238,7 +1293,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 			}
 
 			// Resolve dependency graph.
-			deps, edges, err := resolveDependencies(ctx, meta, srcClient, publishMode, orderBy, excludeRe)
+			deps, edges, err := resolveDependencies(ctx, meta, srcClient, publishMode, orderBy, excludeRe, explicitInPackage)
 			if err != nil {
 				return err
 			}
@@ -1273,13 +1328,9 @@ func newPackageDependenciesCmd() *cobra.Command {
 					return f.Format(jsonRows, nil)
 				}
 
-				pathFunc := func(v interface{}) string {
-					row, _ := v.(map[string]interface{})
-					id, _ := row["id"].(string)
-					return id
-				}
 				cols := []output.Column{
-					{Header: "PATH", Field: "id", Func: pathFunc},
+					{Header: "LOCATION", Field: "location"},
+					{Header: "DEPENDENCY", Field: "dependency", Width: 12},
 				}
 				for _, prof := range reportProfiles {
 					key := strings.ReplaceAll(prof, "-", "_")
@@ -1298,7 +1349,13 @@ func newPackageDependenciesCmd() *cobra.Command {
 						})
 					}
 				}
-				return f.Format(tableRows, cols)
+				if formatErr := f.Format(tableRows, cols); formatErr != nil {
+					return formatErr
+				}
+				if outputFile != "" {
+					return writeOutputFile(tableRows, cols, outputFile, outputFileFmt)
+				}
+				return nil
 			}
 
 			// Single-profile validation.
@@ -1318,14 +1375,11 @@ func newPackageDependenciesCmd() *cobra.Command {
 				return err
 			}
 
-			pathFunc := func(v interface{}) string {
-				row, _ := v.(map[string]interface{})
-				path, _ := row["path"].(string)
-				typ, _ := row["type"].(string)
-				return path + "." + typ
-			}
 			columns := []output.Column{
-				{Header: "PATH", Field: "path", Func: pathFunc},
+				{Header: "LOCATION", Field: "location"},
+				{Header: "DEPENDENCY", Field: "dependency", Width: 12},
+				{Header: "TYPE", Field: "type", Width: 20},
+				{Header: "PATH", Field: "path", Width: 55},
 			}
 			if targetProfile != "" {
 				columns = append(columns,
@@ -1349,7 +1403,25 @@ func newPackageDependenciesCmd() *cobra.Command {
 				}
 			}
 
-			return f.Format(deps, columns)
+			if err := f.Format(deps, columns); err != nil {
+				return err
+			}
+			if outputFile != "" {
+				fields := parseFields(outputFileRows)
+				if len(fields) == 0 {
+					fields = parseFields(defaultOutputFileFields)
+				}
+				fileRows := dependencyItemsForOutputFile(deps, fields)
+				fileCols := make([]output.Column, 0, len(fields))
+				for _, field := range fields {
+					fileCols = append(fileCols, output.Column{
+						Header: strings.ToUpper(field),
+						Field:  field,
+					})
+				}
+				return writeOutputFile(fileRows, fileCols, outputFile, outputFileFmt)
+			}
+			return nil
 		},
 	}
 
@@ -1359,8 +1431,11 @@ func newPackageDependenciesCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&reportProfiles, "report", nil, "compare dependencies across one or more target profiles (mutually exclusive with --target-profile); accepts comma-separated values or repeated flags")
 	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, status, warning (overrides default sort)")
 	cmd.Flags().StringVarP(&excludePattern, "exclude", "e", "", "regex matched against path/name.type to exclude assets from resolution")
-	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against path/name.type to filter final output (does not affect resolution)")
+	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output (does not affect resolution)")
 	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (mutually exclusive with --report)")
+	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")
+	cmd.Flags().StringVar(&outputFileFmt, "output-file-format", "yaml", "format for output file: yaml, json, csv, table")
+	cmd.Flags().StringVar(&outputFileRows, "output-file-fields", defaultOutputFileFields, "comma-separated fields for file output: location,dependency,type,path,status,warning")
 
 	return cmd
 }

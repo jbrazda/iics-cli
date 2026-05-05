@@ -8,7 +8,8 @@ import (
 )
 
 type yamlFormatter struct {
-	w io.Writer
+	w       io.Writer
+	noColor bool
 }
 
 func (f *yamlFormatter) Format(data interface{}, columns []Column) error {
@@ -23,6 +24,9 @@ func (f *yamlFormatter) Format(data interface{}, columns []Column) error {
 		out = map[string]interface{}{"objects": rows}
 	} else {
 		out = data
+	}
+	if f.noColor {
+		out = sanitizeANSIData(out)
 	}
 
 	enc := yaml.NewEncoder(f.w)

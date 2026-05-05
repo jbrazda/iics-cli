@@ -7,7 +7,8 @@ import (
 )
 
 type csvFormatter struct {
-	w io.Writer
+	w       io.Writer
+	noColor bool
 }
 
 func (f *csvFormatter) Format(data interface{}, columns []Column) error {
@@ -26,6 +27,9 @@ func (f *csvFormatter) Format(data interface{}, columns []Column) error {
 	headers := make([]string, len(columns))
 	for i, col := range columns {
 		headers[i] = col.Header
+		if f.noColor {
+			headers[i] = stripANSIText(headers[i])
+		}
 	}
 	if err := w.Write(headers); err != nil {
 		return fmt.Errorf("writing CSV header: %w", err)
@@ -36,6 +40,9 @@ func (f *csvFormatter) Format(data interface{}, columns []Column) error {
 		record := make([]string, len(columns))
 		for i, col := range columns {
 			record[i] = extractField(row, col)
+			if f.noColor {
+				record[i] = stripANSIText(record[i])
+			}
 		}
 		if err := w.Write(record); err != nil {
 			return fmt.Errorf("writing CSV row: %w", err)

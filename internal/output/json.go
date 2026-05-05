@@ -7,10 +7,14 @@ import (
 )
 
 type jsonFormatter struct {
-	w io.Writer
+	w       io.Writer
+	noColor bool
 }
 
 func (f *jsonFormatter) Format(data interface{}, columns []Column) error {
+	if f.noColor {
+		data = sanitizeANSIData(data)
+	}
 	enc := json.NewEncoder(f.w)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(data); err != nil {

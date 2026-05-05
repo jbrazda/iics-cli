@@ -1,5 +1,7 @@
 # package
 
+<!-- markdownlint-disable MD013 MD024 MD036 MD060 -->
+
 Work with IICS export package files locally. No authentication or API calls are required - all
 operations are performed on the local file system.
 
@@ -289,6 +291,11 @@ Resolves and lists transitive dependencies of every object in an IICS export pac
 The data source is `exportMetadata.v2.json` inside the package. No authentication is required
 for package-only analysis; a source org profile is used when available to resolve external
 GUIDs (assets referenced but not included in the package).
+Traversal continues recursively until no new dependency assets are discovered.
+
+`dependency=explicit` is based on object definition files present in
+`exportPackage.chksum` (physically packaged assets). Metadata-only references that do not have
+backing object files in checksum are reported as `dependency=transitive`.
 
 The command operates in two modes:
 
@@ -301,6 +308,9 @@ against the target org and missing assets are flagged. Output is sorted by `path
 `AI_SERVICE_CONNECTOR`, `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`.
 `--target-profile` or `--report` is required in this mode. Output is sorted by publish
 dependency order (primary) then `path` (secondary):
+
+In publish mode, recursion still traverses through non-publishable intermediate assets so
+deeper publishable dependencies are included in the result.
 
 | Order | Type |
 | ----- | ---- |
@@ -321,9 +331,12 @@ Use `--order-by` to override the default sort in either mode.
 | `--publish` | | bool | | false | Restrict to publishable types; requires `--target-profile` or `--report` |
 | `--report` | | string list | | | Compare dependencies across one or more target profiles (mutually exclusive with `--target-profile`) |
 | `--target-profile` | `-t` | string | | | Profile name for single-profile target org validation (mutually exclusive with `--report`) |
-| `--order-by` | | string | | | Sort output by field: `path`, `type`, `status`, `warning` |
+| `--order-by` | | string | | | Sort output by field: `path`, `type`, `status`, `warning`, `location`, `dependency` |
 | `--exclude` | `-e` | string | | | Regex matched against `path.type` - excludes from BFS resolution |
-| `--filter` | | string | | | Regex matched against `path.type` - filters final output only |
+| `--filter` | | string | | | Regex matched against `location` (`Explore/path.type`) - filters final output only |
+| `--output-file` | | string | | | Write output to a file |
+| `--output-file-format` | | string | | `yaml` | Output file format: `table`, `json`, `csv`, `yaml` |
+| `--output-file-fields` | | string | | `location,dependency,type,path,status,warning` | Comma-separated fields for output file rows |
 
 \* `--file` and `--workspace` are mutually exclusive; exactly one is required.
 
@@ -334,21 +347,28 @@ All [global flags](../../README.md#global-flags) apply, including `--output` / `
 
 ### Output columns
 
-The PATH column always shows `path.type` concatenated (e.g.
-`MyProject/Connections/MyConn.AI_CONNECTION`). The underlying `path` and `type` fields
-are available in JSON, YAML, and CSV output.
+Each row includes a normalized `location` (`Explore/path.type`) and `dependency` marker.
+For `package dependencies`, `dependency=explicit` means the asset has a backing object file in
+`exportPackage.chksum`; `dependency=transitive` means it is reference-only in metadata or
+API-resolved during traversal.
 
 #### Single-profile mode (no `--target-profile` or `--report`)
 
 | Column | JSON field | Description |
 | ------ | ---------- | ----------- |
-| `PATH` | `path` + `type` | Asset identifier as `path.type` |
+| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
+| `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
+| `TYPE` | `type` | Asset type |
+| `PATH` | `path` | Asset path without `Explore/` prefix |
 
 #### With `--target-profile <name>`
 
 | Column | JSON field | Description |
 | ------ | ---------- | ----------- |
-| `PATH` | `path` + `type` | Asset identifier as `path.type` |
+| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
+| `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
+| `TYPE` | `type` | Asset type |
+| `PATH` | `path` | Asset path without `Explore/` prefix |
 | `STATUS (name)` | `status` | `found`, `missing`, or `unknown`; color-coded |
 | `WARNING` | `warning` | Only shown when at least one warning exists |
 
@@ -356,7 +376,8 @@ are available in JSON, YAML, and CSV output.
 
 | Column | JSON field | Description |
 | ------ | ---------- | ----------- |
-| `PATH` | `id` | Asset identifier as `path.type` |
+| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
+| `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
 | `STATUS (dev)` | `status_dev` | Per-profile status; color-coded |
 | `STATUS (qa)` | `status_qa` | Per-profile status; color-coded |
 | `WARNING (dev)` | `warning_dev` | CSV only - warning text per profile |
@@ -366,9 +387,11 @@ JSON and YAML output for `--report` uses a nested `profiles` map:
 
 ```json
 {
-  "id": "MyProject/MyConn.AI_CONNECTION",
+  "id": "Explore/MyProject/MyConn.AI_CONNECTION",
   "path": "MyProject/MyConn",
   "type": "AI_CONNECTION",
+  "location": "Explore/MyProject/MyConn.AI_CONNECTION",
+  "dependency": "explicit",
   "profiles": {
     "dev": { "status": "found" },
     "qa":  { "status": "missing", "warning": "asset not found in target org" }
@@ -427,6 +450,12 @@ iics package dependencies -f pkg.zip --report dev,qa -o csv
 
 # Exclude system connections, filter to a specific project
 iics package dependencies -f pkg.zip --exclude '^SYS' --filter 'MyProject'
+
+# Write dependency list to a JSON file with selected fields
+iics package dependencies -f pkg.zip \
+  --output-file deps.json \
+  --output-file-format json \
+  --output-file-fields location,dependency,type,status,warning
 
 # Render dependency graph as Mermaid diagram
 iics package dependencies -f pkg.zip -o mermaid

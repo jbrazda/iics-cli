@@ -1,5 +1,7 @@
 # objects
 
+<!-- markdownlint-disable MD013 MD024 MD060 -->
+
 List and inspect IICS assets (objects) in your organisation.
 
 ## Synopsis
@@ -135,6 +137,11 @@ $objs | Group-Object -Property type | ForEach-Object { [PSCustomObject]@{type=$_
 ## objects dependencies
 
 Find what objects a given asset depends on, or which assets depend on it.
+The command resolves full transitive closure by recursively traversing every discovered
+dependency object until no new nodes are found.
+
+`objects dependencies` and `package dependencies` now use the same transitive traversal
+engine, so dependency recursion behavior is consistent across both commands.
 
 ### Flags
 
@@ -146,6 +153,10 @@ Find what objects a given asset depends on, or which assets depend on it.
 | `--skip`      |       | int      |          | 0       | Results to skip (only meaningful with `--limit`)                       |
 | `--targets`   |       | []string |          |         | Comma-separated profiles to validate dependencies against              |
 | `--publish`   |       | bool     |          | false   | Restrict output to publishable types only; sort by publish order       |
+| `--filter`    |       | string   |          |         | Regex matched against `location` (`Explore/path.type`) for final output |
+| `--output-file` |     | string   |          |         | Write output to a file |
+| `--output-file-format` | | string |          | `yaml` | Output file format: `table`, `json`, `csv`, `yaml` |
+| `--output-file-fields` | | string |          | `location,dependency,id,type,path,status,warning` | Comma-separated fields for output file rows |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -153,20 +164,30 @@ When `--id` is omitted and stdin is not a terminal, a JSON array is read from st
 (e.g. piped from `objects list --output json`). Dependencies for all input objects
 are collected and deduplicated.
 
+With `--publish`, filtering is applied to output rows only; traversal still walks through
+non-publishable dependency nodes so downstream publishable dependencies are included.
+
+Rows include a `dependency` marker:
+
+- `explicit`: seed objects provided by `--id` or stdin input list
+- `transitive`: objects discovered through dependency traversal
+
 ### Output columns (standard mode)
 
 | Column         | Description                                    |
 | -------------- | ---------------------------------------------- |
-| `id`           | Dependent object ID                            |
-| `documentType` | Object type (e.g. PROCESS, GUIDE, PROCESS_OBJECT) |
+| `location`     | Normalized asset identifier: `Explore/path.type` |
+| `dependency`   | `explicit` (seed input) or `transitive` (resolved) |
+| `id`           | Object ID (when available)                     |
+| `type`         | Object type                                    |
 | `path`         | Full path of the dependent object              |
-| `location`     | Computed publish path: `Explore/<path>.<TYPE>` |
 
 ### Output columns (--targets report mode)
 
 | Column              | Description                                      |
 | ------------------- | ------------------------------------------------ |
-| `PATH.TYPE`         | Dependency path and type combined                |
+| `Location`          | Normalized asset identifier: `Explore/path.type` |
+| `DEPENDENCY`        | `explicit` (seed input) or `transitive` (resolved) |
 | `STATUS (<profile>)`| `found`, `missing`, or `unknown` per profile     |
 | `WARNING (<profile>)`| Lookup warning message (CSV output only)        |
 
@@ -205,6 +226,12 @@ iics objects list -q "tag==Project_sprint_9" --output json \
 iics objects list -q "tag==Project_sprint_9" --output json \
   | iics objects dependencies --ref-type uses --targets qa --publish \
   | iics publish run --profile qa
+
+# Filter by normalized location and write selected fields to CSV
+iics objects list -q "tag==Project_sprint_9" --output json \
+  | iics objects dependencies --ref-type uses --filter '^Explore/Shared/' \
+    --output-file deps.csv --output-file-format csv \
+    --output-file-fields location,dependency,type,path,status,warning
 ```
 
 ```powershell

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
+	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -222,13 +223,18 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 
 func newObjectsDependenciesCmd() *cobra.Command {
 	var (
-		objectID    string
-		refType     string
-		limit       int
-		skip        int
-		targets     []string
-		publishMode bool
+		objectID      string
+		refType       string
+		limit         int
+		skip          int
+		targets       []string
+		publishMode   bool
+		filterPattern string
+		outputFile    string
+		outputFileFmt string
+		outputFields  string
 	)
+	defaultOutputFileFields := "location,dependency,id,type,path,status,warning"
 
 	cmd := &cobra.Command{
 		Use:   "dependencies",
@@ -288,49 +294,45 @@ correct publish dependency order (connectors before connections before processes
 				return err
 			}
 
-			// Collect and deduplicate all references across all input IDs.
-			seen := make(map[string]struct{})
-			var allRefs []client.ObjectReference
-
+			allRefs, err := collectTransitiveObjectRefs(ctx, c, ids, refType, limit, skip)
+			if err != nil {
+				return err
+			}
+			deps := objectRefsToDeps(allRefs)
+			seedSet := make(map[string]bool, len(ids))
 			for _, id := range ids {
-				var resp *client.ObjectDependenciesResponse
-				if limit == 0 {
-					resp, err = c.GetAllObjectDependencies(ctx, id, refType)
-				} else {
-					resp, err = c.GetObjectDependencies(ctx, id, refType, limit, skip)
+				if id != "" {
+					seedSet[id] = true
 				}
+			}
+			for i := range deps {
+				if seedSet[deps[i].ID] {
+					deps[i].Dependency = "explicit"
+				}
+			}
+			if filterPattern != "" {
+				deps, err = applyFilter(deps, filterPattern)
 				if err != nil {
-					return fmt.Errorf("fetching dependencies for %s: %w", id, err)
-				}
-				for _, ref := range resp.References {
-					// Use ID as dedup key; appContextId is null in most API responses.
-					key := ref.ID
-					if key == "" {
-						key = ref.AppContextID
-					}
-					if _, ok := seen[key]; !ok {
-						seen[key] = struct{}{}
-						allRefs = append(allRefs, ref)
-					}
+					return fmt.Errorf("invalid --filter pattern: %w", err)
 				}
 			}
 
-			if len(allRefs) == 0 {
+			if len(deps) == 0 {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No dependencies found.")
 				return nil
 			}
 
 			// Apply --publish filter then sort by typePriority.
 			if publishMode {
-				filtered := allRefs[:0:0]
-				for _, r := range allRefs {
+				filtered := deps[:0:0]
+				for _, r := range deps {
 					if publishableTypes[r.Type] {
 						filtered = append(filtered, r)
 					}
 				}
-				allRefs = filtered
-				sort.Slice(allRefs, func(i, j int) bool {
-					pi, pj := typePriority[allRefs[i].Type], typePriority[allRefs[j].Type]
+				deps = filtered
+				sort.Slice(deps, func(i, j int) bool {
+					pi, pj := typePriority[deps[i].Type], typePriority[deps[j].Type]
 					if pi != pj {
 						if pi == 0 {
 							return false
@@ -340,9 +342,9 @@ correct publish dependency order (connectors before connections before processes
 						}
 						return pi < pj
 					}
-					return allRefs[i].Path < allRefs[j].Path
+					return deps[i].Path < deps[j].Path
 				})
-				if len(allRefs) == 0 {
+				if len(deps) == 0 {
 					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No publishable dependencies found.")
 					return nil
 				}
@@ -355,7 +357,6 @@ correct publish dependency order (connectors before connections before processes
 
 			// Multi-target report mode: validate each dependency against each profile.
 			if len(targets) > 0 {
-				deps := objectRefsToDeps(allRefs)
 				profileResults, err := validateMultiProfile(ctx, targets, deps)
 				if err != nil {
 					return err
@@ -367,7 +368,8 @@ correct publish dependency order (connectors before connections before processes
 				}
 
 				cols := []output.Column{
-					{Header: "PATH.TYPE", Field: "id"},
+					{Header: "LOCATION", Field: "location"},
+					{Header: "DEPENDENCY", Field: "dependency", Width: 12},
 				}
 				for _, prof := range targets {
 					key := strings.ReplaceAll(prof, "-", "_")
@@ -386,17 +388,42 @@ correct publish dependency order (connectors before connections before processes
 						})
 					}
 				}
-				return f.Format(tableRows, cols)
+				if err := f.Format(tableRows, cols); err != nil {
+					return err
+				}
+				if outputFile != "" {
+					return writeOutputFile(tableRows, cols, outputFile, outputFileFmt)
+				}
+				return nil
 			}
 
 			// Standard output.
 			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "TYPE", Field: "documentType", Width: 20},
-				{Header: "PATH", Field: "path"},
 				{Header: "LOCATION", Field: "location"},
+				{Header: "DEPENDENCY", Field: "dependency", Width: 12},
+				{Header: "ID", Field: "id", Width: 24},
+				{Header: "TYPE", Field: "type", Width: 20},
+				{Header: "PATH", Field: "path", Width: 55},
 			}
-			return f.Format(allRefs, columns)
+			if err := f.Format(deps, columns); err != nil {
+				return err
+			}
+			if outputFile != "" {
+				fields := parseFields(outputFields)
+				if len(fields) == 0 {
+					fields = parseFields(defaultOutputFileFields)
+				}
+				fileRows := dependencyItemsForOutputFile(deps, fields)
+				fileCols := make([]output.Column, 0, len(fields))
+				for _, field := range fields {
+					fileCols = append(fileCols, output.Column{
+						Header: strings.ToUpper(field),
+						Field:  field,
+					})
+				}
+				return writeOutputFile(fileRows, fileCols, outputFile, outputFileFmt)
+			}
+			return nil
 		},
 	}
 
@@ -406,6 +433,10 @@ correct publish dependency order (connectors before connections before processes
 	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip (only used with --limit)")
 	cmd.Flags().StringSliceVar(&targets, "targets", nil, "comma-separated profiles to validate dependencies against")
 	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only and sort by publish dependency order")
+	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output")
+	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")
+	cmd.Flags().StringVar(&outputFileFmt, "output-file-format", "yaml", "format for output file: yaml, json, csv, table")
+	cmd.Flags().StringVar(&outputFields, "output-file-fields", defaultOutputFileFields, "comma-separated fields for file output: location,dependency,id,type,path,status,warning")
 
 	return cmd
 }
@@ -415,7 +446,52 @@ correct publish dependency order (connectors before connections before processes
 func objectRefsToDeps(refs []client.ObjectReference) []dependencyItem {
 	deps := make([]dependencyItem, len(refs))
 	for i, r := range refs {
-		deps[i] = dependencyItem{Path: r.Path, Type: r.Type}
+		id := r.ID
+		if id == "" {
+			id = r.AppContextID
+		}
+		deps[i] = dependencyItem{
+			ID:         id,
+			Path:       r.Path,
+			Type:       r.Type,
+			Location:   r.Location,
+			Dependency: "transitive",
+		}
+		if deps[i].Location == "" {
+			deps[i].Location = "Explore/" + r.Path + "." + r.Type
+		}
 	}
 	return deps
+}
+
+func collectTransitiveObjectRefs(
+	ctx context.Context,
+	c *client.Client,
+	seedIDs []string,
+	refType string,
+	limit, skip int,
+) ([]client.ObjectReference, error) {
+	graph, err := dependencies.TraverseByIDs(ctx, c, seedIDs, refType, limit, skip)
+	if err != nil {
+		return nil, err
+	}
+	resultRefs := make([]client.ObjectReference, 0, len(graph.Nodes))
+	for _, n := range graph.Nodes {
+		path := strings.TrimPrefix(strings.TrimPrefix(n.Path, "/"), "Explore/")
+		ref := client.ObjectReference{
+			ID:           n.ID,
+			AppContextID: n.ID,
+			Path:         path,
+			Type:         n.Type,
+			Location:     "Explore/" + path + "." + n.Type,
+		}
+		resultRefs = append(resultRefs, ref)
+	}
+	sort.Slice(resultRefs, func(i, j int) bool {
+		if resultRefs[i].Type != resultRefs[j].Type {
+			return resultRefs[i].Type < resultRefs[j].Type
+		}
+		return resultRefs[i].Path < resultRefs[j].Path
+	})
+	return resultRefs, nil
 }
