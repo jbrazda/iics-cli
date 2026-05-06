@@ -23,6 +23,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 )
 
@@ -1202,6 +1203,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 		orderBy        string
 		reportProfiles []string
 		excludePattern string
+		excludeFile    string
 		filterPattern  string
 		targetProfile  string
 		outputFile     string
@@ -1251,9 +1253,23 @@ func newPackageDependenciesCmd() *cobra.Command {
 
 			// Compile exclude regex.
 			var excludeRe *regexp.Regexp
-			if excludePattern != "" {
+			if excludePattern != "" || excludeFile != "" {
+				patterns := make([]string, 0, 8)
+				if excludePattern != "" {
+					patterns = append(patterns, excludePattern)
+				}
+				if excludeFile != "" {
+					compiledPatterns, err := release.LoadExcludePatterns(excludeFile)
+					if err != nil {
+						return err
+					}
+					for _, re := range compiledPatterns {
+						patterns = append(patterns, re.String())
+					}
+				}
+				combined := "(?:" + strings.Join(patterns, ")|(?:") + ")"
 				var err error
-				excludeRe, err = regexp.Compile(excludePattern)
+				excludeRe, err = regexp.Compile(combined)
 				if err != nil {
 					return fmt.Errorf("invalid --exclude pattern: %w", err)
 				}
@@ -1431,6 +1447,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&reportProfiles, "report", nil, "compare dependencies across one or more target profiles (mutually exclusive with --target-profile); accepts comma-separated values or repeated flags")
 	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, status, warning (overrides default sort)")
 	cmd.Flags().StringVarP(&excludePattern, "exclude", "e", "", "regex matched against path/name.type to exclude assets from resolution")
+	cmd.Flags().StringVar(&excludeFile, "exclude-file", "", "path to regex patterns file; each matching path/name.type is excluded from resolution")
 	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output (does not affect resolution)")
 	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (mutually exclusive with --report)")
 	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")

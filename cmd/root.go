@@ -215,6 +215,7 @@ func init() {
 	rootCmd.AddCommand(newAuditlogCmd())
 	rootCmd.AddCommand(newPublishCmd())
 	rootCmd.AddCommand(newUnpublishCmd())
+	rootCmd.AddCommand(newReleaseCmd())
 	rootCmd.AddCommand(newCompletionCmd())
 }
 

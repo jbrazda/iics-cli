@@ -13,11 +13,11 @@ iics package <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand      | Description |
-| --------------- | ----------- |
-| `expand`        | Extract an IICS export ZIP package to a directory |
-| `create`        | Assemble a new IICS export ZIP package from a directory |
-| `dependencies`  | Resolve and list transitive dependencies of an export package |
+| Subcommand     | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| `expand`       | Extract an IICS export ZIP package to a directory             |
+| `create`       | Assemble a new IICS export ZIP package from a directory       |
+| `dependencies` | Resolve and list transitive dependencies of an export package |
 
 ---
 
@@ -37,13 +37,13 @@ The typical workflow for version-controlling IICS assets is:
 
 ### Flags
 
-| Flag | Short | Type | Required | Default | Description |
-| ---- | ----- | ---- | -------- | ------- | ----------- |
-| `--file` | `-f` | string | yes | | Path to the source ZIP package |
-| `--target` | `-t` | string | yes | | Destination directory; created if absent |
-| `--recursive` | `-r` | bool | | false | Recursively expand nested ZIPs into `<name>.zip/` directories |
-| `--clean` | `-c` | bool | | false | Delete target contents before expanding |
-| `--yes` | `-y` | bool | | false | Suppress the `--clean` confirmation prompt |
+| Flag          | Short | Type   | Required | Default | Description                                                   |
+|---------------|-------|--------|----------|---------|---------------------------------------------------------------|
+| `--file`      | `-f`  | string | yes      |         | Path to the source ZIP package                                |
+| `--target`    | `-t`  | string | yes      |         | Destination directory; created if absent                      |
+| `--recursive` | `-r`  | bool   |          | false   | Recursively expand nested ZIPs into `<name>.zip/` directories |
+| `--clean`     | `-c`  | bool   |          | false   | Delete target contents before expanding                       |
+| `--yes`       | `-y`  | bool   |          | false   | Suppress the `--clean` confirmation prompt                    |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -143,11 +143,11 @@ are re-packed into nested ZIP entries automatically.
 
 ### Flags
 
-| Flag | Short | Type | Required | Default | Description |
-| ---- | ----- | ---- | -------- | ------- | ----------- |
-| `--source` | `-s` | string | yes | | Source directory to package |
-| `--target` | `-t` | string | yes | | Output ZIP file path |
-| `--force` | `-f` | bool | | false | Overwrite existing output file |
+| Flag       | Short | Type   | Required | Default | Description                    |
+|------------|-------|--------|----------|---------|--------------------------------|
+| `--source` | `-s`  | string | yes      |         | Source directory to package    |
+| `--target` | `-t`  | string | yes      |         | Output ZIP file path           |
+| `--force`  | `-f`  | bool   |          | false   | Overwrite existing output file |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -312,31 +312,32 @@ dependency order (primary) then `path` (secondary):
 In publish mode, recursion still traverses through non-publishable intermediate assets so
 deeper publishable dependencies are included in the result.
 
-| Order | Type |
-| ----- | ---- |
-| 1 | `AI_SERVICE_CONNECTOR` |
-| 2 | `AI_CONNECTION` |
-| 3 | `PROCESS` |
-| 4 | `GUIDE` |
-| 5 | `TASKFLOW` |
+| Order | Type                   |
+|-------|------------------------|
+| 1     | `AI_SERVICE_CONNECTOR` |
+| 2     | `AI_CONNECTION`        |
+| 3     | `PROCESS`              |
+| 4     | `GUIDE`                |
+| 5     | `TASKFLOW`             |
 
 Use `--order-by` to override the default sort in either mode.
 
 ### Flags
 
-| Flag | Short | Type | Required | Default | Description |
-| ---- | ----- | ---- | -------- | ------- | ----------- |
-| `--file` | `-f` | string | yes* | | Path to IICS export ZIP package |
-| `--workspace` | `-w` | string | yes* | | Path to expanded workspace directory |
-| `--publish` | | bool | | false | Restrict to publishable types; requires `--target-profile` or `--report` |
-| `--report` | | string list | | | Compare dependencies across one or more target profiles (mutually exclusive with `--target-profile`) |
-| `--target-profile` | `-t` | string | | | Profile name for single-profile target org validation (mutually exclusive with `--report`) |
-| `--order-by` | | string | | | Sort output by field: `path`, `type`, `status`, `warning`, `location`, `dependency` |
-| `--exclude` | `-e` | string | | | Regex matched against `path.type` - excludes from BFS resolution |
-| `--filter` | | string | | | Regex matched against `location` (`Explore/path.type`) - filters final output only |
-| `--output-file` | | string | | | Write output to a file |
-| `--output-file-format` | | string | | `yaml` | Output file format: `table`, `json`, `csv`, `yaml` |
-| `--output-file-fields` | | string | | `location,dependency,type,path,status,warning` | Comma-separated fields for output file rows |
+| Flag                   | Short | Type        | Required | Default                                        | Description                                                                                          |
+|------------------------|-------|-------------|----------|------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `--file`               | `-f`  | string      | yes*     |                                                | Path to IICS export ZIP package                                                                      |
+| `--workspace`          | `-w`  | string      | yes*     |                                                | Path to expanded workspace directory                                                                 |
+| `--publish`            |       | bool        |          | false                                          | Restrict to publishable types; requires `--target-profile` or `--report`                             |
+| `--report`             |       | string list |          |                                                | Compare dependencies across one or more target profiles (mutually exclusive with `--target-profile`) |
+| `--target-profile`     | `-t`  | string      |          |                                                | Profile name for single-profile target org validation (mutually exclusive with `--report`)           |
+| `--order-by`           |       | string      |          |                                                | Sort output by field: `path`, `type`, `status`, `warning`, `location`, `dependency`                  |
+| `--exclude`            | `-e`  | string      |          |                                                | Regex matched against `path.type` - excludes from BFS resolution                                     |
+| `--exclude-file`       |       | string      |          |                                                | Regex policy file; each matching `path.type` is excluded from BFS resolution                         |
+| `--filter`             |       | string      |          |                                                | Regex matched against `location` (`Explore/path.type`) - filters final output only                   |
+| `--output-file`        |       | string      |          |                                                | Write output to a file                                                                               |
+| `--output-file-format` |       | string      |          | `yaml`                                         | Output file format: `table`, `json`, `csv`, `yaml`                                                   |
+| `--output-file-fields` |       | string      |          | `location,dependency,type,path,status,warning` | Comma-separated fields for output file rows                                                          |
 
 \* `--file` and `--workspace` are mutually exclusive; exactly one is required.
 
@@ -354,34 +355,34 @@ API-resolved during traversal.
 
 #### Single-profile mode (no `--target-profile` or `--report`)
 
-| Column | JSON field | Description |
-| ------ | ---------- | ----------- |
-| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
+| Column       | JSON field   | Description                                                                                          |
+|--------------|--------------|------------------------------------------------------------------------------------------------------|
+| `LOCATION`   | `location`   | Asset identifier as `Explore/path.type`                                                              |
 | `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
-| `TYPE` | `type` | Asset type |
-| `PATH` | `path` | Asset path without `Explore/` prefix |
+| `TYPE`       | `type`       | Asset type                                                                                           |
+| `PATH`       | `path`       | Asset path without `Explore/` prefix                                                                 |
 
 #### With `--target-profile <name>`
 
-| Column | JSON field | Description |
-| ------ | ---------- | ----------- |
-| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
-| `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
-| `TYPE` | `type` | Asset type |
-| `PATH` | `path` | Asset path without `Explore/` prefix |
-| `STATUS (name)` | `status` | `found`, `missing`, or `unknown`; color-coded |
-| `WARNING` | `warning` | Only shown when at least one warning exists |
+| Column          | JSON field   | Description                                                                                          |
+|-----------------|--------------|------------------------------------------------------------------------------------------------------|
+| `LOCATION`      | `location`   | Asset identifier as `Explore/path.type`                                                              |
+| `DEPENDENCY`    | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
+| `TYPE`          | `type`       | Asset type                                                                                           |
+| `PATH`          | `path`       | Asset path without `Explore/` prefix                                                                 |
+| `STATUS (name)` | `status`     | `found`, `missing`, or `unknown`; color-coded                                                        |
+| `WARNING`       | `warning`    | Only shown when at least one warning exists                                                          |
 
 #### With `--report <profiles>`
 
-| Column | JSON field | Description |
-| ------ | ---------- | ----------- |
-| `LOCATION` | `location` | Asset identifier as `Explore/path.type` |
-| `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
-| `STATUS (dev)` | `status_dev` | Per-profile status; color-coded |
-| `STATUS (qa)` | `status_qa` | Per-profile status; color-coded |
-| `WARNING (dev)` | `warning_dev` | CSV only - warning text per profile |
-| `WARNING (qa)` | `warning_qa` | CSV only - warning text per profile |
+| Column          | JSON field    | Description                                                                                          |
+|-----------------|---------------|------------------------------------------------------------------------------------------------------|
+| `LOCATION`      | `location`    | Asset identifier as `Explore/path.type`                                                              |
+| `DEPENDENCY`    | `dependency`  | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
+| `STATUS (dev)`  | `status_dev`  | Per-profile status; color-coded                                                                      |
+| `STATUS (qa)`   | `status_qa`   | Per-profile status; color-coded                                                                      |
+| `WARNING (dev)` | `warning_dev` | CSV only - warning text per profile                                                                  |
+| `WARNING (qa)`  | `warning_qa`  | CSV only - warning text per profile                                                                  |
 
 JSON and YAML output for `--report` uses a nested `profiles` map:
 
@@ -414,11 +415,11 @@ These environment variables override the target profile settings without modifyi
 `~/.iics/config.yaml`, which is useful in CI/CD pipelines. Applies to `--target-profile`
 only; `--report` uses named profiles from the config file.
 
-| Variable | Overrides |
-| -------- | --------- |
-| `IICS_TARGET_USERNAME` | target profile username |
-| `IICS_TARGET_PASSWORD` | target profile password |
-| `IICS_TARGET_REGION` | target profile region |
+| Variable                | Overrides               |
+|-------------------------|-------------------------|
+| `IICS_TARGET_USERNAME`  | target profile username |
+| `IICS_TARGET_PASSWORD`  | target profile password |
+| `IICS_TARGET_REGION`    | target profile region   |
 | `IICS_TARGET_LOGIN_URL` | target profile loginUrl |
 
 ### Examples

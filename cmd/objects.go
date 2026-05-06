@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 )
 
@@ -224,12 +226,14 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 func newObjectsDependenciesCmd() *cobra.Command {
 	var (
 		objectID      string
+		tagName       string
 		refType       string
 		limit         int
 		skip          int
 		targets       []string
 		publishMode   bool
 		filterPattern string
+		excludeFile   string
 		outputFile    string
 		outputFileFmt string
 		outputFields  string
@@ -260,21 +264,40 @@ correct publish dependency order (connectors before connections before processes
   iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --targets qa --publish | iics publish run --profile qa`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
 
 			// Collect input IDs from --id or stdin JSON array.
 			var ids []string
+			if objectID != "" && tagName != "" {
+				return fmt.Errorf("--id and --tag are mutually exclusive")
+			}
 			if objectID != "" {
 				ids = []string{objectID}
+			} else if tagName != "" {
+				listResp, listErr := c.ListAllObjects(ctx, client.ObjectsListOptions{
+					Query: fmt.Sprintf("tag=='%s'", tagName),
+				}, nil)
+				if listErr != nil {
+					return fmt.Errorf("listing objects for tag %q: %w", tagName, listErr)
+				}
+				for _, o := range listResp.Objects {
+					if o.ID != "" {
+						ids = append(ids, o.ID)
+					}
+				}
 			} else if !config.IsTerminal() {
-				data, err := io.ReadAll(os.Stdin)
-				if err != nil {
-					return fmt.Errorf("reading stdin: %w", err)
+				data, readErr := io.ReadAll(os.Stdin)
+				if readErr != nil {
+					return fmt.Errorf("reading stdin: %w", readErr)
 				}
 				var objs []struct {
 					ID string `json:"id"`
 				}
-				if err := json.Unmarshal(data, &objs); err != nil {
-					return fmt.Errorf("parsing stdin as JSON array: %w", err)
+				if unmarshalErr := json.Unmarshal(data, &objs); unmarshalErr != nil {
+					return fmt.Errorf("parsing stdin as JSON array: %w", unmarshalErr)
 				}
 				for _, o := range objs {
 					if o.ID != "" {
@@ -287,11 +310,6 @@ correct publish dependency order (connectors before connections before processes
 
 			if len(ids) == 0 {
 				return fmt.Errorf("no object IDs provided")
-			}
-
-			c, err := getClient(cmd)
-			if err != nil {
-				return err
 			}
 
 			allRefs, err := collectTransitiveObjectRefs(ctx, c, ids, refType, limit, skip)
@@ -315,6 +333,13 @@ correct publish dependency order (connectors before connections before processes
 				if err != nil {
 					return fmt.Errorf("invalid --filter pattern: %w", err)
 				}
+			}
+			if excludeFile != "" {
+				patterns, patternErr := release.LoadExcludePatterns(excludeFile)
+				if patternErr != nil {
+					return patternErr
+				}
+				deps = applyExcludeRegexes(deps, patterns)
 			}
 
 			if len(deps) == 0 {
@@ -428,12 +453,14 @@ correct publish dependency order (connectors before connections before processes
 	}
 
 	cmd.Flags().StringVar(&objectID, "id", "", "object ID (or pipe a JSON array from objects list)")
+	cmd.Flags().StringVar(&tagName, "tag", "", "tag name to resolve seed objects before dependency traversal")
 	cmd.Flags().StringVar(&refType, "ref-type", "", "reference type: uses or usedBy")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results; 0 fetches all pages in batches of 50")
 	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip (only used with --limit)")
 	cmd.Flags().StringSliceVar(&targets, "targets", nil, "comma-separated profiles to validate dependencies against")
 	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only and sort by publish dependency order")
 	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output")
+	cmd.Flags().StringVar(&excludeFile, "exclude-file", "", "path to regex patterns file; matching locations are excluded from final output")
 	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")
 	cmd.Flags().StringVar(&outputFileFmt, "output-file-format", "yaml", "format for output file: yaml, json, csv, table")
 	cmd.Flags().StringVar(&outputFields, "output-file-fields", defaultOutputFileFields, "comma-separated fields for file output: location,dependency,id,type,path,status,warning")
@@ -494,4 +521,24 @@ func collectTransitiveObjectRefs(
 		return resultRefs[i].Path < resultRefs[j].Path
 	})
 	return resultRefs, nil
+}
+
+func applyExcludeRegexes(deps []dependencyItem, patterns []*regexp.Regexp) []dependencyItem {
+	if len(patterns) == 0 {
+		return deps
+	}
+	filtered := deps[:0:0]
+	for _, d := range deps {
+		excluded := false
+		for _, re := range patterns {
+			if re.MatchString(d.Location) {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			filtered = append(filtered, d)
+		}
+	}
+	return filtered
 }

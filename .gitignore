@@ -46,3 +46,5 @@ __debug_bin*
 
 # Claude Code runtime artifacts
 .claude/
+
+target/
