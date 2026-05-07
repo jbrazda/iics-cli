@@ -1,8 +1,10 @@
 package release
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/dependencies"
 )
 
@@ -196,6 +199,100 @@ func PublishAssets(assets []Asset) []Asset {
 		}
 	}
 	return out
+}
+
+func FilterMissingTransitiveForTarget(ctx context.Context, targetProfileName string, assets []Asset) ([]Asset, error) {
+	cfg, err := config.Load("")
+	if err != nil {
+		return nil, fmt.Errorf("loading config for target %q: %w", targetProfileName, err)
+	}
+	resolvedProfileName, err := resolveTargetProfileName(cfg, targetProfileName)
+	if err != nil {
+		return nil, err
+	}
+	profile, err := cfg.ResolveTargetProfile(resolvedProfileName)
+	if err != nil {
+		return nil, err
+	}
+	loginURL, err := profile.GetLoginURL()
+	if err != nil {
+		return nil, fmt.Errorf("resolving target login URL for profile %q: %w", resolvedProfileName, err)
+	}
+	tc := client.NewClient(loginURL, profile.Username, profile.Password)
+
+	missingByLocation := make(map[string]bool, len(assets))
+	for _, a := range assets {
+		if a.Dependency != "transitive" {
+			continue
+		}
+		exists, existsErr := assetExistsInTarget(ctx, tc, a)
+		if existsErr != nil {
+			return nil, fmt.Errorf("checking target %q for %s: %w", targetProfileName, a.Location, existsErr)
+		}
+		missingByLocation[a.Location] = !exists
+	}
+
+	return ApplyMissingTransitivePolicy(assets, missingByLocation), nil
+}
+
+func ApplyMissingTransitivePolicy(assets []Asset, missingByLocation map[string]bool) []Asset {
+	filtered := make([]Asset, 0, len(assets))
+	for _, a := range assets {
+		if a.Dependency != "transitive" {
+			filtered = append(filtered, a)
+			continue
+		}
+		if missingByLocation[a.Location] {
+			filtered = append(filtered, a)
+		}
+	}
+	return filtered
+}
+
+func resolveTargetProfileName(cfg *config.Config, requested string) (string, error) {
+	req := strings.TrimSpace(requested)
+	if req == "" {
+		return "", fmt.Errorf("target profile is required")
+	}
+	if _, ok := cfg.Profiles[req]; ok {
+		return req, nil
+	}
+	lowerReq := strings.ToLower(req)
+	for name := range cfg.Profiles {
+		if strings.ToLower(name) == lowerReq {
+			return name, nil
+		}
+	}
+	return "", fmt.Errorf("target profile %q not found in config", requested)
+}
+
+func assetExistsInTarget(ctx context.Context, tc *client.Client, a Asset) (bool, error) {
+	if a.Type == "Connection" {
+		name := a.Path
+		if idx := strings.LastIndex(name, "/"); idx >= 0 {
+			name = name[idx+1:]
+		}
+		_, err := tc.GetConnectionByName(ctx, name)
+		if err == nil {
+			return true, nil
+		}
+		var apiErr *client.APIError
+		if errors.As(err, &apiErr) && apiErr.IsNotFound() {
+			return false, nil
+		}
+		return false, err
+	}
+
+	resp, err := tc.Lookup(ctx, []client.LookupObject{{Path: a.Path, Type: a.Type}})
+	if err != nil {
+		var apiErr *client.APIError
+		if errors.As(err, &apiErr) &&
+			bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
+			return false, nil
+		}
+		return false, err
+	}
+	return len(resp.Objects) > 0, nil
 }
 
 func WriteAssetsCSV(path string, assets []Asset, fields []string) error {

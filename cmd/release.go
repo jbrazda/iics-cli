@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/release"
@@ -93,7 +94,7 @@ func newReleaseManifestCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "path to PR description markdown file with Deployment Options section")
-	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics", "output root directory for generated files")
+	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics/import", "output root directory for generated files")
 	cmd.Flags().StringVar(&mode, "mode", "", "deploy mode override: full or tag-based")
 	cmd.Flags().StringVar(&tag, "tag", "", "tag value for tag-based mode")
 	cmd.Flags().StringSliceVar(&targets, "targets", nil, "target environments (comma-separated): tst,qa,stg,prod")
@@ -133,7 +134,7 @@ func newReleaseValidateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/conf/release_manifest.yaml", "path to release manifest yaml")
+	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/import/conf/release_manifest.yaml", "path to release manifest yaml")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
 	return cmd
 }
@@ -144,6 +145,7 @@ func newReleasePlanCmd() *cobra.Command {
 		outputRoot       string
 		fullPackageCfg   string
 		validTargets     string
+		addMissingTrans  bool
 		packageFieldsRaw string
 		publishFieldsRaw string
 	)
@@ -175,7 +177,7 @@ func newReleasePlanCmd() *cobra.Command {
 
 			if opts.Mode == release.ModeFullDeployment {
 				for _, env := range opts.Targets {
-					envDir := filepath.Join(outputRoot, "conf", strings.ToLower(env))
+					envDir := filepath.Join(outputRoot, strings.ToLower(env))
 					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
 						return fmt.Errorf("creating env directory: %w", mkErr)
 					}
@@ -204,15 +206,28 @@ func newReleasePlanCmd() *cobra.Command {
 				return err
 			}
 			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.ConnectorsOnly, excludes)
-			publishAssets := release.PublishAssets(allFiltered)
-			connectorAssets := release.ConnectorAssets(allFiltered)
+			connectorUnion := make(map[string]release.Asset)
 
 			for _, env := range opts.Targets {
-				envDir := filepath.Join(outputRoot, "conf", strings.ToLower(env))
+				envAssets := allFiltered
+				if addMissingTrans {
+					envFiltered, filterErr := release.FilterMissingTransitiveForTarget(context.Background(), env, allFiltered)
+					if filterErr != nil {
+						return filterErr
+					}
+					envAssets = envFiltered
+				}
+				publishAssets := release.PublishAssets(envAssets)
+				connectorAssets := release.ConnectorAssets(envAssets)
+				for _, ca := range connectorAssets {
+					connectorUnion[ca.Location] = ca
+				}
+
+				envDir := filepath.Join(outputRoot, strings.ToLower(env))
 				if err := os.MkdirAll(envDir, 0o755); err != nil {
 					return fmt.Errorf("creating env directory: %w", err)
 				}
-				if err := release.WriteAssetsCSV(filepath.Join(envDir, "tag_build.package.csv"), allFiltered, packageFields); err != nil {
+				if err := release.WriteAssetsCSV(filepath.Join(envDir, "tag_build.package.csv"), envAssets, packageFields); err != nil {
 					return err
 				}
 				if err := release.WriteAssetsCSV(filepath.Join(envDir, "publish_assets.csv"), publishAssets, publishFields); err != nil {
@@ -220,7 +235,17 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 			}
 			if opts.IncludeConnectors {
-				if err := release.WriteAssetsCSV(filepath.Join(outputRoot, "conf", "connectors.package.csv"), connectorAssets, packageFields); err != nil {
+				connectorAssets := make([]release.Asset, 0, len(connectorUnion))
+				for _, asset := range connectorUnion {
+					connectorAssets = append(connectorAssets, asset)
+				}
+				sort.Slice(connectorAssets, func(i, j int) bool {
+					if connectorAssets[i].Type != connectorAssets[j].Type {
+						return connectorAssets[i].Type < connectorAssets[j].Type
+					}
+					return connectorAssets[i].Path < connectorAssets[j].Path
+				})
+				if err := release.WriteAssetsCSV(filepath.Join(outputRoot, "connectors.package.csv"), connectorAssets, packageFields); err != nil {
 					return err
 				}
 			}
@@ -228,10 +253,11 @@ func newReleasePlanCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/conf/release_manifest.yaml", "path to release manifest yaml")
-	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics", "output root directory for generated files")
+	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/import/conf/release_manifest.yaml", "path to release manifest yaml")
+	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics/import", "output root directory for generated files")
 	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/all_exclude_connections.package.csv", "full-deployment package config file to copy per environment")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
+	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")
 	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,dependency,type,path", "fields for generated package csv files")
 	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,dependency", "fields for generated publish csv files")
 	return cmd

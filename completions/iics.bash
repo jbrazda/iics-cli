@@ -3659,6 +3659,8 @@ _iics_release_plan()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--add-missing-transitive-deps")
+    local_nonpersistent_flags+=("--add-missing-transitive-deps")
     flags+=("--full-package-config=")
     two_word_flags+=("--full-package-config")
     local_nonpersistent_flags+=("--full-package-config")
