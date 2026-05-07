@@ -138,14 +138,14 @@ The `loginUrl`, `baseApiUrl`, and `caiUrl` fields are populated automatically af
 
 The `style` section controls table output appearance. Available themes:
 
-| Theme | Description |
-| ----- | ----------- |
-| `default` | Unicode rounded borders, cyan bold headers (TTY only) |
-| `minimal` | No borders, colored bold headers with unicode underline |
-| `compact` | No borders, gray bold headers, 1-space column gap (TTY only) |
-| `plain` | ASCII borders, no color - used automatically for non-TTY output |
-| `markdown` | GitHub-flavored markdown table, no color, always rendered regardless of TTY |
-| `gh` | GitHub CLI-style: no borders, no separator, plain headers, no color, always rendered regardless of TTY |
+| Theme      | Description                                                                                            |
+|------------|--------------------------------------------------------------------------------------------------------|
+| `default`  | Unicode rounded borders, cyan bold headers (TTY only)                                                  |
+| `minimal`  | No borders, colored bold headers with unicode underline                                                |
+| `compact`  | No borders, gray bold headers, 1-space column gap (TTY only)                                           |
+| `plain`    | ASCII borders, no color - used automatically for non-TTY output                                        |
+| `markdown` | GitHub-flavored markdown table, no color, always rendered regardless of TTY                            |
+| `gh`       | GitHub CLI-style: no borders, no separator, plain headers, no color, always rendered regardless of TTY |
 
 Non-TTY output (piped, redirected) always uses `plain` regardless of the configured theme.
 The `markdown` and `gh` themes are exceptions - they always render as-is even when output
@@ -158,17 +158,22 @@ themes. Leave empty to use the theme default.
 
 ### Environment variable overrides
 
-| Variable         | Description                                                |
-|------------------|------------------------------------------------------------|
-| `IICS_PROFILE`   | Override default profile                                   |
-| `IICS_USERNAME`  | Override profile username                                  |
-| `IICS_PASSWORD`  | Override profile password (takes precedence over keychain) |
-| `IICS_REGION`    | Override profile region                                    |
-| `IICS_LOGIN_URL` | Override computed login URL                                |
-| `IICS_CAI_URL`   | Override profile `caiUrl`                                  |
-| `IICS_OUTPUT`    | Override default output format                             |
-| `IICS_THEME`     | Override table theme (same values as `--theme` flag)       |
-| `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated) |
+| Variable                    | Description                                                                              |
+|-----------------------------|------------------------------------------------------------------------------------------|
+| `IICS_PROFILE`              | Override default profile                                                                 |
+| `IICS_USERNAME`             | Override profile username                                                                |
+| `IICS_PASSWORD`             | Override profile password (takes precedence over keychain)                               |
+| `IICS_REGION`               | Override profile region                                                                  |
+| `IICS_LOGIN_URL`            | Override computed login URL                                                              |
+| `IICS_CAI_URL`              | Override profile `caiUrl`                                                                |
+| `IICS_OUTPUT`               | Override default output format                                                           |
+| `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
+| `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
+| `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |
+| `IICS_USER_<TARGET>`        | CI target username fallback for `iics release plan` when profile is not configured       |
+| `IICS_PWD_<TARGET>`         | CI target password fallback for `iics release plan` when profile is not configured       |
+| `IICS_REGION_<TARGET>`      | Optional CI target region for `iics release plan`                                        |
+| `IICS_LOGIN_URL_<TARGET>`   | Optional CI target login URL for `iics release plan`                                     |
 
 Environment variables take precedence over config file values.
 
@@ -255,15 +260,15 @@ it easy to override credentials in CI pipelines without touching the config file
 
 ### Global flags
 
-| Flag         | Short | Description                                                        |
-| ------------ | ----- | ------------------------------------------------------------------ |
-| `--profile`  | `-p`  | Profile to use (overrides default)                                 |
-| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`            |
-| `--verbose`  | `-v`  | Enable verbose output                                              |
-| `--no-color` |       | Disable colored output and force `plain` table theme               |
+| Flag         | Short | Description                                                                                |
+|--------------|-------|--------------------------------------------------------------------------------------------|
+| `--profile`  | `-p`  | Profile to use (overrides default)                                                         |
+| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`                                    |
+| `--verbose`  | `-v`  | Enable verbose output                                                                      |
+| `--no-color` |       | Disable colored output and force `plain` table theme                                       |
 | `--theme`    |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config) |
-| `--config`   |       | Config file path (default `~/.iics/config.yaml`)                   |
-| `--debug`    |       | Print full HTTP request/response trace to stderr                   |
+| `--config`   |       | Config file path (default `~/.iics/config.yaml`)                                           |
+| `--debug`    |       | Print full HTTP request/response trace to stderr                                           |
 
 ## Development
 

@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jbrazda/iics-cli/internal/config"
 )
 
 func TestLoadExcludePatterns(t *testing.T) {
@@ -48,5 +50,48 @@ func TestApplyMissingTransitivePolicy(t *testing.T) {
 	}
 	if got[0].Location != "Explore/A.PROCESS" || got[1].Location != "Explore/B.PROCESS" {
 		t.Fatalf("unexpected assets: %#v", got)
+	}
+}
+
+func TestParseTargetProfileMap(t *testing.T) {
+	m, err := parseTargetProfileMap("TST=tst-prof,qa=qa-prof")
+	if err != nil {
+		t.Fatalf("parseTargetProfileMap() error = %v", err)
+	}
+	if m["TST"] != "tst-prof" || m["QA"] != "qa-prof" {
+		t.Fatalf("unexpected map: %#v", m)
+	}
+}
+
+func TestResolveProfileNameForTargetExplicitMissing(t *testing.T) {
+	cfg := &config.Config{
+		Profiles: map[string]*config.Profile{
+			"tst-prof": {Username: "u", Password: "p", Region: "USE4"},
+		},
+	}
+	_, explicit, err := resolveProfileNameForTarget(cfg, "QA", map[string]string{"QA": "qa-prof"})
+	if err == nil {
+		t.Fatalf("expected error for missing explicitly mapped profile")
+	}
+	if !explicit {
+		t.Fatalf("expected explicit mapping marker")
+	}
+}
+
+func TestResolveProfileNameForTargetImplicitCaseInsensitive(t *testing.T) {
+	cfg := &config.Config{
+		Profiles: map[string]*config.Profile{
+			"qa": {Username: "u", Password: "p", Region: "USE4"},
+		},
+	}
+	name, explicit, err := resolveProfileNameForTarget(cfg, "QA", nil)
+	if err != nil {
+		t.Fatalf("resolveProfileNameForTarget() error = %v", err)
+	}
+	if explicit {
+		t.Fatalf("expected implicit resolution")
+	}
+	if name != "qa" {
+		t.Fatalf("name = %q, want qa", name)
 	}
 }

@@ -3,11 +3,14 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -145,6 +148,7 @@ func newReleasePlanCmd() *cobra.Command {
 		outputRoot       string
 		fullPackageCfg   string
 		validTargets     string
+		targetProfileMap string
 		addMissingTrans  bool
 		packageFieldsRaw string
 		publishFieldsRaw string
@@ -153,6 +157,15 @@ func newReleasePlanCmd() *cobra.Command {
 		Use:   "plan",
 		Short: "Generate per-environment package and publish CSV files",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			slog.Info("release plan: starting",
+				"manifest", manifestPath,
+				"outputRoot", outputRoot,
+				"fullPackageConfig", fullPackageCfg,
+				"validTargets", strings.TrimSpace(validTargets),
+				"targetProfileMap", strings.TrimSpace(targetProfileMap),
+				"addMissingTransitiveDeps", addMissingTrans,
+			)
+
 			data, err := os.ReadFile(manifestPath)
 			if err != nil {
 				return fmt.Errorf("reading manifest: %w", err)
@@ -167,13 +180,28 @@ func newReleasePlanCmd() *cobra.Command {
 			}
 
 			opts := manifest.Options
+			slog.Info("release plan: manifest loaded",
+				"mode", string(opts.Mode),
+				"tag", opts.Tag,
+				"targets", strings.Join(opts.Targets, ","),
+				"includeConnectors", opts.IncludeConnectors,
+				"connectorsOnly", opts.ConnectorsOnly,
+				"excludeFile", opts.ExcludeFile,
+			)
 			excludes, err := release.LoadExcludePatterns(opts.ExcludeFile)
 			if err != nil {
 				return err
 			}
+			slog.Info("release plan: exclude policy loaded", "patterns", len(excludes))
 
 			packageFields := splitCSVFields(packageFieldsRaw, []string{"location", "dependency", "type", "path"})
 			publishFields := splitCSVFields(publishFieldsRaw, []string{"location", "dependency"})
+			slog.Info("release plan: output fields resolved",
+				"packageFields", strings.Join(packageFields, ","),
+				"publishFields", strings.Join(publishFields, ","),
+			)
+			infoEnabled := slog.Default().Enabled(context.Background(), slog.LevelInfo)
+			logWriter := cmd.ErrOrStderr()
 
 			if opts.Mode == release.ModeFullDeployment {
 				for _, env := range opts.Targets {
@@ -192,7 +220,16 @@ func newReleasePlanCmd() *cobra.Command {
 					if writeErr := release.WriteAssetsCSV(filepath.Join(envDir, "publish_assets.csv"), nil, publishFields); writeErr != nil {
 						return writeErr
 					}
+					slog.Info("release plan: full mode files generated",
+						"environment", env,
+						"packageFile", targetCfg,
+						"publishFile", filepath.Join(envDir, "publish_assets.csv"),
+					)
 				}
+				slog.Info("release plan: completed full mode",
+					"targets", strings.Join(opts.Targets, ","),
+					"outputRoot", outputRoot,
+				)
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Generated full-deployment plan files.")
 				return nil
 			}
@@ -205,20 +242,72 @@ func newReleasePlanCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			slog.Info("release plan: dependencies resolved", "count", len(assets))
+			if infoEnabled {
+				if err := renderTypeCountTable(logWriter, "release plan: dependency totals by type", release.AssetCountsByType(assets), len(assets)); err != nil {
+					return err
+				}
+			}
+
 			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.ConnectorsOnly, excludes)
+			if infoEnabled {
+				slog.Info("release plan: dependency status table")
+				if err := renderDependencyStatusTable(
+					context.Background(),
+					logWriter,
+					allFiltered,
+					opts.Targets,
+					release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+				); err != nil {
+					return err
+				}
+				if err := renderTypeCountTable(logWriter, "release plan: policy-filtered totals by type", release.AssetCountsByType(allFiltered), len(allFiltered)); err != nil {
+					return err
+				}
+			}
 			connectorUnion := make(map[string]release.Asset)
+			filesWritten := 0
 
 			for _, env := range opts.Targets {
+				slog.Info("release plan: processing target", "environment", env)
 				envAssets := allFiltered
 				if addMissingTrans {
-					envFiltered, filterErr := release.FilterMissingTransitiveForTarget(context.Background(), env, allFiltered)
+					envFiltered, filterErr := release.FilterMissingTransitiveForTarget(
+						context.Background(),
+						env,
+						allFiltered,
+						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+					)
 					if filterErr != nil {
 						return filterErr
 					}
 					envAssets = envFiltered
+					slog.Info("release plan: missing-transitive filter applied",
+						"environment", env,
+						"before", len(allFiltered),
+						"after", len(envAssets),
+					)
 				}
 				publishAssets := release.PublishAssets(envAssets)
 				connectorAssets := release.ConnectorAssets(envAssets)
+				if infoEnabled {
+					if err := renderTypeCountTable(
+						logWriter,
+						fmt.Sprintf("release plan: package totals by type for %s", env),
+						release.AssetCountsByType(envAssets),
+						len(envAssets),
+					); err != nil {
+						return err
+					}
+					if err := renderTypeCountTable(
+						logWriter,
+						fmt.Sprintf("release plan: publish totals by type for %s", env),
+						release.AssetCountsByType(publishAssets),
+						len(publishAssets),
+					); err != nil {
+						return err
+					}
+				}
 				for _, ca := range connectorAssets {
 					connectorUnion[ca.Location] = ca
 				}
@@ -230,9 +319,16 @@ func newReleasePlanCmd() *cobra.Command {
 				if err := release.WriteAssetsCSV(filepath.Join(envDir, "tag_build.package.csv"), envAssets, packageFields); err != nil {
 					return err
 				}
+				filesWritten++
 				if err := release.WriteAssetsCSV(filepath.Join(envDir, "publish_assets.csv"), publishAssets, publishFields); err != nil {
 					return err
 				}
+				filesWritten++
+				slog.Info("release plan: target files generated",
+					"environment", env,
+					"packageFile", filepath.Join(envDir, "tag_build.package.csv"),
+					"publishFile", filepath.Join(envDir, "publish_assets.csv"),
+				)
 			}
 			if opts.IncludeConnectors {
 				connectorAssets := make([]release.Asset, 0, len(connectorUnion))
@@ -248,7 +344,24 @@ func newReleasePlanCmd() *cobra.Command {
 				if err := release.WriteAssetsCSV(filepath.Join(outputRoot, "connectors.package.csv"), connectorAssets, packageFields); err != nil {
 					return err
 				}
+				filesWritten++
+				if infoEnabled {
+					if err := renderTypeCountTable(
+						logWriter,
+						"release plan: connector totals by type",
+						release.AssetCountsByType(connectorAssets),
+						len(connectorAssets),
+					); err != nil {
+						return err
+					}
+				}
+				slog.Info("release plan: connectors file generated", "connectorsFile", filepath.Join(outputRoot, "connectors.package.csv"))
 			}
+			slog.Info("release plan: completed selective mode",
+				"targets", strings.Join(opts.Targets, ","),
+				"outputRoot", outputRoot,
+				"filesWritten", filesWritten,
+			)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Generated selective plan files for targets: %s\n", strings.Join(opts.Targets, ","))
 			return nil
 		},
@@ -257,6 +370,7 @@ func newReleasePlanCmd() *cobra.Command {
 	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics/import", "output root directory for generated files")
 	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/all_exclude_connections.package.csv", "full-deployment package config file to copy per environment")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
+	cmd.Flags().StringVar(&targetProfileMap, "target-profile-map", "", "comma-separated target to profile map (TARGET=profile), overrides IICS_TARGET_PROFILE_MAP")
 	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")
 	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,dependency,type,path", "fields for generated package csv files")
 	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,dependency", "fields for generated publish csv files")
@@ -276,4 +390,75 @@ func splitCSVFields(raw string, fallback []string) []string {
 		return fallback
 	}
 	return fields
+}
+
+func renderDependencyStatusTable(
+	ctx context.Context,
+	w io.Writer,
+	assets []release.Asset,
+	targets []string,
+	opts release.TargetResolutionOptions,
+) error {
+	tableRows := make([]map[string]interface{}, len(assets))
+	for i, dep := range assets {
+		row := map[string]interface{}{
+			"id":         dep.Location,
+			"path":       dep.Path,
+			"type":       dep.Type,
+			"location":   dep.Location,
+			"dependency": dep.Dependency,
+		}
+		tableRows[i] = row
+	}
+
+	for _, target := range targets {
+		validations, err := release.ValidateAssetsForTarget(ctx, target, assets, opts)
+		if err != nil {
+			return fmt.Errorf("profile %q: %w", target, err)
+		}
+		key := strings.ReplaceAll(target, "-", "_")
+		for i := range tableRows {
+			tableRows[i]["status_"+key] = validations[i].Status
+			tableRows[i]["warning_"+key] = validations[i].Warning
+		}
+	}
+
+	cols := []output.Column{
+		{Header: "LOCATION", Field: "location"},
+		{Header: "DEPENDENCY", Field: "dependency", Width: 12},
+	}
+	for _, prof := range targets {
+		key := strings.ReplaceAll(prof, "-", "_")
+		cols = append(cols, output.Column{
+			Header: fmt.Sprintf("STATUS (%s)", prof),
+			Field:  "status_" + key,
+			Func:   makeProfileStatusFunc(key),
+		})
+	}
+	return renderThemedTable(w, tableRows, cols)
+}
+
+func renderTypeCountTable(w io.Writer, title string, counts []release.AssetTypeCount, total int) error {
+	slog.Info(title)
+	rows := make([]map[string]interface{}, 0, len(counts)+1)
+	for _, c := range counts {
+		rows = append(rows, map[string]interface{}{
+			"type":  c.Type,
+			"count": c.Count,
+		})
+	}
+	rows = append(rows, map[string]interface{}{
+		"type":  "TOTAL",
+		"count": total,
+	})
+	return renderThemedTable(w, rows, []output.Column{
+		{Header: "TYPE", Field: "type"},
+		{Header: "COUNT", Field: "count"},
+	})
+}
+
+func renderThemedTable(w io.Writer, rows interface{}, columns []output.Column) error {
+	cfg, _ := loadConfig() // best-effort; nil cfg falls back to defaults
+	f := output.New(output.FormatTable, w, resolveTableStyle(cfg))
+	return f.Format(rows, columns)
 }
