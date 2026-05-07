@@ -33,6 +33,14 @@ var publishableTypes = map[string]bool{
 	"TASKFLOW":             true,
 }
 
+var publishTypeRank = map[string]int{
+	"AI_SERVICE_CONNECTOR": 0,
+	"AI_CONNECTION":        1,
+	"PROCESS":              2,
+	"GUIDE":                3,
+	"TASKFLOW":             4,
+}
+
 var connectorTypes = map[string]bool{
 	"AI_SERVICE_CONNECTOR": true,
 	"AI_CONNECTION":        true,
@@ -209,7 +217,17 @@ func PublishAssets(assets []Asset) []Asset {
 			out = append(out, a)
 		}
 	}
+	sort.SliceStable(out, func(i, j int) bool {
+		return publishTypeRankForAsset(out[i].Type) < publishTypeRankForAsset(out[j].Type)
+	})
 	return out
+}
+
+func publishTypeRankForAsset(assetType string) int {
+	if rank, ok := publishTypeRank[assetType]; ok {
+		return rank
+	}
+	return 99
 }
 
 func FilterMissingTransitiveForTarget(ctx context.Context, targetProfileName string, assets []Asset, opts TargetResolutionOptions) ([]Asset, error) {

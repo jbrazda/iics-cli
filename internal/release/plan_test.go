@@ -53,6 +53,41 @@ func TestApplyMissingTransitivePolicy(t *testing.T) {
 	}
 }
 
+func TestPublishAssetsPublishOrder(t *testing.T) {
+	input := []Asset{
+		{Location: "Explore/A.PROCESS", Type: "PROCESS"},
+		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION"},
+		{Location: "Explore/C.GUIDE", Type: "GUIDE"},
+		{Location: "Explore/D.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR"},
+		{Location: "Explore/E.TASKFLOW", Type: "TASKFLOW"},
+	}
+	got := PublishAssets(input)
+	if len(got) != 5 {
+		t.Fatalf("len = %d, want 5", len(got))
+	}
+	wantTypes := []string{"AI_SERVICE_CONNECTOR", "AI_CONNECTION", "PROCESS", "GUIDE", "TASKFLOW"}
+	for i, want := range wantTypes {
+		if got[i].Type != want {
+			t.Fatalf("type[%d] = %q, want %q", i, got[i].Type, want)
+		}
+	}
+}
+
+func TestPublishAssetsStableWithinType(t *testing.T) {
+	input := []Asset{
+		{Location: "Explore/Conn1.AI_CONNECTION", Type: "AI_CONNECTION"},
+		{Location: "Explore/Proc.PROCESS", Type: "PROCESS"},
+		{Location: "Explore/Conn2.AI_CONNECTION", Type: "AI_CONNECTION"},
+	}
+	got := PublishAssets(input)
+	if len(got) != 3 {
+		t.Fatalf("len = %d, want 3", len(got))
+	}
+	if got[0].Location != "Explore/Conn1.AI_CONNECTION" || got[1].Location != "Explore/Conn2.AI_CONNECTION" {
+		t.Fatalf("AI_CONNECTION relative order changed: %#v", got)
+	}
+}
+
 func TestParseTargetProfileMap(t *testing.T) {
 	m, err := parseTargetProfileMap("TST=tst-prof,qa=qa-prof")
 	if err != nil {

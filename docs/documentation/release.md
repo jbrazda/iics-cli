@@ -83,7 +83,8 @@ With `--verbose`, INFO logs include:
 For `tag-based` mode:
 
 - `tag_build.package.csv`
-- `publish_assets.csv`
+- `publish_assets.csv` (ordered for publish execution: `AI_SERVICE_CONNECTOR`,
+  `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`, matching `publish.md`)
 - optional global `target/iics/import/connectors.package.csv`
 - with `--add-missing-transitive-deps`: explicit assets are always included; transitive
   assets are included only when missing in the specific target environment profile

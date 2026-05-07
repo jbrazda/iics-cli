@@ -51,13 +51,13 @@ expects. This is the recommended source for generating publish lists.
 
 ### Supported asset types
 
-| Type suffix | Asset type |
-| ----------- | ---------- |
-| `AI_SERVICE_CONNECTOR` | Service connector |
-| `AI_CONNECTION` | Application integration connection |
-| `PROCESS` | Process |
-| `GUIDE` | Guide |
-| `TASKFLOW` | Taskflow |
+| Type suffix            | Asset type                         |
+|------------------------|------------------------------------|
+| `AI_SERVICE_CONNECTOR` | Service connector                  |
+| `AI_CONNECTION`        | Application integration connection |
+| `PROCESS`              | Process                            |
+| `GUIDE`                | Guide                              |
+| `TASKFLOW`             | Taskflow                           |
 
 ## Publish Order
 
@@ -65,13 +65,13 @@ Assets are automatically sorted in dependency order before being submitted to th
 regardless of the order they appear in the input file or piped input. This ensures that
 dependencies are published before the assets that depend on them.
 
-| Order | Type suffix | Asset type |
-| ----- | ----------- | ---------- |
-| 1 | `AI_SERVICE_CONNECTOR` | Service connector |
-| 2 | `AI_CONNECTION` | Application integration connection |
-| 3 | `PROCESS` | Process |
-| 4 | `GUIDE` | Guide |
-| 5 | `TASKFLOW` | Taskflow |
+| Order | Type suffix            | Asset type                         |
+|-------|------------------------|------------------------------------|
+| 1     | `AI_SERVICE_CONNECTOR` | Service connector                  |
+| 2     | `AI_CONNECTION`        | Application integration connection |
+| 3     | `PROCESS`              | Process                            |
+| 4     | `GUIDE`                | Guide                              |
+| 5     | `TASKFLOW`             | Taskflow                           |
 
 Within each type group the original relative order from the input file is preserved
 (stable sort). Assets of unknown type are placed at the end.
