@@ -147,7 +147,7 @@ engine, so dependency recursion behavior is consistent across both commands.
 
 | Flag                   | Short | Type     | Required | Default                                           | Description                                                                |
 |------------------------|-------|----------|----------|---------------------------------------------------|----------------------------------------------------------------------------|
-| `--id`                 |       | string   |          |                                                   | Object ID to inspect (or pipe a JSON array from `objects list`)            |
+| `--id`                 |       | string   |          |                                                   | Object ID to inspect (or pipe JSON/CSV/YAML rows from `objects list`)      |
 | `--tag`                |       | string   |          |                                                   | Tag name used to resolve seed objects before traversal                     |
 | `--ref-type`           |       | string   |          |                                                   | Reference direction: `uses` or `usedBy` (default: both)                    |
 | `--limit`              |       | int      |          | 0 (all)                                           | Max results; 0 fetches all pages in batches of 50                          |
@@ -162,9 +162,9 @@ engine, so dependency recursion behavior is consistent across both commands.
 
 All [global flags](../../README.md#global-flags) apply.
 
-When `--id` is omitted and stdin is not a terminal, a JSON array is read from stdin
-(e.g. piped from `objects list --output json`). Dependencies for all input objects
-are collected and deduplicated.
+When `--id` is omitted and stdin is not a terminal, stdin is auto-detected as JSON,
+CSV, or YAML (for example from `objects list --output json|csv|yaml`). Dependencies
+for all input objects are collected and deduplicated.
 
 With `--publish`, filtering is applied to output rows only; traversal still walks through
 non-publishable dependency nodes so downstream publishable dependencies are included.
@@ -211,6 +211,14 @@ iics objects dependencies --id "$ID" --ref-type uses --output json
 iics objects list -q "tag==Project_sprint_9" --output json \
   | iics objects dependencies --ref-type uses
 
+# Same stdin flow with CSV output from objects list
+iics objects list -q "tag==Project_sprint_9" --output csv \
+  | iics objects dependencies --ref-type uses
+
+# Same stdin flow with YAML output from objects list
+iics objects list -q "tag==Project_sprint_9" --output yaml \
+  | iics objects dependencies --ref-type uses
+
 # Resolve seed objects directly from tag (no stdin pipe)
 iics objects dependencies --tag Project_sprint_9 --ref-type uses
 
@@ -253,6 +261,14 @@ iics objects dependencies --id $obj.id --ref-type uses --output json
 
 # Find all dependencies of tagged objects (multi-object mode via stdin pipe)
 iics objects list -q "tag==Project_sprint_9" --output json `
+  | iics objects dependencies --ref-type uses
+
+# Same stdin flow with CSV output from objects list
+iics objects list -q "tag==Project_sprint_9" --output csv `
+  | iics objects dependencies --ref-type uses
+
+# Same stdin flow with YAML output from objects list
+iics objects list -q "tag==Project_sprint_9" --output yaml `
   | iics objects dependencies --ref-type uses
 
 # Validate dependencies across multiple target environments

@@ -11,8 +11,10 @@
 
 ## PR Details
 
-- PR Author: [Jaroslav Brazda](mailto:john.doe@example.com)
-- PR Link: [<PR Link>](<PR URL>)
+> TODO: The PR details will be populated when the manifest is generated as part of the CI Pipeline execution. This section is intended to provide context on the source PR that triggered the release generation and may include details such as PR author, link to the PR, summary of changes, etc.
+
+- PR Author: [John Doe](mailto:john.doe@example.com)
+- PR Link: [123479](<PR URL>)
 
 ### Commits
 
@@ -48,66 +50,66 @@ Included items with transitive dependencies:
 ## Deployment Dependency Status Summary
 
 | LOCATION                                                                                 | DEPENDENCY | STATUS (PROD) | STATUS (QA) | STATUS (TST) |
-|------------------------------------------------------------------------------------------|------------|---------------|-------------|--------------|
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION             | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION               | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION                 | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION                 | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION                     | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION                  | explicit   | missing       | found       | found        |
-| Explore/Connections/Natl APIs/EntityMeshServiceConnection.AI_CONNECTION                  | transitive | missing       | found       | found        |
-| Explore/Connections/Salesforce/SalesforceMetadata.AI_CONNECTION                          | transitive | found         | found       | found        |
-| Explore/DAS/Connections/DataAccessService.AI_CONNECTION                                  | transitive | found         | found       | found        |
-| Explore/Tools/Connections/IPaaS-Configuration-DB.AI_CONNECTION                           | transitive | found         | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR      | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR          | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR          | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR              | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR           | explicit   | missing       | found       | found        |
-| Explore/Connectors/Natl APIs/EntityMeshService.AI_SERVICE_CONNECTOR                      | transitive | missing       | found       | found        |
-| Explore/Connectors/Salesforce/SalesforceMetadata.AI_SERVICE_CONNECTOR                    | transitive | found         | found       | found        |
-| Explore/DAS/Connectors/DataAccessService.AI_SERVICE_CONNECTOR                            | transitive | found         | found       | found        |
-| Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE                                   | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE                                     | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE                                       | explicit   | missing       | found       | found        |
-| Explore/Logging/Guides/SP Show Process Links.GUIDE                                       | transitive | found         | found       | found        |
-| Explore/Logging/Guides/iPaaS Job View DB.GUIDE                                           | transitive | found         | found       | found        |
-| Explore/Tools/Guides/iPaaS Configuration Manager.GUIDE                                   | transitive | found         | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS                | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS                       | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS                       | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS             | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS                    | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS                           | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS                    | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS                   | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS                 | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS              | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS                    | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS                       | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS                        | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS                        | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS                   | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS                        | explicit   | missing       | found       | found        |
-| Explore/DAS/Processes/execMultiSQLProxy.PROCESS                                          | transitive | found         | found       | found        |
-| Explore/Tools/Processes/SP-Import-Configuration.PROCESS                                  | transitive | found         | found       | found        |
-| Explore/Tools/ProxyProcesses/SP-IPaaS-Encrypt-NA.PROCESS                                 | transitive | found         | found       | found        |
-| Explore/Tools/ProxyProcesses/SP-ReadConfiguration.PROCESS                                | transitive | found         | found       | found        |
-| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveParameters.PROCESS_OBJECT         | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchParameters.PROCESS_OBJECT             | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchRequest.PROCESS_OBJECT                | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieveParameters.PROCESS_OBJECT             | explicit   | missing       | found       | found        |
-| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearchParameters.PROCESS_OBJECT                 | explicit   | missing       | found       | found        |
-| Explore/Logging/ProcessObjects/CreateJobLogEventRequest.PROCESS_OBJECT                   | transitive | found         | found       | found        |
-| Explore/Logging/ProcessObjects/FaultInfo.PROCESS_OBJECT                                  | transitive | found         | found       | found        |
-| Explore/Logging/ProcessObjects/JobEvent.PROCESS_OBJECT                                   | transitive | found         | found       | found        |
-| Explore/Logging/ProcessObjects/JobEventView.PROCESS_OBJECT                               | transitive | found         | found       | found        |
-| Explore/Logging/ProcessObjects/JobLogRecord.PROCESS_OBJECT                               | transitive | found         | found       | found        |
-| Explore/Logging/ProcessObjects/ProcessExecutionContext.PROCESS_OBJECT                    | transitive | found         | found       | found        |
-| Explore/Tools/ProcessObjects/CachePutItem.PROCESS_OBJECT                                 | transitive | found         | found       | found        |
-| Explore/Tools/ProcessObjects/CachePutRequest.PROCESS_OBJECT                              | transitive | found         | found       | found        |
-| Explore/Tools/ProcessObjects/ConfigurationProperty.PROCESS_OBJECT                        | transitive | found         | found       | found        |
+|------------------------------------------------------------------------------------------|:----------:|:-------------:|:-----------:|:------------:|
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_CONNECTION             |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchConnector.AI_CONNECTION               |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_CONNECTION                 |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_CONNECTION                 |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSerach-API-v1.AI_CONNECTION                     |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_CONNECTION                  |  explicit  |    missing    |    found    |    found     |
+| Explore/Connections/Natl APIs/EntityMeshServiceConnection.AI_CONNECTION                  | transitive |    missing    |    found    |    found     |
+| Explore/Connections/Salesforce/SalesforceMetadata.AI_CONNECTION                          | transitive |     found     |    found    |    found     |
+| Explore/DAS/Connections/DataAccessService.AI_CONNECTION                                  | transitive |     found     |    found    |    found     |
+| Explore/Tools/Connections/IPaaS-Configuration-DB.AI_CONNECTION                           | transitive |     found     |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve-API-v1.AI_SERVICE_CONNECTOR      |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchServiceConnector.AI_SERVICE_CONNECTOR |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieve-API-v1.AI_SERVICE_CONNECTOR          |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/LocationSearch-API-v1.AI_SERVICE_CONNECTOR          |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearch-API-v1.AI_SERVICE_CONNECTOR              |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleSearch-API-v1.AI_SERVICE_CONNECTOR           |  explicit  |    missing    |    found    |    found     |
+| Explore/Connectors/Natl APIs/EntityMeshService.AI_SERVICE_CONNECTOR                      | transitive |    missing    |    found    |    found     |
+| Explore/Connectors/Salesforce/SalesforceMetadata.AI_SERVICE_CONNECTOR                    | transitive |     found     |    found    |    found     |
+| Explore/DAS/Connectors/DataAccessService.AI_SERVICE_CONNECTOR                            | transitive |     found     |    found    |    found     |
+| Explore/ClaimCenter_GW/Guides/TestPolicyRetrieve.GUIDE                                   |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/Guides/TestPolicySearch.GUIDE                                     |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/Guides/TestRiskSearch.GUIDE                                       |  explicit  |    missing    |    found    |    found     |
+| Explore/Logging/Guides/SP Show Process Links.GUIDE                                       | transitive |     found     |    found    |    found     |
+| Explore/Logging/Guides/iPaaS Job View DB.GUIDE                                           | transitive |     found     |    found    |    found     |
+| Explore/Tools/Guides/iPaaS Configuration Manager.GUIDE                                   | transitive |     found     |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/MP-PolicyRetrieve-CAI-v1.PROCESS                |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveWIP.PROCESS                       |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieve_v1.PROCESS                       |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/SP-SF-PolicyRetrieve-CAI-v1.PROCESS             |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/MP-PolicySearch-CAI-v1.PROCESS                    |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearch_v1.PROCESS                           |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/SP-PolicySearch-CAI-v1.PROCESS                    |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/LocationRiskRetrieve_v1.PROCESS                   |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/MP-RiskRetrieve_v1-CAI-v1.PROCESS                 |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/SP-SF-RiskRetrieve_v1-CAI-v1.PROCESS              |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/VehicleRiskRetrieve_v1.PROCESS                    |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/LocationRiskSearch_v1.PROCESS                       |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/MP-RiskSearch-CAI-v1.PROCESS                        |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/SP-RiskSearch-CAI-v1.PROCESS                        |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/SP-SF-RiskSearch-CAI-vOLD.PROCESS                   |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/VehicleRiskSearch_v1.PROCESS                        |  explicit  |    missing    |    found    |    found     |
+| Explore/DAS/Processes/execMultiSQLProxy.PROCESS                                          | transitive |     found     |    found    |    found     |
+| Explore/Tools/Processes/SP-Import-Configuration.PROCESS                                  | transitive |     found     |    found    |    found     |
+| Explore/Tools/ProxyProcesses/SP-IPaaS-Encrypt-NA.PROCESS                                 | transitive |     found     |    found    |    found     |
+| Explore/Tools/ProxyProcesses/SP-ReadConfiguration.PROCESS                                | transitive |     found     |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicyRetrieve_v1/PolicyRetrieveParameters.PROCESS_OBJECT         |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchParameters.PROCESS_OBJECT             |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/PolicySearch_v1/PolicySearchRequest.PROCESS_OBJECT                |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskRetrieve_v1/RiskRetrieveParameters.PROCESS_OBJECT             |  explicit  |    missing    |    found    |    found     |
+| Explore/ClaimCenter_GW/RiskSearch_v1/RiskSearchParameters.PROCESS_OBJECT                 |  explicit  |    missing    |    found    |    found     |
+| Explore/Logging/ProcessObjects/CreateJobLogEventRequest.PROCESS_OBJECT                   | transitive |     found     |    found    |    found     |
+| Explore/Logging/ProcessObjects/FaultInfo.PROCESS_OBJECT                                  | transitive |     found     |    found    |    found     |
+| Explore/Logging/ProcessObjects/JobEvent.PROCESS_OBJECT                                   | transitive |     found     |    found    |    found     |
+| Explore/Logging/ProcessObjects/JobEventView.PROCESS_OBJECT                               | transitive |     found     |    found    |    found     |
+| Explore/Logging/ProcessObjects/JobLogRecord.PROCESS_OBJECT                               | transitive |     found     |    found    |    found     |
+| Explore/Logging/ProcessObjects/ProcessExecutionContext.PROCESS_OBJECT                    | transitive |     found     |    found    |    found     |
+| Explore/Tools/ProcessObjects/CachePutItem.PROCESS_OBJECT                                 | transitive |     found     |    found    |    found     |
+| Explore/Tools/ProcessObjects/CachePutRequest.PROCESS_OBJECT                              | transitive |     found     |    found    |    found     |
+| Explore/Tools/ProcessObjects/ConfigurationProperty.PROCESS_OBJECT                        | transitive |     found     |    found    |    found     |
 
 ## Release Plan
 
@@ -145,7 +147,7 @@ target
 | PROCESS_OBJECT       |            5 |          5 |           5 |
 | TOTAL                |           38 |         36 |          36 |
 
-> NOTE: Package content includes all items that are included in the release package for each target + any transitive dependencies that are not explicitly included but missing in the target Environment. The counts may differ from the total included items due to explicit exclusions or differences in dependencies.
+> NOTE: Package content includes all items that are included in the release package for each target + any transitive dependencies that are not explicitly included but missing in the target Environment. The counts may differ from the total included items due to explicit exclusions or differences in dependencies. See the generated `tag_build.package.csv` or `publish_assets.csv` files for details on the assets included for each target.
 
 ## Publishable Assets per Target
 
@@ -157,4 +159,4 @@ target
  | PROCESS              |           16 |         16 |          16 |
  | TOTAL                |           33 |         31 |          31 |
 
- > NOTE: Publishable assets are those that are included in the release package for each target or resolved as a transitive dependency. The counts may differ from the total included items due to target-specific exclusions or differences in dependencies.
+ > NOTE: Publishable assets are those that are included in the release package for each target or resolved as a transitive dependency. The counts may differ from the total included items due to target-specific exclusions or differences in dependencies. See the generated `publish_assets.csv` files for details on the assets included for each target.

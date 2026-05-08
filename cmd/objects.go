@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -245,8 +244,9 @@ func newObjectsDependenciesCmd() *cobra.Command {
 		Short: "Find asset dependencies",
 		Long: `Find what objects a given asset depends on, or which assets depend on it.
 
-When --id is omitted and stdin is not a terminal, a JSON array of objects is read
-from stdin (e.g. piped from "objects list --output json"). Dependencies for all
+When --id is omitted and stdin is not a terminal, object rows are read from stdin
+with auto-detection for JSON, CSV, and YAML (e.g. piped from
+"objects list --output json/csv/yaml"). Dependencies for all
 input objects are collected and deduplicated by appContextId.
 
 Without --limit all dependency pages are fetched automatically in batches of 50.
@@ -259,6 +259,8 @@ correct publish dependency order (connectors before connections before processes
 		Example: `  iics objects dependencies --id <id>
   iics objects dependencies --id <id> --ref-type uses
   iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses
+  iics objects list -q "tag==sprint9" --output csv | iics objects dependencies --ref-type uses
+  iics objects list -q "tag==sprint9" --output yaml | iics objects dependencies --ref-type uses
   iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --targets dev,qa
   iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --publish | iics publish run
   iics objects list -q "tag==sprint9" --output json | iics objects dependencies --ref-type uses --targets qa --publish | iics publish run --profile qa`,
@@ -269,7 +271,7 @@ correct publish dependency order (connectors before connections before processes
 				return err
 			}
 
-			// Collect input IDs from --id or stdin JSON array.
+			// Collect input IDs from --id, --tag, or auto-detected stdin rows.
 			var ids []string
 			if objectID != "" && tagName != "" {
 				return fmt.Errorf("--id and --tag are mutually exclusive")
@@ -293,19 +295,13 @@ correct publish dependency order (connectors before connections before processes
 				if readErr != nil {
 					return fmt.Errorf("reading stdin: %w", readErr)
 				}
-				var objs []struct {
-					ID string `json:"id"`
+				parsedIDs, parseErr := dependencies.ParseSeedIDsFromInput(data)
+				if parseErr != nil {
+					return parseErr
 				}
-				if unmarshalErr := json.Unmarshal(data, &objs); unmarshalErr != nil {
-					return fmt.Errorf("parsing stdin as JSON array: %w", unmarshalErr)
-				}
-				for _, o := range objs {
-					if o.ID != "" {
-						ids = append(ids, o.ID)
-					}
-				}
+				ids = append(ids, parsedIDs...)
 			} else {
-				return fmt.Errorf("--id is required (or pipe a JSON array from objects list)")
+				return fmt.Errorf("--id is required (or pipe JSON/CSV/YAML rows from objects list)")
 			}
 
 			if len(ids) == 0 {
