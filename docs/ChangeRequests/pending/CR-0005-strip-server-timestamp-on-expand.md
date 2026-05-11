@@ -13,8 +13,7 @@
 ## Status
 
 **Implemented / pending developer confirmation** - code is in `cmd/package.go`.
-R1 complete (no Informatica docs reference the field; structural analysis confirms it is safe to remove).
-R2 (round-trip import test against a live IICS dev org) still required before marking complete.
+R1 and R2 complete. Removal is confirmed safe - round-trip import to a live IICS dev org succeeds with zero errors and `checksumValid=true`.
 
 ---
 
@@ -203,7 +202,7 @@ contain XML files with the same timestamp element. If they do, `expandNestedZIP`
 | Item | Finding | Source |
 | ---- | ------- | ------ |
 | R1 - Informatica KB | **Safe to remove.** No mention of `CurrentServerDateTime` in `docs.informatica.com`, `knowledge.informatica.com`, or any Informatica community or GitHub source. The element is part of the Active Endpoints repository HTTP response envelope (`<aetgt:getResponse>`), not the asset design. It is a sibling of `<types1:Item>` (the actual asset content), not nested inside it. The original Informatica IICS Asset Management CLI dot-file sidecars (`.asset.json`) contain no trace of this field, confirming the official tooling does not use it when re-assembling packages. The field name - "Current**Server**DateTime" - denotes the server clock at response time, which has no meaning to an importer. | Web search across `docs.informatica.com`, `knowledge.informatica.com`, GitHub; structural analysis of `testdata/imports/ZZ_TEST_CLI_Extracted` dot-files; [jbrazda/icai-fault-alert-service](https://github.com/jbrazda/icai-fault-alert-service/blob/master/src/ipd/Explore/Alerting/ProcessObjects/alert-config.PROCESS_OBJECT.xml) |
-| R2 - Import test result | Pending - requires live IICS dev org round-trip test | |
+| R2 - Import test result | **SUCCESSFUL.** Full round-trip on dev org (2026-05-11): export 12 objects (31 files) -> expand (strip applied to 13 XML files) -> create -> import. All 28 imported objects reported SUCCESSFUL. Server returned `checksumValid=true`. No errors or warnings. | Live IICS dev org import job `9DE4KJ6zLdLbc7BcibqWmz` |
 | R3 - Nested ZIP XML files | Confirmed: nested ZIPs (DTEMPLATE, MTT) do not contain XML files with this element in observed testdata. `expandNestedZIP` patched defensively. | testdata/imports |
 
 ---
@@ -234,7 +233,7 @@ None. No new command, no new flags (unless R2 reveals a need for `--no-strip-tim
 ## Acceptance Criteria
 
 - [x] R1 - Informatica KB search complete; element confirmed safe to remove (see Research Findings).
-- [ ] R2 - Round-trip import test against live IICS dev org.
+- [x] R2 - Round-trip import test: SUCCESSFUL on dev org 2026-05-11 (all 28 objects, checksumValid=true, zero errors).
 - [x] R3 - Nested ZIP XML files confirmed; `expandNestedZIP` patched defensively.
 - [ ] `iics package expand` produces `.xml` files with no `CurrentServerDateTime` element (any namespace prefix).
 - [ ] `iics package create` on the stripped expanded directory produces a ZIP that IICS
