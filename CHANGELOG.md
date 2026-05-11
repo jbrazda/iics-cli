@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-11
+
+### Added
+
+- `expand` command strips `CurrentServerDateTime` elements from XML assets on expand,
+  preventing spurious diffs in source-controlled packages (CR-0005)
+- `objects dependencies` now accepts JSON, CSV, and YAML input via stdin for seed IDs,
+  supports `--targets` report across multiple profiles, and `--publish` to trigger
+  publication after dependency resolution (CR-0019)
+- Release plan output enforces publish order for dependent assets, ensuring correct
+  sequencing in verbose plan tables
+- Target-aware missing transitive dependency filtering: dependencies absent in a given
+  target org are filtered per-target rather than globally
+- Deploy target validation is now configurable via release manifest options
+- Dependency resolution enhancements: improved output export and connection lookup accuracy
+- `package create --manifest-file/-m` for manifest-driven selective packaging: accepts
+  JSON, CSV, YAML, or TXT format with format auto-detection; stdin pipe supported (CR-0023)
+- `package create --name/-n` overrides the default package name used in generated
+  `ContentsofExportPackage_<name>.csv` (CR-0023)
+- `package create --exclude-found-transitive` combined with `--status-target` filters
+  out transitive dependencies already present in the target org from the build manifest (CR-0023)
+- Artifact format detection centralized; YAML stdin auto-detection added (CR-0023)
+
+### Fixed
+
+- Export artifact key lookup reconciliation now correctly matches artifacts when keys are
+  reordered or partially specified
+- `objects list`, `objects dependencies`, and `package dependencies` now build location
+  strings with `SYS/` prefix for Connection and AgentGroup assets instead of the
+  incorrect `Explore/` prefix (BUG-0007)
+- `objects dependencies` default limit corrected; auto-pagination added; `location` field
+  now included in all dependency output (BUG-0006)
+- `ObjectDependenciesResponse` struct corrected to match actual IICS v3 API response shape
+- `ObjectReference` field tags and deduplication key fixed
+- Interactive `user create`/`user update` wizard now paginates groups and roles to avoid
+  hitting the API maximum limit
+- Replaced deprecated `reflect.Ptr` with `reflect.Pointer` (golangci-lint)
+
+### Changed
+
+- Go and GitHub Actions dependency bumps (group updates #18 and #19)
+
 ## [0.3.2] - 2026-04-09
 
 ### Added
