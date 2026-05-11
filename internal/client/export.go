@@ -65,6 +65,56 @@ type ArtifactEntry struct {
 	Type string
 }
 
+// ReconcileArtifactEntriesWithLookup applies lookup results back to artifact entries
+// using stable key matching rather than positional response order.
+func ReconcileArtifactEntriesWithLookup(entries []ArtifactEntry, results []LookupResult) []ArtifactEntry {
+	enriched := make([]ArtifactEntry, len(entries))
+	copy(enriched, entries)
+
+	pendingByKey := make(map[string][]int)
+	for i, e := range enriched {
+		if e.ID != "" {
+			continue
+		}
+		key := BuildLookupMatchKey(e.Path, e.Type)
+		pendingByKey[key] = append(pendingByKey[key], i)
+	}
+
+	popNext := func(key string) (int, bool) {
+		indexes := pendingByKey[key]
+		if len(indexes) == 0 {
+			return 0, false
+		}
+		next := indexes[0]
+		if len(indexes) == 1 {
+			delete(pendingByKey, key)
+		} else {
+			pendingByKey[key] = indexes[1:]
+		}
+		return next, true
+	}
+
+	for _, result := range results {
+		origIdx, ok := popNext(BuildLookupMatchKey(result.Path, result.Type))
+		if !ok {
+			origIdx, ok = popNext(BuildLookupMatchKey(result.Path, ""))
+			if !ok {
+				continue
+			}
+		}
+
+		enriched[origIdx].ID = result.ID
+		if enriched[origIdx].Path == "" {
+			enriched[origIdx].Path = result.Path
+		}
+		if enriched[origIdx].Type == "" {
+			enriched[origIdx].Type = result.Type
+		}
+	}
+
+	return enriched
+}
+
 // CreateExport starts an export job.
 func (c *Client) CreateExport(ctx context.Context, req *ExportRequest) (*ExportJob, error) {
 	var resp ExportJob

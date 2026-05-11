@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"net/http"
+	"strings"
 )
 
 // LookupObject specifies an object to look up by ID or path+type.
@@ -30,6 +31,14 @@ type LookupResult struct {
 // LookupResponse is the response from the lookup API.
 type LookupResponse struct {
 	Objects []LookupResult `json:"objects"`
+}
+
+// BuildLookupMatchKey builds a stable lookup reconciliation key from path and type.
+// Paths are normalized so equivalent forms ("/", "Explore/", "SYS/" prefixes) match.
+func BuildLookupMatchKey(path, objectType string) string {
+	normalizedPath := NormalizeLocationPath(path)
+	normalizedType := strings.TrimSpace(objectType)
+	return normalizedPath + "\x1f" + normalizedType
 }
 
 // Lookup resolves one or more objects by ID, path+type, or a mix.

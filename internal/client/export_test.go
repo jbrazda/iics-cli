@@ -393,3 +393,65 @@ abc456,,PROCESS
 		t.Errorf("entry 1: got id=%q", entries[1].ID)
 	}
 }
+
+func TestReconcileArtifactEntriesWithLookup_ReorderedAndPartial(t *testing.T) {
+	entries := []ArtifactEntry{
+		{Path: "Proj/A", Type: "MTT"},
+		{Path: "Proj/B", Type: "MTT"},
+		{Path: "Proj/C", Type: "MTT"},
+	}
+	results := []LookupResult{
+		{ID: "id-b", Path: "Proj/B", Type: "MTT"},
+		{ID: "id-c", Path: "Proj/C", Type: "MTT"},
+	}
+
+	got := ReconcileArtifactEntriesWithLookup(entries, results)
+
+	if got[0].ID != "" {
+		t.Fatalf("entry 0 ID = %q, want unresolved empty ID", got[0].ID)
+	}
+	if got[1].ID != "id-b" {
+		t.Fatalf("entry 1 ID = %q, want %q", got[1].ID, "id-b")
+	}
+	if got[2].ID != "id-c" {
+		t.Fatalf("entry 2 ID = %q, want %q", got[2].ID, "id-c")
+	}
+}
+
+func TestReconcileArtifactEntriesWithLookup_DuplicateKeys(t *testing.T) {
+	entries := []ArtifactEntry{
+		{Path: "Proj/Shared", Type: "MTT"},
+		{Path: "Proj/Shared", Type: "MTT"},
+	}
+	results := []LookupResult{
+		{ID: "id-1", Path: "Proj/Shared", Type: "MTT"},
+		{ID: "id-2", Path: "Proj/Shared", Type: "MTT"},
+	}
+
+	got := ReconcileArtifactEntriesWithLookup(entries, results)
+
+	if got[0].ID != "id-1" {
+		t.Fatalf("entry 0 ID = %q, want %q", got[0].ID, "id-1")
+	}
+	if got[1].ID != "id-2" {
+		t.Fatalf("entry 1 ID = %q, want %q", got[1].ID, "id-2")
+	}
+}
+
+func TestReconcileArtifactEntriesWithLookup_PathOnlyFallback(t *testing.T) {
+	entries := []ArtifactEntry{
+		{Path: "Explore/Proj/NoType"},
+	}
+	results := []LookupResult{
+		{ID: "id-x", Path: "Proj/NoType", Type: "DSS"},
+	}
+
+	got := ReconcileArtifactEntriesWithLookup(entries, results)
+
+	if got[0].ID != "id-x" {
+		t.Fatalf("entry ID = %q, want %q", got[0].ID, "id-x")
+	}
+	if got[0].Type != "DSS" {
+		t.Fatalf("entry type = %q, want %q", got[0].Type, "DSS")
+	}
+}

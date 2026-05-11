@@ -532,12 +532,10 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 
 	// Collect entries that require lookup (any entry missing an ID).
 	var lookupObjs []client.LookupObject
-	var lookupOrigIdx []int
 
-	for i, e := range enriched {
+	for _, e := range enriched {
 		if e.ID == "" {
 			lookupObjs = append(lookupObjs, client.LookupObject{Path: e.Path, Type: e.Type})
-			lookupOrigIdx = append(lookupOrigIdx, i)
 		}
 	}
 
@@ -550,18 +548,7 @@ func resolveExportObjects(ctx context.Context, c *client.Client, entries []clien
 		if err != nil {
 			return nil, nil, fmt.Errorf("looking up object IDs: %w", err)
 		}
-		for i, result := range resp.Objects {
-			if i < len(lookupOrigIdx) {
-				origIdx := lookupOrigIdx[i]
-				enriched[origIdx].ID = result.ID
-				if enriched[origIdx].Path == "" {
-					enriched[origIdx].Path = result.Path
-				}
-				if enriched[origIdx].Type == "" {
-					enriched[origIdx].Type = result.Type
-				}
-			}
-		}
+		enriched = client.ReconcileArtifactEntriesWithLookup(enriched, resp.Objects)
 		if verbose {
 			slog.Info("lookup complete", "resolved", len(resp.Objects))
 		}

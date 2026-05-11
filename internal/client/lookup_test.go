@@ -78,3 +78,39 @@ func TestLookupByPathAndType(t *testing.T) {
 		t.Errorf("expected ID xyz789, got %s", resp.Objects[0].ID)
 	}
 }
+
+func TestBuildLookupMatchKey(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		typ  string
+		want string
+	}{
+		{
+			name: "path and type",
+			path: "Default/MyTask",
+			typ:  "MTT",
+			want: "Default/MyTask\x1fMTT",
+		},
+		{
+			name: "path only",
+			path: "Explore/Default/MyTask",
+			typ:  "",
+			want: "Default/MyTask\x1f",
+		},
+		{
+			name: "sys normalized",
+			path: "/SYS/Agents/Group1",
+			typ:  "AgentGroup",
+			want: "Agents/Group1\x1fAgentGroup",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := BuildLookupMatchKey(tc.path, tc.typ); got != tc.want {
+				t.Fatalf("BuildLookupMatchKey(%q, %q) = %q, want %q", tc.path, tc.typ, got, tc.want)
+			}
+		})
+	}
+}
