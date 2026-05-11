@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -296,14 +297,21 @@ func stripServerTimestamp(data []byte) []byte {
 
 func newPackageCreateCmd() *cobra.Command {
 	var (
-		source string
-		target string
-		force  bool
+		source                  string
+		target                  string
+		force                   bool
+		manifestFile            string
+		packageName             string
+		excludeFoundTransitive  bool
+		excludeTargetStatusName string
 	)
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an IICS export ZIP package from a directory",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if excludeTargetStatusName != "" && !excludeFoundTransitive {
+				return fmt.Errorf("--status-target requires --exclude-found-transitive")
+			}
 			// 1. Validate source
 			fi, err := os.Stat(source)
 			if err != nil {
@@ -380,6 +388,85 @@ func newPackageCreateCmd() *cobra.Command {
 				fileContents[filepath.ToSlash(rel)] = data
 			}
 
+			manifestEntries, manifestStats, hasSelectionManifest, err := readPackageSelectionManifest(
+				manifestFile,
+				excludeFoundTransitive,
+				excludeTargetStatusName,
+			)
+			if err != nil {
+				return err
+			}
+			if hasSelectionManifest {
+				if len(manifestEntries) == 0 {
+					return fmt.Errorf("selection manifest is empty")
+				}
+				meta, metaErr := readExportMetadata("", absSource)
+				if metaErr != nil {
+					return fmt.Errorf("reading source metadata for selective packaging: %w", metaErr)
+				}
+
+				exported := make([]dependencies.ExportedObjectRef, 0, len(meta.ExportedObjects))
+				for _, o := range meta.ExportedObjects {
+					exported = append(exported, dependencies.ExportedObjectRef{
+						ObjectGUID: o.ObjectGUID,
+						ObjectName: o.ObjectName,
+						ObjectType: o.ObjectType,
+						Path:       o.Path,
+					})
+				}
+				selectedIDs, warnings, selErr := dependencies.SelectExportedObjects(manifestEntries, exported)
+				if selErr != nil {
+					return selErr
+				}
+				if len(selectedIDs) == 0 {
+					return fmt.Errorf("no assets matched selection manifest")
+				}
+				for _, w := range warnings {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: %s\n", w)
+				}
+				if verbose && excludeFoundTransitive {
+					_, _ = fmt.Fprintf(
+						cmd.OutOrStdout(),
+						"Selection filter: excluded %d transitive found rows using %s\n",
+						manifestStats.ExcludedTransitiveFound,
+						manifestStats.SelectedStatusColumnName,
+					)
+				}
+
+				selectedObjects := make([]exportedObject, 0, len(selectedIDs))
+				for _, o := range meta.ExportedObjects {
+					if selectedIDs[o.ObjectGUID] {
+						selectedObjects = append(selectedObjects, o)
+					}
+				}
+				if len(selectedObjects) == 0 {
+					return fmt.Errorf("selection manifest resolved no exported objects")
+				}
+
+				filtered := filterPackageFilesForSelection(fileContents, meta.ExportedObjects, selectedIDs)
+				if len(filtered) == 0 {
+					return fmt.Errorf("no package files remained after selection filtering")
+				}
+
+				meta.ExportedObjects = selectedObjects
+				metaData, marshalErr := json.MarshalIndent(meta, "", "  ")
+				if marshalErr != nil {
+					return fmt.Errorf("serializing filtered exportMetadata.v2.json: %w", marshalErr)
+				}
+				filtered["exportMetadata.v2.json"] = metaData
+
+				csvName := packageName
+				if csvName == "" {
+					csvName = strings.TrimSuffix(filepath.Base(target), filepath.Ext(target))
+				}
+				contentsCSV, csvErr := buildContentsOfExportPackageCSV(selectedObjects)
+				if csvErr != nil {
+					return csvErr
+				}
+				filtered["ContentsofExportPackage_"+csvName+".csv"] = contentsCSV
+				fileContents = filtered
+			}
+
 			// 4. Generate checksum from all collected files
 			chksum := generatePackageChecksum(fileContents)
 
@@ -441,6 +528,10 @@ func newPackageCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&source, "source", "s", "", "source directory (required)")
 	cmd.Flags().StringVarP(&target, "target", "t", "", "output ZIP file path (required)")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "overwrite existing output file")
+	cmd.Flags().StringVarP(&manifestFile, "manifest-file", "m", "", "inclusion manifest file (.txt/.csv/.json/.yaml); omit to read from stdin when piped")
+	cmd.Flags().StringVarP(&packageName, "name", "n", "", "package name override used for ContentsofExportPackage_<name>.csv")
+	cmd.Flags().BoolVar(&excludeFoundTransitive, "exclude-found-transitive", false, "exclude manifest rows where dependency is transitive and status is found in target")
+	cmd.Flags().StringVar(&excludeTargetStatusName, "status-target", "", "target key for STATUS (<target>) column (for example: qa); required when multiple STATUS columns exist")
 	_ = cmd.MarkFlagRequired("source")
 	_ = cmd.MarkFlagRequired("target")
 	return cmd
@@ -492,6 +583,140 @@ func generatePackageChecksum(files map[string][]byte) string {
 	}
 	sort.Strings(entries)
 	return strings.Join(entries, "\n") + "\n"
+}
+
+func hasPipedStdin() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice == 0
+}
+
+func readPackageSelectionManifest(
+	manifestFile string,
+	excludeFoundTransitive bool,
+	statusTarget string,
+) ([]client.ArtifactEntry, dependencies.BuildManifestStats, bool, error) {
+	stats := dependencies.BuildManifestStats{}
+	parseByFormat := func(data []byte, format, sourceLabel string) ([]client.ArtifactEntry, dependencies.BuildManifestStats, error) {
+		if format == "csv" {
+			return dependencies.ParseBuildManifestCSV(data, dependencies.BuildManifestParseOptions{
+				ExcludeFoundTransitive: excludeFoundTransitive,
+				TargetStatus:           statusTarget,
+			})
+		}
+		if excludeFoundTransitive {
+			return nil, stats, fmt.Errorf("--exclude-found-transitive currently supports csv manifests; got %s from %s", format, sourceLabel)
+		}
+		entries, err := client.ParseArtifactsReader(bytes.NewReader(data), format)
+		if err != nil {
+			return nil, stats, err
+		}
+		return entries, stats, nil
+	}
+
+	if manifestFile != "" {
+		data, err := os.ReadFile(manifestFile)
+		if err != nil {
+			return nil, stats, false, fmt.Errorf("reading --manifest-file: %w", err)
+		}
+		format := strings.ToLower(strings.TrimPrefix(filepath.Ext(manifestFile), "."))
+		if format == "yml" {
+			format = "yaml"
+		}
+		if format == "" {
+			format = client.DetectArtifactsFormat(data)
+		}
+		entries, parseStats, parseErr := parseByFormat(data, format, "--manifest-file")
+		if parseErr != nil {
+			return nil, stats, false, fmt.Errorf("parsing --manifest-file: %w", parseErr)
+		}
+		return entries, parseStats, true, nil
+	}
+	if !hasPipedStdin() {
+		return nil, stats, false, nil
+	}
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, stats, false, fmt.Errorf("reading stdin: %w", err)
+	}
+	if len(strings.TrimSpace(string(data))) == 0 {
+		return nil, stats, false, nil
+	}
+	format := detectDataFormat(data)
+	entries, parseStats, parseErr := parseByFormat(data, format, "stdin")
+	if parseErr != nil {
+		return nil, stats, false, fmt.Errorf("parsing selection manifest from stdin (%s): %w", format, parseErr)
+	}
+	return entries, parseStats, true, nil
+}
+
+func filterPackageFilesForSelection(
+	fileContents map[string][]byte,
+	allObjects []exportedObject,
+	selectedIDs map[string]bool,
+) map[string][]byte {
+	allObjectFiles := make(map[string]bool)
+	selectedObjectFiles := make(map[string]bool)
+	for _, o := range allObjects {
+		candidates := dependencies.ObjectChecksumCandidates(o.Path, o.ObjectName, o.ObjectType)
+		for _, c := range candidates {
+			if _, ok := fileContents[c]; ok {
+				allObjectFiles[c] = true
+				if selectedIDs[o.ObjectGUID] {
+					selectedObjectFiles[c] = true
+				}
+			}
+		}
+	}
+
+	out := make(map[string][]byte)
+	for path, data := range fileContents {
+		if path == "exportPackage.chksum" || path == "exportMetadata.v2.json" {
+			continue
+		}
+		if strings.HasPrefix(path, "ContentsofExportPackage_") && strings.HasSuffix(path, ".csv") {
+			continue
+		}
+		if allObjectFiles[path] {
+			if selectedObjectFiles[path] {
+				out[path] = data
+			}
+			continue
+		}
+		out[path] = data
+	}
+	return out
+}
+
+func buildContentsOfExportPackageCSV(objects []exportedObject) ([]byte, error) {
+	rows := make([][]string, 0, len(objects)+1)
+	rows = append(rows, []string{"objectPath", "objectName", "objectType", "id"})
+
+	sorted := make([]exportedObject, len(objects))
+	copy(sorted, objects)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		a := client.NormalizeLocationPath(sorted[i].Path) + "/" + sorted[i].ObjectName + "." + sorted[i].ObjectType
+		b := client.NormalizeLocationPath(sorted[j].Path) + "/" + sorted[j].ObjectName + "." + sorted[j].ObjectType
+		return a < b
+	})
+
+	for _, o := range sorted {
+		rows = append(rows, []string{
+			o.Path,
+			o.ObjectName,
+			o.ObjectType,
+			o.ObjectGUID,
+		})
+	}
+
+	var b bytes.Buffer
+	w := csv.NewWriter(&b)
+	if err := w.WriteAll(rows); err != nil {
+		return nil, fmt.Errorf("writing ContentsofExportPackage csv: %w", err)
+	}
+	return b.Bytes(), nil
 }
 
 // ---------------------------------------------------------------------------

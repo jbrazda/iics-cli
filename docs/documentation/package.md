@@ -137,17 +137,25 @@ Assembles a new IICS export ZIP package from the contents of a source directory 
 regenerates `exportPackage.chksum` to match. The resulting ZIP is suitable for import
 via `iics import run`.
 
+Selective packaging is supported with `--manifest-file` or piped stdin. When a manifest
+is supplied, only matching assets are included, `exportMetadata.v2.json` is regenerated
+for selected assets, and `ContentsofExportPackage_<name>.csv` is generated.
+
 Dot files (names starting with `.`) and any existing `exportPackage.chksum` are
 excluded. Directories whose name ends in `.zip` (produced by `package expand --recursive`)
 are re-packed into nested ZIP entries automatically.
 
 ### Flags
 
-| Flag       | Short | Type   | Required | Default | Description                    |
-|------------|-------|--------|----------|---------|--------------------------------|
-| `--source` | `-s`  | string | yes      |         | Source directory to package    |
-| `--target` | `-t`  | string | yes      |         | Output ZIP file path           |
-| `--force`  | `-f`  | bool   |          | false   | Overwrite existing output file |
+| Flag                         | Short | Type   | Required | Default | Description                                                                       |
+|------------------------------|-------|--------|----------|---------|-----------------------------------------------------------------------------------|
+| `--source`                   | `-s`  | string | yes      |         | Source directory to package                                                       |
+| `--target`                   | `-t`  | string | yes      |         | Output ZIP file path                                                              |
+| `--force`                    | `-f`  | bool   |          | false   | Overwrite existing output file                                                    |
+| `--manifest-file`            | `-m`  | string |          |         | Inclusion manifest file (`.txt`, `.csv`, `.json`, `.yaml`); omit to read stdin   |
+| `--name`                     | `-n`  | string |          |         | Package name used for generated `ContentsofExportPackage_<name>.csv` file         |
+| `--exclude-found-transitive` |       | bool   |          | false   | Exclude rows where `DEPENDENCY=transitive` and selected `STATUS (<target>)=found` |
+| `--status-target`            |       | string |          |         | Target key for `STATUS (<target>)` column (for example `qa`)                      |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -160,6 +168,22 @@ The format matches the Informatica CLI v2 package format:
 - Spaces in paths escaped as `\` followed by a space
 - SHA-256 hash in uppercase hex
 - No header or timestamp line
+
+### Selective manifest input
+
+Manifest rows may reference assets by ID, location, or path and type. Supported formats
+are the same as export artifact parsing: `txt`, `csv`, `json`, and `yaml`.
+
+- `--manifest-file` reads from a file.
+- If `--manifest-file` is omitted and stdin is piped, stdin is auto-detected and used.
+- If neither is provided, `package create` keeps existing full-source behavior.
+
+Target-aware transitive exclusion:
+
+- Enable with `--exclude-found-transitive`.
+- The manifest must be CSV with `DEPENDENCY` and `STATUS (<target>)` columns.
+- Use `--status-target` when multiple status columns exist (for example `STATUS (qa)`, `STATUS (stg)`).
+- Rows where `DEPENDENCY=transitive` and `STATUS (<target>)=found` are excluded.
 
 ### Verbose output (`--verbose`)
 
@@ -178,6 +202,27 @@ iics package create \
   --source src/iics \
   --target dist/my-project.zip \
   --force --verbose
+
+# Build a selective package from a manifest file
+iics package create \
+  --source src/iics \
+  --target dist/my-project-selective.zip \
+  --manifest-file target/iics/import/conf/package_manifest.csv \
+  --name my-project-selective \
+  --force
+
+# Exclude transitive dependencies already found in target QA
+iics package create \
+  --source src/iics \
+  --target dist/my-project-qa.zip \
+  --manifest-file testdata/package/create/build_package_qa.csv \
+  --exclude-found-transitive \
+  --status-target qa \
+  --force
+
+# Build a selective package from piped stdin
+iics objects dependencies --file dist/export.zip --output csv \
+  | iics package create --source src/iics --target dist/from-stdin.zip --force
 ```
 
 ```powershell

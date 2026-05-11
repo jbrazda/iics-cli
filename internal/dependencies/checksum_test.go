@@ -41,3 +41,20 @@ func TestIsObjectChecksumBacked(t *testing.T) {
 		t.Fatalf("did not expect AI_CONNECTION to be checksum-backed")
 	}
 }
+
+func TestObjectChecksumCandidates(t *testing.T) {
+	got := ObjectChecksumCandidates("/Explore/ClaimCenter_GW/SmartComm_v1", "SmartComm File Transfers", "GUIDE")
+	if len(got) != 3 {
+		t.Fatalf("expected 3 candidates, got %d", len(got))
+	}
+	want := map[string]bool{
+		"Explore/ClaimCenter_GW/SmartComm_v1/SmartComm File Transfers.GUIDE.xml":  true,
+		"Explore/ClaimCenter_GW/SmartComm_v1/SmartComm File Transfers.GUIDE.zip":  true,
+		"Explore/ClaimCenter_GW/SmartComm_v1/SmartComm File Transfers.GUIDE.json": true,
+	}
+	for _, c := range got {
+		if !want[c] {
+			t.Fatalf("unexpected candidate %q", c)
+		}
+	}
+}

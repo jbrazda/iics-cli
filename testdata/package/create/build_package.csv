@@ -1,0 +1,16 @@
+LOCATION,DEPENDENCY,ID,TYPE,PATH
+Explore/ZZ_TEST_CLI/Connections/TestServiceConnection1.AI_CONNECTION,explicit,0KfTorzrNwihXfV38FliA2,AI_CONNECTION,ZZ_TEST_CLI/Connections/TestServiceConnection1
+Explore/ZZ_TEST_CLI/Connectors/TestServiceConnector1.AI_SERVICE_CONNECTOR,explicit,4ayib7p2V5xlJ1CHmRiTA0,AI_SERVICE_CONNECTOR,ZZ_TEST_CLI/Connectors/TestServiceConnector1
+SYS/CDI-G01.AgentGroup,transitive,eMvazWw2MoBjBanMZKwNUE,AgentGroup,CDI-G01
+SYS/Telematics.Connection,transitive,2E6Di63bPJUer5MvW8lxYx,Connection,Telematics
+Explore/ZZ_TEST_CLI/Mappings/m_Test_Git.DTEMPLATE,transitive,0pXCTRhtjrcdwOCIS5P7S5,DTEMPLATE,ZZ_TEST_CLI/Mappings/m_Test_Git
+Explore/ZZ_TEST_CLI/Guides/Test Conversion Utility.GUIDE,explicit,3sSitJsDn5odECT8qJMYut,GUIDE,ZZ_TEST_CLI/Guides/Test Conversion Utility
+Explore/ZZ_TEST_CLI/IssueGenerateRandomString/TestRandomString.GUIDE,explicit,9WuPOQqwGVfi4M1RQ1OVUZ,GUIDE,ZZ_TEST_CLI/IssueGenerateRandomString/TestRandomString
+Explore/ZZ_TEST_CLI/Tasks/mt_Test_Git.MTT,explicit,kUBJTuKdfe3fZCZfsibhme,MTT,ZZ_TEST_CLI/Tasks/mt_Test_Git
+Explore/ZZ_TEST_CLI/IssueGenerateRandomString/Test_GenRandomString.PROCESS,explicit,lFlQBdLdygSfyFK3TZh4IZ,PROCESS,ZZ_TEST_CLI/IssueGenerateRandomString/Test_GenRandomString
+Explore/ZZ_TEST_CLI/Processes/MP-SampleJob-v1.PROCESS,explicit,94w3YRfYqTwkXDMISNqemA,PROCESS,ZZ_TEST_CLI/Processes/MP-SampleJob-v1
+Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS,explicit,3cnlhCxf4I5kGPJQoIZSMZ,PROCESS,ZZ_TEST_CLI/Processes/MockupEcho
+Explore/ZZ_TEST_CLI/Processes/SCH-SampleJob-v1.PROCESS,explicit,d6dJpLA2O4keMYSbHodOEU,PROCESS,ZZ_TEST_CLI/Processes/SCH-SampleJob-v1
+Explore/ZZ_TEST_CLI/Processes/SP-SampleJob-v1.PROCESS,explicit,5NdzLW2s8S6ghkAjo8384O,PROCESS,ZZ_TEST_CLI/Processes/SP-SampleJob-v1
+Explore/ZZ_TEST_CLI/Processes/SP-SimulateFault.PROCESS,explicit,aN1Pyo4KVAfltahTnFdX6O,PROCESS,ZZ_TEST_CLI/Processes/SP-SimulateFault
+Explore/ZZ_TEST_CLI/ProcessObjects/TestConfigurationProperty.PROCESS_OBJECT,explicit,h2zy4tla02Gf0L72vmIo6L,PROCESS_OBJECT,ZZ_TEST_CLI/ProcessObjects/TestConfigurationProperty

@@ -502,24 +502,9 @@ func readArtifactsFromStdin() ([]client.ArtifactEntry, error) {
 	return client.ParseArtifactsReader(bytes.NewReader(data), format)
 }
 
-// detectDataFormat sniffs the first bytes to decide txt/json/csv.
+// detectDataFormat sniffs the first bytes to decide txt/json/csv/yaml.
 func detectDataFormat(data []byte) string {
-	preview := strings.TrimSpace(string(data))
-	if len(preview) == 0 {
-		return "txt"
-	}
-	if preview[0] == '{' || preview[0] == '[' {
-		return "json"
-	}
-	// If the first line contains commas it's likely CSV output from objects list.
-	firstLine := preview
-	if idx := strings.IndexByte(preview, '\n'); idx >= 0 {
-		firstLine = preview[:idx]
-	}
-	if strings.Contains(firstLine, ",") {
-		return "csv"
-	}
-	return "txt"
+	return client.DetectArtifactsFormat(data)
 }
 
 // resolveExportObjects converts ArtifactEntries to ExportObjects, looking up IDs as needed.

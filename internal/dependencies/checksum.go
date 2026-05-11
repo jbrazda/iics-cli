@@ -31,6 +31,20 @@ func IsObjectChecksumBacked(path, objectName, objectType string, entries map[str
 	if len(entries) == 0 || objectName == "" || objectType == "" {
 		return false
 	}
+	for _, c := range ObjectChecksumCandidates(path, objectName, objectType) {
+		if entries[c] {
+			return true
+		}
+	}
+	return false
+}
+
+// ObjectChecksumCandidates returns the candidate package-relative object file
+// paths for an exported object.
+func ObjectChecksumCandidates(path, objectName, objectType string) []string {
+	if objectName == "" || objectType == "" {
+		return nil
+	}
 	basePath := strings.TrimPrefix(path, "/")
 	basePath = strings.TrimSuffix(basePath, "/")
 
@@ -38,16 +52,9 @@ func IsObjectChecksumBacked(path, objectName, objectType string, entries map[str
 	if basePath != "" {
 		base = basePath + "/" + base
 	}
-
-	candidates := []string{
+	return []string{
 		base + ".xml",
 		base + ".zip",
 		base + ".json",
 	}
-	for _, c := range candidates {
-		if entries[c] {
-			return true
-		}
-	}
-	return false
 }

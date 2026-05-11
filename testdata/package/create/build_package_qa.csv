@@ -1,0 +1,18 @@
+LOCATION,DEPENDENCY,STATUS (qa),WARNING (qa)
+Explore/ZZ_TEST_CLI/Connections/TestServiceConnection1.AI_CONNECTION,explicit,found,
+Explore/ZZ_TEST_CLI/Connectors/TestServiceConnector1.AI_SERVICE_CONNECTOR,explicit,found,
+SYS/CDI-G01.AgentGroup,transitive,found,
+SYS/Telematics.Connection,transitive,found,
+Explore/ZZ_TEST_CLI/Mappings/m_Test_Git.DTEMPLATE,transitive,found,
+Explore/ZZ_TEST_CLI/Guides/Test Conversion Utility.GUIDE,explicit,found,
+Explore/ZZ_TEST_CLI/IssueGenerateRandomString/TestRandomString.GUIDE,explicit,found,
+Explore/ZZ_TEST_CLI/Tasks/mt_Test_Git.MTT,explicit,found,
+Explore/ZZ_TEST_CLI/IssueGenerateRandomString/Test_GenRandomString.PROCESS,explicit,found,
+Explore/ZZ_TEST_CLI/Processes/MP-SampleJob-v1.PROCESS,explicit,missing,asset not found in target org
+Explore/ZZ_TEST_CLI/Processes/MockupEcho.PROCESS,explicit,found,
+Explore/ZZ_TEST_CLI/Processes/SCH-SampleJob-v1.PROCESS,explicit,missing,asset not found in target org
+Explore/ZZ_TEST_CLI/Processes/SP-SampleJob-v1.PROCESS,explicit,missing,asset not found in target org
+Explore/ZZ_TEST_CLI/Processes/SP-SimulateFault.PROCESS,explicit,missing,asset not found in target org
+Explore/Logging/ProcessObjects/CreateJobLogEventRequest.PROCESS_OBJECT,transitive,found,
+Explore/Logging/ProcessObjects/ProcessExecutionContext.PROCESS_OBJECT,transitive,found,
+Explore/ZZ_TEST_CLI/ProcessObjects/TestConfigurationProperty.PROCESS_OBJECT,explicit,found,
