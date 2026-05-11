@@ -202,13 +202,18 @@ func TestParseLocationString(t *testing.T) {
 		},
 		{
 			location:    "InvalidNoType",
-			wantErrSubs: "expected Explore/path.TYPE format",
+			wantErrSubs: "expected Explore/path.TYPE or SYS/path.TYPE format",
 		},
 		{
 			// Without "Explore/" prefix still works
 			location: "SomeProject/Asset.DTEMPLATE",
 			wantPath: "SomeProject/Asset",
 			wantType: "DTEMPLATE",
+		},
+		{
+			location: "SYS/Agents/Group1.AgentGroup",
+			wantPath: "Agents/Group1",
+			wantType: "AgentGroup",
 		},
 	}
 

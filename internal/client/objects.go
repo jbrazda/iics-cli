@@ -42,7 +42,7 @@ type Object struct {
 	Tags             []string                `json:"tags,omitempty"`
 	SourceControl    *ObjectSourceControl    `json:"sourceControl,omitempty"`
 	CustomAttributes *ObjectCustomAttributes `json:"customAttributes,omitempty"`
-	Location         string                  `json:"location,omitempty"` // computed: "Explore/<path>.<type>"
+	Location         string                  `json:"location,omitempty"` // computed: "<Explore|SYS>/<path>.<type>"
 }
 
 // ObjectsListOptions holds query parameters for listing objects.
@@ -67,7 +67,7 @@ type ObjectReference struct {
 	Type         string `json:"documentType"` // API field name is documentType, not type
 	Description  string `json:"description,omitempty"`
 	UpdateTime   string `json:"lastUpdatedTime,omitempty"` // API field name is lastUpdatedTime
-	Location     string `json:"location,omitempty"`        // computed: "Explore/<path>.<TYPE>"
+	Location     string `json:"location,omitempty"`        // computed: "<Explore|SYS>/<path>.<TYPE>"
 }
 
 // ObjectDependenciesResponse is the response from GET /objects/{id}/references.
@@ -167,7 +167,7 @@ func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, ref
 		return nil, err
 	}
 	for i := range resp.References {
-		resp.References[i].Location = "Explore/" + resp.References[i].Path + "." + resp.References[i].Type
+		resp.References[i].Location = BuildLocation(resp.References[i].Path, resp.References[i].Type)
 	}
 	return &resp, nil
 }

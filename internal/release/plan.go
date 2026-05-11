@@ -95,18 +95,18 @@ func ResolveTagAssets(ctx context.Context, c *client.Client, tag string) ([]Asse
 
 	result := make(map[string]Asset, len(graph.Nodes))
 	for id, n := range graph.Nodes {
-		path := strings.TrimPrefix(strings.TrimPrefix(n.Path, "/"), "Explore/")
+		path := client.NormalizeLocationPath(n.Path)
 		typ := n.Type
 		if path == "" || typ == "" {
 			if so, ok := seedObj[id]; ok {
-				path = strings.TrimPrefix(strings.TrimPrefix(so.Path, "/"), "Explore/")
+				path = client.NormalizeLocationPath(so.Path)
 				typ = so.Type
 			}
 		}
 		if path == "" || typ == "" {
 			continue
 		}
-		loc := "Explore/" + path + "." + typ
+		loc := client.BuildLocation(path, typ)
 		dep := "transitive"
 		if seedSet[id] {
 			dep = "explicit"
@@ -124,8 +124,8 @@ func ResolveTagAssets(ctx context.Context, c *client.Client, tag string) ([]Asse
 		if o.Path == "" || o.Type == "" {
 			continue
 		}
-		path := strings.TrimPrefix(strings.TrimPrefix(o.Path, "/"), "Explore/")
-		loc := "Explore/" + path + "." + o.Type
+		path := client.NormalizeLocationPath(o.Path)
+		loc := client.BuildLocation(path, o.Type)
 		if _, ok := result[loc]; ok {
 			continue
 		}

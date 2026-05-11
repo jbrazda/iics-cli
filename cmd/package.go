@@ -760,11 +760,10 @@ func resolveDependencies(
 	var rawEdges [][2]string
 
 	apiPath := func(p string) string {
-		p = strings.TrimPrefix(p, "/")
-		if p == "Explore" {
+		p = client.NormalizeLocationPath(p)
+		if p == "" || p == "Explore" || p == "SYS" {
 			return ""
 		}
-		p = strings.TrimPrefix(p, "Explore/")
 		return p
 	}
 
@@ -841,7 +840,7 @@ func resolveDependencies(
 				resultMap[mk] = dependencyItem{
 					Path:       fullPath,
 					Type:       obj.ObjectType,
-					Location:   "Explore/" + fullPath + "." + obj.ObjectType,
+					Location:   client.BuildLocation(fullPath, obj.ObjectType),
 					Dependency: depClass,
 				}
 			}
@@ -887,7 +886,7 @@ func resolveDependencies(
 				resultMap[mk] = dependencyItem{
 					Path:       pathOnly,
 					Type:       n.Type,
-					Location:   "Explore/" + pathOnly + "." + n.Type,
+					Location:   client.BuildLocation(pathOnly, n.Type),
 					Dependency: "transitive",
 				}
 			}
@@ -1448,7 +1447,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 	cmd.Flags().StringVar(&orderBy, "order-by", "", "sort output by field: path, type, status, warning (overrides default sort)")
 	cmd.Flags().StringVarP(&excludePattern, "exclude", "e", "", "regex matched against path/name.type to exclude assets from resolution")
 	cmd.Flags().StringVar(&excludeFile, "exclude-file", "", "path to regex patterns file; each matching path/name.type is excluded from resolution")
-	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output (does not affect resolution)")
+	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location ((Explore|SYS)/path.type) to filter final output (does not affect resolution)")
 	cmd.Flags().StringVarP(&targetProfile, "target-profile", "t", "", "profile name for target org validation (mutually exclusive with --report)")
 	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")
 	cmd.Flags().StringVar(&outputFileFmt, "output-file-format", "yaml", "format for output file: yaml, json, csv, table")

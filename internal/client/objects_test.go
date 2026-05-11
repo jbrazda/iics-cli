@@ -190,9 +190,10 @@ func TestGetObjectDependencies(t *testing.T) {
 		}
 		resp := ObjectDependenciesResponse{
 			ID:    "obj1",
-			Count: 1,
+			Count: 2,
 			References: []ObjectReference{
 				{AppContextID: "dep1", Path: "Sales/Mapping1", Type: "MTT"},
+				{AppContextID: "dep2", Path: "Agents/DefaultAgentGroup", Type: "AgentGroup"},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -204,8 +205,8 @@ func TestGetObjectDependencies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetObjectDependencies() error: %v", err)
 	}
-	if len(resp.References) != 1 {
-		t.Fatalf("expected 1 References entry, got %d", len(resp.References))
+	if len(resp.References) != 2 {
+		t.Fatalf("expected 2 References entries, got %d", len(resp.References))
 	}
 	got := resp.References[0]
 	if got.AppContextID != "dep1" {
@@ -214,6 +215,9 @@ func TestGetObjectDependencies(t *testing.T) {
 	wantLocation := "Explore/Sales/Mapping1.MTT"
 	if got.Location != wantLocation {
 		t.Errorf("expected Location %q, got %q", wantLocation, got.Location)
+	}
+	if got := resp.References[1]; got.Location != "SYS/Agents/DefaultAgentGroup.AgentGroup" {
+		t.Errorf("expected AgentGroup Location %q, got %q", "SYS/Agents/DefaultAgentGroup.AgentGroup", got.Location)
 	}
 }
 

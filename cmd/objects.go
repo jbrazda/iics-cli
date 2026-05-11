@@ -66,9 +66,9 @@ func buildObjectColumns(fields []string) []output.Column {
 }
 
 // objectToFilteredMap returns a map containing only the requested fields for an object.
-// The location field is computed as "Explore/<path>.<type>".
+// The location field is computed as "<Explore|SYS>/<path>.<type>".
 func objectToFilteredMap(obj client.Object, fields []string) map[string]interface{} {
-	location := "Explore/" + obj.Path + "." + obj.Type
+	location := client.BuildLocation(obj.Path, obj.Type)
 	allFields := map[string]interface{}{
 		"id":          obj.ID,
 		"path":        obj.Path,
@@ -110,7 +110,7 @@ csv, table) independently of the console --output format.
 
 The --output-fields and --output-file-fields flags accept a comma-separated
 list of field names. Available fields: id, path, type, description, updatedBy,
-updateTime, location. The location field is computed as "Explore/<path>.<type>".`,
+updateTime, location. The location field is computed as "<Explore|SYS>/<path>.<type>".`,
 		Example: `  iics objects list                          # all objects (auto-paginated)
   iics objects list --type MTT               # all mappings
   iics objects list --type MTT --limit 50    # first 50 mappings
@@ -151,7 +151,7 @@ updateTime, location. The location field is computed as "Explore/<path>.<type>".
 
 			// Populate computed Location field on each object
 			for i := range resp.Objects {
-				resp.Objects[i].Location = "Explore/" + resp.Objects[i].Path + "." + resp.Objects[i].Type
+				resp.Objects[i].Location = client.BuildLocation(resp.Objects[i].Path, resp.Objects[i].Type)
 			}
 
 			// Console output
@@ -455,7 +455,7 @@ correct publish dependency order (connectors before connections before processes
 	cmd.Flags().IntVar(&skip, "skip", 0, "number of results to skip (only used with --limit)")
 	cmd.Flags().StringSliceVar(&targets, "targets", nil, "comma-separated profiles to validate dependencies against")
 	cmd.Flags().BoolVar(&publishMode, "publish", false, "restrict output to publishable types only and sort by publish dependency order")
-	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location (Explore/path.type) to filter final output")
+	cmd.Flags().StringVar(&filterPattern, "filter", "", "regex matched against location ((Explore|SYS)/path.type) to filter final output")
 	cmd.Flags().StringVar(&excludeFile, "exclude-file", "", "path to regex patterns file; matching locations are excluded from final output")
 	cmd.Flags().StringVar(&outputFile, "output-file", "", "path to write output file")
 	cmd.Flags().StringVar(&outputFileFmt, "output-file-format", "yaml", "format for output file: yaml, json, csv, table")
@@ -481,7 +481,7 @@ func objectRefsToDeps(refs []client.ObjectReference) []dependencyItem {
 			Dependency: "transitive",
 		}
 		if deps[i].Location == "" {
-			deps[i].Location = "Explore/" + r.Path + "." + r.Type
+			deps[i].Location = client.BuildLocation(r.Path, r.Type)
 		}
 	}
 	return deps
@@ -500,13 +500,13 @@ func collectTransitiveObjectRefs(
 	}
 	resultRefs := make([]client.ObjectReference, 0, len(graph.Nodes))
 	for _, n := range graph.Nodes {
-		path := strings.TrimPrefix(strings.TrimPrefix(n.Path, "/"), "Explore/")
+		path := client.NormalizeLocationPath(n.Path)
 		ref := client.ObjectReference{
 			ID:           n.ID,
 			AppContextID: n.ID,
 			Path:         path,
 			Type:         n.Type,
-			Location:     "Explore/" + path + "." + n.Type,
+			Location:     client.BuildLocation(path, n.Type),
 		}
 		resultRefs = append(resultRefs, ref)
 	}

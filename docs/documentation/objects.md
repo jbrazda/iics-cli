@@ -46,7 +46,7 @@ All [global flags](../../README.md#global-flags) apply.
 | `id`         | Object ID                                      |
 | `path`       | Full path within the org                       |
 | `type`       | Object type (MTT, DTEMPLATE, DSS, etc.)        |
-| `location`   | Computed as `Explore/<path>.<type>`            |
+| `location`   | Computed as `(Explore|SYS)/<path>.<type>`      |
 | `description`| Object description                             |
 | `updatedBy`  | Last user who modified the object              |
 | `updateTime` | Last modification timestamp                    |
@@ -154,7 +154,7 @@ engine, so dependency recursion behavior is consistent across both commands.
 | `--skip`               |       | int      |          | 0                                                 | Results to skip (only meaningful with `--limit`)                           |
 | `--targets`            |       | []string |          |                                                   | Comma-separated profiles to validate dependencies against                  |
 | `--publish`            |       | bool     |          | false                                             | Restrict output to publishable types only; sort by publish order           |
-| `--filter`             |       | string   |          |                                                   | Regex matched against `location` (`Explore/path.type`) for final output    |
+| `--filter`             |       | string   |          |                                                   | Regex matched against `location` (`(Explore|SYS)/path.type`) for final output |
 | `--exclude-file`       |       | string   |          |                                                   | Regex policy file; matching `location` rows are excluded from final output |
 | `--output-file`        |       | string   |          |                                                   | Write output to a file                                                     |
 | `--output-file-format` |       | string   |          | `yaml`                                            | Output file format: `table`, `json`, `csv`, `yaml`                         |
@@ -178,7 +178,7 @@ Rows include a `dependency` marker:
 
 | Column       | Description                                        |
 |--------------|----------------------------------------------------|
-| `location`   | Normalized asset identifier: `Explore/path.type`   |
+| `location`   | Normalized asset identifier: `(Explore|SYS)/path.type` |
 | `dependency` | `explicit` (seed input) or `transitive` (resolved) |
 | `id`         | Object ID (when available)                         |
 | `type`       | Object type                                        |
@@ -188,7 +188,7 @@ Rows include a `dependency` marker:
 
 | Column                | Description                                        |
 |-----------------------|----------------------------------------------------|
-| `Location`            | Normalized asset identifier: `Explore/path.type`   |
+| `Location`            | Normalized asset identifier: `(Explore|SYS)/path.type` |
 | `DEPENDENCY`          | `explicit` (seed input) or `transitive` (resolved) |
 | `STATUS (<profile>)`  | `found`, `missing`, or `unknown` per profile       |
 | `WARNING (<profile>)` | Lookup warning message (CSV output only)           |

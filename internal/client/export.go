@@ -132,12 +132,12 @@ func (c *Client) DownloadExportLog(ctx context.Context, jobID string, dest io.Wr
 }
 
 // ParseLocationString parses a location like "Explore/path/to/Asset.TYPE"
-// into its path component (without "Explore/" prefix) and type component.
+// or "SYS/path/to/Asset.TYPE" into its path component and type component.
 func ParseLocationString(location string) (path, assetType string, err error) {
-	loc := strings.TrimPrefix(location, "Explore/")
+	loc := NormalizeLocationPath(location)
 	dotIdx := strings.LastIndex(loc, ".")
 	if dotIdx < 0 {
-		return "", "", fmt.Errorf("invalid location %q: expected Explore/path.TYPE format", location)
+		return "", "", fmt.Errorf("invalid location %q: expected Explore/path.TYPE or SYS/path.TYPE format", location)
 	}
 	return loc[:dotIdx], loc[dotIdx+1:], nil
 }
