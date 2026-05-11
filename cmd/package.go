@@ -208,6 +208,11 @@ func extractZIPEntries(files []*zip.File, destDir string, recursive bool) (int, 
 			}
 		}
 
+		// Strip volatile server timestamp from XML assets
+		if strings.HasSuffix(strings.ToLower(f.Name), ".xml") {
+			data = stripServerTimestamp(data)
+		}
+
 		if err := os.WriteFile(destPath, data, 0o644); err != nil {
 			return count, fmt.Errorf("writing %s: %w", destPath, err)
 		}
@@ -251,6 +256,9 @@ func expandNestedZIP(data []byte, destDir string) (int, error) {
 				content = pretty
 			}
 		}
+		if strings.HasSuffix(strings.ToLower(f.Name), ".xml") {
+			content = stripServerTimestamp(content)
+		}
 		if writeErr := os.WriteFile(destPath, content, 0o644); writeErr != nil {
 			return count, writeErr
 		}
@@ -266,6 +274,20 @@ func prettyJSON(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return json.MarshalIndent(v, "", "  ")
+}
+
+// serverTimestampRE matches the CurrentServerDateTime element with any namespace prefix,
+// including surrounding whitespace and the line ending, so ReplaceAll leaves no blank line.
+// The namespace prefix (\w+:) is not fixed - Informatica may bind it to a different prefix.
+var serverTimestampRE = regexp.MustCompile(
+	`(?m)^[ \t]*<\w+:CurrentServerDateTime>[^<]*</\w+:CurrentServerDateTime>[ \t]*\r?\n?`,
+)
+
+// stripServerTimestamp removes the server-injected CurrentServerDateTime element from XML
+// asset files. This element changes on every export regardless of whether the asset design
+// changed, producing noisy git diffs.
+func stripServerTimestamp(data []byte) []byte {
+	return serverTimestampRE.ReplaceAll(data, nil)
 }
 
 // ---------------------------------------------------------------------------
