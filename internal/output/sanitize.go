@@ -28,7 +28,7 @@ func sanitizeANSIReflect(v reflect.Value) reflect.Value {
 	case reflect.String:
 		s := stripANSIText(v.String())
 		return reflect.ValueOf(s).Convert(v.Type())
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if v.IsNil() {
 			return reflect.Zero(v.Type())
 		}

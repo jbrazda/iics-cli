@@ -444,7 +444,7 @@ func extractRows(data interface{}) ([]map[string]interface{}, error) {
 
 	// Handle nil/empty
 	v := reflect.ValueOf(data)
-	if !v.IsValid() || (v.Kind() == reflect.Ptr && v.IsNil()) {
+	if !v.IsValid() || (v.Kind() == reflect.Pointer && v.IsNil()) {
 		return nil, nil
 	}
 	if v.Kind() == reflect.Slice && v.Len() == 0 {
