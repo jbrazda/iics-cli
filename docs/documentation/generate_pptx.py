@@ -216,7 +216,7 @@ add_text_box(s, "REST API v3  |  Go Binary  |  POSIX Compliant  |  Actively Main
              Inches(1), Inches(3.7), Inches(11), Inches(0.6),
              font_size=18, color=RGBColor(0xFF, 0xAA, 0x44),
              align=PP_ALIGN.CENTER)
-add_text_box(s, "Replacing the abandoned Informatica Asset Management CLI V2",
+add_text_box(s, "30+ resource types  |  OS Keychain  |  Package management  |  CI/CD release workflows",
              Inches(1), Inches(4.5), Inches(11), Inches(0.5),
              font_size=16, italic=True, color=MID_GRAY, align=PP_ALIGN.CENTER)
 
@@ -229,18 +229,20 @@ slide_header(s, "Agenda")
 footer(s)
 
 items_l = [
-    "1.  The Problem – Limitations of the Official Informatica CLI",
-    "2.  POSIX Exit Codes – Reliable CI/CD Integration",
-    "3.  Machine-Readable Output – JSON, CSV, Tables",
-    "4.  Secure Credential Management",
-    "5.  Named Environment Profiles",
+    "1.   The Problem – Limitations of the Official Informatica CLI",
+    "2.   POSIX Exit Codes – Reliable CI/CD Integration",
+    "3.   Machine-Readable Output – JSON, CSV, YAML, Tables & Themes",
+    "4.   Secure Credential Management + OS Keychain",
+    "5.   Named Environment Profiles + Interactive Wizard",
+    "6.   Session Caching",
 ]
 items_r = [
-    "6.  Session Caching",
-    "7.  Broad API Coverage – 20+ Resources",
-    "8.  Full Region Support",
-    "9.  Single Binary – No JVM Required",
-    "10. Feature Comparison Summary",
+    "7.   Broad API Coverage – 27+ Resources",
+    "8.   Package Command – Expand, Create, Inspect",
+    "9.   Release Workflow – CI/CD Manifests & Plans",
+    "10.  Publish & Unpublish CAI Assets",
+    "11.  Full Region Support",
+    "12.  Feature Comparison Summary",
 ]
 
 bullet_list(s, items_l, Inches(0.5), Inches(1.3), Inches(6), Inches(5.5),
@@ -253,7 +255,7 @@ bullet_list(s, items_r, Inches(6.8), Inches(1.3), Inches(6), Inches(5.5),
 # SLIDE 3 – The Problem
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
-slide_header(s, "The Problem", "Informatica Asset Management CLI V2 – what it cannot do")
+slide_header(s, "The Problem", "The Official Informatica CLI – what it cannot do")
 footer(s)
 
 problems = [
@@ -286,7 +288,7 @@ code_block(s, (
     "# Export fails – but exit code is still 0\n"
     "iics export -u user@co.com -p secret -r us \\\n"
     "  -a \"MyProject/BadAsset.Process\"\n"
-    "echo $?   # → 0  (pipeline keeps running!)"
+    "echo $?   # -> 0  (pipeline keeps running!)"
 ), Inches(0.5), Inches(1.65), Inches(5.8), Inches(1.6), font_size=11)
 
 add_text_box(s, "iics-cli – three distinct exit codes",
@@ -294,9 +296,9 @@ add_text_box(s, "iics-cli – three distinct exit codes",
              font_size=14, bold=True, color=GREEN)
 code_block(s, (
     "iics export create --name nightly --project Prod\n"
-    "echo $?   # → 1  (API / runtime error)\n\n"
+    "echo $?   # -> 1  (API / runtime error)\n\n"
     "iics export create --bad-flag\n"
-    "echo $?   # → 2  (usage / flag error)"
+    "echo $?   # -> 2  (usage / flag error)"
 ), Inches(7.0), Inches(1.65), Inches(5.8), Inches(1.6), font_size=11)
 
 add_table(s,
@@ -318,10 +320,10 @@ add_text_box(s,
 # SLIDE 5 – Output Formats
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
-slide_header(s, "Machine-Readable Output", "JSON, CSV, and Table formats – pipe into any UNIX tool")
+slide_header(s, "Machine-Readable Output", "JSON, CSV, YAML, and Table formats – pipe into any UNIX tool")
 footer(s)
 
-add_text_box(s, "Every command supports --output / -o  table | json | csv",
+add_text_box(s, "Every command supports --output / -o  table | json | csv | yaml",
              Inches(0.5), Inches(1.2), Inches(12.5), Inches(0.4),
              font_size=15, bold=True, color=DARK_BLUE)
 
@@ -332,16 +334,18 @@ code_block(s, (
     "iics user list -o json | jq -r '.[].userName'\n\n"
     "# CSV – import into Excel / Google Sheets\n"
     "iics connection list -o csv > connections.csv\n\n"
+    "# YAML – human-friendly structured output\n"
+    "iics schedule list -o yaml\n\n"
     "# Find enabled schedules and extract names\n"
     "iics schedule list -o json \\\n"
     "  | jq -r '.[] | select(.status==\"ENABLED\") | .name'\n\n"
     "# Count objects in a project\n"
     "iics objects list --project Prod -o json | jq length"
-), Inches(0.5), Inches(1.7), Inches(12.3), Inches(3.9), font_size=11)
+), Inches(0.5), Inches(1.7), Inches(12.3), Inches(4.1), font_size=11)
 
 add_text_box(s,
     "stdout is always clean data.  All errors and diagnostics go to stderr.",
-    Inches(0.5), Inches(5.75), Inches(12.3), Inches(0.4),
+    Inches(0.5), Inches(5.95), Inches(12.3), Inches(0.4),
     font_size=14, italic=True, color=MID_BLUE)
 
 
@@ -362,9 +366,9 @@ code_block(s, (
     "  -p MyP@ssword123 \\\n"
     "  -r us \\\n"
     "  -a \"Prod/CriticalFlow.Process\""
-), Inches(0.5), Inches(1.65), Inches(5.8), Inches(2.0), font_size=11)
+), Inches(0.5), Inches(1.65), Inches(5.8), Inches(1.8), font_size=11)
 
-add_text_box(s, "iics-cli – credentials in config file + env var",
+add_text_box(s, "iics-cli – config file + env var + OS keychain",
              Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.4),
              font_size=14, bold=True, color=GREEN)
 code_block(s, (
@@ -372,48 +376,64 @@ code_block(s, (
     "defaultProfile: prod\n"
     "profiles:\n"
     "  prod:\n"
-    "    region: US\n"
-    "    username: admin@company.com\n\n"
+    "    region: USE4\n"
+    "    username: admin@company.com\n"
+    "    password: \"@keyring\"  # stored in OS keychain\n\n"
     "# Password via env var – never in a file\n"
     "export IICS_PASSWORD='MyP@ssword123'\n"
     "iics export create --name nightly"
-), Inches(7.0), Inches(1.65), Inches(5.8), Inches(2.0), font_size=11)
+), Inches(7.0), Inches(1.65), Inches(5.8), Inches(2.2), font_size=11)
 
 bullet_list(s, [
     "Config file protected with OS file permissions (chmod 600)",
-    "Password sourced from IICS_PASSWORD env var or secret manager",
-    "No credentials in process list, shell history, or build logs",
+    "Password stored in macOS Keychain or Linux Secret Service (GNOME Keyring / KWallet)",
+    "Password sourced from IICS_PASSWORD env var (highest precedence)",
+    "Sentinel value @keyring in config – real secret never written to disk",
     "Compatible with HashiCorp Vault, AWS Secrets Manager, GitHub Secrets",
-], Inches(0.5), Inches(3.9), Inches(12.3), Inches(2.4), font_size=15)
+], Inches(0.5), Inches(4.1), Inches(12.3), Inches(2.6), font_size=14)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 7 – Named Profiles
+# SLIDE 7 – Named Profiles + Interactive Wizard
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
-slide_header(s, "Named Environment Profiles", "Switch between orgs and environments with a single flag")
+slide_header(s, "Named Environment Profiles", "Interactive wizard or manual config – switch with a single flag")
 footer(s)
 
+add_text_box(s, "Interactive profile setup",
+             Inches(0.5), Inches(1.2), Inches(5.8), Inches(0.35),
+             font_size=14, bold=True, color=DARK_BLUE)
 code_block(s, (
-    "# ~/.iics/config.yaml\n"
+    "# First-run wizard – guided setup\n"
+    "iics profile add\n\n"
+    "# Or add a named profile\n"
+    "iics profile add prod\n\n"
+    "# List / edit / delete profiles\n"
+    "iics profile list\n"
+    "iics profile edit dev\n"
+    "iics profile set-default prod"
+), Inches(0.5), Inches(1.6), Inches(5.8), Inches(2.3), font_size=11)
+
+add_text_box(s, "~/.iics/config.yaml",
+             Inches(0.5), Inches(4.05), Inches(5.8), Inches(0.35),
+             font_size=14, bold=True, color=DARK_BLUE)
+code_block(s, (
     "defaultProfile: dev\n"
     "profiles:\n"
     "  dev:\n"
-    "    region: US\n"
+    "    region: USE4\n"
     "    username: dev-user@company.com\n"
-    "  staging:\n"
-    "    region: US\n"
-    "    username: staging-admin@company.com\n"
     "  prod:\n"
-    "    region: US\n"
+    "    region: USE4\n"
     "    username: prod-admin@company.com\n"
+    "    password: \"@keyring\"\n"
     "  emea:\n"
     "    region: EMEA\n"
     "    username: emea-admin@company.com"
-), Inches(0.5), Inches(1.3), Inches(5.8), Inches(4.5), font_size=11)
+), Inches(0.5), Inches(4.45), Inches(5.8), Inches(2.5), font_size=11)
 
 add_text_box(s, "Switching environments",
-             Inches(7.0), Inches(1.3), Inches(5.8), Inches(0.4),
+             Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.35),
              font_size=14, bold=True, color=DARK_BLUE)
 code_block(s, (
     "# Use the --profile flag\n"
@@ -427,13 +447,14 @@ code_block(s, (
     "  iics export create --profile $env \\\n"
     "    --name \"snapshot-$env\"\n"
     "done"
-), Inches(7.0), Inches(1.75), Inches(5.8), Inches(3.0), font_size=11)
+), Inches(7.0), Inches(1.6), Inches(5.8), Inches(3.0), font_size=11)
 
 bullet_list(s, [
     "Separate credentials per environment – no copy-paste mistakes",
-    "Profile name can be overridden by IICS_PROFILE env var for CI/CD",
+    "Profile overridden by IICS_PROFILE env var for CI/CD",
     "defaultProfile used when no --profile flag is given",
-], Inches(0.5), Inches(6.0), Inches(12.3), Inches(1.3), font_size=14)
+    "iics profile add wizard prompts for region, username, and keychain storage",
+], Inches(7.0), Inches(4.75), Inches(5.8), Inches(2.0), font_size=13)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -477,7 +498,7 @@ bullet_list(s, [
 # SLIDE 9 – API Coverage
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
-slide_header(s, "Broad API Coverage", "20+ resource types vs. 5 operations in the official tool")
+slide_header(s, "Broad API Coverage", "27+ resource types vs. 5 operations in the official tool")
 footer(s)
 
 add_table(s,
@@ -486,25 +507,32 @@ add_table(s,
         ["objects",       "list, dependencies"],
         ["lookup",        "resolve IDs, names, paths"],
         ["connection",    "list, get, create, update, delete"],
-        ["export",        "create, status, download"],
-        ["import",        "upload, start, status, log"],
+        ["export",        "run, create, start, status, download"],
+        ["import",        "run, upload, start, status, download-log"],
+        ["publish",       "run, start, status"],
+        ["unpublish",     "run, start, status"],
+        ["package",       "expand, create, dependencies"],
+        ["release",       "manifest, validate, plan"],
         ["schedule",      "list, get, create, update, delete"],
         ["project",       "create, update, delete"],
         ["folder",        "create, update, delete"],
-        ["user",          "list, get, create, update, delete"],
-        ["usergroup",     "list, get, create, update, delete"],
+        ["profile",       "add, edit, list, delete, set-default, show"],
     ],
     Inches(0.4), Inches(1.25), Inches(6.0), Inches(5.7))
 
 add_table(s,
     ["Resource", "Operations"],
     [
+        ["user",          "list, get, create, update, delete"],
+        ["usergroup",     "list, get, create, update, delete"],
         ["role",          "list, get, create, update, delete"],
         ["privilege",     "list"],
         ["runtime",       "list, get, create, update"],
-        ["agent",         "list, start, stop"],
+        ["agent",         "list, get, details, start, stop"],
         ["tag",           "assign, remove"],
         ["permission",    "get, set, delete"],
+        ["activitylog",   "list, get"],
+        ["auditlog",      "list"],
         ["securitylog",   "list"],
         ["metering",      "get, download"],
         ["sourcecontrol", "checkout, checkin, pull, commit"],
@@ -514,7 +542,184 @@ add_table(s,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 10 – Region Support
+# SLIDE 10 – Package Command
+# ─────────────────────────────────────────────────────────────────────────────
+s = prs.slides.add_slide(blank_layout)
+slide_header(s, "Package Command", "Expand, create, and inspect IICS export packages locally")
+footer(s)
+
+add_text_box(s, "Local file operations – no API calls required",
+             Inches(0.5), Inches(1.2), Inches(12.5), Inches(0.4),
+             font_size=15, bold=True, color=DARK_BLUE)
+
+add_text_box(s, "Expand, Create, Inspect",
+             Inches(0.5), Inches(1.7), Inches(5.8), Inches(0.35),
+             font_size=13, bold=True, color=MID_BLUE)
+code_block(s, (
+    "# Expand a ZIP into a source-control-friendly tree\n"
+    "iics package expand --source export.zip \\\n"
+    "  --target ./workspace/Prod\n\n"
+    "# Create a ZIP from an expanded workspace\n"
+    "iics package create --source ./workspace/Prod \\\n"
+    "  --target deploy.zip\n\n"
+    "# Selective packaging via manifest\n"
+    "iics package create --source ./workspace/Prod \\\n"
+    "  --manifest-file manifest.csv \\\n"
+    "  --target deploy.zip\n\n"
+    "# Inspect dependencies in a package\n"
+    "iics package dependencies --source ./workspace/Prod \\\n"
+    "  -o json | jq '.[].location'"
+), Inches(0.5), Inches(2.1), Inches(5.8), Inches(4.5), font_size=11)
+
+add_text_box(s, "Key capabilities",
+             Inches(7.0), Inches(1.7), Inches(5.8), Inches(0.35),
+             font_size=13, bold=True, color=MID_BLUE)
+bullet_list(s, [
+    "Expand: unzip to Project/Folder/Asset tree for git version control",
+    "Create: re-assemble a deployment ZIP from workspace directory",
+    "Selective create: drive asset selection via CSV/JSON/YAML/TXT manifest",
+    "Manifest auto-detects format – stdin or --manifest-file (-m)",
+    "Transitive dependency resolution – auto-include connections and agents",
+    "Generates ContentsofExportPackage_*.csv and exportMetadata.v2.json",
+    "Computes xexportPackage.chksum checksum file",
+    "Strip CurrentServerDateTime to enable clean git diffs",
+    "Backward-compatible with official CLI asset list text files",
+], Inches(7.0), Inches(2.1), Inches(5.8), Inches(4.5), font_size=13)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SLIDE 11 – Release Workflow
+# ─────────────────────────────────────────────────────────────────────────────
+s = prs.slides.add_slide(blank_layout)
+slide_header(s, "Release Workflow", "CI/CD manifests and per-environment deployment plans")
+footer(s)
+
+add_text_box(s, "Three-step release pipeline",
+             Inches(0.5), Inches(1.2), Inches(12.3), Inches(0.35),
+             font_size=15, bold=True, color=DARK_BLUE)
+
+code_block(s, (
+    "# 1. Generate a release manifest from dependency graph\n"
+    "iics release manifest \\\n"
+    "  --project Prod \\\n"
+    "  --output release-manifest.yaml\n\n"
+    "# 2. Validate the manifest against each target\n"
+    "iics release validate \\\n"
+    "  --manifest release-manifest.yaml \\\n"
+    "  --profile staging\n\n"
+    "# 3. Generate per-environment deployment plans\n"
+    "iics release plan \\\n"
+    "  --manifest release-manifest.yaml \\\n"
+    "  --targets dev,staging,prod \\\n"
+    "  --output-dir ./plans"
+), Inches(0.5), Inches(1.65), Inches(6.0), Inches(4.5), font_size=11)
+
+add_text_box(s, "CI/CD integration",
+             Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.35),
+             font_size=14, bold=True, color=MID_BLUE)
+bullet_list(s, [
+    "release manifest – scans object dependencies and outputs a YAML manifest",
+    "release validate – checks each asset exists in the target org",
+    "release plan – generates one plan CSV per deployment target",
+    "IICS_VALID_DEPLOY_TARGETS – allowlist of approved targets",
+    "IICS_TARGET_PROFILE_MAP – maps target names to profiles",
+    "Per-target CI credentials: IICS_USER_<TARGET>, IICS_PWD_<TARGET>",
+    "Works with GitHub Actions, Jenkins, GitLab CI, and any shell pipeline",
+    "Publish order enforcement – dependencies deployed before dependents",
+], Inches(7.0), Inches(1.65), Inches(5.8), Inches(4.5), font_size=13)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SLIDE 12 – Publish & Unpublish
+# ─────────────────────────────────────────────────────────────────────────────
+s = prs.slides.add_slide(blank_layout)
+slide_header(s, "Publish & Unpublish CAI Assets", "Control asset lifecycle on the runtime")
+footer(s)
+
+add_text_box(s, "Publish assets to the runtime",
+             Inches(0.5), Inches(1.2), Inches(5.8), Inches(0.35),
+             font_size=14, bold=True, color=GREEN)
+code_block(s, (
+    "# Publish immediately and wait for completion\n"
+    "iics publish run \\\n"
+    "  --ids <asset-id-1>,<asset-id-2>\n\n"
+    "# Start async publish job\n"
+    "iics publish start --ids <asset-id-1>\n\n"
+    "# Check publish status\n"
+    "iics publish status --id <job-id>"
+), Inches(0.5), Inches(1.6), Inches(5.8), Inches(2.4), font_size=11)
+
+add_text_box(s, "Unpublish assets from the runtime",
+             Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.35),
+             font_size=14, bold=True, color=ORANGE)
+code_block(s, (
+    "# Unpublish immediately and wait for completion\n"
+    "iics unpublish run \\\n"
+    "  --ids <asset-id-1>,<asset-id-2>\n\n"
+    "# Start async unpublish job\n"
+    "iics unpublish start --ids <asset-id-1>\n\n"
+    "# Check unpublish status\n"
+    "iics unpublish status --id <job-id>"
+), Inches(7.0), Inches(1.6), Inches(5.8), Inches(2.4), font_size=11)
+
+add_text_box(s, "Supported asset types",
+             Inches(0.5), Inches(4.1), Inches(12.3), Inches(0.35),
+             font_size=14, bold=True, color=DARK_BLUE)
+add_table(s,
+    ["Asset Type", "Publishable", "Notes"],
+    [
+        ["PROCESS",              "Yes", "Application Integration processes"],
+        ["GUIDE",                "Yes", "Application Integration guides"],
+        ["TASKFLOW",             "Yes", "Taskflows"],
+        ["AI_CONNECTION",        "Yes", "Application Integration connections"],
+        ["AI_SERVICE_CONNECTOR", "Yes", "Application Integration service connectors"],
+        ["DTEMPLATE",            "No",  "Mappings – deployed via import, not publish"],
+    ],
+    Inches(0.5), Inches(4.55), Inches(12.3), Inches(2.3))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SLIDE 13 – Table Themes
+# ─────────────────────────────────────────────────────────────────────────────
+s = prs.slides.add_slide(blank_layout)
+slide_header(s, "Table Themes & Output Styles", "Human-readable and automation-friendly in the same tool")
+footer(s)
+
+add_text_box(s, "Six built-in table themes – global or per-command",
+             Inches(0.5), Inches(1.2), Inches(12.3), Inches(0.4),
+             font_size=15, bold=True, color=DARK_BLUE)
+
+add_table(s,
+    ["Theme", "Description", "Color", "Always Renders"],
+    [
+        ["default",  "Unicode rounded borders, cyan bold headers",        "Yes (TTY)", "No"],
+        ["minimal",  "No borders, colored bold headers, unicode underline","Yes (TTY)", "No"],
+        ["compact",  "No borders, gray bold headers, 1-space column gap", "Yes (TTY)", "No"],
+        ["plain",    "ASCII borders, no color – auto-used for non-TTY",   "No",        "No"],
+        ["markdown", "GitHub-flavored markdown table",                    "No",        "Yes"],
+        ["gh",       "GitHub CLI-style: no borders, plain headers",       "No",        "Yes"],
+    ],
+    Inches(0.5), Inches(1.7), Inches(12.3), Inches(2.8))
+
+add_text_box(s, "Configure theme globally or per invocation",
+             Inches(0.5), Inches(4.65), Inches(12.3), Inches(0.35),
+             font_size=14, bold=True, color=DARK_BLUE)
+code_block(s, (
+    "# Set a default theme in config\n"
+    "# ~/.iics/config.yaml\n"
+    "style:\n"
+    "  theme: minimal\n"
+    "  noColor: false\n"
+    "  headerColor: \"6\"  # lipgloss: 6=cyan, 244=gray, #FF0000=hex\n\n"
+    "# Override per command\n"
+    "iics user list --theme markdown   # paste into GitHub / Confluence\n"
+    "iics connection list --theme gh   # GitHub CLI style\n"
+    "IICS_THEME=compact iics role list # env var override"
+), Inches(0.5), Inches(5.05), Inches(12.3), Inches(2.0), font_size=11)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SLIDE 14 – Region Support
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Comprehensive Region Support", "All IICS pod regions – not just us / eu / ap")
@@ -532,33 +737,34 @@ add_text_box(s, "iics-cli – full pod registry",
              font_size=14, bold=True, color=GREEN)
 
 pods = [
-    ["USW1, USW1-1, USW1-2", "US West"],
-    ["USE2, USE4, USE6",      "US East"],
-    ["USW3, USW3-1, USW5",   "US West (additional)"],
-    ["CAC1",                  "Canada"],
-    ["EMEA, EMWE1",           "Europe / Middle East / Africa"],
-    ["APSE1, APJ, APNE1",    "Asia Pacific"],
+    ["US, USW1, USE2, USW3, USE4, USW5, USE6", "US (various pods)"],
+    ["USW1-1, USW3-1",                          "US West (dm1 hosts)"],
+    ["USW1-2",                                  "US West (dm2 host)"],
+    ["CAC1",                                    "Canada"],
+    ["EMEA, EMWE1",                             "Europe / Middle East / Africa"],
+    ["APSE1, APJ",                              "Asia Pacific"],
+    ["APNE1",                                   "Asia Pacific North-East"],
 ]
 add_table(s,
     ["Region Code(s)", "Geography"],
     pods,
-    Inches(5.0), Inches(1.65), Inches(7.8), Inches(2.8))
+    Inches(5.0), Inches(1.65), Inches(7.8), Inches(3.1))
 
 add_text_box(s,
-    "A loginUrl override is also supported for future pods or custom deployments.",
-    Inches(0.5), Inches(5.6), Inches(12.3), Inches(0.4),
+    "loginUrl and baseApiUrl auto-populated on first iics login – no manual URL entry needed.",
+    Inches(0.5), Inches(5.5), Inches(12.3), Inches(0.4),
     font_size=14, italic=True, color=MID_BLUE)
 
 code_block(s, (
     "# Use a built-in region\n"
     "iics user list --profile emea   # region: EMEA in config\n\n"
-    "# Override with explicit login URL\n"
-    "# loginUrl: https://dm-us.informaticacloud.com/ma/api/v2/user/login"
-), Inches(0.5), Inches(4.3), Inches(12.3), Inches(1.2), font_size=11)
+    "# Override with explicit login URL (future pods / custom deployments)\n"
+    "# loginUrl: https://dm-us.informaticacloud.com/saas/public/core/v3/login"
+), Inches(0.5), Inches(4.0), Inches(12.3), Inches(1.4), font_size=11)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 11 – Modern Design & Broad Platform Support
+# SLIDE 15 – Modern Design & Broad Platform Support
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Modern Design & Broad Platform Support", "Built for today's DevOps toolchains")
@@ -580,24 +786,23 @@ add_text_box(s, "iics-cli – Modern, actively maintained",
              font_size=14, bold=True, color=GREEN)
 bullet_list(s, [
     "Actively maintained with regular updates",
-    "20+ resource types with full CRUD operations",
+    "27+ resource types with full CRUD operations",
     "All IICS pod regions supported",
-    "Named profiles and session caching",
-    "~8 MB statically-linked Go binary",
+    "Named profiles, OS keychain, and session caching",
+    "~8 MB statically-linked Go binary – no runtime dependencies",
 ], Inches(7.0), Inches(1.7), Inches(5.8), Inches(3.5), font_size=15, color=GREEN)
 
 code_block(s, (
     "# Install – one line\n"
     "curl -L https://github.com/jbrazda/iics-cli/releases/latest/download/iics_linux_amd64 \\\n"
     "  -o /usr/local/bin/iics && chmod +x /usr/local/bin/iics\n\n"
-    "# Docker – minimal image\n"
-    "COPY iics /usr/local/bin/iics\n"
-    "# No apt-get install default-jre needed"
+    "# Docker – copy single binary\n"
+    "COPY iics /usr/local/bin/iics"
 ), Inches(0.5), Inches(5.3), Inches(12.3), Inches(1.8), font_size=11)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 12 – Structured Commands + Help
+# SLIDE 16 – Structured Commands + Help
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Structured Subcommands & Built-in Help", "kubectl / gh / aws style resource-verb hierarchy")
@@ -610,12 +815,16 @@ code_block(s, (
     "iics user   create --from-file user.json\n\n"
     "iics connection list\n"
     "iics connection update --id xyz --from-file conn.json\n\n"
-    "iics export create --name nightly --project Prod\n"
-    "iics export status --job-id 12345\n"
-    "iics export download --job-id 12345 --output export.zip\n\n"
+    "iics export run --name nightly --project Prod\n"
+    "iics export status --id 12345\n"
+    "iics export download --id 12345 --output export.zip\n\n"
+    "iics package expand --source export.zip --target ./workspace\n"
+    "iics package create --source ./workspace --manifest-file plan.csv\n\n"
+    "iics release manifest --project Prod --output manifest.yaml\n"
+    "iics release plan --manifest manifest.yaml --targets dev,prod\n\n"
     "iics sourcecontrol checkin --project Prod --comment \"release 2.4\"\n"
     "iics state fetch --project Prod --output state.json"
-), Inches(0.5), Inches(1.3), Inches(7.5), Inches(5.5), font_size=11)
+), Inches(0.5), Inches(1.3), Inches(7.5), Inches(5.5), font_size=10)
 
 add_text_box(s, "Built-in help at every level",
              Inches(8.2), Inches(1.3), Inches(4.8), Inches(0.4),
@@ -623,19 +832,21 @@ add_text_box(s, "Built-in help at every level",
 code_block(s, (
     "iics --help\n\n"
     "iics user --help\n\n"
-    "iics export create --help"
-), Inches(8.2), Inches(1.75), Inches(4.8), Inches(1.5), font_size=11)
+    "iics export create --help\n\n"
+    "iics package --help"
+), Inches(8.2), Inches(1.75), Inches(4.8), Inches(1.7), font_size=11)
 
 bullet_list(s, [
     "Same pattern as kubectl, gh, aws – familiar to DevOps teams",
-    "Tab completion supported",
+    "Tab completion: bash, zsh, fish, powershell",
     "Per-command docs in docs/documentation/",
     "Full flag reference in built-in --help",
-], Inches(8.2), Inches(3.4), Inches(4.8), Inches(2.5), font_size=13)
+    "--debug prints full HTTP trace to stderr",
+], Inches(8.2), Inches(3.6), Inches(4.8), Inches(2.8), font_size=13)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 13 – Error Reporting
+# SLIDE 17 – Error Reporting
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Better Error Reporting", "Structured API errors with HTTP context – all on stderr")
@@ -677,36 +888,43 @@ bullet_list(s, [
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 14 – Feature Comparison Summary
+# SLIDE 18 – Feature Comparison Summary
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Feature Comparison Summary")
 footer(s)
 
 add_table(s,
-    ["Capability", "Informatica CLI V2", "iics-cli"],
+    ["Capability", "Official Informatica CLI", "iics-cli"],
     [
-        ["Actively maintained",              "No",      "Yes"],
-        ["POSIX exit codes",                 "No",      "Yes"],
-        ["JSON / CSV output",                "No",      "Yes"],
-        ["Pipe-friendly stdout/stderr split","No",      "Yes"],
-        ["Credentials in config file",       "No",      "Yes"],
-        ["Named environment profiles",       "No",      "Yes"],
-        ["Session caching",                  "No",      "Yes"],
-        ["User & group management",          "No",      "Yes"],
-        ["Connection CRUD",                  "No",      "Yes"],
-        ["Schedule CRUD",                    "No",      "Yes"],
-        ["Agent & runtime management",       "No",      "Yes"],
-        ["Source control operations",        "No",      "Yes"],
-        ["All IICS regions",                 "No",      "Yes"],
-        ["Structured subcommands",           "No",      "Yes"],
-        ["Built-in contextual help",         "Minimal", "Yes"],
+        ["Actively maintained",               "No",      "Yes"],
+        ["POSIX exit codes",                  "No",      "Yes"],
+        ["JSON / CSV / YAML output",          "No",      "Yes"],
+        ["Pipe-friendly stdout/stderr split", "No",      "Yes"],
+        ["Credentials in config file",        "No",      "Yes"],
+        ["OS Keychain integration",           "No",      "Yes"],
+        ["Named environment profiles",        "No",      "Yes"],
+        ["Interactive profile wizard",        "No",      "Yes"],
+        ["Session caching",                   "No",      "Yes"],
+        ["Package expand / create",           "No",      "Yes"],
+        ["Selective packaging via manifest",  "No",      "Yes"],
+        ["CI/CD release manifest & plan",     "No",      "Yes"],
+        ["Publish / Unpublish",               "Partial", "Yes"],
+        ["User & group management",           "No",      "Yes"],
+        ["Connection CRUD",                   "No",      "Yes"],
+        ["Schedule CRUD",                     "No",      "Yes"],
+        ["Agent & runtime management",        "No",      "Yes"],
+        ["Activity / Audit / Security logs",  "No",      "Yes"],
+        ["Source control operations",         "No",      "Yes"],
+        ["All IICS regions",                  "No",      "Yes"],
+        ["Table themes & styles",             "No",      "Yes"],
+        ["Built-in contextual help",          "Minimal", "Yes"],
     ],
-    Inches(0.4), Inches(1.2), Inches(12.5), Inches(5.95))
+    Inches(0.4), Inches(1.2), Inches(12.5), Inches(5.9))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 15 – Getting Started
+# SLIDE 19 – Getting Started
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 slide_header(s, "Getting Started", "Install, configure, and run your first command in minutes")
@@ -716,29 +934,32 @@ code_block(s, (
     "# 1. Download the binary for your platform\n"
     "curl -L https://github.com/jbrazda/iics-cli/releases/latest/download/iics_linux_amd64 \\\n"
     "  -o /usr/local/bin/iics && chmod +x /usr/local/bin/iics\n\n"
-    "# 2. Create ~/.iics/config.yaml\n"
+    "# 2. Create a profile interactively (guided wizard)\n"
+    "iics profile add\n\n"
+    "#    -- OR create ~/.iics/config.yaml manually --\n"
     "mkdir -p ~/.iics && chmod 700 ~/.iics\n"
     "cat > ~/.iics/config.yaml << 'EOF'\n"
     "defaultProfile: default\n"
     "profiles:\n"
     "  default:\n"
-    "    region: US\n"
+    "    region: USE4\n"
     "    username: your-email@company.com\n"
     "EOF\n"
     "chmod 600 ~/.iics/config.yaml\n\n"
-    "# 3. Set your password in the environment\n"
+    "# 3. Set your password in the environment (or use the keychain via wizard)\n"
     "export IICS_PASSWORD='your-password'\n\n"
     "# 4. Login (optional – cached for 30 min)\n"
     "iics login\n\n"
     "# 5. Start exploring\n"
     "iics user list\n"
     "iics connection list -o json | jq '.[].name'\n"
+    "iics objects list --type MTT --output json\n"
     "iics export create --name my-first-export --project MyProject"
 ), Inches(0.5), Inches(1.3), Inches(12.3), Inches(5.8), font_size=11)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SLIDE 16 – Thank You / Questions
+# SLIDE 20 – Thank You / Questions
 # ─────────────────────────────────────────────────────────────────────────────
 s = prs.slides.add_slide(blank_layout)
 add_rect(s, 0, 0, SLIDE_W, SLIDE_H, DARK_BLUE)
@@ -752,7 +973,7 @@ add_text_box(s, "github.com/jbrazda/iics-cli",
              Inches(1), Inches(2.8), Inches(11), Inches(0.6),
              font_size=22, color=RGBColor(0xFF, 0xAA, 0x44), align=PP_ALIGN.CENTER)
 
-add_text_box(s, "Source code  •  Releases  •  Issues  •  Documentation",
+add_text_box(s, "Source code  |  Releases  |  Issues  |  Documentation",
              Inches(1), Inches(3.6), Inches(11), Inches(0.5),
              font_size=16, color=RGBColor(0xBB, 0xCC, 0xFF), align=PP_ALIGN.CENTER)
 
