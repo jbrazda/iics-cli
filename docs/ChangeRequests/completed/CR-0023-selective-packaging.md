@@ -64,6 +64,40 @@ See the following files
 - Regenerate `exportMetadata.v2.json` for selected assets only.
 - Generate `ContentsofExportPackage_<name>.csv` for selected assets.
 
+### Additional refinement: export metadata root fields and container metadata
+
+- The generated `exportMetadata.v2.json` root fields must be populated as:
+  - `name`
+  - `sourceOrgId`
+  - `sourceOrgName`
+- `sourceOrgId` and `sourceOrgName` must be copied from the source workspace
+  `exportMetadata.v2.json`.
+- `name` must use:
+  1. `--name` when provided
+  2. otherwise the package default naming behavior used by `package create`
+
+- Selective package assembly must also include parent container metadata files
+  for selected assets:
+  - `ProjectName.Project.json`
+  - `FolderName.Folder.json`
+- Parent projects and folders must be inferred from selected asset paths.
+- Goal: first deployment to a fresh target creates the same container structure
+  with the expected metadata, not only leaf assets.
+
+### Additional refinement: optional tags propagation
+
+- Add `--include-tags` to `iics package create`.
+- When selective packaging regenerates `exportMetadata.v2.json`, include root
+  `tags` only when `--include-tags` is set.
+- Keep default behavior unchanged when the flag is not provided.
+
+### Additional refinement: CDI metadata graph preservation
+
+- When `--exclude-found-transitive` is enabled, keep the full source
+  `exportMetadata.v2.json` dependency graph for import compatibility.
+- Continue excluding transitive-found asset files from package content so those
+  assets are not updated.
+
 ## Proposed implementation plan
 
 1. Add manifest input plumbing to `package create` (file and stdin).
@@ -83,6 +117,8 @@ See the following files
    - folder and project expansion
    - mixed reference dedupe warnings
    - generated output integrity
+   - export metadata root field population (`name`, `sourceOrgId`, `sourceOrgName`)
+   - parent project and folder metadata inclusion for selected assets
 6. Update docs and completions.
 
 ## Acceptance criteria
@@ -93,6 +129,11 @@ See the following files
 4. Duplicates are deduplicated and reported.
 5. Generated package includes selected-only metadata and checksum outputs.
 6. Running `package create` without manifest input preserves existing behavior.
+7. Generated `exportMetadata.v2.json` includes correct root fields:
+   - `name` from `--name` or default package naming
+   - `sourceOrgId` and `sourceOrgName` copied from source workspace metadata
+8. Packages include inferred parent project and folder metadata files for
+   selected assets.
 
 ## Deferred to follow-up CRs
 

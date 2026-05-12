@@ -302,6 +302,7 @@ func newPackageCreateCmd() *cobra.Command {
 		force                   bool
 		manifestFile            string
 		packageName             string
+		includeTags             bool
 		excludeFoundTransitive  bool
 		excludeTargetStatusName string
 	)
@@ -418,6 +419,21 @@ func newPackageCreateCmd() *cobra.Command {
 				if selErr != nil {
 					return selErr
 				}
+				parentAdded := dependencies.IncludeParentContainers(exported, selectedIDs)
+				closureAdded := 0
+				if !excludeFoundTransitive {
+					closureNodes := make([]dependencies.RefClosureNode, 0, len(meta.ExportedObjects))
+					for _, o := range meta.ExportedObjects {
+						if o.ObjectGUID == "" {
+							continue
+						}
+						closureNodes = append(closureNodes, dependencies.RefClosureNode{
+							ID:   o.ObjectGUID,
+							Refs: o.objectRefs(),
+						})
+					}
+					closureAdded = dependencies.IncludeReferencedClosure(closureNodes, selectedIDs)
+				}
 				if len(selectedIDs) == 0 {
 					return fmt.Errorf("no assets matched selection manifest")
 				}
@@ -432,6 +448,12 @@ func newPackageCreateCmd() *cobra.Command {
 						manifestStats.SelectedStatusColumnName,
 					)
 				}
+				if verbose && parentAdded > 0 {
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d inferred parent Project/Folder objects\n", parentAdded)
+				}
+				if verbose && closureAdded > 0 {
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d in-package referenced dependencies\n", closureAdded)
+				}
 
 				selectedObjects := make([]exportedObject, 0, len(selectedIDs))
 				for _, o := range meta.ExportedObjects {
@@ -442,28 +464,66 @@ func newPackageCreateCmd() *cobra.Command {
 				if len(selectedObjects) == 0 {
 					return fmt.Errorf("selection manifest resolved no exported objects")
 				}
+				metadataObjects := selectedObjects
+				if !excludeFoundTransitive {
+					selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+					for i, o := range selectedObjects {
+						selectedNodes[i] = dependencies.ObjectRefsNode{
+							ID:         o.ObjectGUID,
+							ObjectRefs: o.objectRefs(),
+						}
+					}
+					prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
+					for i := range selectedObjects {
+						if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
+							return setErr
+						}
+					}
+					postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+					for i, o := range selectedObjects {
+						postPruneNodes[i] = dependencies.ObjectRefsNode{
+							ID:         o.ObjectGUID,
+							ObjectRefs: o.objectRefs(),
+						}
+					}
+					if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
+						return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
+					}
+					if verbose && prunedCount > 0 {
+						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
+					}
+				} else {
+					// Keep full dependency metadata graph for CDI assets while still
+					// excluding transitive files from package content.
+					metadataObjects = meta.ExportedObjects
+				}
 
 				filtered := filterPackageFilesForSelection(fileContents, meta.ExportedObjects, selectedIDs)
 				if len(filtered) == 0 {
 					return fmt.Errorf("no package files remained after selection filtering")
 				}
 
-				meta.ExportedObjects = selectedObjects
+				finalPackageName := packageName
+				if finalPackageName == "" {
+					finalPackageName = strings.TrimSuffix(filepath.Base(target), filepath.Ext(target))
+				}
+
+				meta.Name = finalPackageName
+				if !includeTags {
+					meta.Tags = nil
+				}
+				meta.ExportedObjects = metadataObjects
 				metaData, marshalErr := json.MarshalIndent(meta, "", "  ")
 				if marshalErr != nil {
 					return fmt.Errorf("serializing filtered exportMetadata.v2.json: %w", marshalErr)
 				}
 				filtered["exportMetadata.v2.json"] = metaData
 
-				csvName := packageName
-				if csvName == "" {
-					csvName = strings.TrimSuffix(filepath.Base(target), filepath.Ext(target))
-				}
 				contentsCSV, csvErr := buildContentsOfExportPackageCSV(selectedObjects)
 				if csvErr != nil {
 					return csvErr
 				}
-				filtered["ContentsofExportPackage_"+csvName+".csv"] = contentsCSV
+				filtered["ContentsofExportPackage_"+finalPackageName+".csv"] = contentsCSV
 				fileContents = filtered
 			}
 
@@ -530,6 +590,7 @@ func newPackageCreateCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "overwrite existing output file")
 	cmd.Flags().StringVarP(&manifestFile, "manifest-file", "m", "", "inclusion manifest file (.txt/.csv/.json/.yaml); omit to read from stdin when piped")
 	cmd.Flags().StringVarP(&packageName, "name", "n", "", "package name override used for ContentsofExportPackage_<name>.csv")
+	cmd.Flags().BoolVar(&includeTags, "include-tags", false, "include root tags in regenerated exportMetadata.v2.json")
 	cmd.Flags().BoolVar(&excludeFoundTransitive, "exclude-found-transitive", false, "exclude manifest rows where dependency is transitive and status is found in target")
 	cmd.Flags().StringVar(&excludeTargetStatusName, "status-target", "", "target key for STATUS (<target>) column (for example: qa); required when multiple STATUS columns exist")
 	_ = cmd.MarkFlagRequired("source")
@@ -748,21 +809,61 @@ type exportMetadata struct {
 	Name            string           `json:"name"`
 	SourceOrgID     string           `json:"sourceOrgId"`
 	SourceOrgName   string           `json:"sourceOrgName"`
+	Tags            []exportTag      `json:"tags,omitempty"`
 	ExportedObjects []exportedObject `json:"exportedObjects"`
+}
+
+type exportTag struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
 }
 
 // exportedObject is one asset record in exportMetadata.v2.json.
 type exportedObject struct {
-	ObjectGUID string          `json:"objectGuid"`
-	ObjectName string          `json:"objectName"`
-	ObjectType string          `json:"objectType"`
-	Path       string          `json:"path"`
-	Metadata   exportedObjMeta `json:"metadata"`
+	ObjectGUID   string          `json:"objectGuid"`
+	ObjectName   string          `json:"objectName"`
+	ObjectType   string          `json:"objectType"`
+	Path         string          `json:"path"`
+	ProviderName json.RawMessage `json:"providerName,omitempty"`
+	Metadata     json.RawMessage `json:"metadata"`
 }
 
-// exportedObjMeta holds the objectRefs array for an exported object.
-type exportedObjMeta struct {
-	ObjectRefs []string `json:"objectRefs"`
+// objectRefs extracts metadata.objectRefs while preserving all other metadata fields.
+func (o exportedObject) objectRefs() []string {
+	metadata := bytes.TrimSpace(o.Metadata)
+	if len(metadata) == 0 || bytes.Equal(metadata, []byte("null")) {
+		return nil
+	}
+	var m struct {
+		ObjectRefs []string `json:"objectRefs"`
+	}
+	if err := json.Unmarshal(metadata, &m); err != nil {
+		return nil
+	}
+	return append([]string(nil), m.ObjectRefs...)
+}
+
+// setObjectRefs updates metadata.objectRefs without dropping other metadata fields.
+func (o *exportedObject) setObjectRefs(refs []string) error {
+	metadata := bytes.TrimSpace(o.Metadata)
+	m := make(map[string]json.RawMessage)
+	if len(metadata) > 0 && !bytes.Equal(metadata, []byte("null")) {
+		if err := json.Unmarshal(metadata, &m); err != nil {
+			return fmt.Errorf("parsing metadata for %s: %w", o.ObjectGUID, err)
+		}
+	}
+	rawRefs, err := json.Marshal(refs)
+	if err != nil {
+		return fmt.Errorf("serializing metadata refs for %s: %w", o.ObjectGUID, err)
+	}
+	m["objectRefs"] = rawRefs
+	updated, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("serializing metadata for %s: %w", o.ObjectGUID, err)
+	}
+	o.Metadata = updated
+	return nil
 }
 
 // dependencyItem is one row in the dependency output.
@@ -1092,7 +1193,7 @@ func resolveDependencies(
 				}
 			}
 
-			for _, refGUID := range obj.Metadata.ObjectRefs {
+			for _, refGUID := range obj.objectRefs() {
 				rawEdges = append(rawEdges, [2]string{guid, refGUID})
 				if refGUID != "" && !visited[refGUID] {
 					queue = append(queue, refGUID)

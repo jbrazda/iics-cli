@@ -90,3 +90,23 @@ func TestSelectExportedObjects_DuplicateWarning(t *testing.T) {
 		t.Fatalf("expected duplicate warning")
 	}
 }
+
+func TestIncludeParentContainers(t *testing.T) {
+	objects := []ExportedObjectRef{
+		{ObjectGUID: "proj", ObjectName: "ZZ_TEST_CLI", ObjectType: "Project", Path: "/Explore"},
+		{ObjectGUID: "folder1", ObjectName: "Processes", ObjectType: "Folder", Path: "/Explore/ZZ_TEST_CLI"},
+		{ObjectGUID: "folder2", ObjectName: "Nested", ObjectType: "Folder", Path: "/Explore/ZZ_TEST_CLI/Processes"},
+		{ObjectGUID: "leaf", ObjectName: "MyProc", ObjectType: "PROCESS", Path: "/Explore/ZZ_TEST_CLI/Processes/Nested"},
+	}
+	selected := map[string]bool{"leaf": true}
+
+	added := IncludeParentContainers(objects, selected)
+	if added != 3 {
+		t.Fatalf("expected 3 parent containers added, got %d", added)
+	}
+	for _, id := range []string{"proj", "folder1", "folder2", "leaf"} {
+		if !selected[id] {
+			t.Fatalf("expected selected id %q", id)
+		}
+	}
+}

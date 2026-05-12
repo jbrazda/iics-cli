@@ -36,6 +36,62 @@ func hasLocationRoot(path string) bool {
 	return strings.HasPrefix(path, "Explore/") || strings.HasPrefix(path, "SYS/")
 }
 
+func parentPaths(fullPath string) []string {
+	parts := strings.Split(strings.Trim(fullPath, "/"), "/")
+	if len(parts) <= 1 {
+		return nil
+	}
+	out := make([]string, 0, len(parts)-1)
+	for i := len(parts) - 1; i >= 1; i-- {
+		out = append(out, strings.Join(parts[:i], "/"))
+	}
+	return out
+}
+
+// IncludeParentContainers adds parent Project/Folder objects inferred from
+// already-selected object paths. It mutates selectedIDs and returns the number
+// of newly added parent container IDs.
+func IncludeParentContainers(objects []ExportedObjectRef, selectedIDs map[string]bool) int {
+	if len(selectedIDs) == 0 || len(objects) == 0 {
+		return 0
+	}
+
+	byID := make(map[string]ExportedObjectRef, len(objects))
+	containerIDsByPath := make(map[string][]string)
+	for _, o := range objects {
+		if o.ObjectGUID == "" || o.ObjectName == "" || o.ObjectType == "" {
+			continue
+		}
+		byID[o.ObjectGUID] = o
+		if o.ObjectType == "Project" || o.ObjectType == "Folder" {
+			p := fullObjectPath(o.Path, o.ObjectName)
+			containerIDsByPath[p] = append(containerIDsByPath[p], o.ObjectGUID)
+		}
+	}
+
+	required := make(map[string]bool)
+	for id := range selectedIDs {
+		o, ok := byID[id]
+		if !ok {
+			continue
+		}
+		for _, parent := range parentPaths(fullObjectPath(o.Path, o.ObjectName)) {
+			required[parent] = true
+		}
+	}
+
+	added := 0
+	for path := range required {
+		for _, id := range containerIDsByPath[path] {
+			if !selectedIDs[id] {
+				selectedIDs[id] = true
+				added++
+			}
+		}
+	}
+	return added
+}
+
 // SelectExportedObjects resolves manifest entries to exported objects.
 // It supports direct object references and container expansion for Project/Folder.
 func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObjectRef) (map[string]bool, []string, error) {

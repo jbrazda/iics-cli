@@ -140,6 +140,8 @@ via `iics import run`.
 Selective packaging is supported with `--manifest-file` or piped stdin. When a manifest
 is supplied, only matching assets are included, `exportMetadata.v2.json` is regenerated
 for selected assets, and `ContentsofExportPackage_<name>.csv` is generated.
+The regenerated metadata keeps source org fields from the source workspace metadata
+and sets the metadata `name` to `--name` or the target ZIP basename.
 
 Dot files (names starting with `.`) and any existing `exportPackage.chksum` are
 excluded. Directories whose name ends in `.zip` (produced by `package expand --recursive`)
@@ -154,6 +156,7 @@ are re-packed into nested ZIP entries automatically.
 | `--force`                    | `-f`  | bool   |          | false   | Overwrite existing output file                                                    |
 | `--manifest-file`            | `-m`  | string |          |         | Inclusion manifest file (`.txt`, `.csv`, `.json`, `.yaml`); omit to read stdin   |
 | `--name`                     | `-n`  | string |          |         | Package name used for generated `ContentsofExportPackage_<name>.csv` file         |
+| `--include-tags`             |       | bool   |          | false   | Include root `tags` in regenerated `exportMetadata.v2.json`                       |
 | `--exclude-found-transitive` |       | bool   |          | false   | Exclude rows where `DEPENDENCY=transitive` and selected `STATUS (<target>)=found` |
 | `--status-target`            |       | string |          |         | Target key for `STATUS (<target>)` column (for example `qa`)                      |
 
@@ -184,6 +187,15 @@ Target-aware transitive exclusion:
 - The manifest must be CSV with `DEPENDENCY` and `STATUS (<target>)` columns.
 - Use `--status-target` when multiple status columns exist (for example `STATUS (qa)`, `STATUS (stg)`).
 - Rows where `DEPENDENCY=transitive` and `STATUS (<target>)=found` are excluded.
+- Parent Project and Folder container objects inferred from selected asset paths are
+  included so first-time target deployments can create container structure metadata.
+- For selective packaging without `--exclude-found-transitive`, package-internal
+  referenced dependencies are re-included to preserve dependency closure.
+- With `--exclude-found-transitive`, package file content excludes filtered
+  transitive assets, but `exportMetadata.v2.json` keeps the full source
+  dependency graph to preserve CDI import semantics.
+- Use `--include-tags` to carry root `tags` from source metadata into regenerated
+  selective package metadata.
 
 ### Verbose output (`--verbose`)
 
@@ -208,6 +220,7 @@ iics package create \
   --source src/iics \
   --target dist/my-project-selective.zip \
   --manifest-file target/iics/import/conf/package_manifest.csv \
+  --include-tags \
   --name my-project-selective \
   --force
 
