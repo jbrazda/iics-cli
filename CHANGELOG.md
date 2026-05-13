@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-13
+
+### Added
+
+- `package create --include-tags` preserves tag propagation in regenerated
+  `exportMetadata.v2.json` when using manifest-driven selective packaging (CR-0023)
+
+### Changed
+
+- `package create --exclude-found-transitive` now preserves the full CDI dependency
+  graph in `exportMetadata.v2.json` while still excluding transitive asset files from
+  the package content, preventing broken metadata for downstream imports (CR-0023)
+- Selective packaging enforces strict single-asset-per-manifest-entry behavior; duplicate
+  manifest entries are deduplicated and reported (CR-0023)
+
 ## [0.4.0] - 2026-05-11
 
 ### Added
