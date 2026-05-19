@@ -41,30 +41,30 @@ All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column       | Description                                    |
-| ------------ | ---------------------------------------------- |
-| `id`         | Object ID                                      |
-| `path`       | Full path within the org                       |
-| `type`       | Object type (MTT, DTEMPLATE, DSS, etc.)        |
-| `location`   | Computed as `(Explore|SYS)/<path>.<type>`      |
-| `description`| Object description                             |
-| `updatedBy`  | Last user who modified the object              |
-| `updateTime` | Last modification timestamp                    |
+| Column        | Description                                |
+|---------------|--------------------------------------------|
+| `id`          | Object ID                                  |
+| `path`        | Full path within the org                   |
+| `type`        | Object type (MTT, DTEMPLATE, DSS, etc.)    |
+| `location`    | Computed as `(Explore\|SYS)/<path>.<type>` |
+| `description` | Object description                         |
+| `updatedBy`   | Last user who modified the object          |
+| `updateTime`  | Last modification timestamp                |
 
 ### Object types
 
 Common values for `--type`:
 
-| Type        | Description                        |
-| ----------- | ---------------------------------- |
-| `MTT`       | Mapping / Mapping Task             |
-| `DTEMPLATE` | Data Integration Task template     |
-| `DSS`       | Synchronization Task               |
-| `BSERVICE`  | Business Service                   |
-| `FWCONFIG`  | Fixed-width configuration          |
-| `TASKFLOW`  | Taskflow                           |
-| `WORKFLOW`  | Cloud Data Integration workflow    |
-| `AI_CONNECTION` | AI Connection                  |
+| Type            | Description                     |
+|-----------------|---------------------------------|
+| `MTT`           | Mapping / Mapping Task          |
+| `DTEMPLATE`     | Data Integration Task template  |
+| `DSS`           | Synchronization Task            |
+| `BSERVICE`      | Business Service                |
+| `FWCONFIG`      | Fixed-width configuration       |
+| `TASKFLOW`      | Taskflow                        |
+| `WORKFLOW`      | Cloud Data Integration workflow |
+| `AI_CONNECTION` | AI Connection                   |
 
 ### Examples
 
@@ -145,20 +145,20 @@ engine, so dependency recursion behavior is consistent across both commands.
 
 ### Flags
 
-| Flag                   | Short | Type     | Required | Default                                           | Description                                                                |
-|------------------------|-------|----------|----------|---------------------------------------------------|----------------------------------------------------------------------------|
-| `--id`                 |       | string   |          |                                                   | Object ID to inspect (or pipe JSON/CSV/YAML rows from `objects list`)      |
-| `--tag`                |       | string   |          |                                                   | Tag name used to resolve seed objects before traversal                     |
-| `--ref-type`           |       | string   |          |                                                   | Reference direction: `uses` or `usedBy` (default: both)                    |
-| `--limit`              |       | int      |          | 0 (all)                                           | Max results; 0 fetches all pages in batches of 50                          |
-| `--skip`               |       | int      |          | 0                                                 | Results to skip (only meaningful with `--limit`)                           |
-| `--targets`            |       | []string |          |                                                   | Comma-separated profiles to validate dependencies against                  |
-| `--publish`            |       | bool     |          | false                                             | Restrict output to publishable types only; sort by publish order           |
-| `--filter`             |       | string   |          |                                                   | Regex matched against `location` (`(Explore|SYS)/path.type`) for final output |
-| `--exclude-file`       |       | string   |          |                                                   | Regex policy file; matching `location` rows are excluded from final output |
-| `--output-file`        |       | string   |          |                                                   | Write output to a file                                                     |
-| `--output-file-format` |       | string   |          | `yaml`                                            | Output file format: `table`, `json`, `csv`, `yaml`                         |
-| `--output-file-fields` |       | string   |          | `location,dependency,id,type,path,status,warning` | Comma-separated fields for output file rows                                |
+| Flag                   | Short | Type     | Required | Default                                           | Description                                                                |                                   |
+|------------------------|-------|----------|----------|---------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------|
+| `--id`                 |       | string   |          |                                                   | Object ID to inspect (or pipe JSON/CSV/YAML rows from `objects list`)      |                                   |
+| `--tag`                |       | string   |          |                                                   | Tag name used to resolve seed objects before traversal                     |                                   |
+| `--ref-type`           |       | string   |          |                                                   | Reference direction: `uses` or `usedBy` (default: both)                    |                                   |
+| `--limit`              |       | int      |          | 0 (all)                                           | Max results; 0 fetches all pages in batches of 50                          |                                   |
+| `--skip`               |       | int      |          | 0                                                 | Results to skip (only meaningful with `--limit`)                           |                                   |
+| `--targets`            |       | []string |          |                                                   | Comma-separated profiles to validate dependencies against                  |                                   |
+| `--publish`            |       | bool     |          | false                                             | Restrict output to publishable types only; sort by publish order           |                                   |
+| `--filter`             |       | string   |          |                                                   | Regex matched against `location` (`(Explore                                | SYS)/path.type`) for final output |
+| `--exclude-file`       |       | string   |          |                                                   | Regex policy file; matching `location` rows are excluded from final output |                                   |
+| `--output-file`        |       | string   |          |                                                   | Write output to a file                                                     |                                   |
+| `--output-file-format` |       | string   |          | `yaml`                                            | Output file format: `table`, `json`, `csv`, `yaml`                         |                                   |
+| `--output-file-fields` |       | string   |          | `location,dependency,id,type,path,status,warning` | Comma-separated fields for output file rows                                |                                   |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -176,22 +176,22 @@ Rows include a `dependency` marker:
 
 ### Output columns (standard mode)
 
-| Column       | Description                                        |
-|--------------|----------------------------------------------------|
-| `location`   | Normalized asset identifier: `(Explore|SYS)/path.type` |
-| `dependency` | `explicit` (seed input) or `transitive` (resolved) |
-| `id`         | Object ID (when available)                         |
-| `type`       | Object type                                        |
-| `path`       | Full path of the dependent object                  |
+| Column       | Description                                        |                 |
+|--------------|----------------------------------------------------|-----------------|
+| `location`   | Normalized asset identifier: `(Explore             | SYS)/path.type` |
+| `dependency` | `explicit` (seed input) or `transitive` (resolved) |                 |
+| `id`         | Object ID (when available)                         |                 |
+| `type`       | Object type                                        |                 |
+| `path`       | Full path of the dependent object                  |                 |
 
 ### Output columns (--targets report mode)
 
-| Column                | Description                                        |
-|-----------------------|----------------------------------------------------|
-| `Location`            | Normalized asset identifier: `(Explore|SYS)/path.type` |
-| `DEPENDENCY`          | `explicit` (seed input) or `transitive` (resolved) |
-| `STATUS (<profile>)`  | `found`, `missing`, or `unknown` per profile       |
-| `WARNING (<profile>)` | Lookup warning message (CSV output only)           |
+| Column                | Description                                        |                 |
+|-----------------------|----------------------------------------------------|-----------------|
+| `Location`            | Normalized asset identifier: `(Explore             | SYS)/path.type` |
+| `DEPENDENCY`          | `explicit` (seed input) or `transitive` (resolved) |                 |
+| `STATUS (<profile>)`  | `found`, `missing`, or `unknown` per profile       |                 |
+| `WARNING (<profile>)` | Lookup warning message (CSV output only)           |                 |
 
 ### Examples
 

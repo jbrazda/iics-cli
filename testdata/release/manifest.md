@@ -4,12 +4,11 @@
 
 > **Instructions** - Fill in before merging to control the automated Build Deploy pipeline.
 > Leave the defaults (Full Deployment, TST + QA) for a standard release.
-> Delete this entire section to use pipeline defaults.
 
 ### Deploy Mode *(check exactly one)*
 
-- [x] Full Deployment *(all assets - uses `conf/all_exclude_connections.package.csv`)*
-- [ ] Selective - Tag-Based *(assets tagged in DEV with the tag below + their dependencies)*
+- [ ] Full Deployment *(all assets - uses `conf/all_exclude_connections.package.csv`)*
+- [x] Selective - Tag-Based *(assets tagged in DEV with the tag below + their dependencies)*
 
 ### Deployment Tag *(required for Tag-Based mode - must match an IICS DEV tag exactly)*
 

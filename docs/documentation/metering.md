@@ -72,10 +72,10 @@ Download a metering report to a CSV file.
 
 ### Flags
 
-| Flag              | Short | Type   | Required | Default                | Description              |
-| ----------------- | ----- | ------ | -------- | ---------------------- | ------------------------ |
-| `--id`            |       | string | yes      |                        | Report ID                |
-| `--output-file`   | `-f`  | string |          | `metering_<id>.csv`   | Output file path         |
+| Flag            | Short | Type   | Required | Default             | Description      |
+|-----------------|-------|--------|----------|---------------------|------------------|
+| `--id`          |       | string | yes      |                     | Report ID        |
+| `--output-file` | `-f`  | string |          | `metering_<id>.csv` | Output file path |
 
 All [global flags](../../README.md#global-flags) apply.
 
