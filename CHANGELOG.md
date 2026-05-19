@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-05-19
+
+### Changed
+
+- `release manifest` splits connector/connection include options into separate flags for
+  finer control over deployment scope
+- Release manifest output cleanup: improved formatting of generated markdown logs
+
+### Fixed
+
+- `user get --id` now correctly scans the user list instead of calling the unsupported
+  `GET /users/{id}` endpoint (which only allows DELETE), resolving HTTP 405 errors (BUG-0004)
+
+### Docs
+
+- Refreshed command reference pages: `metering`, `objects`, `publish`, `release`
+
 ## [0.4.1] - 2026-05-13
 
 ### Added
