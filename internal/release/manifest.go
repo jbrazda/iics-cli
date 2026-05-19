@@ -7,8 +7,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 type DeployMode string
@@ -29,12 +27,13 @@ type TargetPolicy struct {
 }
 
 type Options struct {
-	Mode              DeployMode `yaml:"mode" json:"mode"`
-	Tag               string     `yaml:"tag,omitempty" json:"tag,omitempty"`
-	Targets           []string   `yaml:"targets" json:"targets"`
-	IncludeConnectors bool       `yaml:"includeConnectors" json:"includeConnectors"`
-	ConnectorsOnly    bool       `yaml:"connectorsOnly,omitempty" json:"connectorsOnly,omitempty"`
-	ExcludeFile       string     `yaml:"excludeFile,omitempty" json:"excludeFile,omitempty"`
+	Mode               DeployMode `yaml:"mode" json:"mode"`
+	Tag                string     `yaml:"tag,omitempty" json:"tag,omitempty"`
+	Targets            []string   `yaml:"targets" json:"targets"`
+	IncludeConnectors  bool       `yaml:"includeConnectors" json:"includeConnectors"`
+	IncludeConnections bool       `yaml:"includeConnections" json:"includeConnections"`
+	ConnectorsOnly     bool       `yaml:"connectorsOnly,omitempty" json:"connectorsOnly,omitempty"`
+	ExcludeFile        string     `yaml:"excludeFile,omitempty" json:"excludeFile,omitempty"`
 }
 
 type Manifest struct {
@@ -140,8 +139,9 @@ func ValidateOptionsWithPolicy(opts *Options, policy TargetPolicy) error {
 	sort.Strings(normalized)
 	opts.Targets = normalized
 
-	if opts.ConnectorsOnly && !opts.IncludeConnectors {
+	if opts.ConnectorsOnly {
 		opts.IncludeConnectors = true
+		opts.IncludeConnections = true
 	}
 	return nil
 }
@@ -155,14 +155,7 @@ func ParseManifestYAML(data []byte) (Manifest, error) {
 }
 
 func ParseManifestYAMLWithPolicy(data []byte, policy TargetPolicy) (Manifest, error) {
-	var m Manifest
-	if err := yaml.Unmarshal(data, &m); err != nil {
-		return Manifest{}, fmt.Errorf("parsing manifest: %w", err)
-	}
-	if err := ValidateManifestWithPolicy(&m, policy); err != nil {
-		return Manifest{}, err
-	}
-	return m, nil
+	return ParseManifestWithPolicy(data, ManifestFormatYAML, policy)
 }
 
 func ResolveTargetPolicy(validTargetsOverride string) (TargetPolicy, error) {
@@ -248,7 +241,10 @@ func RenderManifestMarkdown(m Manifest) string {
 	}
 	_, _ = fmt.Fprintf(&sb, "- Targets: `%s`\n", strings.Join(opts.Targets, ", "))
 	_, _ = fmt.Fprintf(&sb, "- Include Connectors: `%t`\n", opts.IncludeConnectors)
-	_, _ = fmt.Fprintf(&sb, "- Connectors Only: `%t`\n", opts.ConnectorsOnly)
+	_, _ = fmt.Fprintf(&sb, "- Include Connections: `%t`\n", opts.IncludeConnections)
+	if opts.ConnectorsOnly {
+		_, _ = fmt.Fprintf(&sb, "- Connectors Only: `%t`\n", opts.ConnectorsOnly)
+	}
 	if opts.ExcludeFile != "" {
 		_, _ = fmt.Fprintf(&sb, "- Exclude File: `%s`\n", opts.ExcludeFile)
 	}
@@ -256,6 +252,10 @@ func RenderManifestMarkdown(m Manifest) string {
 }
 
 func WriteManifestFiles(outputRoot string, m Manifest) (string, string, error) {
+	return WriteManifestFilesWithFormat(outputRoot, m, ManifestFormatYAML)
+}
+
+func WriteManifestFilesWithFormat(outputRoot string, m Manifest, format ManifestFormat) (string, string, error) {
 	confDir := filepath.Join(outputRoot, "conf")
 	logDir := filepath.Join(outputRoot, "logs")
 	if err := os.MkdirAll(confDir, 0o755); err != nil {
@@ -265,18 +265,18 @@ func WriteManifestFiles(outputRoot string, m Manifest) (string, string, error) {
 		return "", "", fmt.Errorf("creating logs directory: %w", err)
 	}
 
-	yamlPath := filepath.Join(confDir, "release_manifest.yaml")
+	manifestPath := filepath.Join(confDir, "release_manifest."+ManifestFileExtension(format))
 	mdPath := filepath.Join(logDir, "release_manifest.md")
 
-	data, err := yaml.Marshal(m)
+	data, err := MarshalManifest(m, format)
 	if err != nil {
-		return "", "", fmt.Errorf("serializing manifest yaml: %w", err)
+		return "", "", err
 	}
-	if err := os.WriteFile(yamlPath, data, 0o644); err != nil {
-		return "", "", fmt.Errorf("writing manifest yaml: %w", err)
+	if err := os.WriteFile(manifestPath, data, 0o644); err != nil {
+		return "", "", fmt.Errorf("writing manifest: %w", err)
 	}
 	if err := os.WriteFile(mdPath, []byte(RenderManifestMarkdown(m)), 0o644); err != nil {
 		return "", "", fmt.Errorf("writing manifest markdown: %w", err)
 	}
-	return yamlPath, mdPath, nil
+	return manifestPath, mdPath, nil
 }

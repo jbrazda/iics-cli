@@ -1,11 +1,14 @@
 package release
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jbrazda/iics-cli/internal/config"
+	"gopkg.in/yaml.v3"
 )
 
 func TestLoadExcludePatterns(t *testing.T) {
@@ -27,10 +30,51 @@ func TestApplyPolicies(t *testing.T) {
 	assets := []Asset{
 		{Location: "Explore/A.PROCESS", Type: "PROCESS"},
 		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION"},
+		{Location: "Explore/C.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR"},
+		{Location: "Explore/D.Connection", Type: "Connection"},
 	}
-	got := ApplyPolicies(assets, false, false, nil)
-	if len(got) != 1 {
-		t.Fatalf("len = %d, want 1", len(got))
+	got := ApplyPolicies(assets, false, false, false, nil)
+	if len(got) != 1 || got[0].Type != "PROCESS" {
+		t.Fatalf("unexpected filtered assets: %#v", got)
+	}
+}
+
+func TestApplyPoliciesIncludeFlagsAndConnectorsOnly(t *testing.T) {
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Type: "PROCESS"},
+		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION"},
+		{Location: "Explore/C.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR"},
+		{Location: "Explore/D.Connection", Type: "Connection"},
+	}
+
+	onlyConnectors := ApplyPolicies(assets, true, false, false, nil)
+	if len(onlyConnectors) != 2 {
+		t.Fatalf("onlyConnectors len = %d, want 2", len(onlyConnectors))
+	}
+	for _, a := range onlyConnectors {
+		if a.Type != "PROCESS" && a.Type != "AI_SERVICE_CONNECTOR" {
+			t.Fatalf("onlyConnectors contains unexpected type %q", a.Type)
+		}
+	}
+
+	onlyConnections := ApplyPolicies(assets, false, true, false, nil)
+	if len(onlyConnections) != 3 {
+		t.Fatalf("onlyConnections len = %d, want 3", len(onlyConnections))
+	}
+	for _, a := range onlyConnections {
+		if a.Type == "AI_SERVICE_CONNECTOR" {
+			t.Fatalf("onlyConnections should not include connector type: %#v", onlyConnections)
+		}
+	}
+
+	connectorsOnly := ApplyPolicies(assets, false, false, true, nil)
+	if len(connectorsOnly) != 3 {
+		t.Fatalf("connectorsOnly len = %d, want 3", len(connectorsOnly))
+	}
+	for _, a := range connectorsOnly {
+		if a.Type == "PROCESS" {
+			t.Fatalf("connectorsOnly should exclude non connector/connection assets")
+		}
 	}
 }
 
@@ -128,5 +172,74 @@ func TestResolveProfileNameForTargetImplicitCaseInsensitive(t *testing.T) {
 	}
 	if name != "qa" {
 		t.Fatalf("name = %q, want qa", name)
+	}
+}
+
+func TestWriteAssetsJSON(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tag_build.package.json")
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Dependency: "explicit", Type: "PROCESS", Path: "A"},
+		{Location: "Explore/B.GUIDE", Dependency: "transitive", Type: "GUIDE", Path: "B"},
+	}
+	if err := WriteAssetsJSON(path, assets, []string{"location", "dependency", "type", "path"}); err != nil {
+		t.Fatalf("WriteAssetsJSON() error = %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	var rows []map[string]string
+	if err := json.Unmarshal(data, &rows); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("rows len = %d, want 2", len(rows))
+	}
+	if rows[0]["location"] != "Explore/A.PROCESS" || rows[1]["dependency"] != "transitive" {
+		t.Fatalf("unexpected rows: %#v", rows)
+	}
+}
+
+func TestWriteAssetsYAMLEmpty(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "publish_assets.yaml")
+	if err := WriteAssetsYAML(path, nil, []string{"location", "dependency"}); err != nil {
+		t.Fatalf("WriteAssetsYAML() error = %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	if strings.TrimSpace(string(data)) != "[]" {
+		t.Fatalf("expected empty yaml list, got %q", string(data))
+	}
+}
+
+func TestWriteAssetsYAMLFieldSelection(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "publish_assets.yaml")
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Dependency: "explicit", Type: "PROCESS", Path: "A", ID: "id-1"},
+	}
+	if err := WriteAssetsYAML(path, assets, []string{"location", "id"}); err != nil {
+		t.Fatalf("WriteAssetsYAML() error = %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	var rows []map[string]string
+	if err := yaml.Unmarshal(data, &rows); err != nil {
+		t.Fatalf("yaml.Unmarshal() error = %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("rows len = %d, want 1", len(rows))
+	}
+	if rows[0]["location"] != "Explore/A.PROCESS" || rows[0]["id"] != "id-1" {
+		t.Fatalf("unexpected row: %#v", rows[0])
+	}
+	if _, ok := rows[0]["type"]; ok {
+		t.Fatalf("unexpected type key in selected fields output: %#v", rows[0])
 	}
 }

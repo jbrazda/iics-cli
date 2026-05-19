@@ -234,7 +234,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [publish](docs/documentation/publish.md)             |        | `start`, `status`, `run`                                               | Publish CAI assets to the runtime                                  |
 | [unpublish](docs/documentation/unpublish.md)         |        | `start`, `status`, `run`                                               | Unpublish CAI assets from the runtime                              |
 | [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
-| [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate CI release manifests and per-environment plan files       |
+| [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate multi-format release manifests and per-environment plans  |
 | [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
 | [folder](docs/documentation/folder.md)               |        | `create`, `update`, `delete`                                           | Manage folders                                                     |
 | [schedule](docs/documentation/schedule.md)           |        | `list`, `get`, `create`, `update`, `delete`                            | Manage schedules                                                   |

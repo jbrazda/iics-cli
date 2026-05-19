@@ -1,6 +1,9 @@
 package release
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestValidateOptions(t *testing.T) {
 	opts := Options{
@@ -78,5 +81,58 @@ func TestValidateOptionsWithPolicyRejectsUnknownTarget(t *testing.T) {
 	}
 	if err := ValidateOptionsWithPolicy(&opts, policy); err == nil {
 		t.Fatalf("expected validation error for unknown target")
+	}
+}
+
+func TestValidateOptionsConnectorsOnlyEnablesBothFlags(t *testing.T) {
+	opts := Options{
+		Mode:               ModeTagBased,
+		Tag:                "sprint-3",
+		Targets:            []string{"TST"},
+		IncludeConnectors:  false,
+		IncludeConnections: false,
+		ConnectorsOnly:     true,
+	}
+	if err := ValidateOptions(&opts); err != nil {
+		t.Fatalf("ValidateOptions() error = %v", err)
+	}
+	if !opts.IncludeConnectors || !opts.IncludeConnections {
+		t.Fatalf("connectorsOnly should force include flags true, got connectors=%t connections=%t", opts.IncludeConnectors, opts.IncludeConnections)
+	}
+}
+
+func TestRenderManifestMarkdownOmitsConnectorsOnlyWhenFalse(t *testing.T) {
+	md := RenderManifestMarkdown(Manifest{
+		SchemaVersion: "v1",
+		GeneratedAt:   "2026-05-19T10:00:00Z",
+		Options: Options{
+			Mode:               ModeTagBased,
+			Tag:                "sprint-1",
+			Targets:            []string{"QA", "TST"},
+			IncludeConnectors:  true,
+			IncludeConnections: true,
+			ConnectorsOnly:     false,
+		},
+	})
+	if strings.Contains(md, "Connectors Only:") {
+		t.Fatalf("markdown should not include Connectors Only when false:\n%s", md)
+	}
+}
+
+func TestRenderManifestMarkdownIncludesConnectorsOnlyWhenTrue(t *testing.T) {
+	md := RenderManifestMarkdown(Manifest{
+		SchemaVersion: "v1",
+		GeneratedAt:   "2026-05-19T10:00:00Z",
+		Options: Options{
+			Mode:               ModeTagBased,
+			Tag:                "sprint-1",
+			Targets:            []string{"QA", "TST"},
+			IncludeConnectors:  true,
+			IncludeConnections: true,
+			ConnectorsOnly:     true,
+		},
+	})
+	if !strings.Contains(md, "- Connectors Only: `true`") {
+		t.Fatalf("markdown should include Connectors Only when true:\n%s", md)
 	}
 }

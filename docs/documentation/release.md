@@ -12,9 +12,9 @@ iics release <subcommand> [flags]
 
 | Subcommand | Description                                                                                                |
 |------------|------------------------------------------------------------------------------------------------------------|
-| `manifest` | Generate `target/iics/import/conf/release_manifest.yaml` and `target/iics/import/logs/release_manifest.md` |
+| `manifest` | Generate `release_manifest.<ext>` (`yaml`, `json`, or `properties`) and `release_manifest.md`              |
 | `validate` | Validate release manifest schema and options                                                               |
-| `plan`     | Generate per-environment package and publish CSV files from a release manifest                             |
+| `plan`     | Generate per-environment package and publish files (`csv`, `json`, or `yaml`) from a release manifest      |
 
 ---
 
@@ -28,12 +28,14 @@ Generates release manifest files from either a PR description markdown file (Dep
 |------------------------|-------------|----------------------|-------------------------------------------------------------------------------------|
 | `--from-file`          | string      |                      | PR description markdown file to parse                                               |
 | `--output-root`        | string      | `target/iics/import` | Root output directory                                                               |
+| `--output`             | string      | `yaml`               | Manifest output format: `yaml`, `json`, `properties`                               |
 | `--mode`               | string      |                      | Override mode: `full` or `tag-based`                                                |
 | `--tag`                | string      |                      | Deployment tag when mode is `tag-based`                                             |
 | `--targets`            | string list |                      | Target environments (e.g. `tst,qa`)                                                 |
 | `--valid-targets`      | string      |                      | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
 | `--include-connectors` | bool        | `false`              | Include connector assets                                                            |
-| `--connectors-only`    | bool        | `false`              | Connector-only deployment                                                           |
+| `--include-connections` | bool       | `false`              | Include connection assets                                                           |
+| `--connectors-only`    | bool        | `false`              | Include only connectors and connections                                             |
 | `--exclude-file`       | string      |                      | Regex policy file path                                                              |
 | `--source`             | string      |                      | Optional source identifier stored in manifest                                       |
 
@@ -43,6 +45,16 @@ Generates release manifest files from either a PR description markdown file (Dep
 iics release manifest \
   --from-file pr-description.md \
   --output-root target/iics/import
+
+# Generate Java properties output for Ant/PowerShell build scripts
+iics release manifest \
+  --from-file pr-description.md \
+  --output properties
+
+# Include connectors but not connections
+iics release manifest \
+  --from-file pr-description.md \
+  --include-connectors
 ```
 
 ---
@@ -55,20 +67,26 @@ Validates manifest schema version and normalized options.
 
 | Flag              | Type   | Default                                         | Description                                                                         |
 |-------------------|--------|-------------------------------------------------|-------------------------------------------------------------------------------------|
-| `--manifest`      | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path                                                                       |
+| `--manifest`      | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path (`.yaml`, `.json`, `.properties`), or `-` for stdin                 |
 | `--valid-targets` | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
 
 ### Example
 
 ```bash
 iics release validate --manifest target/iics/import/conf/release_manifest.yaml
+
+# Validate JSON manifest
+iics release validate --manifest target/iics/import/conf/release_manifest.json
+
+# Validate properties manifest from stdin (auto-detect content type)
+cat target/iics/import/conf/release_manifest.properties | iics release validate --manifest -
 ```
 
 ---
 
 ## release plan
 
-Reads `release_manifest.yaml` and generates deterministic per-environment plan files under `target/iics/import/<env>/`.
+Reads `release_manifest` input (`yaml`, `json`, or `properties`) and generates deterministic per-environment plan files under `target/iics/import/<env>/`.
 
 With `--verbose`, INFO logs include:
 
@@ -82,17 +100,17 @@ With `--verbose`, INFO logs include:
 
 For `tag-based` mode:
 
-- `tag_build.package.csv`
-- `publish_assets.csv` (ordered for publish execution: `AI_SERVICE_CONNECTOR`,
+- `tag_build.package.<ext>`
+- `publish_assets.<ext>` (ordered for publish execution: `AI_SERVICE_CONNECTOR`,
   `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`, matching `publish.md`)
-- optional global `target/iics/import/connectors.package.csv`
+- optional global `target/iics/import/connectors.package.<ext>`
 - with `--add-missing-transitive-deps`: explicit assets are always included; transitive
   assets are included only when missing in the specific target environment profile
 
 For `full` mode:
 
 - copies `all_exclude_connections.package.csv` to each environment folder
-- creates empty `publish_assets.csv` headers for each environment
+- creates empty `publish_assets.<ext>` files for each environment
 
 ### Flags
 
@@ -104,8 +122,9 @@ For `full` mode:
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
 | `--add-missing-transitive-deps` | bool   | `false`                                         | Include transitive dependencies only when missing in each target environment; explicit assets are always included        |
-| `--package-fields`              | string | `location,dependency,type,path`                 | CSV fields for package files                                                                                             |
-| `--publish-fields`              | string | `location,dependency`                           | CSV fields for publish files                                                                                             |
+| `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
+| `--package-fields`              | string | `location,dependency,type,path`                 | Fields for package files                                                                                                 |
+| `--publish-fields`              | string | `location,dependency`                           | Fields for publish files                                                                                                 |
 
 ### Example
 
@@ -130,6 +149,11 @@ iics release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
   --target-profile-map TST=tst-ci,QA=qa-ci,PROD=prod-ci \
   --add-missing-transitive-deps
+
+# Generate JSON plan files
+iics release plan \
+  --manifest target/iics/import/conf/release_manifest.properties \
+  --output json
 ```
 
 ---

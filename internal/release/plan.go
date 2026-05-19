@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/dependencies"
+	"gopkg.in/yaml.v3"
 )
 
 type Asset struct {
@@ -41,10 +43,13 @@ var publishTypeRank = map[string]int{
 	"TASKFLOW":             4,
 }
 
-var connectorTypes = map[string]bool{
+var connectorAssetTypes = map[string]bool{
 	"AI_SERVICE_CONNECTOR": true,
-	"AI_CONNECTION":        true,
-	"Connection":           true,
+}
+
+var connectionAssetTypes = map[string]bool{
+	"AI_CONNECTION": true,
+	"Connection":    true,
 }
 
 const targetProfileMapEnv = "IICS_TARGET_PROFILE_MAP"
@@ -175,7 +180,7 @@ func LoadExcludePatterns(filePath string) ([]*regexp.Regexp, error) {
 	return patterns, nil
 }
 
-func ApplyPolicies(assets []Asset, includeConnectors, connectorsOnly bool, excludePatterns []*regexp.Regexp) []Asset {
+func ApplyPolicies(assets []Asset, includeConnectors, includeConnections, connectorsOnly bool, excludePatterns []*regexp.Regexp) []Asset {
 	filtered := make([]Asset, 0, len(assets))
 	for _, a := range assets {
 		excluded := false
@@ -189,10 +194,12 @@ func ApplyPolicies(assets []Asset, includeConnectors, connectorsOnly bool, exclu
 			continue
 		}
 		if connectorsOnly {
-			if !connectorTypes[a.Type] {
+			if !isConnectorOrConnectionType(a.Type) {
 				continue
 			}
-		} else if !includeConnectors && connectorTypes[a.Type] {
+		} else if !includeConnectors && isConnectorType(a.Type) {
+			continue
+		} else if !includeConnections && isConnectionType(a.Type) {
 			continue
 		}
 		filtered = append(filtered, a)
@@ -203,11 +210,23 @@ func ApplyPolicies(assets []Asset, includeConnectors, connectorsOnly bool, exclu
 func ConnectorAssets(assets []Asset) []Asset {
 	out := make([]Asset, 0)
 	for _, a := range assets {
-		if connectorTypes[a.Type] {
+		if isConnectorOrConnectionType(a.Type) {
 			out = append(out, a)
 		}
 	}
 	return out
+}
+
+func isConnectorType(assetType string) bool {
+	return connectorAssetTypes[assetType]
+}
+
+func isConnectionType(assetType string) bool {
+	return connectionAssetTypes[assetType]
+}
+
+func isConnectorOrConnectionType(assetType string) bool {
+	return isConnectorType(assetType) || isConnectionType(assetType)
 }
 
 func PublishAssets(assets []Asset) []Asset {
@@ -538,20 +557,7 @@ func WriteAssetsCSV(path string, assets []Asset, fields []string) error {
 	for _, a := range assets {
 		row := make([]string, 0, len(fields))
 		for _, field := range fields {
-			switch strings.ToLower(field) {
-			case "location":
-				row = append(row, a.Location)
-			case "dependency":
-				row = append(row, a.Dependency)
-			case "id":
-				row = append(row, a.ID)
-			case "type":
-				row = append(row, a.Type)
-			case "path":
-				row = append(row, a.Path)
-			default:
-				row = append(row, "")
-			}
+			row = append(row, assetFieldValue(a, field))
 		}
 		if err := w.Write(row); err != nil {
 			return err
@@ -562,4 +568,116 @@ func WriteAssetsCSV(path string, assets []Asset, fields []string) error {
 		return err
 	}
 	return nil
+}
+
+func WriteAssetsJSON(path string, assets []Asset, fields []string) error {
+	if len(fields) == 0 {
+		fields = []string{"location"}
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("creating output directory: %w", err)
+	}
+	rows := make([]orderedAssetRow, 0, len(assets))
+	for _, a := range assets {
+		rows = append(rows, newOrderedAssetRow(a, fields))
+	}
+	data, err := json.MarshalIndent(rows, "", "  ")
+	if err != nil {
+		return fmt.Errorf("serializing assets json: %w", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		return fmt.Errorf("writing json %s: %w", path, err)
+	}
+	return nil
+}
+
+func WriteAssetsYAML(path string, assets []Asset, fields []string) error {
+	if len(fields) == 0 {
+		fields = []string{"location"}
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("creating output directory: %w", err)
+	}
+	rows := make([]orderedAssetRow, 0, len(assets))
+	for _, a := range assets {
+		rows = append(rows, newOrderedAssetRow(a, fields))
+	}
+	data, err := yaml.Marshal(rows)
+	if err != nil {
+		return fmt.Errorf("serializing assets yaml: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("writing yaml %s: %w", path, err)
+	}
+	return nil
+}
+
+func assetFieldValue(a Asset, field string) string {
+	switch strings.ToLower(field) {
+	case "location":
+		return a.Location
+	case "dependency":
+		return a.Dependency
+	case "id":
+		return a.ID
+	case "type":
+		return a.Type
+	case "path":
+		return a.Path
+	default:
+		return ""
+	}
+}
+
+type orderedAssetRow struct {
+	fields []string
+	values []string
+}
+
+func newOrderedAssetRow(a Asset, fields []string) orderedAssetRow {
+	normalized := make([]string, len(fields))
+	values := make([]string, len(fields))
+	for i, field := range fields {
+		key := strings.ToLower(strings.TrimSpace(field))
+		normalized[i] = key
+		values[i] = assetFieldValue(a, key)
+	}
+	return orderedAssetRow{
+		fields: normalized,
+		values: values,
+	}
+}
+
+func (r orderedAssetRow) MarshalJSON() ([]byte, error) {
+	var sb strings.Builder
+	sb.WriteByte('{')
+	for i := range r.fields {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		key, err := json.Marshal(r.fields[i])
+		if err != nil {
+			return nil, err
+		}
+		value, err := json.Marshal(r.values[i])
+		if err != nil {
+			return nil, err
+		}
+		sb.Write(key)
+		sb.WriteByte(':')
+		sb.Write(value)
+	}
+	sb.WriteByte('}')
+	return []byte(sb.String()), nil
+}
+
+func (r orderedAssetRow) MarshalYAML() (interface{}, error) {
+	node := &yaml.Node{Kind: yaml.MappingNode}
+	for i := range r.fields {
+		node.Content = append(node.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: r.fields[i]},
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: r.values[i]},
+		)
+	}
+	return node, nil
 }

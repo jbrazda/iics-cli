@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	reTagLine = regexp.MustCompile(`(?i)^\s*tag:\s*` + "`?" + `([^` + "`" + `\s]+)` + "`?" + `\s*$`)
+	reTagLine = regexp.MustCompile(`(?i)^\s*tag:\s*` + "`?" + `([^` + "`" + `\s]+)` + "`?" + `(?:\s*<!--.*-->)?\s*$`)
 )
 
 func ParseDeploymentOptionsMarkdown(markdown string) (Options, error) {
@@ -49,8 +49,11 @@ func ParseDeploymentOptionsMarkdown(markdown string) (Options, error) {
 			}
 		}
 
-		if strings.Contains(lower, "connectors and connections") && strings.Contains(lower, "- [x]") {
+		if strings.Contains(lower, "- [x] connectors") {
 			opts.IncludeConnectors = true
+		}
+		if strings.Contains(lower, "- [x] connections") {
+			opts.IncludeConnections = true
 		}
 	}
 

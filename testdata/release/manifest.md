@@ -12,7 +12,7 @@
 
 ### Deployment Tag *(required for Tag-Based mode - must match an IICS DEV tag exactly)*
 
-Tag: `sample_tag` <!-- enter single-word tag here, e.g. sprint-42 -->
+Tag: `ZZ_TEST_CLI` <!-- enter single-word tag here, e.g. sprint-42 -->
 
 > **Note:**  Tag-based deployments will automatically include all missing dependencies of tagged assets to specific org. Dependencies are determined by analyzing asset references and API metadata, and may include connections or connectors if tagged assets rely on them. The generated package file for tag-based deployments will include both the tagged assets and their dependencies to ensure a successful deployment to the target environments. Build pipeline will built specific package for each environment based on the dependencies and options selected in the PR description, ensuring that the correct set of assets and their dependencies are included for deployment to each environment.
 
@@ -25,6 +25,7 @@ Tag: `sample_tag` <!-- enter single-word tag here, e.g. sprint-42 -->
 
 ### Connectors Package *(optional - typically managed manually post-deploy)*
 
-- [x] Connectors and Connections (CAI assets that require manual intervention after deployment)
+- [x] Connectors (CAI connector assets that may require manual intervention after deployment)
+- [x] Connections (CAI connection assets that may require manual intervention after deployment)
 
 > **Note:**  Connectors and connections are typically not included in the default package configurations and require manual intervention after deployment (e.g. setting up credentials or environment-specific parameters). This connector Package is only built and staged for deployment but must be deployed manually to allow for review and control over when and how connectors are deployed based on the target environment and deployment strategy.
