@@ -104,12 +104,17 @@ For `tag-based` mode:
 - `publish_assets.<ext>` (ordered for publish execution: `AI_SERVICE_CONNECTOR`,
   `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`, matching `publish.md`)
 - optional global `target/iics/import/connectors.package.<ext>`
+- each per-environment `tag_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
 - with `--add-missing-transitive-deps`: explicit assets are always included; transitive
   assets are included only when missing in the specific target environment profile
 
 For `full` mode:
 
-- copies `full_build.package.csv` to each environment folder
+- resolves dependencies from `--full-package-config` seed rows (`id`, `location`, or `path+type`)
+- when seed rows include `Project` or `Folder`, all nested objects are treated as explicit
+- marks objects outside explicit scope as transitive
+- writes `full_build.package.<ext>` per environment using `--output` format
+- each per-environment `full_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
 - creates empty `publish_assets.<ext>` files for each environment
 
 ### Flags
@@ -118,12 +123,12 @@ For `full` mode:
 |---------------------------------|--------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | `--manifest`                    | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path                                                                                                            |
 | `--output-root`                 | string | `target/iics/import`                            | Root output directory                                                                                                    |
-| `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Source config copied in full mode                                                                                        |
+| `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Full mode seed config (`id`, `location`, or `path+type`) used to resolve package assets                                |
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
 | `--add-missing-transitive-deps` | bool   | `false`                                         | Include transitive dependencies only when missing in each target environment; explicit assets are always included        |
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
-| `--package-fields`              | string | `location,dependency,type,path`                 | Fields for package files                                                                                                 |
+| `--package-fields`              | string | `location,dependency,type,path`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
 | `--publish-fields`              | string | `location,dependency`                           | Fields for publish files                                                                                                 |
 
 ### Example

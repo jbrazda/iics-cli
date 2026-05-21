@@ -18,6 +18,7 @@ type BuildManifestStats struct {
 	TotalRows                int
 	IncludedRows             int
 	ExcludedTransitiveFound  int
+	ExcludedEntries          []client.ArtifactEntry
 	SelectedStatusColumnName string
 }
 
@@ -103,6 +104,31 @@ func ParseBuildManifestCSV(data []byte, opts BuildManifestParseOptions) ([]clien
 	}
 
 	entries := make([]client.ArtifactEntry, 0)
+
+	buildEntry := func(row []string) (client.ArtifactEntry, bool, error) {
+		id := val(row, idx["id"])
+		path := val(row, idx["path"])
+		typ := val(row, idx["type"])
+		location := val(row, idx["location"])
+		if id != "" {
+			return client.ArtifactEntry{ID: id, Type: typ}, true, nil
+		}
+		if location != "" {
+			p, t, parseErr := client.ParseLocationString(location)
+			if parseErr != nil {
+				return client.ArtifactEntry{}, false, fmt.Errorf("parsing location %q: %w", location, parseErr)
+			}
+			if typ == "" {
+				typ = t
+			}
+			return client.ArtifactEntry{Path: p, Type: typ}, true, nil
+		}
+		if path != "" {
+			return client.ArtifactEntry{Path: path, Type: typ}, true, nil
+		}
+		return client.ArtifactEntry{}, false, nil
+	}
+
 	for {
 		row, readErr := r.Read()
 		if readErr == io.EOF {
@@ -118,34 +144,23 @@ func ParseBuildManifestCSV(data []byte, opts BuildManifestParseOptions) ([]clien
 			status := strings.ToLower(val(row, statusIdx))
 			if dep == "transitive" && status == "found" {
 				stats.ExcludedTransitiveFound++
+				entry, ok, entryErr := buildEntry(row)
+				if entryErr != nil {
+					return nil, stats, entryErr
+				}
+				if ok {
+					stats.ExcludedEntries = append(stats.ExcludedEntries, entry)
+				}
 				continue
 			}
 		}
 
-		id := val(row, idx["id"])
-		path := val(row, idx["path"])
-		typ := val(row, idx["type"])
-		location := val(row, idx["location"])
-
-		if id != "" {
-			entries = append(entries, client.ArtifactEntry{ID: id, Type: typ})
-			stats.IncludedRows++
-			continue
+		entry, ok, entryErr := buildEntry(row)
+		if entryErr != nil {
+			return nil, stats, entryErr
 		}
-		if location != "" {
-			p, t, parseErr := client.ParseLocationString(location)
-			if parseErr != nil {
-				return nil, stats, fmt.Errorf("parsing location %q: %w", location, parseErr)
-			}
-			if typ == "" {
-				typ = t
-			}
-			entries = append(entries, client.ArtifactEntry{Path: p, Type: typ})
-			stats.IncludedRows++
-			continue
-		}
-		if path != "" {
-			entries = append(entries, client.ArtifactEntry{Path: path, Type: typ})
+		if ok {
+			entries = append(entries, entry)
 			stats.IncludedRows++
 			continue
 		}

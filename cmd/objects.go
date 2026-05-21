@@ -246,8 +246,8 @@ func newObjectsDependenciesCmd() *cobra.Command {
 
 When --id is omitted and stdin is not a terminal, object rows are read from stdin
 with auto-detection for JSON, CSV, and YAML (e.g. piped from
-"objects list --output json/csv/yaml"). Dependencies for all
-input objects are collected and deduplicated by appContextId.
+"objects list --output json/csv/yaml"). Seed rows can include id, location, or
+path+type, and dependencies for all resolved seed objects are collected.
 
 Without --limit all dependency pages are fetched automatically in batches of 50.
 
@@ -271,13 +271,13 @@ correct publish dependency order (connectors before connections before processes
 				return err
 			}
 
-			// Collect input IDs from --id, --tag, or auto-detected stdin rows.
-			var ids []string
+			// Collect input seed entries from --id, --tag, or auto-detected stdin rows.
+			var seedEntries []client.ArtifactEntry
 			if objectID != "" && tagName != "" {
 				return fmt.Errorf("--id and --tag are mutually exclusive")
 			}
 			if objectID != "" {
-				ids = []string{objectID}
+				seedEntries = []client.ArtifactEntry{{ID: objectID}}
 			} else if tagName != "" {
 				listResp, listErr := c.ListAllObjects(ctx, client.ObjectsListOptions{
 					Query: fmt.Sprintf("tag=='%s'", tagName),
@@ -287,7 +287,7 @@ correct publish dependency order (connectors before connections before processes
 				}
 				for _, o := range listResp.Objects {
 					if o.ID != "" {
-						ids = append(ids, o.ID)
+						seedEntries = append(seedEntries, client.ArtifactEntry{ID: o.ID})
 					}
 				}
 			} else if !config.IsTerminal() {
@@ -295,35 +295,24 @@ correct publish dependency order (connectors before connections before processes
 				if readErr != nil {
 					return fmt.Errorf("reading stdin: %w", readErr)
 				}
-				parsedIDs, parseErr := dependencies.ParseSeedIDsFromInput(data)
+				parsedEntries, parseErr := dependencies.ParseSeedEntriesFromInput(data)
 				if parseErr != nil {
 					return parseErr
 				}
-				ids = append(ids, parsedIDs...)
+				seedEntries = append(seedEntries, parsedEntries...)
 			} else {
-				return fmt.Errorf("--id is required (or pipe JSON/CSV/YAML rows from objects list)")
+				return fmt.Errorf("--id is required (or pipe JSON/CSV/YAML rows with id/location/path+type)")
 			}
 
-			if len(ids) == 0 {
-				return fmt.Errorf("no object IDs provided")
+			if len(seedEntries) == 0 {
+				return fmt.Errorf("no object seed entries provided")
 			}
 
-			allRefs, err := collectTransitiveObjectRefs(ctx, c, ids, refType, limit, skip)
+			resolvedAssets, _, err := dependencies.ResolveSeedAssets(ctx, c, seedEntries, refType, limit, skip)
 			if err != nil {
 				return err
 			}
-			deps := objectRefsToDeps(allRefs)
-			seedSet := make(map[string]bool, len(ids))
-			for _, id := range ids {
-				if id != "" {
-					seedSet[id] = true
-				}
-			}
-			for i := range deps {
-				if seedSet[deps[i].ID] {
-					deps[i].Dependency = "explicit"
-				}
-			}
+			deps := resolvedSeedAssetsToDeps(resolvedAssets)
 			if filterPattern != "" {
 				deps, err = applyFilter(deps, filterPattern)
 				if err != nil {
@@ -448,7 +437,7 @@ correct publish dependency order (connectors before connections before processes
 		},
 	}
 
-	cmd.Flags().StringVar(&objectID, "id", "", "object ID (or pipe a JSON array from objects list)")
+	cmd.Flags().StringVar(&objectID, "id", "", "object ID (or pipe JSON/CSV/YAML rows with id/location/path+type)")
 	cmd.Flags().StringVar(&tagName, "tag", "", "tag name to resolve seed objects before dependency traversal")
 	cmd.Flags().StringVar(&refType, "ref-type", "", "reference type: uses or usedBy")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results; 0 fetches all pages in batches of 50")
@@ -464,59 +453,18 @@ correct publish dependency order (connectors before connections before processes
 	return cmd
 }
 
-// objectRefsToDeps converts ObjectReference items to dependencyItem for use with
-// the shared validateTargetDependencies and buildReportRows functions.
-func objectRefsToDeps(refs []client.ObjectReference) []dependencyItem {
-	deps := make([]dependencyItem, len(refs))
-	for i, r := range refs {
-		id := r.ID
-		if id == "" {
-			id = r.AppContextID
-		}
+func resolvedSeedAssetsToDeps(assets []dependencies.ResolvedSeedAsset) []dependencyItem {
+	deps := make([]dependencyItem, len(assets))
+	for i, asset := range assets {
 		deps[i] = dependencyItem{
-			ID:         id,
-			Path:       r.Path,
-			Type:       r.Type,
-			Location:   r.Location,
-			Dependency: "transitive",
-		}
-		if deps[i].Location == "" {
-			deps[i].Location = client.BuildLocation(r.Path, r.Type)
+			ID:         asset.ID,
+			Path:       asset.Path,
+			Type:       asset.Type,
+			Location:   asset.Location,
+			Dependency: asset.Dependency,
 		}
 	}
 	return deps
-}
-
-func collectTransitiveObjectRefs(
-	ctx context.Context,
-	c *client.Client,
-	seedIDs []string,
-	refType string,
-	limit, skip int,
-) ([]client.ObjectReference, error) {
-	graph, err := dependencies.TraverseByIDs(ctx, c, seedIDs, refType, limit, skip)
-	if err != nil {
-		return nil, err
-	}
-	resultRefs := make([]client.ObjectReference, 0, len(graph.Nodes))
-	for _, n := range graph.Nodes {
-		path := client.NormalizeLocationPath(n.Path)
-		ref := client.ObjectReference{
-			ID:           n.ID,
-			AppContextID: n.ID,
-			Path:         path,
-			Type:         n.Type,
-			Location:     client.BuildLocation(path, n.Type),
-		}
-		resultRefs = append(resultRefs, ref)
-	}
-	sort.Slice(resultRefs, func(i, j int) bool {
-		if resultRefs[i].Type != resultRefs[j].Type {
-			return resultRefs[i].Type < resultRefs[j].Type
-		}
-		return resultRefs[i].Path < resultRefs[j].Path
-	})
-	return resultRefs, nil
 }
 
 func applyExcludeRegexes(deps []dependencyItem, patterns []*regexp.Regexp) []dependencyItem {

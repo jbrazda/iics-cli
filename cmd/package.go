@@ -420,19 +420,36 @@ func newPackageCreateCmd() *cobra.Command {
 					return selErr
 				}
 				parentAdded := dependencies.IncludeParentContainers(exported, selectedIDs)
-				closureAdded := 0
-				if !excludeFoundTransitive {
-					closureNodes := make([]dependencies.RefClosureNode, 0, len(meta.ExportedObjects))
-					for _, o := range meta.ExportedObjects {
-						if o.ObjectGUID == "" {
-							continue
-						}
-						closureNodes = append(closureNodes, dependencies.RefClosureNode{
-							ID:   o.ObjectGUID,
-							Refs: o.objectRefs(),
-						})
+				closureNodes := make([]dependencies.RefClosureNode, 0, len(meta.ExportedObjects))
+				for _, o := range meta.ExportedObjects {
+					if o.ObjectGUID == "" {
+						continue
 					}
+					closureNodes = append(closureNodes, dependencies.RefClosureNode{
+						ID:   o.ObjectGUID,
+						Refs: o.objectRefs(),
+					})
+				}
+				closureAdded := 0
+				closureSuppressedExcluded := 0
+				if !excludeFoundTransitive {
 					closureAdded = dependencies.IncludeReferencedClosure(closureNodes, selectedIDs)
+				} else {
+					closureAddedIDs := dependencies.AddedIDsAfterClosure(closureNodes, selectedIDs)
+					closureSuppressedExcluded = len(closureAddedIDs)
+					if len(manifestStats.ExcludedEntries) > 0 && len(closureAddedIDs) > 0 {
+						excludedSelectedIDs, _, excludedSelErr := dependencies.SelectExportedObjects(manifestStats.ExcludedEntries, exported)
+						if excludedSelErr != nil {
+							return fmt.Errorf("resolving excluded transitive-found entries: %w", excludedSelErr)
+						}
+						// Keep a floor count based on all closure-suppressed additions and
+						// use excluded-entry overlap to avoid undercounting when manifest rows
+						// and closure additions are both present.
+						overlap := dependencies.CountSetIntersection(closureAddedIDs, excludedSelectedIDs)
+						if overlap > closureSuppressedExcluded {
+							closureSuppressedExcluded = overlap
+						}
+					}
 				}
 				if len(selectedIDs) == 0 {
 					return fmt.Errorf("no assets matched selection manifest")
@@ -441,11 +458,14 @@ func newPackageCreateCmd() *cobra.Command {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: %s\n", w)
 				}
 				if verbose && excludeFoundTransitive {
+					totalExcluded := manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
 					_, _ = fmt.Fprintf(
 						cmd.OutOrStdout(),
-						"Selection filter: excluded %d transitive found rows using %s\n",
-						manifestStats.ExcludedTransitiveFound,
+						"Selection filter: excluded %d transitive found rows using %s (manifest rows: %d, closure-suppressed: %d)\n",
+						totalExcluded,
 						manifestStats.SelectedStatusColumnName,
+						manifestStats.ExcludedTransitiveFound,
+						closureSuppressedExcluded,
 					)
 				}
 				if verbose && parentAdded > 0 {

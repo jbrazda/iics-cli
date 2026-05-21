@@ -164,7 +164,15 @@ All [global flags](../../README.md#global-flags) apply.
 
 When `--id` is omitted and stdin is not a terminal, stdin is auto-detected as JSON,
 CSV, or YAML (for example from `objects list --output json|csv|yaml`). Dependencies
-for all input objects are collected and deduplicated.
+for all input objects are collected and deduplicated. Seed rows may use any of:
+
+- `id`
+- `location`
+- `path` plus `type`
+
+When a seed row references a `Project` or `Folder`, all nested objects are treated as
+explicit dependencies, while objects discovered outside that explicit scope are marked
+as transitive.
 
 With `--publish`, filtering is applied to output rows only; traversal still walks through
 non-publishable dependency nodes so downstream publishable dependencies are included.
@@ -217,6 +225,10 @@ iics objects list -q "tag==Project_sprint_9" --output csv \
 
 # Same stdin flow with YAML output from objects list
 iics objects list -q "tag==Project_sprint_9" --output yaml \
+  | iics objects dependencies --ref-type uses
+
+# Resolve dependencies from folder seeds without IDs
+cat full_build.package.csv \
   | iics objects dependencies --ref-type uses
 
 # Resolve seed objects directly from tag (no stdin pipe)

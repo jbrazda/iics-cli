@@ -25,6 +25,8 @@ type Asset struct {
 	Type       string
 	Location   string
 	Dependency string
+	Status     string
+	Warning    string
 }
 
 var publishableTypes = map[string]bool{
@@ -290,6 +292,46 @@ func ValidateAssetsForTarget(ctx context.Context, targetProfileName string, asse
 		out[i] = AssetValidation{Status: "missing"}
 	}
 	return out, nil
+}
+
+// AnnotateAssetsWithTargetValidation returns a copy of assets with Status/Warning
+// populated for a specific target environment.
+func AnnotateAssetsWithTargetValidation(ctx context.Context, targetProfileName string, assets []Asset, opts TargetResolutionOptions) ([]Asset, error) {
+	validations, err := ValidateAssetsForTarget(ctx, targetProfileName, assets, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Asset, len(assets))
+	copy(out, assets)
+	for i := range out {
+		if i < len(validations) {
+			out[i].Status = validations[i].Status
+			out[i].Warning = validations[i].Warning
+		}
+	}
+	return out, nil
+}
+
+func statusFieldForTarget(target string) string {
+	return fmt.Sprintf("status (%s)", strings.ToLower(strings.TrimSpace(target)))
+}
+
+// EnsureCurrentTargetStatusField ensures the target-specific status field exists in
+// package fields when writing per-environment package files.
+func EnsureCurrentTargetStatusField(fields []string, target string) []string {
+	if strings.TrimSpace(target) == "" {
+		return fields
+	}
+	targetStatusField := statusFieldForTarget(target)
+	for _, field := range fields {
+		if strings.EqualFold(strings.TrimSpace(field), targetStatusField) {
+			return fields
+		}
+	}
+	out := make([]string, 0, len(fields)+1)
+	out = append(out, fields...)
+	out = append(out, targetStatusField)
+	return out
 }
 
 func ApplyMissingTransitivePolicy(assets []Asset, missingByLocation map[string]bool) []Asset {
@@ -613,7 +655,8 @@ func WriteAssetsYAML(path string, assets []Asset, fields []string) error {
 }
 
 func assetFieldValue(a Asset, field string) string {
-	switch strings.ToLower(field) {
+	f := strings.ToLower(strings.TrimSpace(field))
+	switch f {
 	case "location":
 		return a.Location
 	case "dependency":
@@ -624,7 +667,17 @@ func assetFieldValue(a Asset, field string) string {
 		return a.Type
 	case "path":
 		return a.Path
+	case "status":
+		return a.Status
+	case "warning":
+		return a.Warning
 	default:
+		if strings.HasPrefix(f, "status (") && strings.HasSuffix(f, ")") {
+			return a.Status
+		}
+		if strings.HasPrefix(f, "warning (") && strings.HasSuffix(f, ")") {
+			return a.Warning
+		}
 		return ""
 	}
 }

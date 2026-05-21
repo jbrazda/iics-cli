@@ -21,6 +21,9 @@ Explore/A/three.MTT,explicit,found,id3,MTT,A/three
 	if stats.ExcludedTransitiveFound != 1 {
 		t.Fatalf("expected 1 excluded transitive-found row, got %d", stats.ExcludedTransitiveFound)
 	}
+	if len(stats.ExcludedEntries) != 1 || stats.ExcludedEntries[0].ID != "id1" {
+		t.Fatalf("unexpected excluded entries: %#v", stats.ExcludedEntries)
+	}
 	if stats.SelectedStatusColumnName != "STATUS (qa)" {
 		t.Fatalf("expected selected status column STATUS (qa), got %q", stats.SelectedStatusColumnName)
 	}

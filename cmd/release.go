@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
@@ -219,18 +220,85 @@ func newReleasePlanCmd() *cobra.Command {
 			logWriter := cmd.ErrOrStderr()
 
 			if opts.Mode == release.ModeFullDeployment {
+				content, readErr := os.ReadFile(fullPackageCfg)
+				if readErr != nil {
+					return fmt.Errorf("reading full package config %s: %w", fullPackageCfg, readErr)
+				}
+				entries, parseErr := dependencies.ParseSeedEntriesFromInput(content)
+				if parseErr != nil {
+					return fmt.Errorf("parsing full package config %s: %w", fullPackageCfg, parseErr)
+				}
+				c, clientErr := getClient(cmd)
+				if clientErr != nil {
+					return clientErr
+				}
+				resolvedAssets, stats, resolveErr := dependencies.ResolveSeedAssets(
+					context.Background(),
+					c,
+					entries,
+					"uses",
+					0,
+					0,
+				)
+				if resolveErr != nil {
+					return fmt.Errorf("resolving full mode dependency seeds: %w", resolveErr)
+				}
+				fullAssets := make([]release.Asset, 0, len(resolvedAssets))
+				for _, asset := range resolvedAssets {
+					fullAssets = append(fullAssets, release.Asset{
+						ID:         asset.ID,
+						Path:       asset.Path,
+						Type:       asset.Type,
+						Location:   asset.Location,
+						Dependency: asset.Dependency,
+					})
+				}
+				slog.Info("release plan: full mode dependencies resolved",
+					"seedEntries", stats.InputEntries,
+					"seedIDs", stats.ResolvedSeedIDs,
+					"containerRoots", stats.ContainerRoots,
+					"expandedExplicitObjects", stats.ExpandedExplicitObjects,
+					"resolvedAssets", stats.ResolvedAssets,
+					"explicitAssets", stats.ExplicitAssets,
+					"transitiveAssets", stats.TransitiveAssets,
+				)
+
 				for _, env := range opts.Targets {
 					envDir := filepath.Join(outputRoot, strings.ToLower(env))
 					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
 						return fmt.Errorf("creating env directory: %w", mkErr)
 					}
-					targetCfg := filepath.Join(envDir, "full_build.package.csv")
-					content, readErr := os.ReadFile(fullPackageCfg)
-					if readErr != nil {
-						return fmt.Errorf("reading full package config %s: %w", fullPackageCfg, readErr)
+					envAssets := fullAssets
+					if addMissingTrans {
+						filtered, filterErr := release.FilterMissingTransitiveForTarget(
+							context.Background(),
+							env,
+							fullAssets,
+							release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+						)
+						if filterErr != nil {
+							return filterErr
+						}
+						envAssets = filtered
+						slog.Info("release plan: missing-transitive filter applied",
+							"environment", env,
+							"before", len(fullAssets),
+							"after", len(envAssets),
+						)
 					}
-					if writeErr := os.WriteFile(targetCfg, content, 0o644); writeErr != nil {
-						return fmt.Errorf("writing %s: %w", targetCfg, writeErr)
+					envPackageAssets, annotateErr := release.AnnotateAssetsWithTargetValidation(
+						context.Background(),
+						env,
+						envAssets,
+						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+					)
+					if annotateErr != nil {
+						return annotateErr
+					}
+					envPackageFields := release.EnsureCurrentTargetStatusField(packageFields, env)
+					targetCfg := filepath.Join(envDir, "full_build.package."+planExt)
+					if writeErr := writeAssets(targetCfg, envPackageAssets, envPackageFields); writeErr != nil {
+						return writeErr
 					}
 					publishFile := filepath.Join(envDir, "publish_assets."+planExt)
 					if writeErr := writeAssets(publishFile, nil, publishFields); writeErr != nil {
@@ -304,6 +372,16 @@ func newReleasePlanCmd() *cobra.Command {
 						"after", len(envAssets),
 					)
 				}
+				envPackageAssets, annotateErr := release.AnnotateAssetsWithTargetValidation(
+					context.Background(),
+					env,
+					envAssets,
+					release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+				)
+				if annotateErr != nil {
+					return annotateErr
+				}
+				envPackageFields := release.EnsureCurrentTargetStatusField(packageFields, env)
 				publishAssets := release.PublishAssets(envAssets)
 				connectorAssets := release.ConnectorAssets(envAssets)
 				if infoEnabled {
@@ -334,7 +412,7 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 				packageFile := filepath.Join(envDir, "tag_build.package."+planExt)
 				publishFile := filepath.Join(envDir, "publish_assets."+planExt)
-				if err := writeAssets(packageFile, envAssets, packageFields); err != nil {
+				if err := writeAssets(packageFile, envPackageAssets, envPackageFields); err != nil {
 					return err
 				}
 				filesWritten++
@@ -387,7 +465,7 @@ func newReleasePlanCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/import/conf/release_manifest.yaml", "path to release manifest file (.yaml/.json/.properties); use - for stdin")
 	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics/import", "output root directory for generated files")
-	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/full_build.package.csv", "full-deployment package config file to copy per environment")
+	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/full_build.package.csv", "full-deployment seed config file (id/location/path+type rows) used to resolve package assets")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
 	cmd.Flags().StringVar(&targetProfileMap, "target-profile-map", "", "comma-separated target to profile map (TARGET=profile), overrides IICS_TARGET_PROFILE_MAP")
 	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")

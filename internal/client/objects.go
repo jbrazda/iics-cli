@@ -177,16 +177,44 @@ func (c *Client) GetObjectDependencies(ctx context.Context, objectID string, ref
 func (c *Client) GetAllObjectDependencies(ctx context.Context, objectID string, refType string) (*ObjectDependenciesResponse, error) {
 	var result ObjectDependenciesResponse
 	skip := 0
+	seenRefs := make(map[string]bool)
+	seenPages := make(map[string]bool)
 	for {
 		page, err := c.GetObjectDependencies(ctx, objectID, refType, depPageSize, skip)
 		if err != nil {
 			return nil, err
 		}
-		result.References = append(result.References, page.References...)
+		pageKeys := make([]string, 0, len(page.References))
+		addedThisPage := 0
+		for _, ref := range page.References {
+			key := dependencyRefKey(ref)
+			pageKeys = append(pageKeys, key)
+			if seenRefs[key] {
+				continue
+			}
+			seenRefs[key] = true
+			result.References = append(result.References, ref)
+			addedThisPage++
+		}
+		pageSig := strings.Join(pageKeys, "\x1e")
+		if seenPages[pageSig] || (len(page.References) > 0 && addedThisPage == 0) {
+			break
+		}
+		seenPages[pageSig] = true
 		if len(page.References) < depPageSize {
 			break
 		}
 		skip += depPageSize
 	}
 	return &result, nil
+}
+
+func dependencyRefKey(ref ObjectReference) string {
+	id := ref.ID
+	if id == "" {
+		id = ref.AppContextID
+	}
+	return strings.TrimSpace(id) + "\x1f" +
+		strings.TrimSpace(ref.Path) + "\x1f" +
+		strings.TrimSpace(ref.Type)
 }

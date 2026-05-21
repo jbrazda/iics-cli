@@ -233,6 +233,7 @@ func TestGetAllObjectDependencies(t *testing.T) {
 		if skip >= depPageSize {
 			count = 10
 		}
+
 		refs := make([]ObjectReference, count)
 		for i := range refs {
 			refs[i] = ObjectReference{
@@ -241,6 +242,7 @@ func TestGetAllObjectDependencies(t *testing.T) {
 				Type:         "MTT",
 			}
 		}
+
 		resp := ObjectDependenciesResponse{ID: "obj1", Count: count, References: refs}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
@@ -264,5 +266,35 @@ func TestGetAllObjectDependencies(t *testing.T) {
 		if ref.Location != wantLoc {
 			t.Errorf("expected Location %q, got %q", wantLoc, ref.Location)
 		}
+	}
+}
+
+func TestGetAllObjectDependencies_StopsWhenPageDoesNotAdvance(t *testing.T) {
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		refs := make([]ObjectReference, depPageSize)
+		for i := range refs {
+			refs[i] = ObjectReference{
+				AppContextID: fmt.Sprintf("dep-%d", i),
+				Path:         fmt.Sprintf("Proj/Obj%d", i),
+				Type:         "MTT",
+			}
+		}
+		resp := ObjectDependenciesResponse{ID: "obj1", Count: len(refs), References: refs}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	c := newTestClient(handler)
+	resp, err := c.GetAllObjectDependencies(context.Background(), "obj1", "uses")
+	if err != nil {
+		t.Fatalf("GetAllObjectDependencies() error: %v", err)
+	}
+	if len(resp.References) != depPageSize {
+		t.Fatalf("expected %d unique references, got %d", depPageSize, len(resp.References))
+	}
+	if calls != 2 {
+		t.Fatalf("expected 2 API calls (initial + non-advancing check), got %d", calls)
 	}
 }

@@ -38,3 +38,31 @@ func TestIncludeReferencedClosure_NoSelection(t *testing.T) {
 		t.Fatalf("expected selected to remain empty")
 	}
 }
+
+func TestAddedIDsAfterClosure(t *testing.T) {
+	nodes := []RefClosureNode{
+		{ID: "task", Refs: []string{"mapping", "conn"}},
+		{ID: "mapping", Refs: []string{"conn"}},
+		{ID: "conn", Refs: nil},
+	}
+	selected := map[string]bool{"task": true}
+
+	added := AddedIDsAfterClosure(nodes, selected)
+	if len(added) != 2 {
+		t.Fatalf("expected 2 added IDs, got %d", len(added))
+	}
+	if !added["mapping"] || !added["conn"] {
+		t.Fatalf("unexpected added set: %#v", added)
+	}
+	if len(selected) != 1 || !selected["task"] {
+		t.Fatalf("input selectedIDs mutated: %#v", selected)
+	}
+}
+
+func TestCountSetIntersection(t *testing.T) {
+	a := map[string]bool{"a": true, "b": true, "c": true}
+	b := map[string]bool{"b": true, "c": true, "d": true}
+	if got := CountSetIntersection(a, b); got != 2 {
+		t.Fatalf("CountSetIntersection() = %d, want 2", got)
+	}
+}

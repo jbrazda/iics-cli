@@ -122,13 +122,18 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 	selected := make(map[string]bool)
 	warnings := make([]string, 0)
 	hasExplicitObjectRef := false
+	seenManifestIDs := make(map[string]bool)
+	seenManifestPathTypes := make(map[string]bool)
+	seenManifestPaths := make(map[string]bool)
 
-	add := func(id, reason string) {
+	add := func(id, reason string, duplicateManifestSelector bool) {
 		if id == "" {
 			return
 		}
 		if selected[id] {
-			warnings = append(warnings, fmt.Sprintf("duplicate manifest selection ignored for %s (%s)", id, reason))
+			if duplicateManifestSelector {
+				warnings = append(warnings, fmt.Sprintf("duplicate manifest selection ignored for %s (%s)", id, reason))
+			}
 			return
 		}
 		selected[id] = true
@@ -141,13 +146,13 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 		for id, full := range fullPathByID {
 			if containerHasRoot {
 				if full == containerPath || strings.HasPrefix(full, containerPath+"/") {
-					add(id, "container expansion")
+					add(id, "container expansion", false)
 				}
 				continue
 			}
 			fullNormalized := client.NormalizeLocationPath(full)
 			if fullNormalized == containerNormalized || strings.HasPrefix(fullNormalized, containerNormalized+"/") {
-				add(id, "container expansion")
+				add(id, "container expansion", false)
 			}
 		}
 	}
@@ -155,11 +160,13 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 	for idx, e := range entries {
 		entryLabel := fmt.Sprintf("entry %d", idx+1)
 		if e.ID != "" {
+			duplicateManifestSelector := seenManifestIDs[e.ID]
+			seenManifestIDs[e.ID] = true
 			obj, ok := byID[e.ID]
 			if !ok {
 				return nil, nil, fmt.Errorf("manifest %s: id %q not found in source exportMetadata.v2.json", entryLabel, e.ID)
 			}
-			add(obj.ObjectGUID, "id")
+			add(obj.ObjectGUID, "id", duplicateManifestSelector)
 			if obj.ObjectType == "Project" || obj.ObjectType == "Folder" {
 				expandContainer(fullPathByID[obj.ObjectGUID])
 			} else {
@@ -175,12 +182,15 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 		typ := strings.TrimSpace(e.Type)
 
 		if typ != "" {
-			matches := byPathType[pathTypeKey(path, typ)]
+			pathType := pathTypeKey(path, typ)
+			duplicateManifestSelector := seenManifestPathTypes[pathType]
+			seenManifestPathTypes[pathType] = true
+			matches := byPathType[pathType]
 			if len(matches) == 0 {
 				return nil, nil, fmt.Errorf("manifest %s: no exported object for %q.%s", entryLabel, path, typ)
 			}
 			for _, m := range matches {
-				add(m.ObjectGUID, "path+type")
+				add(m.ObjectGUID, "path+type", duplicateManifestSelector)
 			}
 			if typ == "Project" || typ == "Folder" {
 				expandContainer(path)
@@ -191,12 +201,14 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 		}
 
 		matches := allByPath[path]
+		duplicateManifestSelector := seenManifestPaths[path]
+		seenManifestPaths[path] = true
 		if len(matches) == 0 {
 			return nil, nil, fmt.Errorf("manifest %s: no exported object for path %q", entryLabel, path)
 		}
 		containerOnly := true
 		for _, m := range matches {
-			add(m.ObjectGUID, "path")
+			add(m.ObjectGUID, "path", duplicateManifestSelector)
 			if m.ObjectType == "Project" || m.ObjectType == "Folder" {
 				expandContainer(path)
 			} else {
@@ -213,7 +225,7 @@ func SelectExportedObjects(entries []client.ArtifactEntry, objects []ExportedObj
 	if !hasExplicitObjectRef {
 		for id, loc := range locationByID {
 			if strings.HasPrefix(loc, "SYS/") {
-				add(id, "SYS implied by container-only selection")
+				add(id, "SYS implied by container-only selection", false)
 			}
 		}
 	}

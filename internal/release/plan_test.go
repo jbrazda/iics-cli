@@ -1,6 +1,7 @@
 package release
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -241,5 +242,59 @@ func TestWriteAssetsYAMLFieldSelection(t *testing.T) {
 	}
 	if _, ok := rows[0]["type"]; ok {
 		t.Fatalf("unexpected type key in selected fields output: %#v", rows[0])
+	}
+}
+
+func TestEnsureCurrentTargetStatusField(t *testing.T) {
+	fields := []string{"location", "dependency", "type", "path"}
+	got := EnsureCurrentTargetStatusField(fields, "QA")
+	if len(got) != 5 {
+		t.Fatalf("len = %d, want 5", len(got))
+	}
+	if got[4] != "status (qa)" {
+		t.Fatalf("last field = %q, want %q", got[4], "status (qa)")
+	}
+
+	got2 := EnsureCurrentTargetStatusField(got, "qa")
+	if len(got2) != 5 {
+		t.Fatalf("len after duplicate ensure = %d, want 5", len(got2))
+	}
+}
+
+func TestWriteAssetsCSV_TargetStatusHeaderAndValue(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "full_build.package.csv")
+	assets := []Asset{
+		{
+			Location:   "Explore/A.PROCESS",
+			Dependency: "transitive",
+			Type:       "PROCESS",
+			Path:       "A",
+			Status:     "found",
+		},
+	}
+	fields := []string{"location", "dependency", "status (qa)", "type", "path"}
+	if err := WriteAssetsCSV(path, assets, fields); err != nil {
+		t.Fatalf("WriteAssetsCSV() error = %v", err)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer func() { _ = f.Close() }()
+	r := csv.NewReader(f)
+	headers, err := r.Read()
+	if err != nil {
+		t.Fatalf("Read headers error = %v", err)
+	}
+	if len(headers) != 5 || headers[2] != "STATUS (QA)" {
+		t.Fatalf("unexpected headers: %#v", headers)
+	}
+	row, err := r.Read()
+	if err != nil {
+		t.Fatalf("Read row error = %v", err)
+	}
+	if row[2] != "found" {
+		t.Fatalf("status value = %q, want found", row[2])
 	}
 }

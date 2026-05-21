@@ -187,6 +187,10 @@ Target-aware transitive exclusion:
 - The manifest must be CSV with `DEPENDENCY` and `STATUS (<target>)` columns.
 - Use `--status-target` when multiple status columns exist (for example `STATUS (qa)`, `STATUS (stg)`).
 - Rows where `DEPENDENCY=transitive` and `STATUS (<target>)=found` are excluded.
+- Verbose exclusion count includes:
+  - manifest rows excluded directly by `DEPENDENCY=transitive` and `STATUS (<target>)=found`
+  - additional transitive found dependencies that would only be included through
+    in-package closure expansion (suppressed when `--exclude-found-transitive` is enabled)
 - Parent Project and Folder container objects inferred from selected asset paths are
   included so first-time target deployments can create container structure metadata.
 - For selective packaging without `--exclude-found-transitive`, package-internal
