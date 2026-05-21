@@ -18,7 +18,7 @@ The existing [Quick Guide — Selective Deployment](../../../Informatica.wiki) r
 
 1. Tag assets in the IICS DEV org.
 2. Merge the PR — this immediately triggers the automated **Build Deploy Main** pipeline with
-   a **full** build using `all_exclude_connections.package.txt`.
+   a **full** build using `full_build.package.txt`.
 3. **Cancel** the auto-triggered pipeline before it completes (race condition).
 4. Manually re-trigger the pipeline and supply two non-default parameters:
    - `package_config` → `./conf/tag_build.package.txt`
@@ -50,10 +50,10 @@ This workflow has several problems:
    was not triggered by a merge (e.g. a direct push), the pipeline will use safe pre-configured defaults (full deployment targeting TST and QA only).
 6. Individual repositories can update their PR templates to include the new Deployment Options section, or rely on the default  deployment if they choose not to.
 7. The new `BuildManifest` stage should resolve files based on the below table layout, which is designed to be easily extendable for future deployment options (e.g. additional package configurations) in a clear and deterministic way (first match wins, with a defined fallback): and the parser will use the configuration column to determine which package file to use for the build stage. The "Description" column is for human readers and has no impact on the parsing logic.
-8. Parsing Stage should generate configuration files into the `/target/iics/conf` directory for downstream stages to consume, based on the selected options. For example, if "Selective Tag-Based" is selected, it should generate a `tag_build.package.csv` file with the appropriate content for the build stage to use. If "Full Deployment" is selected, it should ensure that `all_exclude_connections.package.csv` is available for the build stage. This approach keeps the parsing logic focused on interpreting the PR description and leaves the actual configuration file generation to a dedicated step, which can be easily extended in the future as new deployment options are added.
+8. Parsing Stage should generate configuration files into the `/target/iics/conf` directory for downstream stages to consume, based on the selected options. For example, if "Selective Tag-Based" is selected, it should generate a `tag_build.package.csv` file with the appropriate content for the build stage to use. If "Full Deployment" is selected, it should ensure that `full_build.package.csv` is available for the build stage. This approach keeps the parsing logic focused on interpreting the PR description and leaves the actual configuration file generation to a dedicated step, which can be easily extended in the future as new deployment options are added.
    - The logic should be flexible to allow for future options that may require additional or different configuration files, without requiring changes to the parsing logic (e.g. if a future option requires a `custom.package.csv`, the parser can simply emit that file when the option is selected, and downstream stages can be designed to look for it if it exists)
    - Several types of builds are always implicitly supported and their implicit configuration in project_root/conf is optional as the parsing stage can generate the necessary package files based on the selected options:
-     - Full Deployment (default): uses pre-configured `all_exclude_connections.package.csv` (includes all assets except CAI Connections and Connectors located outside of the Currently deployed project folder, which typically require manual intervention after deployment) If the all_exclude_connections.package.csv file is not present in the conf directory, the parsing stage should generate it with a default configuration that includes all assets in the source folder except for any connections or connectors referenced from other projects, to ensure that the full deployment option can function correctly even if the specific package file is not pre-configured in the repository. This provides a safety net to ensure that the full deployment option is always available and can be used as a fallback if there are issues with the selective deployment options or their configurations.
+     - Full Deployment (default): uses pre-configured `full_build.package.csv` (includes all assets except CAI Connections and Connectors located outside of the Currently deployed project folder, which typically require manual intervention after deployment) If the full_build.package.csv file is not present in the conf directory, the parsing stage should generate it with a default configuration that includes all assets in the source folder except for any connections or connectors referenced from other projects, to ensure that the full deployment option can function correctly even if the specific package file is not pre-configured in the repository. This provides a safety net to ensure that the full deployment option is always available and can be used as a fallback if there are issues with the selective deployment options or their configurations.
      - Selective Tag-Based: uses `tag_build.package.csv` (content generated based on the specified tag)
      - Connector deployment is always optional and controlled by the "Include Connectors" checkbox, the pipeline should generate a `connectors.package.csv` file with the appropriate content (include all CAI connectors and connections that are selected). Connectors are not typically included in the other package files and are only deployed if this option is selected, allowing for flexible deployment scenarios where connectors can be managed separately from other assets as their deployment requires manual intervention after deployment (setup of credentials or environment specific parameters).
      - Connectors package is build always and staged for deployment, but not deployed automatically, to allow for manual review and deployment of connectors as needed based on the target environment and deployment strategy. This provides an additional layer of control for deployer to manage connectors effectively while still allowing them to be included in the build process for visibility and staging purposes.
@@ -83,7 +83,7 @@ This workflow has several problems:
     **Global Config Files**
 
     ```shell
-    target/iics/conf/all_exclude_connections.package.csv # default full deployment package config copied over from project root conf directory or generated by the parsing stage if not present
+    target/iics/conf/full_build.package.csv # default full deployment package config copied over from project root conf directory or generated by the parsing stage if not present
     target/iics/conf/connectors.package.csv # connectors package config generated dynamically from the contents of the project dependencies and the "Include Connectors" option in the PR description
     ```
 
@@ -149,7 +149,7 @@ Design constraints:
 
 ### Deploy Mode *(check exactly one)*
 
-- [x] Full Deployment *(all assets - uses `conf/all_exclude_connections.package.csv`)*
+- [x] Full Deployment *(all assets - uses `conf/full_build.package.csv`)*
 - [ ] Selective - Tag-Based *(assets tagged in DEV with the tag below + their dependencies)*
 
 ### Deployment Tag *(required for Tag-Based mode - must match an IICS DEV tag exactly)*

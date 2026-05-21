@@ -224,7 +224,7 @@ func newReleasePlanCmd() *cobra.Command {
 					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
 						return fmt.Errorf("creating env directory: %w", mkErr)
 					}
-					targetCfg := filepath.Join(envDir, "all_exclude_connections.package.csv")
+					targetCfg := filepath.Join(envDir, "full_build.package.csv")
 					content, readErr := os.ReadFile(fullPackageCfg)
 					if readErr != nil {
 						return fmt.Errorf("reading full package config %s: %w", fullPackageCfg, readErr)
@@ -387,7 +387,7 @@ func newReleasePlanCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&manifestPath, "manifest", "target/iics/import/conf/release_manifest.yaml", "path to release manifest file (.yaml/.json/.properties); use - for stdin")
 	cmd.Flags().StringVar(&outputRoot, "output-root", "target/iics/import", "output root directory for generated files")
-	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/all_exclude_connections.package.csv", "full-deployment package config file to copy per environment")
+	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/full_build.package.csv", "full-deployment package config file to copy per environment")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
 	cmd.Flags().StringVar(&targetProfileMap, "target-profile-map", "", "comma-separated target to profile map (TARGET=profile), overrides IICS_TARGET_PROFILE_MAP")
 	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")

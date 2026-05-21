@@ -7,7 +7,7 @@
 
 ### Deploy Mode *(check exactly one)*
 
-- [ ] Full Deployment *(all assets - uses `conf/all_exclude_connections.package.csv`)*
+- [ ] Full Deployment *(all assets - uses `conf/full_build.package.csv`)*
 - [x] Selective - Tag-Based *(assets tagged in DEV with the tag below + their dependencies)*
 
 ### Deployment Tag *(required for Tag-Based mode - must match an IICS DEV tag exactly)*

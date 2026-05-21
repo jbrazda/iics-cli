@@ -109,7 +109,7 @@ For `tag-based` mode:
 
 For `full` mode:
 
-- copies `all_exclude_connections.package.csv` to each environment folder
+- copies `full_build.package.csv` to each environment folder
 - creates empty `publish_assets.<ext>` files for each environment
 
 ### Flags
@@ -118,7 +118,7 @@ For `full` mode:
 |---------------------------------|--------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | `--manifest`                    | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path                                                                                                            |
 | `--output-root`                 | string | `target/iics/import`                            | Root output directory                                                                                                    |
-| `--full-package-config`         | string | `./conf/all_exclude_connections.package.csv`    | Source config copied in full mode                                                                                        |
+| `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Source config copied in full mode                                                                                        |
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
 | `--add-missing-transitive-deps` | bool   | `false`                                         | Include transitive dependencies only when missing in each target environment; explicit assets are always included        |
