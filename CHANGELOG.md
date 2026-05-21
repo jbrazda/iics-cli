@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-05-21
+
+### Changed
+
+- Full-build dependency resolution improved: more accurate transitive dependency tracking
+  and cleaner status output during release plan generation
+- Duplicate dependency warnings are now deduplicated and consolidated in release output
+- Release config documentation aligns `full_build.package.csv` as the canonical config name
+
 ## [0.4.2] - 2026-05-19
 
 ### Changed
