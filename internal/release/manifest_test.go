@@ -14,7 +14,7 @@ func TestValidateOptions(t *testing.T) {
 	if err := ValidateOptions(&opts); err != nil {
 		t.Fatalf("ValidateOptions() error = %v", err)
 	}
-	if len(opts.Targets) != 2 || opts.Targets[0] != "QA" || opts.Targets[1] != "TST" {
+	if len(opts.Targets) != 2 || opts.Targets[0] != "qa" || opts.Targets[1] != "tst" {
 		t.Fatalf("normalized targets unexpected: %#v", opts.Targets)
 	}
 }
@@ -35,7 +35,7 @@ func TestResolveTargetPolicyDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveTargetPolicy() error = %v", err)
 	}
-	if !p.Allowed["TST"] || !p.Allowed["QA"] || !p.Allowed["STG"] || !p.Allowed["PROD"] {
+	if !p.Allowed["tst"] || !p.Allowed["qa"] || !p.Allowed["stg"] || !p.Allowed["prod"] {
 		t.Fatalf("default policy missing expected targets: %#v", p.Ordered)
 	}
 }
@@ -46,7 +46,7 @@ func TestResolveTargetPolicyPrecedence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveTargetPolicy() error = %v", err)
 	}
-	if len(p.Ordered) != 2 || p.Ordered[0] != "SIT" || p.Ordered[1] != "UAT" {
+	if len(p.Ordered) != 2 || p.Ordered[0] != "sit" || p.Ordered[1] != "uat" {
 		t.Fatalf("policy precedence unexpected: %#v", p.Ordered)
 	}
 }
@@ -64,7 +64,7 @@ func TestValidateOptionsWithPolicy(t *testing.T) {
 	if err := ValidateOptionsWithPolicy(&opts, policy); err != nil {
 		t.Fatalf("ValidateOptionsWithPolicy() error = %v", err)
 	}
-	if len(opts.Targets) != 1 || opts.Targets[0] != "DEV" {
+	if len(opts.Targets) != 1 || opts.Targets[0] != "dev" {
 		t.Fatalf("unexpected normalized targets: %#v", opts.Targets)
 	}
 }

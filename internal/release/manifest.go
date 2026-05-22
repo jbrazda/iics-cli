@@ -18,7 +18,7 @@ const (
 
 const (
 	validDeployTargetsEnv = "IICS_VALID_DEPLOY_TARGETS"
-	defaultValidTargets   = "TST,QA,STG,PROD"
+	defaultValidTargets   = "tst,qa,stg,prod"
 )
 
 type TargetPolicy struct {
@@ -46,7 +46,7 @@ type Manifest struct {
 func DefaultOptions() Options {
 	return Options{
 		Mode:    ModeFullDeployment,
-		Targets: []string{"TST", "QA"},
+		Targets: []string{"tst", "qa"},
 	}
 }
 
@@ -121,7 +121,7 @@ func ValidateOptionsWithPolicy(opts *Options, policy TargetPolicy) error {
 	normalized := make([]string, 0, len(opts.Targets))
 	seen := make(map[string]bool, len(opts.Targets))
 	for _, t := range opts.Targets {
-		u := strings.ToUpper(strings.TrimSpace(t))
+		u := strings.ToLower(strings.TrimSpace(t))
 		if u == "" {
 			continue
 		}
@@ -185,7 +185,7 @@ func parseValidTargets(raw string) ([]string, error) {
 	out := make([]string, 0, len(parts))
 	seen := make(map[string]bool, len(parts))
 	for _, p := range parts {
-		t := strings.ToUpper(strings.TrimSpace(p))
+		t := strings.ToLower(strings.TrimSpace(p))
 		if t == "" {
 			continue
 		}
@@ -205,7 +205,7 @@ func parseValidTargets(raw string) ([]string, error) {
 
 func isValidTargetToken(v string) bool {
 	for _, r := range v {
-		if (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
 			continue
 		}
 		return false
@@ -214,8 +214,8 @@ func isValidTargetToken(v string) bool {
 }
 
 func defaultTargetsForPolicy(policy TargetPolicy) []string {
-	if policy.Allowed["TST"] && policy.Allowed["QA"] {
-		return []string{"TST", "QA"}
+	if policy.Allowed["tst"] && policy.Allowed["qa"] {
+		return []string{"tst", "qa"}
 	}
 	if len(policy.Ordered) >= 2 {
 		return []string{policy.Ordered[0], policy.Ordered[1]}
@@ -223,7 +223,7 @@ func defaultTargetsForPolicy(policy TargetPolicy) []string {
 	if len(policy.Ordered) == 1 {
 		return []string{policy.Ordered[0]}
 	}
-	return []string{"TST", "QA"}
+	return []string{"tst", "qa"}
 }
 
 func RenderManifestMarkdown(m Manifest) string {

@@ -50,7 +50,7 @@ func TestManifestFormatRoundTripProperties(t *testing.T) {
 	if !out.Options.IncludeConnectors || !out.Options.IncludeConnections {
 		t.Fatalf("include flags mismatch after round-trip: %#v", out.Options)
 	}
-	if len(out.Options.Targets) != 2 || out.Options.Targets[0] != "QA" || out.Options.Targets[1] != "TST" {
+	if len(out.Options.Targets) != 2 || out.Options.Targets[0] != "qa" || out.Options.Targets[1] != "tst" {
 		t.Fatalf("normalized targets mismatch: %#v", out.Options.Targets)
 	}
 }
@@ -86,7 +86,7 @@ func TestWriteManifestFilesWithFormat(t *testing.T) {
 		GeneratedAt:   "2026-05-19T10:00:00Z",
 		Options: Options{
 			Mode:    ModeFullDeployment,
-			Targets: []string{"QA", "TST"},
+			Targets: []string{"qa", "tst"},
 		},
 	}
 

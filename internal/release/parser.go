@@ -40,7 +40,7 @@ func ParseDeploymentOptionsMarkdown(markdown string) (Options, error) {
 			continue
 		}
 
-		for _, env := range []string{"TST", "QA", "STG", "PROD"} {
+		for _, env := range []string{"tst", "qa", "stg", "prod"} {
 			if strings.Contains(lower, "- [x] "+strings.ToLower(env)) {
 				if !targetSeen[env] {
 					targetSeen[env] = true

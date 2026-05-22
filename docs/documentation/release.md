@@ -152,7 +152,7 @@ iics release plan \
 # Override target profile mapping for envs
 iics release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
-  --target-profile-map TST=tst-ci,QA=qa-ci,PROD=prod-ci \
+  --target-profile-map tst=tst-ci,qa=qa-ci,prod=prod-ci \
   --add-missing-transitive-deps
 
 # Generate JSON plan files
