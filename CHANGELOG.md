@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-05-22
+
+### Changed
+
+- `manifest.options.targets` values are now normalized to lower case (`tst`, `qa`, `stg`, `prod`)
+  for consistency with generated folder paths, status field names, and profile names. Existing
+  manifests with upper case targets continue to parse correctly. CI env var names
+  (`IICS_USER_TST`, `IICS_PWD_TST`, etc.) are unaffected.
+
 ## [0.4.3] - 2026-05-21
 
 ### Changed
