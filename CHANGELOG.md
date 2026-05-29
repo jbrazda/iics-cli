@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-05-29
+
+### Fixed
+
+- Full package config now supports single-column CSV headers (files with only an `assetPath`
+  column and no `targetEnvironments` column) without failing on missing column index
+
+### Changed
+
+- Updated release manifest samples
+
 ## [0.4.4] - 2026-05-22
 
 ### Changed
