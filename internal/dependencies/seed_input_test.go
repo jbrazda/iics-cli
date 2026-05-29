@@ -33,6 +33,20 @@ func TestParseSeedEntriesFromInputCSVPathType(t *testing.T) {
 	}
 }
 
+func TestParseSeedEntriesFromInputCSVLocationOnlyHeader(t *testing.T) {
+	in := []byte("LOCATION\nExplore/ZZ_TEST_CLI.Project\n")
+	got, err := ParseSeedEntriesFromInput(in)
+	if err != nil {
+		t.Fatalf("ParseSeedEntriesFromInput() error = %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("len = %d, want 1", len(got))
+	}
+	if got[0].Path != "ZZ_TEST_CLI" || got[0].Type != "Project" {
+		t.Fatalf("entry = %#v", got[0])
+	}
+}
+
 func TestParseSeedIDsFromInputStillWorksForIDRows(t *testing.T) {
 	in := []byte("ID,PATH,TYPE\nx1,A,PROCESS\nx2,B,GUIDE\n")
 	got, err := ParseSeedIDsFromInput(in)
