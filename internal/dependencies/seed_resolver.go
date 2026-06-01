@@ -255,7 +255,25 @@ func expandContainerObjects(
 	containerRoots map[string]bool,
 ) (int, error) {
 	added := 0
+	queue := make([]string, 0, len(containerRoots))
+	visited := make(map[string]bool, len(containerRoots))
 	for root := range containerRoots {
+		root = client.NormalizeLocationPath(strings.TrimSpace(root))
+		if root == "" {
+			continue
+		}
+		queue = append(queue, root)
+	}
+	sort.Strings(queue)
+
+	for len(queue) > 0 {
+		root := queue[0]
+		queue = queue[1:]
+		if visited[root] {
+			continue
+		}
+		visited[root] = true
+
 		resp, err := c.ListAllObjects(ctx, client.ObjectsListOptions{
 			Query: fmt.Sprintf("location=='%s'", root),
 		}, nil)
@@ -273,6 +291,9 @@ func expandContainerObjects(
 				continue
 			}
 			if _, exists := explicitByID[id]; exists {
+				if typ == "Folder" && !visited[path] {
+					queue = append(queue, path)
+				}
 				continue
 			}
 			explicitByID[id] = resolvedSeedObject{
@@ -281,6 +302,9 @@ func expandContainerObjects(
 				Type: typ,
 			}
 			added++
+			if typ == "Folder" && !visited[path] {
+				queue = append(queue, path)
+			}
 		}
 	}
 	return added, nil

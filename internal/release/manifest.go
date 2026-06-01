@@ -32,7 +32,6 @@ type Options struct {
 	Targets            []string   `yaml:"targets" json:"targets"`
 	IncludeConnectors  bool       `yaml:"includeConnectors" json:"includeConnectors"`
 	IncludeConnections bool       `yaml:"includeConnections" json:"includeConnections"`
-	ConnectorsOnly     bool       `yaml:"connectorsOnly,omitempty" json:"connectorsOnly,omitempty"`
 	ExcludeFile        string     `yaml:"excludeFile,omitempty" json:"excludeFile,omitempty"`
 }
 
@@ -139,10 +138,6 @@ func ValidateOptionsWithPolicy(opts *Options, policy TargetPolicy) error {
 	sort.Strings(normalized)
 	opts.Targets = normalized
 
-	if opts.ConnectorsOnly {
-		opts.IncludeConnectors = true
-		opts.IncludeConnections = true
-	}
 	return nil
 }
 
@@ -242,9 +237,6 @@ func RenderManifestMarkdown(m Manifest) string {
 	_, _ = fmt.Fprintf(&sb, "- Targets: `%s`\n", strings.Join(opts.Targets, ", "))
 	_, _ = fmt.Fprintf(&sb, "- Include Connectors: `%t`\n", opts.IncludeConnectors)
 	_, _ = fmt.Fprintf(&sb, "- Include Connections: `%t`\n", opts.IncludeConnections)
-	if opts.ConnectorsOnly {
-		_, _ = fmt.Fprintf(&sb, "- Connectors Only: `%t`\n", opts.ConnectorsOnly)
-	}
 	if opts.ExcludeFile != "" {
 		_, _ = fmt.Fprintf(&sb, "- Exclude File: `%s`\n", opts.ExcludeFile)
 	}

@@ -3609,8 +3609,6 @@ _iics_release_manifest()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--connectors-only")
-    local_nonpersistent_flags+=("--connectors-only")
     flags+=("--exclude-file=")
     two_word_flags+=("--exclude-file")
     local_nonpersistent_flags+=("--exclude-file")

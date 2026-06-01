@@ -182,7 +182,7 @@ func LoadExcludePatterns(filePath string) ([]*regexp.Regexp, error) {
 	return patterns, nil
 }
 
-func ApplyPolicies(assets []Asset, includeConnectors, includeConnections, connectorsOnly bool, excludePatterns []*regexp.Regexp) []Asset {
+func ApplyPolicies(assets []Asset, includeConnectors, includeConnections bool, excludePatterns []*regexp.Regexp) []Asset {
 	filtered := make([]Asset, 0, len(assets))
 	for _, a := range assets {
 		excluded := false
@@ -195,11 +195,7 @@ func ApplyPolicies(assets []Asset, includeConnectors, includeConnections, connec
 		if excluded {
 			continue
 		}
-		if connectorsOnly {
-			if !isConnectorOrConnectionType(a.Type) {
-				continue
-			}
-		} else if !includeConnectors && isConnectorType(a.Type) {
+		if !includeConnectors && isConnectorType(a.Type) {
 			continue
 		} else if !includeConnections && isConnectionType(a.Type) {
 			continue

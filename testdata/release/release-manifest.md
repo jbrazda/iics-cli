@@ -7,7 +7,6 @@
 - Tag: `PSAR`
 - Targets: `PROD, QA, TST`
 - Include Connectors: `true`
-- Connectors Only: `false`
 
 ## PR Details
 

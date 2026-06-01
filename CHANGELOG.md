@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the redundant `release manifest --connectors-only` option; use
+  `--include-connectors` and `--include-connections` to include both asset types
+
+### Fixed
+
+- `release plan` full mode now writes environment `publish_assets` files from
+  resolved publishable package assets instead of creating empty files
+
 ## [0.4.5] - 2026-05-29
 
 ### Fixed

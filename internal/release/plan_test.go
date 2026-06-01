@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -34,13 +35,13 @@ func TestApplyPolicies(t *testing.T) {
 		{Location: "Explore/C.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR"},
 		{Location: "Explore/D.Connection", Type: "Connection"},
 	}
-	got := ApplyPolicies(assets, false, false, false, nil)
+	got := ApplyPolicies(assets, false, false, nil)
 	if len(got) != 1 || got[0].Type != "PROCESS" {
 		t.Fatalf("unexpected filtered assets: %#v", got)
 	}
 }
 
-func TestApplyPoliciesIncludeFlagsAndConnectorsOnly(t *testing.T) {
+func TestApplyPoliciesIncludeFlags(t *testing.T) {
 	assets := []Asset{
 		{Location: "Explore/A.PROCESS", Type: "PROCESS"},
 		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION"},
@@ -48,7 +49,7 @@ func TestApplyPoliciesIncludeFlagsAndConnectorsOnly(t *testing.T) {
 		{Location: "Explore/D.Connection", Type: "Connection"},
 	}
 
-	onlyConnectors := ApplyPolicies(assets, true, false, false, nil)
+	onlyConnectors := ApplyPolicies(assets, true, false, nil)
 	if len(onlyConnectors) != 2 {
 		t.Fatalf("onlyConnectors len = %d, want 2", len(onlyConnectors))
 	}
@@ -58,23 +59,13 @@ func TestApplyPoliciesIncludeFlagsAndConnectorsOnly(t *testing.T) {
 		}
 	}
 
-	onlyConnections := ApplyPolicies(assets, false, true, false, nil)
+	onlyConnections := ApplyPolicies(assets, false, true, nil)
 	if len(onlyConnections) != 3 {
 		t.Fatalf("onlyConnections len = %d, want 3", len(onlyConnections))
 	}
 	for _, a := range onlyConnections {
 		if a.Type == "AI_SERVICE_CONNECTOR" {
 			t.Fatalf("onlyConnections should not include connector type: %#v", onlyConnections)
-		}
-	}
-
-	connectorsOnly := ApplyPolicies(assets, false, false, true, nil)
-	if len(connectorsOnly) != 3 {
-		t.Fatalf("connectorsOnly len = %d, want 3", len(connectorsOnly))
-	}
-	for _, a := range connectorsOnly {
-		if a.Type == "PROCESS" {
-			t.Fatalf("connectorsOnly should exclude non connector/connection assets")
 		}
 	}
 }
@@ -246,7 +237,7 @@ func TestWriteAssetsYAMLFieldSelection(t *testing.T) {
 }
 
 func TestEnsureCurrentTargetStatusField(t *testing.T) {
-	fields := []string{"location", "dependency", "type", "path"}
+	fields := []string{"location", "type", "path", "dependency"}
 	got := EnsureCurrentTargetStatusField(fields, "QA")
 	if len(got) != 5 {
 		t.Fatalf("len = %d, want 5", len(got))
@@ -261,7 +252,7 @@ func TestEnsureCurrentTargetStatusField(t *testing.T) {
 	}
 }
 
-func TestWriteAssetsCSV_TargetStatusHeaderAndValue(t *testing.T) {
+func TestWriteAssetsCSV_DefaultPackageFieldOrderWithTargetStatus(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "full_build.package.csv")
 	assets := []Asset{
@@ -273,7 +264,7 @@ func TestWriteAssetsCSV_TargetStatusHeaderAndValue(t *testing.T) {
 			Status:     "found",
 		},
 	}
-	fields := []string{"location", "dependency", "status (qa)", "type", "path"}
+	fields := EnsureCurrentTargetStatusField([]string{"location", "type", "path", "dependency"}, "QA")
 	if err := WriteAssetsCSV(path, assets, fields); err != nil {
 		t.Fatalf("WriteAssetsCSV() error = %v", err)
 	}
@@ -287,14 +278,55 @@ func TestWriteAssetsCSV_TargetStatusHeaderAndValue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Read headers error = %v", err)
 	}
-	if len(headers) != 5 || headers[2] != "STATUS (QA)" {
+	wantHeaders := []string{"LOCATION", "TYPE", "PATH", "DEPENDENCY", "STATUS (QA)"}
+	if !reflect.DeepEqual(headers, wantHeaders) {
 		t.Fatalf("unexpected headers: %#v", headers)
 	}
 	row, err := r.Read()
 	if err != nil {
 		t.Fatalf("Read row error = %v", err)
 	}
-	if row[2] != "found" {
-		t.Fatalf("status value = %q, want found", row[2])
+	wantRow := []string{"Explore/A.PROCESS", "PROCESS", "A", "transitive", "found"}
+	if !reflect.DeepEqual(row, wantRow) {
+		t.Fatalf("unexpected row: %#v", row)
+	}
+}
+
+func TestWriteAssetsCSV_DefaultPublishFieldOrder(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "publish_assets.csv")
+	assets := []Asset{
+		{
+			Location:   "Explore/A.PROCESS",
+			Dependency: "explicit",
+			Type:       "PROCESS",
+			Path:       "A",
+		},
+	}
+	fields := []string{"location", "type", "path", "dependency"}
+	if err := WriteAssetsCSV(path, assets, fields); err != nil {
+		t.Fatalf("WriteAssetsCSV() error = %v", err)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer func() { _ = f.Close() }()
+	r := csv.NewReader(f)
+	headers, err := r.Read()
+	if err != nil {
+		t.Fatalf("Read headers error = %v", err)
+	}
+	wantHeaders := []string{"LOCATION", "TYPE", "PATH", "DEPENDENCY"}
+	if !reflect.DeepEqual(headers, wantHeaders) {
+		t.Fatalf("unexpected headers: %#v", headers)
+	}
+	row, err := r.Read()
+	if err != nil {
+		t.Fatalf("Read row error = %v", err)
+	}
+	wantRow := []string{"Explore/A.PROCESS", "PROCESS", "A", "explicit"}
+	if !reflect.DeepEqual(row, wantRow) {
+		t.Fatalf("unexpected row: %#v", row)
 	}
 }

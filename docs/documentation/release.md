@@ -35,7 +35,6 @@ Generates release manifest files from either a PR description markdown file (Dep
 | `--valid-targets`      | string      |                      | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
 | `--include-connectors` | bool        | `false`              | Include connector assets                                                            |
 | `--include-connections` | bool       | `false`              | Include connection assets                                                           |
-| `--connectors-only`    | bool        | `false`              | Include only connectors and connections                                             |
 | `--exclude-file`       | string      |                      | Regex policy file path                                                              |
 | `--source`             | string      |                      | Optional source identifier stored in manifest                                       |
 
@@ -115,7 +114,8 @@ For `full` mode:
 - marks objects outside explicit scope as transitive
 - writes `full_build.package.<ext>` per environment using `--output` format
 - each per-environment `full_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
-- creates empty `publish_assets.<ext>` files for each environment
+- writes `publish_assets.<ext>` per environment from all publishable resolved full-package assets
+  (`AI_SERVICE_CONNECTOR`, `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`)
 
 ### Flags
 
@@ -128,8 +128,8 @@ For `full` mode:
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
 | `--add-missing-transitive-deps` | bool   | `false`                                         | Include transitive dependencies only when missing in each target environment; explicit assets are always included        |
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
-| `--package-fields`              | string | `location,dependency,type,path`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
-| `--publish-fields`              | string | `location,dependency`                           | Fields for publish files                                                                                                 |
+| `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
+| `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |
 
 ### Example
 

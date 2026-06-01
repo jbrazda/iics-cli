@@ -39,7 +39,6 @@ func newReleaseManifestCmd() *cobra.Command {
 		validTargets       string
 		includeConnectors  bool
 		includeConnections bool
-		connectorsOnly     bool
 		excludeFile        string
 		source             string
 	)
@@ -82,9 +81,6 @@ func newReleaseManifestCmd() *cobra.Command {
 			if cmd.Flags().Changed("include-connections") {
 				opts.IncludeConnections = includeConnections
 			}
-			if cmd.Flags().Changed("connectors-only") {
-				opts.ConnectorsOnly = connectorsOnly
-			}
 			if cmd.Flags().Changed("exclude-file") {
 				opts.ExcludeFile = excludeFile
 			}
@@ -115,7 +111,6 @@ func newReleaseManifestCmd() *cobra.Command {
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
 	cmd.Flags().BoolVar(&includeConnectors, "include-connectors", false, "include connector assets in generated package/publish files")
 	cmd.Flags().BoolVar(&includeConnections, "include-connections", false, "include connection assets in generated package/publish files")
-	cmd.Flags().BoolVar(&connectorsOnly, "connectors-only", false, "generate connectors-and-connections-only package/publish files")
 	cmd.Flags().StringVar(&excludeFile, "exclude-file", "", "path to regex exclude policy file")
 	cmd.Flags().StringVar(&source, "source", "", "optional source identifier written to manifest")
 	return cmd
@@ -201,7 +196,6 @@ func newReleasePlanCmd() *cobra.Command {
 				"targets", strings.Join(opts.Targets, ","),
 				"includeConnectors", opts.IncludeConnectors,
 				"includeConnections", opts.IncludeConnections,
-				"connectorsOnly", opts.ConnectorsOnly,
 				"excludeFile", opts.ExcludeFile,
 			)
 			excludes, err := release.LoadExcludePatterns(opts.ExcludeFile)
@@ -210,8 +204,8 @@ func newReleasePlanCmd() *cobra.Command {
 			}
 			slog.Info("release plan: exclude policy loaded", "patterns", len(excludes))
 
-			packageFields := splitCSVFields(packageFieldsRaw, []string{"location", "dependency", "type", "path"})
-			publishFields := splitCSVFields(publishFieldsRaw, []string{"location", "dependency"})
+			packageFields := splitCSVFields(packageFieldsRaw, []string{"location", "type", "path", "dependency"})
+			publishFields := splitCSVFields(publishFieldsRaw, []string{"location", "type", "path", "dependency"})
 			slog.Info("release plan: output fields resolved",
 				"packageFields", strings.Join(packageFields, ","),
 				"publishFields", strings.Join(publishFields, ","),
@@ -300,14 +294,16 @@ func newReleasePlanCmd() *cobra.Command {
 					if writeErr := writeAssets(targetCfg, envPackageAssets, envPackageFields); writeErr != nil {
 						return writeErr
 					}
+					publishAssets := release.PublishAssets(envAssets)
 					publishFile := filepath.Join(envDir, "publish_assets."+planExt)
-					if writeErr := writeAssets(publishFile, nil, publishFields); writeErr != nil {
+					if writeErr := writeAssets(publishFile, publishAssets, publishFields); writeErr != nil {
 						return writeErr
 					}
 					slog.Info("release plan: full mode files generated",
 						"environment", env,
 						"packageFile", targetCfg,
 						"publishFile", publishFile,
+						"publishAssets", len(publishAssets),
 					)
 				}
 				slog.Info("release plan: completed full mode",
@@ -333,7 +329,7 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 			}
 
-			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.IncludeConnections, opts.ConnectorsOnly, excludes)
+			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.IncludeConnections, excludes)
 			if infoEnabled {
 				slog.Info("release plan: dependency status table")
 				if err := renderDependencyStatusTable(
@@ -470,8 +466,8 @@ func newReleasePlanCmd() *cobra.Command {
 	cmd.Flags().StringVar(&targetProfileMap, "target-profile-map", "", "comma-separated target to profile map (TARGET=profile), overrides IICS_TARGET_PROFILE_MAP")
 	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")
 	cmd.Flags().StringVar(&planOutput, "output", "csv", "plan file output format: csv|json|yaml")
-	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,dependency,type,path", "fields for generated package files")
-	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,dependency", "fields for generated publish files")
+	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,type,path,dependency", "fields for generated package files")
+	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,type,path,dependency", "fields for generated publish files")
 	return cmd
 }
 

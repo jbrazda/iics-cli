@@ -21,7 +21,6 @@ func TestManifestFormatRoundTripProperties(t *testing.T) {
 			Targets:            []string{"qa", "tst"},
 			IncludeConnectors:  true,
 			IncludeConnections: true,
-			ConnectorsOnly:     false,
 			ExcludeFile:        "conf/excludes.txt",
 		},
 	}
@@ -35,6 +34,9 @@ func TestManifestFormatRoundTripProperties(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "iics.release.manifest.options.includeConnections=true") {
 		t.Fatalf("properties output missing includeConnections key:\n%s", string(data))
+	}
+	if strings.Contains(string(data), "iics.release.manifest.options.connectorsOnly") {
+		t.Fatalf("properties output should not include connectorsOnly key:\n%s", string(data))
 	}
 
 	out, err := ParseManifestWithPolicy(data, ManifestFormatProperties, policy)

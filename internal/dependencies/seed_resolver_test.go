@@ -70,13 +70,17 @@ func TestResolveSeedAssets_ExpandsContainerAndClassifiesDependencies(t *testing.
 			if limit == 0 {
 				limit = 200
 			}
-			objects := []client.Object{
-				{ID: "folder", Path: "ZZ_TEST_CLI/Processes", Type: "Folder"},
-				{ID: "nested", Path: "ZZ_TEST_CLI/Processes/Nested", Type: "Folder"},
-				{ID: "proc1", Path: "ZZ_TEST_CLI/Processes/P1", Type: "PROCESS"},
-				{ID: "proc2", Path: "ZZ_TEST_CLI/Processes/Nested/P2", Type: "PROCESS"},
-				{ID: "other", Path: "OtherProject/IgnoreMe", Type: "PROCESS"},
+			location := queryLocation(t, r.URL.Query().Get("q"))
+			objectsByLocation := map[string][]client.Object{
+				"ZZ_TEST_CLI/Processes": {
+					{ID: "nested", Path: "ZZ_TEST_CLI/Processes/Nested", Type: "Folder"},
+					{ID: "proc1", Path: "ZZ_TEST_CLI/Processes/P1", Type: "PROCESS"},
+				},
+				"ZZ_TEST_CLI/Processes/Nested": {
+					{ID: "proc2", Path: "ZZ_TEST_CLI/Processes/Nested/P2", Type: "PROCESS"},
+				},
 			}
+			objects := objectsByLocation[location]
 			var page []client.Object
 			if skip < len(objects) {
 				end := skip + limit
@@ -146,4 +150,14 @@ func TestResolveSeedAssets_ExpandsContainerAndClassifiesDependencies(t *testing.
 	if byLocation[transitiveLocation].Dependency != "transitive" {
 		t.Fatalf("%s dependency = %s, want transitive", transitiveLocation, byLocation[transitiveLocation].Dependency)
 	}
+}
+
+func queryLocation(t *testing.T, rawQuery string) string {
+	t.Helper()
+	const prefix = "location=='"
+	const suffix = "'"
+	if !strings.HasPrefix(rawQuery, prefix) || !strings.HasSuffix(rawQuery, suffix) {
+		t.Fatalf("unexpected object query: %q", rawQuery)
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(rawQuery, prefix), suffix)
 }

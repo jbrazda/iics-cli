@@ -145,7 +145,6 @@ func marshalManifestProperties(m Manifest) []byte {
 	lines = append(lines, fmt.Sprintf("%s.options.targets=%s", manifestPropertiesPrefix, strings.Join(m.Options.Targets, ",")))
 	lines = append(lines, fmt.Sprintf("%s.options.includeConnectors=%t", manifestPropertiesPrefix, m.Options.IncludeConnectors))
 	lines = append(lines, fmt.Sprintf("%s.options.includeConnections=%t", manifestPropertiesPrefix, m.Options.IncludeConnections))
-	lines = append(lines, fmt.Sprintf("%s.options.connectorsOnly=%t", manifestPropertiesPrefix, m.Options.ConnectorsOnly))
 	if m.Options.ExcludeFile != "" {
 		lines = append(lines, fmt.Sprintf("%s.options.excludeFile=%s", manifestPropertiesPrefix, m.Options.ExcludeFile))
 	}
@@ -209,13 +208,5 @@ func parseManifestProperties(data []byte) (Manifest, error) {
 		}
 		m.Options.IncludeConnections = v
 	}
-	if raw := get("options.connectorsOnly"); raw != "" {
-		v, err := strconv.ParseBool(raw)
-		if err != nil {
-			return Manifest{}, fmt.Errorf("parsing manifest properties connectorsOnly: %w", err)
-		}
-		m.Options.ConnectorsOnly = v
-	}
-
 	return m, nil
 }
