@@ -13,6 +13,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 )
 
@@ -231,6 +232,7 @@ func newImportRunCmd() *cobra.Command {
 		printImportLog     bool
 		expand             bool
 		objectStatusFields string
+		logFile            string
 	)
 
 	cmd := &cobra.Command{
@@ -255,6 +257,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			out := cmd.OutOrStdout()
 			startWall := time.Now()
+			logEnabled, logPath := manifestLogPath(cmd, logFile)
 
 			// --- Step 1: Upload ---
 			f, err := os.Open(zipFile)
@@ -375,14 +378,28 @@ the import log automatically on failure or when --print-import-log is set.`,
 
 			// --- Step 6: Import log ---
 			needLog := printImportLog || isImportFailed(finalJob.Status.State)
+			var importLogContent string
 			if needLog {
 				_, _ = fmt.Fprintln(out, "\nImport Log:")
 				var logBuf bytes.Buffer
 				if err := c.DownloadImportLog(context.Background(), finalJob.ID, &logBuf); err != nil {
 					_, _ = fmt.Fprintf(out, "  (could not download log: %v)\n", err)
 				} else {
-					_, _ = fmt.Fprintln(out, logBuf.String())
+					importLogContent = logBuf.String()
+					_, _ = fmt.Fprintln(out, importLogContent)
 				}
+			}
+			if logEnabled {
+				appendManifestLogWarning(cmd, logPath, release.RenderImportRunLog(release.ImportRunLog{
+					JobID:      finalJob.ID,
+					Name:       finalJob.Name,
+					State:      finalJob.Status.State,
+					Message:    finalJob.Status.Message,
+					StartTime:  finalJob.StartTime,
+					EndTime:    finalJob.EndTime,
+					Objects:    importObjectsToManifestLog(finalJob.Objects),
+					LogContent: importLogContent,
+				}))
 			}
 
 			if isImportFailed(finalJob.Status.State) {
@@ -403,6 +420,7 @@ the import log automatically on failure or when --print-import-log is set.`,
 	cmd.Flags().BoolVar(&expand, "expand", false, "expand object list in final status output")
 	cmd.Flags().StringVar(&objectStatusFields, "object-status-fields", defaultObjectStatusFields,
 		"comma-separated list of fields to display in the object status table")
+	bindManifestLogFlag(cmd, &logFile)
 
 	return cmd
 }
@@ -548,4 +566,20 @@ func printImportObjects(cmd *cobra.Command, job *client.ImportJob, fields string
 	if err := formatter.Format(flat, cols); err != nil {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  (render error: %v)\n", err)
 	}
+}
+
+func importObjectsToManifestLog(objects []client.ImportJobObject) []release.ImportLogObject {
+	rows := make([]release.ImportLogObject, 0, len(objects))
+	for _, object := range objects {
+		rows = append(rows, release.ImportLogObject{
+			SourceID:   object.SourceObject.ID,
+			SourcePath: object.SourceObject.Path,
+			SourceName: object.SourceObject.Name,
+			TargetName: object.TargetObject.Name,
+			SourceType: object.SourceObject.Type,
+			State:      object.Status.State,
+			Message:    object.Status.Message,
+		})
+	}
+	return rows
 }

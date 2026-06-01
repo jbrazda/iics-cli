@@ -130,6 +130,7 @@ For `full` mode:
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
 | `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
 | `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |
+| `--log-file`                    | string | disabled; default path when flag has no value   | Append a Markdown release report section; use `--log-file=PATH` to override `target/iics/import/logs/release_manifest.md` |
 
 ### Example
 

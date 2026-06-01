@@ -15,6 +15,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -136,6 +137,7 @@ func newPublishRunCmd() *cobra.Command {
 		maxWaitTime     int
 		detailedPolling bool
 		itemFields      string
+		logFile         string
 	)
 
 	cmd := &cobra.Command{
@@ -164,7 +166,7 @@ polls to completion, and prints a detailed summary.`,
 			}
 
 			return runPublishOp(cmd, c, paths, caiURL, name, "publish", pollingInterval, maxWaitTime, detailedPolling,
-				itemFields, c.StartPublish, c.GetPublishStatus)
+				itemFields, logFile, c.StartPublish, c.GetPublishStatus)
 		},
 	}
 
@@ -176,6 +178,7 @@ polls to completion, and prints a detailed summary.`,
 	cmd.Flags().IntVar(&maxWaitTime, "max-wait-time", 300, "maximum seconds to wait for completion")
 	cmd.Flags().BoolVar(&detailedPolling, "detailed-polling", false, "print item detail table on each poll (requires --verbose)")
 	cmd.Flags().StringVar(&itemFields, "item-fields", defaultItemFields, "comma-separated item detail fields to display")
+	bindManifestLogFlag(cmd, &logFile)
 	return cmd
 }
 
@@ -212,6 +215,7 @@ func runPublishOp(
 	pollingInterval, maxWaitTime int,
 	detailedPolling bool,
 	itemFields string,
+	logFile string,
 	startFn func(context.Context, string, []string) (*client.PublishJobResponse, error),
 	statusFn func(context.Context, string, string, bool) (*client.PublishJobResponse, error),
 ) error {
@@ -281,10 +285,24 @@ func runPublishOp(
 	if len(results) == 0 {
 		return nil
 	}
+	var err error
 	if len(batches) == 1 {
-		return printPublishSummary(cmd, verb, results[0].resp, itemFields, verbose)
+		err = printPublishSummary(cmd, verb, results[0].resp, itemFields, verbose)
+	} else {
+		err = printMultiBatchSummary(cmd, verb, results, itemFields, verbose)
 	}
-	return printMultiBatchSummary(cmd, verb, results, itemFields, verbose)
+	if err != nil {
+		return err
+	}
+	if verb == "publish" {
+		logEnabled, logPath := manifestLogPath(cmd, logFile)
+		if logEnabled {
+			appendManifestLogWarning(cmd, logPath, release.RenderPublishRunLog(release.PublishRunLog{
+				Batches: publishBatchesToManifestLog(results),
+			}))
+		}
+	}
+	return nil
 }
 
 // titleCase uppercases the first letter of s.
@@ -293,6 +311,43 @@ func titleCase(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func publishBatchesToManifestLog(results []batchResult) []release.PublishBatchLog {
+	batches := make([]release.PublishBatchLog, 0, len(results))
+	for _, result := range results {
+		attrs := result.resp.Data.Attributes
+		batch := release.PublishBatchLog{
+			Batch:     result.batchNum,
+			JobID:     result.jobID,
+			State:     attrs.JobState,
+			StartDate: attrs.StartDate,
+			EndDate:   attrs.EndDate,
+			Duration:  publishItemDuration(attrs.StartDate, attrs.EndDate),
+			Total:     attrs.TotalCount,
+			Published: result.batchPublished(),
+			Errors:    result.batchErrors(),
+		}
+		if result.timedOut {
+			batch.State = "TIMED_OUT"
+			batch.Errors++
+		}
+		for _, item := range result.resp.Data.Attributes.ItemDetail {
+			batch.Items = append(batch.Items, release.PublishItemLog{
+				Batch:     result.batchNum,
+				Index:     item.ItemIndex,
+				GUID:      item.ItemGUID,
+				AssetPath: item.AssetPath,
+				State:     item.ItemState,
+				StartDate: item.ItemStartDate,
+				EndDate:   item.ItemEndDate,
+				Duration:  publishItemDuration(item.ItemStartDate, item.ItemEndDate),
+				Detail:    item.ItemStatusDetail,
+			})
+		}
+		batches = append(batches, batch)
+	}
+	return batches
 }
 
 // defaultItemFields is the default set of columns for the item detail table.

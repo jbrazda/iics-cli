@@ -159,6 +159,7 @@ are re-packed into nested ZIP entries automatically.
 | `--include-tags`             |       | bool   |          | false   | Include root `tags` in regenerated `exportMetadata.v2.json`                       |
 | `--exclude-found-transitive` |       | bool   |          | false   | Exclude rows where `DEPENDENCY=transitive` and selected `STATUS (<target>)=found` |
 | `--status-target`            |       | string |          |         | Target key for `STATUS (<target>)` column (for example `qa`)                      |
+| `--log-file`                 |       | string |          |         | Append a Markdown release report section; use `--log-file=PATH` to override default path |
 
 All [global flags](../../README.md#global-flags) apply.
 

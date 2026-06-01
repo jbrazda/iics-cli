@@ -1,7 +1,7 @@
 ---
 id: BUG-0009
 title: release plan full mode writes empty publish assets
-status: pending
+status: completed
 priority: high
 affects: cmd/release.go
 ---

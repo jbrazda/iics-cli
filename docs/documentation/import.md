@@ -39,6 +39,7 @@ The recommended command for most use cases. Uploads the ZIP, starts the import, 
 | `--print-import-log`    |       | bool   |          | false           | Print the import log after completion                        |
 | `--expand`              |       | bool   |          | false           | Expand object list in final output                           |
 | `--object-status-fields`|       | string |          | see below       | Comma-separated list of object fields to display             |
+| `--log-file`            |       | string |          |                 | Append a Markdown release report section; use `--log-file=PATH` to override default path |
 
 All [global flags](../../README.md#global-flags) apply.
 

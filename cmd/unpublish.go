@@ -153,7 +153,7 @@ polls to completion, and prints a detailed summary.`,
 			}
 
 			return runPublishOp(cmd, c, paths, caiURL, name, "unpublish", pollingInterval, maxWaitTime, detailedPolling,
-				itemFields, c.StartUnpublish, c.GetUnpublishStatus)
+				itemFields, "", c.StartUnpublish, c.GetUnpublishStatus)
 		},
 	}
 

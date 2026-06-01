@@ -14,6 +14,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 )
 
@@ -284,6 +285,7 @@ func newExportRunCmd() *cobra.Command {
 		includeTags         bool
 		excludeDependencies bool
 		downloadExportLog   string
+		logFile             string
 	)
 
 	cmd := &cobra.Command{
@@ -306,6 +308,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 			ctx := context.Background()
 			out := cmd.OutOrStdout()
 			startWall := time.Now()
+			logEnabled, logPath := manifestLogPath(cmd, logFile)
 
 			// Step 1-2: Read input and resolve artifact IDs.
 			entries, err := readArtifacts(artifactsFile)
@@ -429,25 +432,35 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 
 			// Optional: Download export log.
 			if cmd.Flags().Changed("download-export-log") {
-				logPath := downloadExportLog
-				if logPath == "" {
+				exportLogPath := downloadExportLog
+				if exportLogPath == "" {
 					ext := filepath.Ext(exportFilePath)
-					logPath = strings.TrimSuffix(exportFilePath, ext) + ".log"
+					exportLogPath = strings.TrimSuffix(exportFilePath, ext) + ".log"
 				}
 				if verbose {
-					slog.Info("downloading export log", "path", logPath)
+					slog.Info("downloading export log", "path", exportLogPath)
 				}
-				logFile, err := os.Create(logPath)
+				logFile, err := os.Create(exportLogPath)
 				if err != nil {
-					_, _ = fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", logPath, err)
+					_, _ = fmt.Fprintf(out, "Warning: could not create log file %s: %v\n", exportLogPath, err)
 				} else {
 					defer func() { _ = logFile.Close() }()
 					if err := c.DownloadExportLog(ctx, finalJob.ID, logFile); err != nil {
 						_, _ = fmt.Fprintf(out, "Warning: could not download export log: %v\n", err)
 					} else {
-						_, _ = fmt.Fprintf(out, "Export log saved to: %s\n", logPath)
+						_, _ = fmt.Fprintf(out, "Export log saved to: %s\n", exportLogPath)
 					}
 				}
+			}
+			if logEnabled {
+				appendManifestLogWarning(cmd, logPath, release.RenderExportRunLog(release.ExportRunLog{
+					JobID:     finalJob.ID,
+					Name:      finalJob.Name,
+					State:     finalJob.Status.State,
+					Message:   finalJob.Status.Message,
+					ExportZIP: exportFilePath,
+					Objects:   artifactEntriesToManifestLog(enrichedEntries),
+				}))
 			}
 
 			return nil
@@ -464,6 +477,7 @@ completion, and downloads the ZIP package. Always prints the job summary.`,
 	cmd.Flags().BoolVar(&includeTags, "include-tags", false, "export tag information with assets")
 	cmd.Flags().BoolVar(&excludeDependencies, "exclude-dependencies", false, "exclude dependent objects from export")
 	cmd.Flags().StringVar(&downloadExportLog, "download-export-log", "", "download export log (default path: <export-file-path>.log)")
+	bindManifestLogFlag(cmd, &logFile)
 
 	return cmd
 }
@@ -563,6 +577,18 @@ func printArtifactTable(entries []client.ArtifactEntry, w io.Writer) {
 		{Header: "TYPE", Field: "Type"},
 	}
 	_ = f.Format(entries, cols)
+}
+
+func artifactEntriesToManifestLog(entries []client.ArtifactEntry) []release.ManifestLogAsset {
+	rows := make([]release.ManifestLogAsset, 0, len(entries))
+	for _, entry := range entries {
+		rows = append(rows, release.ManifestLogAsset{
+			ID:   entry.ID,
+			Type: entry.Type,
+			Path: entry.Path,
+		})
+	}
+	return rows
 }
 
 // printExportObjects renders the object list table for an export job.

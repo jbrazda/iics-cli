@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
@@ -156,6 +157,7 @@ func newReleasePlanCmd() *cobra.Command {
 		planOutput       string
 		packageFieldsRaw string
 		publishFieldsRaw string
+		logFile          string
 	)
 	cmd := &cobra.Command{
 		Use:   "plan",
@@ -206,6 +208,7 @@ func newReleasePlanCmd() *cobra.Command {
 
 			packageFields := splitCSVFields(packageFieldsRaw, []string{"location", "type", "path", "dependency"})
 			publishFields := splitCSVFields(publishFieldsRaw, []string{"location", "type", "path", "dependency"})
+			logEnabled, logPath := manifestLogPath(cmd, logFile)
 			slog.Info("release plan: output fields resolved",
 				"packageFields", strings.Join(packageFields, ","),
 				"publishFields", strings.Join(publishFields, ","),
@@ -257,6 +260,8 @@ func newReleasePlanCmd() *cobra.Command {
 					"transitiveAssets", stats.TransitiveAssets,
 				)
 
+				assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
+				publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 				for _, env := range opts.Targets {
 					envDir := filepath.Join(outputRoot, strings.ToLower(env))
 					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
@@ -299,6 +304,8 @@ func newReleasePlanCmd() *cobra.Command {
 					if writeErr := writeAssets(publishFile, publishAssets, publishFields); writeErr != nil {
 						return writeErr
 					}
+					assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
+					publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
 					slog.Info("release plan: full mode files generated",
 						"environment", env,
 						"packageFile", targetCfg,
@@ -310,6 +317,20 @@ func newReleasePlanCmd() *cobra.Command {
 					"targets", strings.Join(opts.Targets, ","),
 					"outputRoot", outputRoot,
 				)
+				if logEnabled {
+					appendManifestLogWarning(cmd, logPath, release.RenderReleasePlanLog(release.ReleasePlanLog{
+						SchemaVersion:      "v1",
+						GeneratedAt:        time.Now(),
+						Source:             manifestPath,
+						Mode:               opts.Mode,
+						Tag:                opts.Tag,
+						Targets:            opts.Targets,
+						IncludeConnectors:  opts.IncludeConnectors,
+						IncludeConnections: opts.IncludeConnections,
+						AssetsByTarget:     assetsByTarget,
+						PublishByTarget:    publishByTarget,
+					}))
+				}
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Generated full-deployment plan files.")
 				return nil
 			}
@@ -346,6 +367,8 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 			}
 			connectorUnion := make(map[string]release.Asset)
+			assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
+			publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 			filesWritten := 0
 
 			for _, env := range opts.Targets {
@@ -415,6 +438,8 @@ func newReleasePlanCmd() *cobra.Command {
 				if err := writeAssets(publishFile, publishAssets, publishFields); err != nil {
 					return err
 				}
+				assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
+				publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
 				filesWritten++
 				slog.Info("release plan: target files generated",
 					"environment", env,
@@ -455,6 +480,20 @@ func newReleasePlanCmd() *cobra.Command {
 				"outputRoot", outputRoot,
 				"filesWritten", filesWritten,
 			)
+			if logEnabled {
+				appendManifestLogWarning(cmd, logPath, release.RenderReleasePlanLog(release.ReleasePlanLog{
+					SchemaVersion:      "v1",
+					GeneratedAt:        time.Now(),
+					Source:             manifestPath,
+					Mode:               opts.Mode,
+					Tag:                opts.Tag,
+					Targets:            opts.Targets,
+					IncludeConnectors:  opts.IncludeConnectors,
+					IncludeConnections: opts.IncludeConnections,
+					AssetsByTarget:     assetsByTarget,
+					PublishByTarget:    publishByTarget,
+				}))
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Generated selective plan files for targets: %s\n", strings.Join(opts.Targets, ","))
 			return nil
 		},
@@ -468,6 +507,7 @@ func newReleasePlanCmd() *cobra.Command {
 	cmd.Flags().StringVar(&planOutput, "output", "csv", "plan file output format: csv|json|yaml")
 	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,type,path,dependency", "fields for generated package files")
 	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,type,path,dependency", "fields for generated publish files")
+	bindManifestLogFlag(cmd, &logFile)
 	return cmd
 }
 

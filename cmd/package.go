@@ -305,6 +305,7 @@ func newPackageCreateCmd() *cobra.Command {
 		includeTags             bool
 		excludeFoundTransitive  bool
 		excludeTargetStatusName string
+		logFile                 string
 	)
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -321,6 +322,7 @@ func newPackageCreateCmd() *cobra.Command {
 			if !fi.IsDir() {
 				return fmt.Errorf("source must be a directory: %s", source)
 			}
+			logEnabled, logPath := manifestLogPath(cmd, logFile)
 
 			// 2. Check target
 			if _, statErr := os.Stat(target); statErr == nil && !force {
@@ -397,6 +399,9 @@ func newPackageCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			var reportIncluded []release.ManifestLogAsset
+			var reportSelectedCount int
+			var reportExcludedCount int
 			if hasSelectionManifest {
 				if len(manifestEntries) == 0 {
 					return fmt.Errorf("selection manifest is empty")
@@ -484,6 +489,9 @@ func newPackageCreateCmd() *cobra.Command {
 				if len(selectedObjects) == 0 {
 					return fmt.Errorf("selection manifest resolved no exported objects")
 				}
+				reportIncluded = exportedObjectsToManifestLog(selectedObjects)
+				reportSelectedCount = len(selectedObjects)
+				reportExcludedCount = manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
 				metadataObjects := selectedObjects
 				if !excludeFoundTransitive {
 					selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
@@ -602,6 +610,18 @@ func newPackageCreateCmd() *cobra.Command {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  exportPackage.chksum\n")
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created %s (%d files)\n", target, len(sortedPaths)+1)
+			if logEnabled {
+				appendManifestLogWarning(cmd, logPath, release.RenderPackageCreateLog(release.PackageCreateLog{
+					PackagePath:             target,
+					Source:                  source,
+					SelectionManifest:       manifestFile,
+					PackageName:             packageName,
+					FileCount:               len(sortedPaths) + 1,
+					AssetsSelected:          reportSelectedCount,
+					TransitiveFoundExcluded: reportExcludedCount,
+					IncludedAssets:          reportIncluded,
+				}))
+			}
 			return nil
 		},
 	}
@@ -613,6 +633,7 @@ func newPackageCreateCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&includeTags, "include-tags", false, "include root tags in regenerated exportMetadata.v2.json")
 	cmd.Flags().BoolVar(&excludeFoundTransitive, "exclude-found-transitive", false, "exclude manifest rows where dependency is transitive and status is found in target")
 	cmd.Flags().StringVar(&excludeTargetStatusName, "status-target", "", "target key for STATUS (<target>) column (for example: qa); required when multiple STATUS columns exist")
+	bindManifestLogFlag(cmd, &logFile)
 	_ = cmd.MarkFlagRequired("source")
 	_ = cmd.MarkFlagRequired("target")
 	return cmd
@@ -847,6 +868,18 @@ type exportedObject struct {
 	Path         string          `json:"path"`
 	ProviderName json.RawMessage `json:"providerName,omitempty"`
 	Metadata     json.RawMessage `json:"metadata"`
+}
+
+func exportedObjectsToManifestLog(objects []exportedObject) []release.ManifestLogAsset {
+	rows := make([]release.ManifestLogAsset, 0, len(objects))
+	for _, object := range objects {
+		rows = append(rows, release.ManifestLogAsset{
+			ID:   object.ObjectGUID,
+			Type: object.ObjectType,
+			Path: object.Path,
+		})
+	}
+	return rows
 }
 
 // objectRefs extracts metadata.objectRefs while preserving all other metadata fields.

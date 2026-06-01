@@ -38,6 +38,7 @@ The recommended command for most use cases. Reads an artifacts list, resolves pa
 | `--expand-status`       |       | bool   |          | false      | Print the per-object export status table                           |
 | `--print-file-contents` |       | bool   |          | false      | List ZIP file contents after download                              |
 | `--download-export-log` |       | string |          |            | Download export log to this path (default: `<zip>.log`)           |
+| `--log-file`            |       | string |          |            | Append a Markdown release report section; use `--log-file=PATH` to override default path |
 
 All [global flags](../../README.md#global-flags) apply.
 
