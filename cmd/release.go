@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -259,9 +258,26 @@ func newReleasePlanCmd() *cobra.Command {
 					"explicitAssets", stats.ExplicitAssets,
 					"transitiveAssets", stats.TransitiveAssets,
 				)
+				if infoEnabled {
+					slog.Info("release plan: full mode dependency status table")
+					if renderErr := renderDependencyStatusTable(
+						context.Background(),
+						logWriter,
+						fullAssets,
+						opts.Targets,
+						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+					); renderErr != nil {
+						return renderErr
+					}
+					if renderErr := renderTypeCountTable(logWriter, "release plan: full mode dependency totals by type", release.AssetCountsByType(fullAssets), len(fullAssets)); renderErr != nil {
+						return renderErr
+					}
+				}
 
+				connectorUnion := make(map[string]release.Asset)
 				assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 				publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
+				filesWritten := 0
 				for _, env := range opts.Targets {
 					envDir := filepath.Join(outputRoot, strings.ToLower(env))
 					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
@@ -304,6 +320,28 @@ func newReleasePlanCmd() *cobra.Command {
 					if writeErr := writeAssets(publishFile, publishAssets, publishFields); writeErr != nil {
 						return writeErr
 					}
+					filesWritten += 2
+					if infoEnabled {
+						if renderErr := renderTypeCountTable(
+							logWriter,
+							fmt.Sprintf("release plan: package totals by type for %s", env),
+							release.AssetCountsByType(envAssets),
+							len(envAssets),
+						); renderErr != nil {
+							return renderErr
+						}
+						if renderErr := renderTypeCountTable(
+							logWriter,
+							fmt.Sprintf("release plan: publish totals by type for %s", env),
+							release.AssetCountsByType(publishAssets),
+							len(publishAssets),
+						); renderErr != nil {
+							return renderErr
+						}
+					}
+					for _, ca := range release.ConnectorAssets(envAssets) {
+						connectorUnion[ca.Location] = ca
+					}
 					assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
 					publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
 					slog.Info("release plan: full mode files generated",
@@ -313,9 +351,33 @@ func newReleasePlanCmd() *cobra.Command {
 						"publishAssets", len(publishAssets),
 					)
 				}
+				if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
+					connectorAssets := make([]release.Asset, 0, len(connectorUnion))
+					for _, asset := range connectorUnion {
+						connectorAssets = append(connectorAssets, asset)
+					}
+					connectorAssets = release.ConnectorPackageAssets(connectorAssets)
+					connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
+					if writeErr := writeAssets(connectorsFile, connectorAssets, packageFields); writeErr != nil {
+						return writeErr
+					}
+					filesWritten++
+					if infoEnabled {
+						if renderErr := renderTypeCountTable(
+							logWriter,
+							"release plan: connector totals by type",
+							release.AssetCountsByType(connectorAssets),
+							len(connectorAssets),
+						); renderErr != nil {
+							return renderErr
+						}
+					}
+					slog.Info("release plan: connectors file generated", "connectorsFile", connectorsFile)
+				}
 				slog.Info("release plan: completed full mode",
 					"targets", strings.Join(opts.Targets, ","),
 					"outputRoot", outputRoot,
+					"filesWritten", filesWritten,
 				)
 				if logEnabled {
 					appendManifestLogWarning(cmd, logPath, release.RenderReleasePlanLog(release.ReleasePlanLog{
@@ -447,17 +509,12 @@ func newReleasePlanCmd() *cobra.Command {
 					"publishFile", publishFile,
 				)
 			}
-			if opts.IncludeConnectors {
+			if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
 				connectorAssets := make([]release.Asset, 0, len(connectorUnion))
 				for _, asset := range connectorUnion {
 					connectorAssets = append(connectorAssets, asset)
 				}
-				sort.Slice(connectorAssets, func(i, j int) bool {
-					if connectorAssets[i].Type != connectorAssets[j].Type {
-						return connectorAssets[i].Type < connectorAssets[j].Type
-					}
-					return connectorAssets[i].Path < connectorAssets[j].Path
-				})
+				connectorAssets = release.ConnectorPackageAssets(connectorAssets)
 				connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
 				if err := writeAssets(connectorsFile, connectorAssets, packageFields); err != nil {
 					return err

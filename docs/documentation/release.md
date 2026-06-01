@@ -102,7 +102,8 @@ For `tag-based` mode:
 - `tag_build.package.<ext>`
 - `publish_assets.<ext>` (ordered for publish execution: `AI_SERVICE_CONNECTOR`,
   `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`, matching `publish.md`)
-- optional global `target/iics/import/connectors.package.<ext>`
+- optional global `target/iics/import/connectors.package.<ext>` when connectors
+  or connections are included
 - each per-environment `tag_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
 - with `--add-missing-transitive-deps`: explicit assets are always included; transitive
   assets are included only when missing in the specific target environment profile
@@ -116,6 +117,8 @@ For `full` mode:
 - each per-environment `full_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
 - writes `publish_assets.<ext>` per environment from all publishable resolved full-package assets
   (`AI_SERVICE_CONNECTOR`, `AI_CONNECTION`, `PROCESS`, `GUIDE`, `TASKFLOW`)
+- writes optional global `target/iics/import/connectors.package.<ext>` when
+  connectors or connections are included
 
 ### Flags
 

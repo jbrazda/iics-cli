@@ -70,6 +70,52 @@ func TestApplyPoliciesIncludeFlags(t *testing.T) {
 	}
 }
 
+func TestShouldWriteConnectorPackage(t *testing.T) {
+	tests := []struct {
+		name               string
+		includeConnectors  bool
+		includeConnections bool
+		want               bool
+	}{
+		{name: "none", want: false},
+		{name: "connectors", includeConnectors: true, want: true},
+		{name: "connections", includeConnections: true, want: true},
+		{name: "both", includeConnectors: true, includeConnections: true, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ShouldWriteConnectorPackage(tt.includeConnectors, tt.includeConnections)
+			if got != tt.want {
+				t.Fatalf("ShouldWriteConnectorPackage() = %t, want %t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestConnectorPackageAssetsFiltersAndSorts(t *testing.T) {
+	input := []Asset{
+		{Location: "Explore/Z.PROCESS", Type: "PROCESS", Path: "Z"},
+		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION", Path: "B"},
+		{Location: "Explore/A.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR", Path: "A"},
+		{Location: "Explore/C.Connection", Type: "Connection", Path: "C"},
+	}
+
+	got := ConnectorPackageAssets(input)
+	wantLocations := []string{
+		"Explore/B.AI_CONNECTION",
+		"Explore/A.AI_SERVICE_CONNECTOR",
+		"Explore/C.Connection",
+	}
+	if len(got) != len(wantLocations) {
+		t.Fatalf("len = %d, want %d: %#v", len(got), len(wantLocations), got)
+	}
+	for i, want := range wantLocations {
+		if got[i].Location != want {
+			t.Fatalf("location[%d] = %q, want %q", i, got[i].Location, want)
+		}
+	}
+}
+
 func TestApplyMissingTransitivePolicy(t *testing.T) {
 	assets := []Asset{
 		{Location: "Explore/A.PROCESS", Type: "PROCESS", Dependency: "explicit"},

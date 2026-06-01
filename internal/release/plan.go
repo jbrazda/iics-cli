@@ -215,6 +215,21 @@ func ConnectorAssets(assets []Asset) []Asset {
 	return out
 }
 
+func ShouldWriteConnectorPackage(includeConnectors, includeConnections bool) bool {
+	return includeConnectors || includeConnections
+}
+
+func ConnectorPackageAssets(assets []Asset) []Asset {
+	out := ConnectorAssets(assets)
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Type != out[j].Type {
+			return out[i].Type < out[j].Type
+		}
+		return out[i].Path < out[j].Path
+	})
+	return out
+}
+
 func isConnectorType(assetType string) bool {
 	return connectorAssetTypes[assetType]
 }
