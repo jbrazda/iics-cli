@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-06-01
+
+### Fixed
+
+- `release plan` full mode now generates `connectors.package` files when
+  connectors or connections are included, and emits verbose dependency and
+  package composition output to match tag-based planning behavior
+
 ## [0.4.6] - 2026-06-01
 
 ### Added
