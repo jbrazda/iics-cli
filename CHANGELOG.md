@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-06-01
+
+### Added
+
+- `release manifest` now writes a Markdown log file alongside the JSON manifest,
+  summarising the release plan in a human-readable format
+
 ### Changed
 
 - Removed the redundant `release manifest --connectors-only` option; use
