@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-07-01
+
+### Fixed
+
+- `release plan` now generates `connectors.package.<ext>` files from the
+  resolved dependency tree instead of per-target missing-transitive filtered
+  assets, keeping connector and connection dependencies in the standalone
+  connectors package even when they already exist in target orgs
+
 ## [0.4.8] - 2026-07-01
 
 ### Fixed
