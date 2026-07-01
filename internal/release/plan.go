@@ -222,17 +222,8 @@ func ShouldWriteConnectorPackage(includeConnectors, includeConnections bool) boo
 	return includeConnectors || includeConnections
 }
 
-func ConnectorPackageAssets(assets []Asset, includeConnectors, includeConnections bool) []Asset {
-	out := make([]Asset, 0, len(assets))
-	for _, a := range assets {
-		if isConnectorType(a.Type) && includeConnectors {
-			out = append(out, a)
-			continue
-		}
-		if isConnectionType(a.Type) && includeConnections {
-			out = append(out, a)
-		}
-	}
+func ConnectorPackageAssets(assets []Asset) []Asset {
+	out := ConnectorAssets(assets)
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Type != out[j].Type {
 			return out[i].Type < out[j].Type

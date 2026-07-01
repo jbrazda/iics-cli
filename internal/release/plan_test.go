@@ -102,7 +102,7 @@ func TestConnectorPackageAssetsFiltersAndSorts(t *testing.T) {
 		{Location: "Explore/C.Connection", Type: "Connection", Path: "C"},
 	}
 
-	got := ConnectorPackageAssets(input, true, true)
+	got := ConnectorPackageAssets(input)
 	wantLocations := []string{
 		"Explore/B.AI_CONNECTION",
 		"Explore/A.AI_SERVICE_CONNECTOR",
@@ -118,25 +118,20 @@ func TestConnectorPackageAssetsFiltersAndSorts(t *testing.T) {
 	}
 }
 
-func TestConnectorPackageAssetsRespectsIndependentIncludeFlags(t *testing.T) {
+func TestConnectorPackageAssetsIncludesAllConnectorDependencies(t *testing.T) {
 	input := []Asset{
 		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION", Path: "B"},
 		{Location: "Explore/A.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR", Path: "A"},
 		{Location: "Explore/C.Connection", Type: "Connection", Path: "C"},
 	}
 
-	connectorsOnly := ConnectorPackageAssets(input, true, false)
-	if len(connectorsOnly) != 1 || connectorsOnly[0].Type != "AI_SERVICE_CONNECTOR" {
-		t.Fatalf("connectorsOnly unexpected: %#v", connectorsOnly)
+	got := ConnectorPackageAssets(input)
+	if len(got) != 3 {
+		t.Fatalf("len = %d, want 3", len(got))
 	}
-
-	connectionsOnly := ConnectorPackageAssets(input, false, true)
-	if len(connectionsOnly) != 2 {
-		t.Fatalf("connectionsOnly len = %d, want 2", len(connectionsOnly))
-	}
-	for _, a := range connectionsOnly {
-		if a.Type == "AI_SERVICE_CONNECTOR" {
-			t.Fatalf("connectionsOnly should not include connectors: %#v", connectionsOnly)
+	for _, a := range got {
+		if a.Type != "AI_CONNECTION" && a.Type != "AI_SERVICE_CONNECTOR" && a.Type != "Connection" {
+			t.Fatalf("unexpected connector dependency type %q", a.Type)
 		}
 	}
 }

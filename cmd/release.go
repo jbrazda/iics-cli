@@ -279,7 +279,6 @@ func newReleasePlanCmd() *cobra.Command {
 					}
 				}
 
-				connectorUnion := make(map[string]release.Asset)
 				assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 				publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 				filesWritten := 0
@@ -344,9 +343,6 @@ func newReleasePlanCmd() *cobra.Command {
 							return renderErr
 						}
 					}
-					for _, ca := range release.ConnectorAssets(envAssets) {
-						connectorUnion[ca.Location] = ca
-					}
 					assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
 					publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
 					slog.Info("release plan: full mode files generated",
@@ -357,11 +353,7 @@ func newReleasePlanCmd() *cobra.Command {
 					)
 				}
 				if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
-					connectorAssets := make([]release.Asset, 0, len(connectorUnion))
-					for _, asset := range connectorUnion {
-						connectorAssets = append(connectorAssets, asset)
-					}
-					connectorAssets = release.ConnectorPackageAssets(connectorAssets, opts.IncludeConnectors, opts.IncludeConnections)
+					connectorAssets := release.ConnectorPackageAssets(fullAssets)
 					connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
 					if writeErr := writeAssets(connectorsFile, connectorAssets, packageFields); writeErr != nil {
 						return writeErr
@@ -433,7 +425,7 @@ func newReleasePlanCmd() *cobra.Command {
 					return err
 				}
 			}
-			connectorUnion := make(map[string]release.Asset)
+			connectorDependencyAssets := release.ApplyPolicies(assets, true, true, excludes)
 			assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 			publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
 			filesWritten := 0
@@ -469,7 +461,6 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 				envPackageFields := release.EnsureCurrentTargetStatusField(packageFields, env)
 				publishAssets := release.PublishAssets(envAssets)
-				connectorAssets := release.ConnectorAssets(envAssets)
 				if infoEnabled {
 					if err := renderTypeCountTable(
 						logWriter,
@@ -488,10 +479,6 @@ func newReleasePlanCmd() *cobra.Command {
 						return err
 					}
 				}
-				for _, ca := range connectorAssets {
-					connectorUnion[ca.Location] = ca
-				}
-
 				envDir := filepath.Join(outputRoot, strings.ToLower(env))
 				if err := os.MkdirAll(envDir, 0o755); err != nil {
 					return fmt.Errorf("creating env directory: %w", err)
@@ -515,11 +502,7 @@ func newReleasePlanCmd() *cobra.Command {
 				)
 			}
 			if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
-				connectorAssets := make([]release.Asset, 0, len(connectorUnion))
-				for _, asset := range connectorUnion {
-					connectorAssets = append(connectorAssets, asset)
-				}
-				connectorAssets = release.ConnectorPackageAssets(connectorAssets, opts.IncludeConnectors, opts.IncludeConnections)
+				connectorAssets := release.ConnectorPackageAssets(connectorDependencyAssets)
 				connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
 				if err := writeAssets(connectorsFile, connectorAssets, packageFields); err != nil {
 					return err
