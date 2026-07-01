@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-07-01
+
+### Fixed
+
+- `release plan` target dependency validation no longer fails when a missing
+  connection lookup returns `APP_13436` (HTTP 403); it is now classified as a
+  missing dependency and planning continues
+- `--debug` now emits request and response traces for target-org validation
+  calls used by release planning
+- Dependency status tables are now sorted by `LOCATION`
+- `connectors.package.<ext>` generation is now consistently policy-driven by
+  the manifest `Include Connectors` and `Include Connections` settings in both
+  full and tag modes
+
 ## [0.4.7] - 2026-06-01
 
 ### Fixed
