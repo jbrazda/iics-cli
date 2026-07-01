@@ -3,12 +3,14 @@ package release
 import (
 	"encoding/csv"
 	"encoding/json"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"gopkg.in/yaml.v3"
 )
@@ -100,7 +102,7 @@ func TestConnectorPackageAssetsFiltersAndSorts(t *testing.T) {
 		{Location: "Explore/C.Connection", Type: "Connection", Path: "C"},
 	}
 
-	got := ConnectorPackageAssets(input)
+	got := ConnectorPackageAssets(input, true, true)
 	wantLocations := []string{
 		"Explore/B.AI_CONNECTION",
 		"Explore/A.AI_SERVICE_CONNECTOR",
@@ -112,6 +114,81 @@ func TestConnectorPackageAssetsFiltersAndSorts(t *testing.T) {
 	for i, want := range wantLocations {
 		if got[i].Location != want {
 			t.Fatalf("location[%d] = %q, want %q", i, got[i].Location, want)
+		}
+	}
+}
+
+func TestConnectorPackageAssetsRespectsIndependentIncludeFlags(t *testing.T) {
+	input := []Asset{
+		{Location: "Explore/B.AI_CONNECTION", Type: "AI_CONNECTION", Path: "B"},
+		{Location: "Explore/A.AI_SERVICE_CONNECTOR", Type: "AI_SERVICE_CONNECTOR", Path: "A"},
+		{Location: "Explore/C.Connection", Type: "Connection", Path: "C"},
+	}
+
+	connectorsOnly := ConnectorPackageAssets(input, true, false)
+	if len(connectorsOnly) != 1 || connectorsOnly[0].Type != "AI_SERVICE_CONNECTOR" {
+		t.Fatalf("connectorsOnly unexpected: %#v", connectorsOnly)
+	}
+
+	connectionsOnly := ConnectorPackageAssets(input, false, true)
+	if len(connectionsOnly) != 2 {
+		t.Fatalf("connectionsOnly len = %d, want 2", len(connectionsOnly))
+	}
+	for _, a := range connectionsOnly {
+		if a.Type == "AI_SERVICE_CONNECTOR" {
+			t.Fatalf("connectionsOnly should not include connectors: %#v", connectionsOnly)
+		}
+	}
+}
+
+func TestIsMissingConnectionError_APP13436Forbidden(t *testing.T) {
+	err := &client.APIError{
+		StatusCode: http.StatusForbidden,
+		Code:       "APP_13436",
+		ResponseBody: []byte(`{
+			"@type": "error",
+			"code": "APP_13436",
+			"description": "No object named connection exists for organization FF_JB_TEST."
+		}`),
+	}
+	if !isMissingConnectionError(err) {
+		t.Fatalf("expected APP_13436 to be treated as missing connection")
+	}
+}
+
+func TestIsMissingConnectionError_ForbiddenWithoutMissingSignature(t *testing.T) {
+	err := &client.APIError{
+		StatusCode: http.StatusForbidden,
+		Code:       "AUTH_FAILED",
+		Message:    "Permission denied",
+		ResponseBody: []byte(`{
+			"code": "AUTH_FAILED",
+			"description": "Permission denied"
+		}`),
+	}
+	if isMissingConnectionError(err) {
+		t.Fatalf("unexpected missing classification for non-missing forbidden response")
+	}
+}
+
+func TestSortAssetsByLocation(t *testing.T) {
+	input := []Asset{
+		{Location: "Explore/Z.PROCESS", Type: "PROCESS", Path: "Z"},
+		{Location: "Explore/A.AI_CONNECTION", Type: "AI_CONNECTION", Path: "A"},
+		{Location: "Explore/M.Connection", Type: "Connection", Path: "M"},
+	}
+	got := SortAssetsByLocation(input)
+	want := []string{
+		"Explore/A.AI_CONNECTION",
+		"Explore/M.Connection",
+		"Explore/Z.PROCESS",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("len = %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i].Location != want[i] {
+			t.Fatalf("location[%d] = %q, want %q", i, got[i].Location, want[i])
 		}
 	}
 }

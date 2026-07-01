@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -58,6 +59,8 @@ const targetProfileMapEnv = "IICS_TARGET_PROFILE_MAP"
 
 type TargetResolutionOptions struct {
 	TargetProfileMap string
+	Verbose          bool
+	Debug            bool
 }
 
 type AssetValidation struct {
@@ -219,8 +222,17 @@ func ShouldWriteConnectorPackage(includeConnectors, includeConnections bool) boo
 	return includeConnectors || includeConnections
 }
 
-func ConnectorPackageAssets(assets []Asset) []Asset {
-	out := ConnectorAssets(assets)
+func ConnectorPackageAssets(assets []Asset, includeConnectors, includeConnections bool) []Asset {
+	out := make([]Asset, 0, len(assets))
+	for _, a := range assets {
+		if isConnectorType(a.Type) && includeConnectors {
+			out = append(out, a)
+			continue
+		}
+		if isConnectionType(a.Type) && includeConnections {
+			out = append(out, a)
+		}
+	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Type != out[j].Type {
 			return out[i].Type < out[j].Type
@@ -554,7 +566,11 @@ func resolveTargetClient(targetProfileName string, opts TargetResolutionOptions)
 	if err != nil {
 		return nil, "", fmt.Errorf("resolving target login URL for profile %q: %w", resolvedProfileName, err)
 	}
-	return client.NewClient(loginURL, profile.Username, profile.Password), resolvedProfileName, nil
+	clientOptions := []client.ClientOption{
+		client.WithVerbose(opts.Verbose),
+		client.WithDebug(opts.Debug),
+	}
+	return client.NewClient(loginURL, profile.Username, profile.Password, clientOptions...), resolvedProfileName, nil
 }
 
 func assetExistsInTarget(ctx context.Context, tc *client.Client, a Asset) (bool, error) {
@@ -567,8 +583,7 @@ func assetExistsInTarget(ctx context.Context, tc *client.Client, a Asset) (bool,
 		if err == nil {
 			return true, nil
 		}
-		var apiErr *client.APIError
-		if errors.As(err, &apiErr) && apiErr.IsNotFound() {
+		if isMissingConnectionError(err) {
 			return false, nil
 		}
 		return false, err
@@ -584,6 +599,42 @@ func assetExistsInTarget(ctx context.Context, tc *client.Client, a Asset) (bool,
 		return false, err
 	}
 	return len(resp.Objects) > 0, nil
+}
+
+func isMissingConnectionError(err error) bool {
+	var apiErr *client.APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	if apiErr.IsNotFound() {
+		return true
+	}
+	if apiErr.StatusCode != http.StatusForbidden || !strings.EqualFold(strings.TrimSpace(apiErr.Code), "APP_13436") {
+		return false
+	}
+	msg := strings.ToLower(strings.TrimSpace(apiErr.Message))
+	if strings.Contains(msg, "no object named connection exists") {
+		return true
+	}
+	body := strings.ToLower(string(apiErr.ResponseBody))
+	return strings.Contains(body, "no object named connection exists")
+}
+
+func SortAssetsByLocation(assets []Asset) []Asset {
+	out := make([]Asset, len(assets))
+	copy(out, assets)
+	sort.SliceStable(out, func(i, j int) bool {
+		left := strings.ToLower(strings.TrimSpace(out[i].Location))
+		right := strings.ToLower(strings.TrimSpace(out[j].Location))
+		if left != right {
+			return left < right
+		}
+		if out[i].Type != out[j].Type {
+			return out[i].Type < out[j].Type
+		}
+		return out[i].Path < out[j].Path
+	})
+	return out
 }
 
 func WriteAssetsCSV(path string, assets []Asset, fields []string) error {

@@ -214,6 +214,11 @@ func newReleasePlanCmd() *cobra.Command {
 			)
 			infoEnabled := slog.Default().Enabled(context.Background(), slog.LevelInfo)
 			logWriter := cmd.ErrOrStderr()
+			targetResolutionOpts := release.TargetResolutionOptions{
+				TargetProfileMap: targetProfileMap,
+				Verbose:          verbose,
+				Debug:            debug,
+			}
 
 			if opts.Mode == release.ModeFullDeployment {
 				content, readErr := os.ReadFile(fullPackageCfg)
@@ -265,7 +270,7 @@ func newReleasePlanCmd() *cobra.Command {
 						logWriter,
 						fullAssets,
 						opts.Targets,
-						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+						targetResolutionOpts,
 					); renderErr != nil {
 						return renderErr
 					}
@@ -289,7 +294,7 @@ func newReleasePlanCmd() *cobra.Command {
 							context.Background(),
 							env,
 							fullAssets,
-							release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+							targetResolutionOpts,
 						)
 						if filterErr != nil {
 							return filterErr
@@ -305,7 +310,7 @@ func newReleasePlanCmd() *cobra.Command {
 						context.Background(),
 						env,
 						envAssets,
-						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+						targetResolutionOpts,
 					)
 					if annotateErr != nil {
 						return annotateErr
@@ -356,7 +361,7 @@ func newReleasePlanCmd() *cobra.Command {
 					for _, asset := range connectorUnion {
 						connectorAssets = append(connectorAssets, asset)
 					}
-					connectorAssets = release.ConnectorPackageAssets(connectorAssets)
+					connectorAssets = release.ConnectorPackageAssets(connectorAssets, opts.IncludeConnectors, opts.IncludeConnections)
 					connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
 					if writeErr := writeAssets(connectorsFile, connectorAssets, packageFields); writeErr != nil {
 						return writeErr
@@ -420,7 +425,7 @@ func newReleasePlanCmd() *cobra.Command {
 					logWriter,
 					allFiltered,
 					opts.Targets,
-					release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+					targetResolutionOpts,
 				); err != nil {
 					return err
 				}
@@ -441,7 +446,7 @@ func newReleasePlanCmd() *cobra.Command {
 						context.Background(),
 						env,
 						allFiltered,
-						release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+						targetResolutionOpts,
 					)
 					if filterErr != nil {
 						return filterErr
@@ -457,7 +462,7 @@ func newReleasePlanCmd() *cobra.Command {
 					context.Background(),
 					env,
 					envAssets,
-					release.TargetResolutionOptions{TargetProfileMap: targetProfileMap},
+					targetResolutionOpts,
 				)
 				if annotateErr != nil {
 					return annotateErr
@@ -514,7 +519,7 @@ func newReleasePlanCmd() *cobra.Command {
 				for _, asset := range connectorUnion {
 					connectorAssets = append(connectorAssets, asset)
 				}
-				connectorAssets = release.ConnectorPackageAssets(connectorAssets)
+				connectorAssets = release.ConnectorPackageAssets(connectorAssets, opts.IncludeConnectors, opts.IncludeConnections)
 				connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
 				if err := writeAssets(connectorsFile, connectorAssets, packageFields); err != nil {
 					return err
@@ -618,8 +623,9 @@ func renderDependencyStatusTable(
 	targets []string,
 	opts release.TargetResolutionOptions,
 ) error {
-	tableRows := make([]map[string]interface{}, len(assets))
-	for i, dep := range assets {
+	sortedAssets := release.SortAssetsByLocation(assets)
+	tableRows := make([]map[string]interface{}, len(sortedAssets))
+	for i, dep := range sortedAssets {
 		row := map[string]interface{}{
 			"id":         dep.Location,
 			"path":       dep.Path,
@@ -631,7 +637,7 @@ func renderDependencyStatusTable(
 	}
 
 	for _, target := range targets {
-		validations, err := release.ValidateAssetsForTarget(ctx, target, assets, opts)
+		validations, err := release.ValidateAssetsForTarget(ctx, target, sortedAssets, opts)
 		if err != nil {
 			return fmt.Errorf("profile %q: %w", target, err)
 		}
