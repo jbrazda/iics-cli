@@ -493,37 +493,31 @@ func newPackageCreateCmd() *cobra.Command {
 				reportSelectedCount = len(selectedObjects)
 				reportExcludedCount = manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
 				metadataObjects := selectedObjects
-				if !excludeFoundTransitive {
-					selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-					for i, o := range selectedObjects {
-						selectedNodes[i] = dependencies.ObjectRefsNode{
-							ID:         o.ObjectGUID,
-							ObjectRefs: o.objectRefs(),
-						}
+				selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+				for i, o := range selectedObjects {
+					selectedNodes[i] = dependencies.ObjectRefsNode{
+						ID:         o.ObjectGUID,
+						ObjectRefs: o.objectRefs(),
 					}
-					prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
-					for i := range selectedObjects {
-						if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
-							return setErr
-						}
+				}
+				prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
+				for i := range selectedObjects {
+					if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
+						return setErr
 					}
-					postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-					for i, o := range selectedObjects {
-						postPruneNodes[i] = dependencies.ObjectRefsNode{
-							ID:         o.ObjectGUID,
-							ObjectRefs: o.objectRefs(),
-						}
+				}
+				postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+				for i, o := range selectedObjects {
+					postPruneNodes[i] = dependencies.ObjectRefsNode{
+						ID:         o.ObjectGUID,
+						ObjectRefs: o.objectRefs(),
 					}
-					if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
-						return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
-					}
-					if verbose && prunedCount > 0 {
-						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
-					}
-				} else {
-					// Keep full dependency metadata graph for CDI assets while still
-					// excluding transitive files from package content.
-					metadataObjects = meta.ExportedObjects
+				}
+				if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
+					return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
+				}
+				if verbose && prunedCount > 0 {
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
 				}
 
 				filtered := filterPackageFilesForSelection(fileContents, meta.ExportedObjects, selectedIDs)

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `package create --exclude-found-transitive` now regenerates
+  `exportMetadata.v2.json` from the selected package assets instead of
+  retaining the full source metadata object list
+
 ## [0.4.9] - 2026-07-01
 
 ### Fixed
