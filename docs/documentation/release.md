@@ -105,8 +105,9 @@ For `tag-based` mode:
 - optional global `target/iics/import/connectors.package.<ext>` when connectors
   or connections are included
 - each per-environment `tag_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
-- with `--add-missing-transitive-deps`: explicit assets are always included; transitive
-  assets are included only when missing in the specific target environment profile
+- by default, explicit assets are always included and transitive assets are
+  included only when missing in the specific target environment profile
+- use `--skip-missing-transitive-deps` to keep all transitive assets
 
 For `full` mode:
 
@@ -120,6 +121,66 @@ For `full` mode:
 - writes optional global `target/iics/import/connectors.package.<ext>` when
   connectors or connections are included
 
+### How dependency resolution works
+
+#### Tag-based mode
+
+1. Queries the source org with `ListAllObjects` using `tag=='<tag>'` to find all explicitly-tagged objects.
+2. For each tagged object ID, runs a BFS traversal (`TraverseByIDs`) that repeatedly calls
+   the `GetObjectDependencies` API with `refType=uses`.
+   - References that carry an ID are queued directly.
+   - References with only `path+type` are resolved to IDs via `Lookup`.
+3. After the graph is fully traversed, a bulk `Lookup` by ID populates path/type metadata for
+   every visited node.
+4. Each resulting asset is labelled `explicit` (directly tagged) or `transitive` (pulled in as a
+   dependency).
+
+#### Full deployment mode
+
+1. Reads a seed config file (`--full-package-config`) containing rows with `id`, `location`, or
+   `path+type`.
+2. Entries that have only `path+type` are resolved to IDs via `Lookup`.
+3. Seeds of type `Project` or `Folder` are **expanded recursively**: the CLI calls
+   `ListAllObjects` with `location=='<path>'` for every container root, and all contained
+   objects are treated as `explicit` seeds.
+4. The same BFS traversal as tag-based mode then resolves transitive dependencies from all
+   explicit seed IDs.
+
+### How target org presence is checked
+
+Target credentials are resolved in this order:
+
+1. `--target-profile-map` flag or `IICS_TARGET_PROFILE_MAP` env var (e.g. `TST=my-tst-profile,PROD=prod`).
+2. Profile in `~/.iics/config.yaml` with a name matching the target (case-insensitive; `STG` and
+   `STAGE` are treated as aliases).
+3. CI env vars `IICS_USER_<TARGET>` + `IICS_PWD_<TARGET>` with optional
+   `IICS_LOGIN_URL_<TARGET>` / `IICS_REGION_<TARGET>`.
+4. Global fallback `IICS_TARGET_USERNAME` + `IICS_TARGET_PASSWORD`.
+
+Two checks are performed against the resolved target client:
+
+#### Missing-transitive filter (default enabled)
+
+- Missing-transitive filtering is enabled by default.
+- Applied only to **transitive** assets; explicit assets are always included.
+- For each transitive asset, calls `assetExistsInTarget` (see below).
+- Transitive assets that are **missing** in the target are **included** in the plan (they need
+  to be deployed); assets that **already exist** are **excluded** (assumed stable).
+- Use `--skip-missing-transitive-deps` to disable this filtering.
+
+#### Per-asset validation (always runs)
+
+- Checks every asset and annotates the output with `Status` and `Warning` values, written as a
+  target-specific column (`STATUS (tst)`, `STATUS (prod)`, etc.) in each per-environment package
+  file.
+
+#### `assetExistsInTarget` lookup logic
+
+| Asset type   | API call                                                                          | Treated as absent when                              |
+|--------------|-----------------------------------------------------------------------------------|-----------------------------------------------------|
+| `Connection` | `GetConnectionByName` using the last path segment                                 | 404 or `APP_13436` (no object named connection)     |
+| All others   | `Lookup` with `{Path, Type}`                                                      | `V3API_LookupError_012` error code in response body |
+
 ### Flags
 
 | Flag                            | Type   | Default                                         | Description                                                                                                              |
@@ -129,7 +190,8 @@ For `full` mode:
 | `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Full mode seed config (`id`, `location`, or `path+type`) used to resolve package assets                                |
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
-| `--add-missing-transitive-deps` | bool   | `false`                                         | Include transitive dependencies only when missing in each target environment; explicit assets are always included        |
+| `--add-missing-transitive-deps` | bool   | `true`                                          | Legacy control for missing-transitive filtering; default behavior is enabled                                               |
+| `--skip-missing-transitive-deps` | bool  | `false`                                         | Disable missing-transitive filtering and keep all transitive dependencies                                                   |
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
 | `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
 | `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |
@@ -147,17 +209,16 @@ iics --verbose release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
   --output-root target/iics/import
 
-# Include transitive dependencies only when missing in target environments
+# Include transitive dependencies only when missing in target environments (default)
 iics release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
-  --output-root target/iics/import \
-  --add-missing-transitive-deps
+  --output-root target/iics/import
 
 # Override target profile mapping for envs
 iics release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
   --target-profile-map tst=tst-ci,qa=qa-ci,prod=prod-ci \
-  --add-missing-transitive-deps
+  --skip-missing-transitive-deps
 
 # Generate JSON plan files
 iics release plan \

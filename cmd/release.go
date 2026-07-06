@@ -153,6 +153,7 @@ func newReleasePlanCmd() *cobra.Command {
 		validTargets     string
 		targetProfileMap string
 		addMissingTrans  bool
+		skipMissingTrans bool
 		planOutput       string
 		packageFieldsRaw string
 		publishFieldsRaw string
@@ -175,6 +176,7 @@ func newReleasePlanCmd() *cobra.Command {
 				"validTargets", strings.TrimSpace(validTargets),
 				"targetProfileMap", strings.TrimSpace(targetProfileMap),
 				"addMissingTransitiveDeps", addMissingTrans,
+				"skipMissingTransitiveDeps", skipMissingTrans,
 			)
 
 			data, _, err := readReleaseManifestInput(manifestPath)
@@ -218,6 +220,13 @@ func newReleasePlanCmd() *cobra.Command {
 				TargetProfileMap: targetProfileMap,
 				Verbose:          verbose,
 				Debug:            debug,
+			}
+			effectiveMissingTrans := true
+			if cmd.Flags().Changed("skip-missing-transitive-deps") {
+				effectiveMissingTrans = !skipMissingTrans
+			}
+			if cmd.Flags().Changed("add-missing-transitive-deps") {
+				effectiveMissingTrans = addMissingTrans
 			}
 
 			if opts.Mode == release.ModeFullDeployment {
@@ -288,7 +297,7 @@ func newReleasePlanCmd() *cobra.Command {
 						return fmt.Errorf("creating env directory: %w", mkErr)
 					}
 					envAssets := fullAssets
-					if addMissingTrans {
+					if effectiveMissingTrans {
 						filtered, filterErr := release.FilterMissingTransitiveForTarget(
 							context.Background(),
 							env,
@@ -433,7 +442,7 @@ func newReleasePlanCmd() *cobra.Command {
 			for _, env := range opts.Targets {
 				slog.Info("release plan: processing target", "environment", env)
 				envAssets := allFiltered
-				if addMissingTrans {
+				if effectiveMissingTrans {
 					envFiltered, filterErr := release.FilterMissingTransitiveForTarget(
 						context.Background(),
 						env,
@@ -548,7 +557,8 @@ func newReleasePlanCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fullPackageCfg, "full-package-config", "./conf/full_build.package.csv", "full-deployment seed config file (id/location/path+type rows) used to resolve package assets")
 	cmd.Flags().StringVar(&validTargets, "valid-targets", "", "comma-separated allowlist of valid targets (overrides IICS_VALID_DEPLOY_TARGETS)")
 	cmd.Flags().StringVar(&targetProfileMap, "target-profile-map", "", "comma-separated target to profile map (TARGET=profile), overrides IICS_TARGET_PROFILE_MAP")
-	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", false, "include transitive dependencies only when missing in each target environment (explicit assets are always included)")
+	cmd.Flags().BoolVar(&addMissingTrans, "add-missing-transitive-deps", true, "legacy control for missing-transitive filtering; default is enabled")
+	cmd.Flags().BoolVar(&skipMissingTrans, "skip-missing-transitive-deps", false, "disable missing-transitive filtering and keep all transitive dependencies in generated package files")
 	cmd.Flags().StringVar(&planOutput, "output", "csv", "plan file output format: csv|json|yaml")
 	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,type,path,dependency", "fields for generated package files")
 	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,type,path,dependency", "fields for generated publish files")

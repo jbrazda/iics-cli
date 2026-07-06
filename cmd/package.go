@@ -435,6 +435,15 @@ func newPackageCreateCmd() *cobra.Command {
 						Refs: o.objectRefs(),
 					})
 				}
+				excludedSelectedIDs := make(map[string]bool)
+				if excludeFoundTransitive && len(manifestStats.ExcludedEntries) > 0 {
+					resolvedExcluded, _, excludedSelErr := dependencies.SelectExportedObjects(manifestStats.ExcludedEntries, exported)
+					if excludedSelErr != nil {
+						return fmt.Errorf("resolving excluded transitive-found entries: %w", excludedSelErr)
+					}
+					excludedSelectedIDs = resolvedExcluded
+				}
+
 				closureAdded := 0
 				closureSuppressedExcluded := 0
 				if !excludeFoundTransitive {
@@ -442,11 +451,7 @@ func newPackageCreateCmd() *cobra.Command {
 				} else {
 					closureAddedIDs := dependencies.AddedIDsAfterClosure(closureNodes, selectedIDs)
 					closureSuppressedExcluded = len(closureAddedIDs)
-					if len(manifestStats.ExcludedEntries) > 0 && len(closureAddedIDs) > 0 {
-						excludedSelectedIDs, _, excludedSelErr := dependencies.SelectExportedObjects(manifestStats.ExcludedEntries, exported)
-						if excludedSelErr != nil {
-							return fmt.Errorf("resolving excluded transitive-found entries: %w", excludedSelErr)
-						}
+					if len(excludedSelectedIDs) > 0 && len(closureAddedIDs) > 0 {
 						// Keep a floor count based on all closure-suppressed additions and
 						// use excluded-entry overlap to avoid undercounting when manifest rows
 						// and closure additions are both present.
@@ -479,6 +484,24 @@ func newPackageCreateCmd() *cobra.Command {
 				if verbose && closureAdded > 0 {
 					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d in-package referenced dependencies\n", closureAdded)
 				}
+				cdiRefAdded := 0
+				if excludeFoundTransitive {
+					refNodes := make([]dependencies.CDIObjectRefNode, 0, len(meta.ExportedObjects))
+					for _, o := range meta.ExportedObjects {
+						if o.ObjectGUID == "" {
+							continue
+						}
+						refNodes = append(refNodes, dependencies.CDIObjectRefNode{
+							ID:         o.ObjectGUID,
+							Type:       o.ObjectType,
+							ObjectRefs: o.objectRefs(),
+						})
+					}
+					cdiRefAdded = dependencies.IncludeCDISysRefsFromObjectRefs(refNodes, selectedIDs)
+					if verbose && cdiRefAdded > 0 {
+						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d CDI Connection/AgentGroup refs from objectRefs\n", cdiRefAdded)
+					}
+				}
 
 				selectedObjects := make([]exportedObject, 0, len(selectedIDs))
 				for _, o := range meta.ExportedObjects {
@@ -493,31 +516,58 @@ func newPackageCreateCmd() *cobra.Command {
 				reportSelectedCount = len(selectedObjects)
 				reportExcludedCount = manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
 				metadataObjects := selectedObjects
-				selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-				for i, o := range selectedObjects {
-					selectedNodes[i] = dependencies.ObjectRefsNode{
-						ID:         o.ObjectGUID,
-						ObjectRefs: o.objectRefs(),
+				if !excludeFoundTransitive {
+					selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+					for i, o := range selectedObjects {
+						selectedNodes[i] = dependencies.ObjectRefsNode{
+							ID:         o.ObjectGUID,
+							ObjectRefs: o.objectRefs(),
+						}
 					}
-				}
-				prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
-				for i := range selectedObjects {
-					if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
-						return setErr
+					prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
+					for i := range selectedObjects {
+						if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
+							return setErr
+						}
 					}
-				}
-				postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-				for i, o := range selectedObjects {
-					postPruneNodes[i] = dependencies.ObjectRefsNode{
-						ID:         o.ObjectGUID,
-						ObjectRefs: o.objectRefs(),
+					postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
+					for i, o := range selectedObjects {
+						postPruneNodes[i] = dependencies.ObjectRefsNode{
+							ID:         o.ObjectGUID,
+							ObjectRefs: o.objectRefs(),
+						}
 					}
-				}
-				if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
-					return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
-				}
-				if verbose && prunedCount > 0 {
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
+					if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
+						return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
+					}
+					if verbose && prunedCount > 0 {
+						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
+					}
+				} else {
+					metadataIDs := buildMetadataGraphForSelection(meta.ExportedObjects, selectedIDs, excludedSelectedIDs)
+					metadataObjectList := make([]exportedObject, 0, len(metadataIDs))
+					for _, o := range meta.ExportedObjects {
+						if metadataIDs[o.ObjectGUID] {
+							metadataObjectList = append(metadataObjectList, o)
+						}
+					}
+					if len(metadataObjectList) == 0 {
+						return fmt.Errorf("selection metadata graph resolved no exported objects")
+					}
+					metadataNodes := make([]dependencies.ObjectRefsNode, len(metadataObjectList))
+					for i, o := range metadataObjectList {
+						metadataNodes[i] = dependencies.ObjectRefsNode{
+							ID:         o.ObjectGUID,
+							ObjectRefs: o.objectRefs(),
+						}
+					}
+					prunedRefsByID, _ := dependencies.PruneDanglingObjectRefs(metadataNodes)
+					for i := range metadataObjectList {
+						if setErr := metadataObjectList[i].setObjectRefs(prunedRefsByID[metadataObjectList[i].ObjectGUID]); setErr != nil {
+							return setErr
+						}
+					}
+					metadataObjects = metadataObjectList
 				}
 
 				filtered := filterPackageFilesForSelection(fileContents, meta.ExportedObjects, selectedIDs)
@@ -784,6 +834,67 @@ func filterPackageFilesForSelection(
 		out[path] = data
 	}
 	return out
+}
+
+func buildMetadataGraphForSelection(
+	allObjects []exportedObject,
+	selectedIDs map[string]bool,
+	excludedIDs map[string]bool,
+) map[string]bool {
+	metadataIDs := make(map[string]bool, len(selectedIDs))
+	for id := range selectedIDs {
+		metadataIDs[id] = true
+	}
+	byID := make(map[string]exportedObject, len(allObjects))
+	exportedRefs := make([]dependencies.ExportedObjectRef, 0, len(allObjects))
+	for _, o := range allObjects {
+		if o.ObjectGUID == "" {
+			continue
+		}
+		byID[o.ObjectGUID] = o
+		exportedRefs = append(exportedRefs, dependencies.ExportedObjectRef{
+			ObjectGUID: o.ObjectGUID,
+			ObjectName: o.ObjectName,
+			ObjectType: o.ObjectType,
+			Path:       o.Path,
+		})
+	}
+
+	queue := make([]string, 0, len(metadataIDs))
+	for id := range metadataIDs {
+		queue = append(queue, id)
+	}
+	for len(queue) > 0 {
+		id := queue[0]
+		queue = queue[1:]
+		obj, ok := byID[id]
+		if !ok {
+			continue
+		}
+		for _, refID := range obj.objectRefs() {
+			if excludedIDs[refID] && !selectedIDs[refID] {
+				continue
+			}
+			if _, exists := byID[refID]; !exists {
+				continue
+			}
+			if metadataIDs[refID] {
+				continue
+			}
+			metadataIDs[refID] = true
+			queue = append(queue, refID)
+		}
+	}
+
+	// Include container hierarchy needed for selected/closure objects.
+	_ = dependencies.IncludeParentContainers(exportedRefs, metadataIDs)
+	for id := range excludedIDs {
+		if selectedIDs[id] {
+			continue
+		}
+		delete(metadataIDs, id)
+	}
+	return metadataIDs
 }
 
 func buildContentsOfExportPackageCSV(objects []exportedObject) ([]byte, error) {

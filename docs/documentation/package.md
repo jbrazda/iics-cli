@@ -196,9 +196,14 @@ Target-aware transitive exclusion:
   included so first-time target deployments can create container structure metadata.
 - For selective packaging without `--exclude-found-transitive`, package-internal
   referenced dependencies are re-included to preserve dependency closure.
-- With `--exclude-found-transitive`, package file content and regenerated
-  `exportMetadata.v2.json` both reflect only the selected package assets. Any
-  dangling metadata `objectRefs` are pruned to keep the package import-safe.
+- With `--exclude-found-transitive`, package file content excludes filtered
+  transitive assets, and regenerated `exportMetadata.v2.json` includes the
+  selected assets plus dependency closure and required container metadata
+  (not the full source metadata object list).
+- For selected CDI carrier assets (for example `DTEMPLATE`, `MAPPLET`, `MTT`,
+  `DSS`, `DRS`, `DMASK`, `FWCONFIG`, `VISIOTEMPLATE`, `PCS`, `CustomSource`,
+  `WORKFLOW`, `TASKFLOW`), `package create` retains referenced `Connection` and
+  `AgentGroup` dependencies from source `exportMetadata.v2.json` `objectRefs`.
 - Use `--include-tags` to carry root `tags` from source metadata into regenerated
   selective package metadata.
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `package create --exclude-found-transitive` now builds
+  `exportMetadata.v2.json` from selected assets plus dependency closure and
+  required containers, while still excluding filtered transitive-found
+  dependencies from package content
+- `release plan` now defaults missing-transitive filtering to enabled (with an
+  opt-out flag) so per-target package manifests are authoritative by default
+- `package create` now uses CDI asset `objectRefs` from source metadata to
+  retain required `Connection` and `AgentGroup` references for selected CDI
+  assets, without hidden payload parsing
+
 ## [0.4.10] - 2026-07-01
 
 ### Fixed
