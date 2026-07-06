@@ -95,7 +95,7 @@ With `--verbose`, INFO logs include:
 - per-target package/publish output file paths
 - grouped package/publish counts rendered as themed tables (type + total)
 - target validation in status tables uses the same target-profile resolution rules as
-  `--add-missing-transitive-deps` (`--target-profile-map`, env map, case-insensitive profile match)
+  missing-transitive filtering (`--target-profile-map`, env map, case-insensitive profile match)
 
 For `tag-based` mode:
 
@@ -107,7 +107,7 @@ For `tag-based` mode:
 - each per-environment `tag_build.package.<ext>` includes `STATUS (<env>)` for that file's environment
 - by default, explicit assets are always included and transitive assets are
   included only when missing in the specific target environment profile
-- use `--skip-missing-transitive-deps` to keep all transitive assets
+- use `--include-found-transitive` to keep all transitive assets
 
 For `full` mode:
 
@@ -166,7 +166,7 @@ Two checks are performed against the resolved target client:
 - For each transitive asset, calls `assetExistsInTarget` (see below).
 - Transitive assets that are **missing** in the target are **included** in the plan (they need
   to be deployed); assets that **already exist** are **excluded** (assumed stable).
-- Use `--skip-missing-transitive-deps` to disable this filtering.
+- Use `--include-found-transitive` to disable this filtering.
 
 #### Per-asset validation (always runs)
 
@@ -190,8 +190,7 @@ Two checks are performed against the resolved target client:
 | `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Full mode seed config (`id`, `location`, or `path+type`) used to resolve package assets                                |
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
-| `--add-missing-transitive-deps` | bool   | `true`                                          | Legacy control for missing-transitive filtering; default behavior is enabled                                               |
-| `--skip-missing-transitive-deps` | bool  | `false`                                         | Disable missing-transitive filtering and keep all transitive dependencies                                                   |
+| `--include-found-transitive`    | bool   | `false`                                         | Keep all resolved transitive dependencies, even when they already exist in the target environment                        |
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
 | `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
 | `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |
@@ -218,7 +217,7 @@ iics release plan \
 iics release plan \
   --manifest target/iics/import/conf/release_manifest.yaml \
   --target-profile-map tst=tst-ci,qa=qa-ci,prod=prod-ci \
-  --skip-missing-transitive-deps
+  --include-found-transitive
 
 # Generate JSON plan files
 iics release plan \

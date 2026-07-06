@@ -49,5 +49,5 @@ The fix now aligns dependency ownership and package behavior:
 - Retain required CDI `Connection` and `AgentGroup` references for selected CDI
   carrier assets using source `exportMetadata.v2.json` `objectRefs`.
 - Make release planning output authoritative by default with missing-transitive
-  filtering enabled (opt-out flag available).
+  filtering enabled (opt out with `--include-found-transitive`).
 - Update command documentation and changelog to match corrected behavior.

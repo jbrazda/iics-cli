@@ -13,8 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `exportMetadata.v2.json` from selected assets plus dependency closure and
   required containers, while still excluding filtered transitive-found
   dependencies from package content
-- `release plan` now defaults missing-transitive filtering to enabled (with an
-  opt-out flag) so per-target package manifests are authoritative by default
+- `release plan` now defaults missing-transitive filtering to enabled so
+  per-target package manifests are authoritative by default
+
+### Changed
+
+- `release plan` replaced `--add-missing-transitive-deps` and
+  `--skip-missing-transitive-deps` with a single opt-out flag
+  `--include-found-transitive` that keeps all resolved transitive dependencies
+  in generated package files
 - `package create` now uses CDI asset `objectRefs` from source metadata to
   retain required `Connection` and `AgentGroup` references for selected CDI
   assets, without hidden payload parsing

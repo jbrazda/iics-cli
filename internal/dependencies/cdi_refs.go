@@ -41,7 +41,8 @@ func IncludeCDISysRefsFromObjectRefs(nodes []CDIObjectRefNode, selectedIDs map[s
 		}
 		byID[node.ID] = node
 	}
-	added := 0
+	// Collect additions first to avoid mutating selectedIDs while ranging over it.
+	toAdd := make(map[string]bool)
 	for id := range selectedIDs {
 		node, ok := byID[id]
 		if !ok || !cdiCarrierTypes[node.Type] {
@@ -55,9 +56,11 @@ func IncludeCDISysRefsFromObjectRefs(nodes []CDIObjectRefNode, selectedIDs map[s
 			if selectedIDs[refID] {
 				continue
 			}
-			selectedIDs[refID] = true
-			added++
+			toAdd[refID] = true
 		}
 	}
-	return added
+	for id := range toAdd {
+		selectedIDs[id] = true
+	}
+	return len(toAdd)
 }
