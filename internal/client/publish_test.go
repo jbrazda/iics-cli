@@ -325,3 +325,147 @@ func TestSplitIntoBatches(t *testing.T) {
 		t.Errorf("expected empty batches, got %d", len(empty))
 	}
 }
+
+func TestPartitionAssetsByKind(t *testing.T) {
+	paths := []string{
+		"Explore/Default/Conn.AI_CONNECTION.xml",
+		"Explore/Default/Flow1.TASKFLOW.xml",
+		"Explore/Default/Proc.PROCESS.xml",
+		"Explore/Default/Flow2.TASKFLOW.xml",
+	}
+	cai, tf := PartitionAssetsByKind(paths)
+	if len(cai) != 2 || cai[0] != paths[0] || cai[1] != paths[2] {
+		t.Errorf("unexpected CAI partition: %v", cai)
+	}
+	if len(tf) != 2 || tf[0] != paths[1] || tf[1] != paths[3] {
+		t.Errorf("unexpected taskflow partition: %v", tf)
+	}
+}
+
+// TestSplitPublishBatchesGroupsCAIAndTaskflowSeparately verifies that a mixed
+// batch of CAI assets and TaskFlows is split into separate homogeneous
+// batches, since combining them in one publish/unpublish request causes the
+// TaskFlow engine to return AvrEntryNotFoundFault.
+func TestSplitPublishBatchesGroupsCAIAndTaskflowSeparately(t *testing.T) {
+	paths := []string{
+		"Explore/Default/Conn.AI_CONNECTION.xml",
+		"Explore/Default/Proc.PROCESS.xml",
+		"Explore/Default/Flow1.TASKFLOW.xml",
+		"Explore/Default/Flow2.TASKFLOW.xml",
+	}
+
+	batches := SplitPublishBatches(paths, 199)
+	if len(batches) != 2 {
+		t.Fatalf("expected 2 batches, got %d", len(batches))
+	}
+	if batches[0].Kind != AssetBatchKindCAI || len(batches[0].Paths) != 2 {
+		t.Errorf("expected first batch to be CAI with 2 paths, got %+v", batches[0])
+	}
+	if batches[1].Kind != AssetBatchKindTaskflow || len(batches[1].Paths) != 2 {
+		t.Errorf("expected second batch to be TASKFLOW with 2 paths, got %+v", batches[1])
+	}
+
+	// When TaskFlows appear first (e.g. unpublish reverse-dependency order),
+	// the TaskFlow group should be emitted first.
+	reversed := []string{
+		"Explore/Default/Flow1.TASKFLOW.xml",
+		"Explore/Default/Proc.PROCESS.xml",
+		"Explore/Default/Conn.AI_CONNECTION.xml",
+	}
+	rBatches := SplitPublishBatches(reversed, 199)
+	if len(rBatches) != 2 || rBatches[0].Kind != AssetBatchKindTaskflow || rBatches[1].Kind != AssetBatchKindCAI {
+		t.Errorf("expected taskflow batch first when input starts with a taskflow, got %+v", rBatches)
+	}
+
+	// Batch size limits are respected per-group.
+	many := make([]string, 0, 6)
+	for i := 0; i < 3; i++ {
+		many = append(many, "Explore/Default/Conn.AI_CONNECTION.xml")
+	}
+	for i := 0; i < 3; i++ {
+		many = append(many, "Explore/Default/Flow.TASKFLOW.xml")
+	}
+	limited := SplitPublishBatches(many, 2)
+	if len(limited) != 4 {
+		t.Fatalf("expected 4 batches (2 CAI + 2 taskflow), got %d", len(limited))
+	}
+}
+
+// TestTaskflowPublishUsesBaseAPIURLAndStatusUsesSameBase verifies that
+// publishing a batch consisting solely of TaskFlow assets goes to the plain
+// base API URL (with "/saas" stripped) rather than the CAI URL, per
+// Informatica KB "HOW-TO: Publish a task flow using Rest API in CDI". It also
+// verifies status polling reuses the job's cached base URL.
+func TestTaskflowPublishUsesBaseAPIURLAndStatusUsesSameBase(t *testing.T) {
+	var posted, statusPolled bool
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/active-bpel/asset/v1/publish":
+			posted = true
+			resp := PublishJobResponse{
+				Data: PublishJobData{
+					Type: "publish",
+					ID:   "job-taskflow-1",
+					Attributes: PublishJobAttributes{
+						JobState: "NOT_STARTED",
+					},
+				},
+			}
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusAccepted)
+			_ = json.NewEncoder(w).Encode(resp)
+		case r.Method == http.MethodGet && r.URL.Path == "/active-bpel/asset/v1/publish/job-taskflow-1/Status":
+			statusPolled = true
+			resp := PublishJobResponse{
+				Data: PublishJobData{
+					Type: "publish",
+					ID:   "job-taskflow-1",
+					Attributes: PublishJobAttributes{
+						JobState: "COMPLETED",
+					},
+				},
+			}
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			_ = json.NewEncoder(w).Encode(resp)
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	})
+
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	c := NewClient(
+		srv.URL+"/login",
+		"user",
+		"pass",
+		WithCAIURL("https://nonexistent-cai.example.com"),
+	)
+	c.SetSession("test-session", srv.URL+"/saas")
+
+	startResp, err := c.StartPublish(
+		context.Background(),
+		"",
+		[]string{"Explore/ODS_Policy_V3_1/TaskFlows_SQLServer/tf_policy_example.TASKFLOW.xml"},
+	)
+	if err != nil {
+		t.Fatalf("StartPublish() error: %v", err)
+	}
+	if startResp.Data.ID != "job-taskflow-1" {
+		t.Fatalf("unexpected job ID: %s", startResp.Data.ID)
+	}
+
+	statusResp, err := c.GetPublishStatus(context.Background(), "", "job-taskflow-1", false)
+	if err != nil {
+		t.Fatalf("GetPublishStatus() error: %v", err)
+	}
+	if statusResp.Data.Attributes.JobState != "COMPLETED" {
+		t.Fatalf("expected COMPLETED, got %s", statusResp.Data.Attributes.JobState)
+	}
+	if !posted {
+		t.Fatal("expected publish POST to be sent")
+	}
+	if !statusPolled {
+		t.Fatal("expected publish status GET to be sent")
+	}
+}

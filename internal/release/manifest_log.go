@@ -407,6 +407,7 @@ type PublishRunLog struct {
 
 type PublishBatchLog struct {
 	Batch     int
+	Group     string // asset group this batch belongs to: CAI or TASKFLOW
 	JobID     string
 	State     string
 	StartDate string
@@ -436,15 +437,15 @@ func RenderPublishRunLog(r PublishRunLog) string {
 	rows := make([][]string, 0, len(r.Batches)+1)
 	var total, published, errors int
 	for _, batch := range r.Batches {
-		rows = append(rows, []string{fmt.Sprintf("%d", batch.Batch), batch.JobID, batch.State, fmt.Sprintf("%d", batch.Total), fmt.Sprintf("%d", batch.Published), fmt.Sprintf("%d", batch.Errors), batch.StartDate, batch.EndDate, batch.Duration})
+		rows = append(rows, []string{fmt.Sprintf("%d", batch.Batch), batch.Group, batch.JobID, batch.State, fmt.Sprintf("%d", batch.Total), fmt.Sprintf("%d", batch.Published), fmt.Sprintf("%d", batch.Errors), batch.StartDate, batch.EndDate, batch.Duration})
 		total += batch.Total
 		published += batch.Published
 		errors += batch.Errors
 	}
 	if len(r.Batches) > 1 {
-		rows = append(rows, []string{"TOTAL", "", publishOverallState(errors), fmt.Sprintf("%d", total), fmt.Sprintf("%d", published), fmt.Sprintf("%d", errors), "", "", ""})
+		rows = append(rows, []string{"TOTAL", "", "", publishOverallState(errors), fmt.Sprintf("%d", total), fmt.Sprintf("%d", published), fmt.Sprintf("%d", errors), "", "", ""})
 	}
-	b.WriteString(MarkdownTable([]string{"BATCH", "JOB ID", "STATE", "TOTAL", "PUBLISHED", "ERRORS", "START DATE", "END DATE", "DURATION"}, rows, map[int]bool{3: true, 4: true, 5: true}))
+	b.WriteString(MarkdownTable([]string{"BATCH", "GROUP", "JOB ID", "STATE", "TOTAL", "PUBLISHED", "ERRORS", "START DATE", "END DATE", "DURATION"}, rows, map[int]bool{4: true, 5: true, 6: true}))
 	var items []PublishItemLog
 	var failed []PublishItemLog
 	for _, batch := range r.Batches {

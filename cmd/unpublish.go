@@ -53,7 +53,7 @@ func newUnpublishStartCmd() *cobra.Command {
 			ctx := context.Background()
 			out := cmd.OutOrStdout()
 
-			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
+			batches := client.SplitPublishBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
 				slog.Info("unpublishing assets", "count", len(paths), "batches", len(batches), "name", name)
 			} else if verbose {
@@ -61,12 +61,12 @@ func newUnpublishStartCmd() *cobra.Command {
 			}
 
 			for i, batch := range batches {
-				resp, err := c.StartUnpublish(ctx, caiURL, batch)
+				resp, err := c.StartUnpublish(ctx, caiURL, batch.Paths)
 				if err != nil {
-					return fmt.Errorf("batch %d: starting unpublish: %w", i+1, err)
+					return fmt.Errorf("batch %d (%s): starting unpublish: %w", i+1, batch.Kind, err)
 				}
-				_, _ = fmt.Fprintf(out, "Unpublish job started: %s (batch %d/%d, assets: %d)\n",
-					resp.Data.ID, i+1, len(batches), len(batch))
+				_, _ = fmt.Fprintf(out, "Unpublish job started: %s (batch %d/%d, group: %s, assets: %d)\n",
+					resp.Data.ID, i+1, len(batches), batch.Kind, len(batch.Paths))
 			}
 			return nil
 		},

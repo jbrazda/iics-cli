@@ -64,7 +64,7 @@ func newPublishStartCmd() *cobra.Command {
 			ctx := context.Background()
 			out := cmd.OutOrStdout()
 
-			batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
+			batches := client.SplitPublishBatches(paths, client.PublishMaxBatchSize)
 			if verbose && name != "" {
 				slog.Info("publishing assets", "count", len(paths), "batches", len(batches), "name", name)
 			} else if verbose {
@@ -72,12 +72,12 @@ func newPublishStartCmd() *cobra.Command {
 			}
 
 			for i, batch := range batches {
-				resp, err := c.StartPublish(ctx, caiURL, batch)
+				resp, err := c.StartPublish(ctx, caiURL, batch.Paths)
 				if err != nil {
-					return fmt.Errorf("batch %d: starting publish: %w", i+1, err)
+					return fmt.Errorf("batch %d (%s): starting publish: %w", i+1, batch.Kind, err)
 				}
-				_, _ = fmt.Fprintf(out, "Publish job started: %s (batch %d/%d, assets: %d)\n",
-					resp.Data.ID, i+1, len(batches), len(batch))
+				_, _ = fmt.Fprintf(out, "Publish job started: %s (batch %d/%d, group: %s, assets: %d)\n",
+					resp.Data.ID, i+1, len(batches), batch.Kind, len(batch.Paths))
 			}
 			return nil
 		},
@@ -185,6 +185,7 @@ polls to completion, and prints a detailed summary.`,
 // batchResult captures the terminal state of a single batch after polling completes.
 type batchResult struct {
 	batchNum int
+	kind     client.AssetBatchKind // CAI or TASKFLOW group this batch belongs to
 	jobID    string
 	resp     *client.PublishJobResponse // final terminal response
 	timedOut bool
@@ -221,7 +222,7 @@ func runPublishOp(
 ) error {
 	ctx := context.Background()
 
-	batches := client.SplitIntoBatches(paths, client.PublishMaxBatchSize)
+	batches := client.SplitPublishBatches(paths, client.PublishMaxBatchSize)
 	if verbose && name != "" {
 		slog.Info(verb+"ing assets", "count", len(paths), "batches", len(batches), "name", name)
 	} else if verbose {
@@ -235,12 +236,12 @@ func runPublishOp(
 	for batchIdx, batch := range batches {
 		batchLabel := fmt.Sprintf("%d/%d", batchIdx+1, len(batches))
 
-		resp, err := startFn(ctx, caiURL, batch)
+		resp, err := startFn(ctx, caiURL, batch.Paths)
 		if err != nil {
-			return fmt.Errorf("batch %d: submitting: %w", batchIdx+1, err)
+			return fmt.Errorf("batch %d (%s): submitting: %w", batchIdx+1, batch.Kind, err)
 		}
 		jobID := resp.Data.ID
-		slog.Info("batch submitted", "batch", batchLabel, "job", jobID, "assets", len(batch))
+		slog.Info("batch submitted", "batch", batchLabel, "group", batch.Kind, "job", jobID, "assets", len(batch.Paths))
 
 		// Poll until terminal or timeout.
 		timedOut := false
@@ -276,6 +277,7 @@ func runPublishOp(
 
 		results = append(results, batchResult{
 			batchNum: batchIdx + 1,
+			kind:     batch.Kind,
 			jobID:    jobID,
 			resp:     resp,
 			timedOut: timedOut,
@@ -319,6 +321,7 @@ func publishBatchesToManifestLog(results []batchResult) []release.PublishBatchLo
 		attrs := result.resp.Data.Attributes
 		batch := release.PublishBatchLog{
 			Batch:     result.batchNum,
+			Group:     string(result.kind),
 			JobID:     result.jobID,
 			State:     attrs.JobState,
 			StartDate: attrs.StartDate,
@@ -506,6 +509,7 @@ func printPublishSummary(cmd *cobra.Command, verb string, resp *client.PublishJo
 // batchSummaryRow is one row in the horizontal multi-batch summary table.
 type batchSummaryRow struct {
 	Batch     string `json:"batch"`
+	Group     string `json:"group"`
 	JobID     string `json:"jobID"`
 	State     string `json:"state"`
 	Total     int    `json:"total"`
@@ -568,6 +572,7 @@ func printMultiBatchSummary(cmd *cobra.Command, verb string, results []batchResu
 
 		rows = append(rows, batchSummaryRow{
 			Batch:     fmt.Sprintf("%d", br.batchNum),
+			Group:     string(br.kind),
 			JobID:     br.jobID,
 			State:     state,
 			Total:     attrs.TotalCount,
@@ -618,6 +623,7 @@ func printMultiBatchSummary(cmd *cobra.Command, verb string, results []batchResu
 	}
 	rows = append(rows, batchSummaryRow{
 		Batch:     "TOTAL",
+		Group:     "",
 		JobID:     "",
 		State:     overallState,
 		Total:     totalTotal,
@@ -630,6 +636,7 @@ func printMultiBatchSummary(cmd *cobra.Command, verb string, results []batchResu
 
 	summCols := []output.Column{
 		{Header: "BATCH", Field: "batch", Width: 6},
+		{Header: "GROUP", Field: "group", Width: 10},
 		{Header: "JOB ID", Field: "jobID", Width: 22},
 		{Header: "STATE", Field: "state", Width: 10},
 		{Header: "TOTAL", Field: "total", Width: 7},

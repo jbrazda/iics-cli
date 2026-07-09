@@ -32,6 +32,7 @@ type Client struct {
 	loginURL       string
 	baseAPIURL     string
 	caiURL         string
+	publishJobBase map[string]string
 	sessionID      string
 	username       string
 	password       string
@@ -73,10 +74,11 @@ func WithCAIURL(url string) ClientOption {
 // NewClient creates a new IICS API client.
 func NewClient(loginURL, username, password string, opts ...ClientOption) *Client {
 	c := &Client{
-		httpClient: &http.Client{Timeout: 60 * time.Second},
-		loginURL:   loginURL,
-		username:   username,
-		password:   password,
+		httpClient:     &http.Client{Timeout: 60 * time.Second},
+		loginURL:       loginURL,
+		username:       username,
+		password:       password,
+		publishJobBase: make(map[string]string),
 	}
 	for _, opt := range opts {
 		opt(c)
