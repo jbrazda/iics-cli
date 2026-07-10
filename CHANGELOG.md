@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-09
+
+### Fixed
+
+- `caiUrl` is now derived from the login-discovered `baseApiUrl` instead of the
+  login URL, and is refreshed on every `login` and `profile add`/`update`,
+  fixing publish failures caused by stale or invalid CAI hosts
+
 ## [0.5.1] - 2026-07-09
 
 ### Fixed
