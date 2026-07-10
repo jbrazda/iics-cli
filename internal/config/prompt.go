@@ -125,10 +125,12 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		}
 	}
 
-	// CAI URL - derive from login URL and offer for override.
+	// CAI URL - derive from baseApiUrl when available.
+	// Do not derive from loginUrl (pod-level host), which can produce an
+	// unresolvable CAI hostname for region-specific org hosts.
 	derivedCaiURL := ""
-	if p.LoginURL != "" {
-		derivedCaiURL = DeriveCaiURL(p.LoginURL)
+	if p.BaseAPIURL != "" {
+		derivedCaiURL = DeriveCaiURL(p.BaseAPIURL)
 	}
 	caiDefault := p.CaiURL
 	if caiDefault == "" {

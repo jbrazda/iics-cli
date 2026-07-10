@@ -304,9 +304,7 @@ the session cache with the org-specific API URLs discovered from the response.`,
 				baseAPIURL := loginResp.Products[0].BaseAPIURL
 				p.LoginURL = loginURL
 				p.BaseAPIURL = baseAPIURL
-				if p.CaiURL == "" {
-					p.CaiURL = config.DeriveCaiURL(baseAPIURL)
-				}
+				p.CaiURL = config.DeriveCaiURL(baseAPIURL)
 			}
 
 			// Persist updated profile.

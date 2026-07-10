@@ -107,9 +107,7 @@ The session is cached locally so subsequent commands don't require re-authentica
 				}
 				stored.LoginURL = loginURL
 				stored.BaseAPIURL = baseAPIURL
-				if stored.CaiURL == "" {
-					stored.CaiURL = config.DeriveCaiURL(baseAPIURL)
-				}
+				stored.CaiURL = config.DeriveCaiURL(baseAPIURL)
 				if saveErr := cfg.Save(cfgFile); saveErr != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not update profile: %v\n", saveErr)
 				}
