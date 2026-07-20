@@ -223,36 +223,36 @@ it easy to override credentials in CI pipelines without touching the config file
 
 | Command                                              | Alias  | Subcommands                                                            | Description                                                        |
 |------------------------------------------------------|--------|------------------------------------------------------------------------|--------------------------------------------------------------------|
-| [profile](docs/documentation/profile.md)             |        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles                                         |
-| [login](docs/documentation/login.md)                 |        |                                                                        | Authenticate and cache session                                     |
-| [logout](docs/documentation/logout.md)               |        |                                                                        | Invalidate session                                                 |
-| [objects](docs/documentation/objects.md)             |        | `list`, `dependencies`                                                 | List/search assets, find dependencies                              |
-| [lookup](docs/documentation/lookup.md)               |        |                                                                        | Resolve object IDs, names, and paths                               |
+| [activitylog](docs/documentation/activitylog.md)     |        | `list`, `get`                                                          | Query activity logs for completed jobs                             |
+| [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `start`, `stop`                              | Manage Secure Agents                                               |
+| [auditlog](docs/documentation/auditlog.md)           |        | `list`                                                                 | Query organization audit log (V2 API)                              |
+| [completion](docs/documentation/completion.md)       |        | `bash`, `zsh`, `fish`, `powershell`                                    | Generate shell completion scripts                                  |
 | [connection](docs/documentation/connection.md)       | `conn` | `list`, `get`, `create`, `update`, `delete`                            | Manage connections                                                 |
 | [export](docs/documentation/export.md)               |        | `run`, `start`, `status`, `download`, `create`                         | Export asset packages                                              |
-| [import](docs/documentation/import.md)               | `imp`  | `run`, `upload`, `start`, `status`, `download-log`                     | Import asset packages                                              |
-| [publish](docs/documentation/publish.md)             |        | `start`, `status`, `run`                                               | Publish CAI assets to the runtime                                  |
-| [unpublish](docs/documentation/unpublish.md)         |        | `start`, `status`, `run`                                               | Unpublish CAI assets from the runtime                              |
-| [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
-| [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate multi-format release manifests and per-environment plans  |
-| [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
 | [folder](docs/documentation/folder.md)               |        | `create`, `update`, `delete`                                           | Manage folders                                                     |
-| [schedule](docs/documentation/schedule.md)           |        | `list`, `get`, `create`, `update`, `delete`                            | Manage schedules                                                   |
-| [user](docs/documentation/user.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage users                                                       |
-| [usergroup](docs/documentation/usergroup.md)         | `ug`   | `list`, `get`, `create`, `update`, `delete`                            | Manage user groups                                                 |
-| [role](docs/documentation/role.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage roles                                                       |
-| [privilege](docs/documentation/privilege.md)         |        | `list`                                                                 | List available privileges                                          |
-| [runtime](docs/documentation/runtime.md)             | `rt`   | `list`, `get`, `create`, `update`                                      | Manage runtime environments                                        |
-| [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `start`, `stop`                              | Manage Secure Agents                                               |
-| [tag](docs/documentation/tag.md)                     |        | `assign`, `remove`                                                     | Assign/remove tags on objects                                      |
-| [permission](docs/documentation/permission.md)       | `perm` | `get`, `set`, `delete`                                                 | Manage object-level permissions                                    |
-| [activitylog](docs/documentation/activitylog.md)     |        | `list`, `get`                                                          | Query activity logs for completed jobs                             |
-| [auditlog](docs/documentation/auditlog.md)           |        | `list`                                                                 | Query organization audit log (V2 API)                              |
-| [securitylog](docs/documentation/securitylog.md)     |        | `list`                                                                 | Query security audit log                                           |
+| [import](docs/documentation/import.md)               | `imp`  | `run`, `upload`, `start`, `status`, `download-log`                     | Import asset packages                                              |
+| [login](docs/documentation/login.md)                 |        |                                                                        | Authenticate and cache session                                     |
+| [logout](docs/documentation/logout.md)               |        |                                                                        | Invalidate session                                                 |
+| [lookup](docs/documentation/lookup.md)               |        |                                                                        | Resolve object IDs, names, and paths                               |
 | [metering](docs/documentation/metering.md)           |        | `get`, `download`                                                      | Query usage and metering data                                      |
+| [objects](docs/documentation/objects.md)             |        | `list`, `dependencies`                                                 | List/search assets, find dependencies                              |
+| [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
+| [permission](docs/documentation/permission.md)       | `perm` | `get`, `set`, `delete`                                                 | Manage object-level permissions                                    |
+| [privilege](docs/documentation/privilege.md)         |        | `list`                                                                 | List available privileges                                          |
+| [profile](docs/documentation/profile.md)             |        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles                                         |
+| [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
+| [publish](docs/documentation/publish.md)             |        | `start`, `status`, `run`                                               | Publish CAI assets to the runtime                                  |
+| [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate multi-format release manifests and per-environment plans  |
+| [role](docs/documentation/role.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage roles                                                       |
+| [runtime](docs/documentation/runtime.md)             | `rt`   | `list`, `get`, `create`, `update`                                      | Manage runtime environments                                        |
+| [schedule](docs/documentation/schedule.md)           |        | `list`, `get`, `create`, `update`, `delete`                            | Manage schedules                                                   |
+| [securitylog](docs/documentation/securitylog.md)     |        | `list`                                                                 | Query security audit log                                           |
 | [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc`   | `checkout`, `checkin`, `pull`, `commit`                                | Source control operations                                          |
 | [state](docs/documentation/state.md)                 |        | `fetch`, `load`                                                        | Fetch/load object state snapshots                                  |
-| [completion](docs/documentation/completion.md)       |        | `bash`, `zsh`, `fish`, `powershell`                                    | Generate shell completion scripts                                  |
+| [tag](docs/documentation/tag.md)                     |        | `assign`, `remove`                                                     | Assign/remove tags on objects                                      |
+| [unpublish](docs/documentation/unpublish.md)         |        | `start`, `status`, `run`                                               | Unpublish CAI assets from the runtime                              |
+| [user](docs/documentation/user.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage users                                                       |
+| [usergroup](docs/documentation/usergroup.md)         | `ug`   | `list`, `get`, `create`, `update`, `delete`                            | Manage user groups                                                 |
 
 > **Keeping completions up to date:** After adding or changing any command or flag, regenerate
 > the shell completion scripts by running `make completions`. The pre-generated scripts live in
