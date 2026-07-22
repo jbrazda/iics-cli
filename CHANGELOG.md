@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-07-22
+
+### Fixed
+
+- `package create` no longer leaks Mass Ingestion `.dat` assets past
+  selective filtering when building packages with a subset of assets
+
 ## [0.5.2] - 2026-07-09
 
 ### Fixed
