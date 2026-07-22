@@ -40,7 +40,10 @@ func IsObjectChecksumBacked(path, objectName, objectType string, entries map[str
 }
 
 // ObjectChecksumCandidates returns the candidate package-relative object file
-// paths for an exported object.
+// paths for an exported object. Mass Ingestion asset types (e.g. MI_TASK,
+// MI_FILE_LISTENER, MI_SERVICE_CONNECTOR) serialize as "<Name>.<TYPE>.dat"
+// rather than .xml/.json, so .dat is included as a generic candidate
+// alongside .xml/.zip/.json.
 func ObjectChecksumCandidates(path, objectName, objectType string) []string {
 	if objectName == "" || objectType == "" {
 		return nil
@@ -56,5 +59,6 @@ func ObjectChecksumCandidates(path, objectName, objectType string) []string {
 		base + ".xml",
 		base + ".zip",
 		base + ".json",
+		base + ".dat",
 	}
 }
