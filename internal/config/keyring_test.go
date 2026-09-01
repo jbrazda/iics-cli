@@ -85,6 +85,9 @@ func TestDeleteKeychainPasswordNotFound(t *testing.T) {
 
 func TestResolveProfileKeyring(t *testing.T) {
 	initMockKeyring()
+	// Isolate from any ambient IICS_PASSWORD in the developer's shell environment,
+	// which would otherwise take precedence over the keychain sentinel.
+	t.Setenv("IICS_PASSWORD", "")
 
 	if err := SetKeychainPassword("ktest", "realpassword"); err != nil {
 		t.Fatalf("SetKeychainPassword() error: %v", err)
@@ -108,6 +111,8 @@ func TestResolveProfileKeyring(t *testing.T) {
 func TestResolveProfileKeyringMissing(t *testing.T) {
 	initMockKeyring()
 	// No keychain entry stored - lookup must fail with a clear message.
+	// Isolate from any ambient IICS_PASSWORD in the developer's shell environment.
+	t.Setenv("IICS_PASSWORD", "")
 
 	cfg := &Config{
 		Profiles: map[string]*Profile{
@@ -150,6 +155,8 @@ func TestResolveProfileKeyringEnvOverride(t *testing.T) {
 
 func TestResolveProfilePlaintext(t *testing.T) {
 	// Plaintext password must pass through unchanged - no keyring interaction.
+	// Isolate from any ambient IICS_PASSWORD in the developer's shell environment.
+	t.Setenv("IICS_PASSWORD", "")
 	cfg := &Config{
 		Profiles: map[string]*Profile{
 			"plain": {Username: "u@example.com", Password: "plaintextpw"},
