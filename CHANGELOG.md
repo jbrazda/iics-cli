@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-09-01
+
+### Fixed
+
+- HTTP request timeout is now configurable and independent of
+  `--max-wait-time`, so long-running export polling no longer aborts
+  individual requests prematurely
+- Keyring tests are now isolated from an ambient `IICS_PASSWORD` environment
+  variable
+
 ## [0.5.3] - 2026-07-22
 
 ### Fixed
