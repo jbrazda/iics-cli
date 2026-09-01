@@ -110,6 +110,7 @@ iics logout
 
 ```yaml
 defaultProfile: dev
+httpTimeout: 120     # seconds; per-HTTP-request timeout (default 120)
 style:
   theme: default     # default | minimal | compact | plain | markdown | gh
   noColor: false     # true = disable color permanently (same as --no-color)
@@ -168,6 +169,7 @@ themes. Leave empty to use the theme default.
 | `IICS_CAI_URL`              | Override profile `caiUrl`                                                                |
 | `IICS_OUTPUT`               | Override default output format                                                           |
 | `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
+| `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set) |
 | `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
 | `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |
 | `IICS_USER_<TARGET>`        | CI target username fallback for `iics release plan` when profile is not configured       |
@@ -269,6 +271,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | `--theme`    |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config) |
 | `--config`   |       | Config file path (default `~/.iics/config.yaml`)                                           |
 | `--debug`    |       | Print full HTTP request/response trace to stderr                                           |
+| `--http-timeout` |   | Per-HTTP-request timeout in seconds (default `120`; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT` env var). Independent of `export`/`import` `--max-wait-time`, which only bounds job polling. |
 
 ## Development
 

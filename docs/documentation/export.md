@@ -42,6 +42,16 @@ The recommended command for most use cases. Reads an artifacts list, resolves pa
 
 All [global flags](../../README.md#global-flags) apply.
 
+> **`--http-timeout` vs `--max-wait-time`:** these control different things.
+> `--max-wait-time`/`--polling-interval` bound how long `export run` polls the job status
+> before giving up. `--http-timeout` (a global flag, default 120s) bounds how long any single
+> HTTP request - including the initial "start export" call - may take before it fails with
+> `context deadline exceeded`. A large artifact list combined with `--include-tags` can make
+> the start-export request itself take longer than the default 120s; if you see
+> `starting export: ... context deadline exceeded (Client.Timeout exceeded while awaiting headers)`,
+> increase `--http-timeout` (or set `IICS_HTTP_TIMEOUT` / `httpTimeout` in `config.yaml`),
+> not `--max-wait-time`.
+
 ### Artifacts file format
 
 The artifacts file lists objects to export, one per line. Supported formats:

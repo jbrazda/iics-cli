@@ -493,6 +493,7 @@ Supports dot notation for nested fields:
 | `--output` / `-o`  | `outputFmt` | `"table"`             | Output format: `table\ | json\ | csv` |
 | `--verbose` / `-v` | `verbose`   | `false`               | Verbose output         |       |      |
 | `--no-color`       | `noColor`   | `false`               | Disable color          |       |      |
+| `--http-timeout`   | `httpTimeoutFlag` | `0` (resolves to `120`) | Per-HTTP-request timeout in seconds; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT`. Independent of `--max-wait-time` (job polling only). |
 
 `verbose` is a package-level `bool` in the `cmd` package - access it directly in `RunE` closures.
 
@@ -504,6 +505,7 @@ Supports dot notation for nested fields:
 
 ```yaml
 defaultProfile: dev
+httpTimeout: 120        # Optional: per-HTTP-request timeout in seconds (default 120)
 profiles:
   dev:
     name: "Development Org"
@@ -522,6 +524,7 @@ profiles:
 | `IICS_PASSWORD`  | profile password |
 | `IICS_REGION`    | profile region   |
 | `IICS_LOGIN_URL` | profile loginUrl |
+| `IICS_HTTP_TIMEOUT` | `httpTimeout` config value (per-request timeout in seconds; `--http-timeout` flag wins if explicitly set) |
 
 **Session cache:** `~/.iics/sessions.yaml`
 

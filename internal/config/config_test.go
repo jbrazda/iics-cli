@@ -199,3 +199,64 @@ func TestProfileGetLoginURL(t *testing.T) {
 		t.Error("expected error with no region or loginUrl")
 	}
 }
+
+func TestResolveHTTPTimeoutSeconds(t *testing.T) {
+	t.Run("flag wins when changed", func(t *testing.T) {
+		cfg := &Config{HTTPTimeout: 90}
+		t.Setenv("IICS_HTTP_TIMEOUT", "45")
+		got := ResolveHTTPTimeoutSeconds(cfg, 300, true)
+		if got != 300 {
+			t.Errorf("expected flag value 300, got %d", got)
+		}
+	})
+
+	t.Run("flag ignored when not changed", func(t *testing.T) {
+		cfg := &Config{HTTPTimeout: 90}
+		t.Setenv("IICS_HTTP_TIMEOUT", "45")
+		got := ResolveHTTPTimeoutSeconds(cfg, 300, false)
+		if got != 45 {
+			t.Errorf("expected env value 45, got %d", got)
+		}
+	})
+
+	t.Run("env wins over config", func(t *testing.T) {
+		cfg := &Config{HTTPTimeout: 90}
+		t.Setenv("IICS_HTTP_TIMEOUT", "45")
+		got := ResolveHTTPTimeoutSeconds(cfg, 0, false)
+		if got != 45 {
+			t.Errorf("expected env value 45, got %d", got)
+		}
+	})
+
+	t.Run("config wins over default", func(t *testing.T) {
+		cfg := &Config{HTTPTimeout: 90}
+		got := ResolveHTTPTimeoutSeconds(cfg, 0, false)
+		if got != 90 {
+			t.Errorf("expected config value 90, got %d", got)
+		}
+	})
+
+	t.Run("default when nothing set", func(t *testing.T) {
+		cfg := &Config{}
+		got := ResolveHTTPTimeoutSeconds(cfg, 0, false)
+		if got != DefaultHTTPTimeoutSeconds {
+			t.Errorf("expected default %d, got %d", DefaultHTTPTimeoutSeconds, got)
+		}
+	})
+
+	t.Run("invalid env var value ignored", func(t *testing.T) {
+		cfg := &Config{}
+		t.Setenv("IICS_HTTP_TIMEOUT", "not-a-number")
+		got := ResolveHTTPTimeoutSeconds(cfg, 0, false)
+		if got != DefaultHTTPTimeoutSeconds {
+			t.Errorf("expected default %d, got %d", DefaultHTTPTimeoutSeconds, got)
+		}
+	})
+
+	t.Run("nil config with default", func(t *testing.T) {
+		got := ResolveHTTPTimeoutSeconds(nil, 0, false)
+		if got != DefaultHTTPTimeoutSeconds {
+			t.Errorf("expected default %d, got %d", DefaultHTTPTimeoutSeconds, got)
+		}
+	})
+}

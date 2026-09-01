@@ -72,9 +72,12 @@ func WithCAIURL(url string) ClientOption {
 }
 
 // NewClient creates a new IICS API client.
+// The default 120s per-request timeout is used only when the caller does not
+// supply WithHTTPClient; cmd/root.go overrides it based on --http-timeout,
+// IICS_HTTP_TIMEOUT, or config.yaml's httpTimeout (see config.ResolveHTTPTimeoutSeconds).
 func NewClient(loginURL, username, password string, opts ...ClientOption) *Client {
 	c := &Client{
-		httpClient:     &http.Client{Timeout: 60 * time.Second},
+		httpClient:     &http.Client{Timeout: 120 * time.Second},
 		loginURL:       loginURL,
 		username:       username,
 		password:       password,

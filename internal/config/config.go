@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -22,6 +23,38 @@ type Config struct {
 	DefaultProfile string              `yaml:"defaultProfile" mapstructure:"defaultProfile"`
 	Profiles       map[string]*Profile `yaml:"profiles"       mapstructure:"profiles"`
 	Style          StyleConfig         `yaml:"style,omitempty" mapstructure:"style"`
+	HTTPTimeout    int                 `yaml:"httpTimeout,omitempty" mapstructure:"httpTimeout"`
+}
+
+// DefaultHTTPTimeoutSeconds is the per-HTTP-request timeout used when no
+// override is supplied via the --http-timeout flag, the IICS_HTTP_TIMEOUT
+// env var, or the httpTimeout config file field.
+const DefaultHTTPTimeoutSeconds = 120
+
+// ResolveHTTPTimeoutSeconds determines the effective per-request HTTP
+// timeout (in seconds), applying the following precedence:
+//
+//  1. flagValue, if flagChanged is true (the user explicitly passed --http-timeout)
+//  2. IICS_HTTP_TIMEOUT env var, if set to a valid positive integer
+//  3. cfg.HTTPTimeout, if non-zero
+//  4. DefaultHTTPTimeoutSeconds
+//
+// This timeout bounds each individual HTTP round trip (login, start-export,
+// status polling, downloads, etc.) and is independent of any command-level
+// polling/wait flags such as export's --max-wait-time.
+func ResolveHTTPTimeoutSeconds(cfg *Config, flagValue int, flagChanged bool) int {
+	if flagChanged && flagValue > 0 {
+		return flagValue
+	}
+	if v := os.Getenv("IICS_HTTP_TIMEOUT"); v != "" {
+		if secs, err := strconv.Atoi(v); err == nil && secs > 0 {
+			return secs
+		}
+	}
+	if cfg != nil && cfg.HTTPTimeout > 0 {
+		return cfg.HTTPTimeout
+	}
+	return DefaultHTTPTimeoutSeconds
 }
 
 // Profile represents a single IICS org connection profile.

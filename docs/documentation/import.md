@@ -43,6 +43,14 @@ The recommended command for most use cases. Uploads the ZIP, starts the import, 
 
 All [global flags](../../README.md#global-flags) apply.
 
+> **`--http-timeout` vs `--max-wait-time`:** these control different things.
+> `--max-wait-time`/`--polling-interval` bound how long `import run` polls the job status
+> before giving up. `--http-timeout` (a global flag, default 120s) bounds how long any single
+> HTTP request may take before it fails with `context deadline exceeded`. If the upload or
+> start-import request itself takes longer than the default 120s (e.g. a very large ZIP),
+> increase `--http-timeout` (or set `IICS_HTTP_TIMEOUT` / `httpTimeout` in `config.yaml`),
+> not `--max-wait-time`.
+
 ### Object status fields
 
 When `--expand` or `--detailed-polling` is set, a per-object table is printed. The default

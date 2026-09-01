@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -18,17 +19,18 @@ import (
 )
 
 var (
-	cfgFile    string
-	profile    string
-	outputFmt  string
-	verbose    bool
-	noColor    bool
-	debug      bool
-	themeFlag  string
-	versionStr = "dev"
-	commitStr  = "none"
-	dateStr    = "unknown"
-	logger     *slog.Logger
+	cfgFile         string
+	profile         string
+	outputFmt       string
+	verbose         bool
+	noColor         bool
+	debug           bool
+	themeFlag       string
+	httpTimeoutFlag int
+	versionStr      = "dev"
+	commitStr       = "none"
+	dateStr         = "unknown"
+	logger          *slog.Logger
 )
 
 // ts returns the current local time formatted for progress output.
@@ -186,6 +188,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	rootCmd.PersistentFlags().StringVar(&themeFlag, "theme", "", "table theme: default|minimal|compact|plain|markdown|gh (overrides config)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "print request body to stderr on API error")
+	rootCmd.PersistentFlags().IntVar(&httpTimeoutFlag, "http-timeout", 0,
+		"HTTP request timeout in seconds, applied per request (login, API calls, downloads); "+
+			"default 120, overrides config httpTimeout / IICS_HTTP_TIMEOUT env var. "+
+			"Independent of export's --max-wait-time, which only bounds job polling.")
 
 	rootCmd.AddCommand(newLoginCmd())
 	rootCmd.AddCommand(newLogoutCmd())
@@ -275,17 +281,17 @@ func isProfileCommand(cmd *cobra.Command) bool {
 // When no profile credentials are configured and stdin is a terminal, it
 // launches an interactive setup wizard before proceeding.
 func getClient(cmd *cobra.Command) (*client.Client, error) {
-	_, p, profileName, err := resolveProfile()
+	cfg, p, profileName, err := resolveProfile()
 	if err != nil {
 		if isMissingCredentialsError(err) && config.IsTerminal() && !isProfileCommand(cmd) {
 			_, _ = fmt.Fprintf(os.Stderr,
 				"\nNo credentials configured for profile %q.\nLet's set up a profile now.\n\n",
 				profileName)
-			cfg, loadErr := config.Load(cfgFile)
+			loadedCfg, loadErr := config.Load(cfgFile)
 			if loadErr != nil {
 				return nil, err
 			}
-			newProfile, makeDefault, storeInKeyring, promptErr := config.PromptProfile(cfg.Profiles[profileName], profileName)
+			newProfile, makeDefault, storeInKeyring, promptErr := config.PromptProfile(loadedCfg.Profiles[profileName], profileName)
 			if promptErr != nil {
 				return nil, fmt.Errorf("profile setup: %w", promptErr)
 			}
@@ -301,18 +307,18 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 				}
 			}
 
-			if cfg.Profiles == nil {
-				cfg.Profiles = make(map[string]*config.Profile)
+			if loadedCfg.Profiles == nil {
+				loadedCfg.Profiles = make(map[string]*config.Profile)
 			}
-			cfg.Profiles[profileName] = newProfile
+			loadedCfg.Profiles[profileName] = newProfile
 			if makeDefault {
-				cfg.DefaultProfile = profileName
+				loadedCfg.DefaultProfile = profileName
 			}
-			if saveErr := cfg.Save(cfgFile); saveErr != nil {
+			if saveErr := loadedCfg.Save(cfgFile); saveErr != nil {
 				return nil, fmt.Errorf("saving profile: %w", saveErr)
 			}
 			_, _ = fmt.Fprintf(os.Stderr, "\nProfile %q saved.\n\n", profileName)
-			_, p, profileName, err = resolveProfile()
+			cfg, p, profileName, err = resolveProfile()
 			if err != nil {
 				return nil, err
 			}
@@ -330,6 +336,8 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 	if p.CaiURL != "" {
 		opts = append(opts, client.WithCAIURL(p.CaiURL))
 	}
+	timeoutSecs := config.ResolveHTTPTimeoutSeconds(cfg, httpTimeoutFlag, cmd.Flags().Changed("http-timeout"))
+	opts = append(opts, client.WithHTTPClient(&http.Client{Timeout: time.Duration(timeoutSecs) * time.Second}))
 	c := client.NewClient(loginURL, p.Username, p.Password, opts...)
 
 	// Register a callback so every auto-login or 401 renewal persists the session.
