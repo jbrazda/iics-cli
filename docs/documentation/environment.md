@@ -1,12 +1,14 @@
-# runtime
+# environment
 
-Manage IICS runtime environments. Alias: `rt`.
+Manage IICS runtime environments (Secure Agent groups). Aliases: `runtime`,
+`rt`, `env`.
 
 Runtime environments are groups of one or more Secure Agents that execute data integration tasks.
 
 ## Synopsis
 
 ```bash
+iics environment <subcommand> [flags]
 iics runtime <subcommand> [flags]
 iics rt <subcommand> [flags]
 ```
@@ -19,11 +21,12 @@ iics rt <subcommand> [flags]
 | `get`      | Get a single runtime environment |
 | `create`   | Create a runtime environment     |
 | `update`   | Update a runtime environment     |
+| `delete`   | Delete a runtime environment     |
 | `configs`  | Manage Secure Agent group service properties |
 
 ---
 
-## runtime list
+## environment list
 
 ### Flags
 
@@ -53,24 +56,24 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
-iics runtime list
+iics environment list
 
-iics rt list --output json
+iics environment list --output json
 
-iics runtime list --filter isShared==true
+iics environment list --filter isShared==true
 ```
 
 ```powershell
-iics runtime list
+iics environment list
 
-iics rt list --output json
+iics environment list --output json
 
-iics runtime list --filter isShared==true
+iics environment list --filter isShared==true
 ```
 
 ---
 
-## runtime get
+## environment get
 
 ### Flags
 
@@ -100,24 +103,24 @@ Table mode prints:
 ### Examples
 
 ```bash
-iics runtime get --id <runtime-id>
+iics environment get --id <runtime-id>
 
-iics runtime get --name "My Group"
+iics environment get --name "My Group"
 
-iics rt get --id <runtime-id> --output json
+iics environment get --id <runtime-id> --output json
 ```
 
 ```powershell
-iics runtime get --id <runtime-id>
+iics environment get --id <runtime-id>
 
-iics runtime get --name "My Group"
+iics environment get --name "My Group"
 
-iics rt get --id <runtime-id> --output json
+iics environment get --id <runtime-id> --output json
 ```
 
 ---
 
-## runtime create
+## environment create
 
 Create a runtime environment (Secure Agent group). Provide a JSON definition
 file, or run interactively.
@@ -150,16 +153,16 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
-iics runtime create --from-file my-runtime.json
+iics environment create --from-file my-runtime.json
 
 # interactive
-iics runtime create
-iics runtime create -i --from-file seed.json
+iics environment create
+iics environment create -i --from-file seed.json
 ```
 
 ---
 
-## runtime update
+## environment update
 
 The `@type` discriminator is added automatically, as for `create`.
 
@@ -175,18 +178,49 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
-iics runtime update --id <runtime-id> --from-file updated-runtime.json
+iics environment update --id <runtime-id> --from-file updated-runtime.json
 ```
 
 ---
 
-## runtime configs
+## environment delete
+
+Delete a runtime environment (Secure Agent group). Uses
+`DELETE /api/v2/runtimeEnvironment/<id>`.
+
+### Flags
+
+| Flag           | Type   | Description |
+| -------------- | ------ | ----------- |
+| `--id`         | string | Runtime environment ID |
+| `--name`       | string | Runtime environment name |
+| `--yes` / `-y` | bool   | Skip the confirmation prompt |
+
+Exactly one of `--id` / `--name` is required; they are mutually exclusive.
+
+### Examples
+
+```bash
+iics environment delete --id <environment-id>
+
+iics environment delete --name "My Group" --yes
+```
+
+```powershell
+iics environment delete --id <environment-id>
+
+iics environment delete --name "My Group" --yes
+```
+
+---
+
+## environment configs
 
 Manage Secure Agent group service property overrides. Uses
 `GET` / `PUT /api/v2/runtimeEnvironment/<id>/configs`. The Secure Agent group ID
 is the runtime environment ID.
 
-### runtime configs get
+### environment configs get
 
 Show the service property overrides for a group.
 
@@ -203,11 +237,11 @@ empty result prints `No service property overrides.`. `--output json` / `yaml`
 render the raw document.
 
 ```bash
-iics runtime configs get --id <groupId>
-iics runtime configs get --name "My Group" --service Data_Integration_Server --output json
+iics environment configs get --id <groupId>
+iics environment configs get --name "My Group" --service Data_Integration_Server --output json
 ```
 
-### runtime configs set
+### environment configs set
 
 Replace the service property overrides for a group from a JSON file shaped as
 `{"<Service_Name>":[{ ...settings... }]}`.
@@ -222,7 +256,7 @@ Replace the service property overrides for a group from a JSON file shaped as
 Exactly one of `--id` / `--name` is required.
 
 ```bash
-iics runtime configs set --id <groupId> --from-file props.json --yes
+iics environment configs set --id <groupId> --from-file props.json --yes
 ```
 
 ## See also

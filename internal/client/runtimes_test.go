@@ -156,6 +156,19 @@ func TestCreateRuntimeEnvironment(t *testing.T) {
 	}
 }
 
+func TestDeleteRuntimeEnvironment(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/api/v2/runtimeEnvironment/rt123" {
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	c := newTestClient(handler)
+	if err := c.DeleteRuntimeEnvironment(context.Background(), "rt123"); err != nil {
+		t.Fatalf("DeleteRuntimeEnvironment() error: %v", err)
+	}
+}
+
 func TestUpdateRuntimeEnvironment(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut {

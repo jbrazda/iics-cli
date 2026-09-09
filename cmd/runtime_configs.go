@@ -39,8 +39,8 @@ func newRuntimeConfigsGetCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Show Secure Agent group service property overrides",
-		Example: `  iics runtime configs get --id <groupId>
-  iics runtime configs get --name "My Group" --service Data_Integration_Server`,
+		Example: `  iics environment configs get --id <groupId>
+  iics environment configs get --name "My Group" --service Data_Integration_Server`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" && name == "" {
 				return fmt.Errorf("either --id or --name is required")
@@ -105,8 +105,8 @@ func newRuntimeConfigsSetCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set",
 		Short: "Replace Secure Agent group service property overrides from a JSON file",
-		Example: `  iics runtime configs set --id <groupId> --from-file props.json
-  iics runtime configs set --name "My Group" --from-file props.json --yes`,
+		Example: `  iics environment configs set --id <groupId> --from-file props.json
+  iics environment configs set --name "My Group" --from-file props.json --yes`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" && name == "" {
 				return fmt.Errorf("either --id or --name is required")

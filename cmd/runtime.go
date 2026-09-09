@@ -102,14 +102,15 @@ func serverlessConfigAttrs(s *client.ServerlessConfig) []output.KVRow {
 
 func newRuntimeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "runtime",
-		Aliases: []string{"rt"},
-		Short:   "Manage runtime environments",
+		Use:     "environment",
+		Aliases: []string{"runtime", "rt", "env"},
+		Short:   "Manage runtime environments (Secure Agent groups)",
 	}
 	cmd.AddCommand(newRuntimeListCmd())
 	cmd.AddCommand(newRuntimeGetCmd())
 	cmd.AddCommand(newRuntimeCreateCmd())
 	cmd.AddCommand(newRuntimeUpdateCmd())
+	cmd.AddCommand(newRuntimeDeleteCmd())
 	cmd.AddCommand(newRuntimeConfigsCmd())
 	return cmd
 }
@@ -122,8 +123,8 @@ func newRuntimeListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List runtime environments",
-		Example: `  iics runtime list
-  iics runtime list --filter isShared==true`,
+		Example: `  iics environment list
+  iics environment list --filter isShared==true`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			preds, err := filter.ParseAll(filters)
 			if err != nil {
@@ -240,9 +241,9 @@ func newRuntimeCreateCmd() *cobra.Command {
 Provide --from-file with a JSON definition, or run interactively (--interactive/-i,
 or omit --from-file on a terminal) to be prompted for the name, shared flag, and
 member agents.`,
-		Example: `  iics runtime create --from-file my-runtime.json
-  iics runtime create
-  iics runtime create -i --from-file seed.json`,
+		Example: `  iics environment create --from-file my-runtime.json
+  iics environment create
+  iics environment create -i --from-file seed.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -324,5 +325,52 @@ func newRuntimeUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&id, "id", "", "runtime environment ID (required)")
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file (required)")
+	return cmd
+}
+
+func newRuntimeDeleteCmd() *cobra.Command {
+	var (
+		id   string
+		name string
+		yes  bool
+	)
+	cmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a runtime environment (Secure Agent group)",
+		Example: `  iics environment delete --id <environment-id>
+  iics environment delete --name "My Group" --yes`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if id == "" && name == "" {
+				return fmt.Errorf("either --id or --name is required")
+			}
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			envID, err := resolveRuntimeID(ctx, c, id, name)
+			if err != nil {
+				return err
+			}
+			if !yes {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete runtime environment %s? [y/N]: ", envID)
+				var confirm string
+				_, _ = fmt.Scanln(&confirm)
+				if confirm != "y" && confirm != "Y" {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
+				}
+			}
+			if err := c.DeleteRuntimeEnvironment(ctx, envID); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Runtime environment deleted: %s\n", envID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&id, "id", "", "runtime environment ID")
+	cmd.Flags().StringVar(&name, "name", "", "runtime environment name")
+	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "skip confirmation prompt")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
 }

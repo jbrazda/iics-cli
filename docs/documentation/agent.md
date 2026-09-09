@@ -371,4 +371,4 @@ iics agent installer-download --installer-info info.json --target C:\Temp\agent.
 
 ## See also
 
-- [runtime](runtime.md) - manage runtime environments that contain agents
+- [environment](environment.md) - manage runtime environments (Secure Agent groups) that contain agents

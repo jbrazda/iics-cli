@@ -158,3 +158,8 @@ func (c *Client) UpdateRuntimeEnvironment(ctx context.Context, id string, rt *Ru
 	}
 	return &resp, nil
 }
+
+// DeleteRuntimeEnvironment deletes a runtime environment (Secure Agent group) by ID.
+func (c *Client) DeleteRuntimeEnvironment(ctx context.Context, id string) error {
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/runtimeEnvironment/%s", BaseAPIPathV2, id), nil, nil)
+}
