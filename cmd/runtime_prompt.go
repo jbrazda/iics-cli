@@ -29,6 +29,12 @@ func runRuntimeCreateWizard(ctx context.Context, c *client.Client, rt *client.Ru
 		_, _ = fmt.Fprintln(os.Stderr, "Environment name is required.")
 	}
 
+	desc, err := promptText("Description (optional)", rt.Description)
+	if err != nil {
+		return err
+	}
+	rt.Description = desc
+
 	shared, err := promptYesNo("Is shared", rt.IsShared)
 	if err != nil {
 		return err

@@ -91,8 +91,8 @@ All [global flags](../../README.md#global-flags) apply.
 Table mode prints:
 
 1. `Runtime Environment: <name>` followed by a vertical `PROPERTY` / `VALUE`
-   listing (`id`, `orgId`, `orgUUID`, `federatedId`, `isShared`, `createdBy`,
-   `updatedBy`, create/update timestamps).
+   listing (`id`, `orgId`, `orgUUID`, `description`, `federatedId`, `isShared`,
+   `createdBy`, `updatedBy`, create/update timestamps).
 2. A `Serverless Config:` section when the environment has one.
 3. `Agents (N):` and a table of the member agents with columns `NAME`, `HOST`,
    `PLATFORM`, `VERSION`, `ACTIVE`, `READY`, `UPGRADE`, `FEDERATED ID`,
@@ -131,10 +131,11 @@ element) are added automatically. An explicit `@type` in the file is honored.
 
 ### Flags
 
-| Flag                | Type   | Description                                              |
-| ------------------- | ------ | ------------------------------------------------------- |
-| `--from-file`       | string | JSON file with the runtime environment definition       |
-| `--interactive`, `-i` | bool | Prompt for the fields interactively                     |
+| Flag                  | Type   | Description                                            |
+| --------------------- | ------ | ----------------------------------------------------- |
+| `--from-file`         | string | JSON file with the runtime environment definition     |
+| `--description`       | string | Environment description (overrides the file value)    |
+| `--interactive`, `-i` | bool   | Prompt for the fields interactively                   |
 
 The interactive wizard runs when `-i` is given, or when `--from-file` is omitted
 and stdin is a terminal. With both `--from-file` and `-i`, the file pre-fills the
@@ -143,8 +144,9 @@ prompts. Without a file and without a terminal, `--from-file` is required.
 ### Interactive prompts
 
 1. `Environment Name` (required).
-2. `Is shared` (y/N).
-3. Agent management menu - `Add agents` lists the currently unassigned Secure
+2. `Description` (optional).
+3. `Is shared` (y/N).
+4. Agent management menu - `Add agents` lists the currently unassigned Secure
    Agents to pick from; `Remove agents` removes from the working selection;
    `Done` creates the environment with the selected agents.
 
@@ -154,6 +156,8 @@ All [global flags](../../README.md#global-flags) apply.
 
 ```bash
 iics environment create --from-file my-runtime.json
+
+iics environment create --from-file my-runtime.json --description "Prod DI group"
 
 # interactive
 iics environment create

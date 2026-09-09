@@ -19,8 +19,10 @@ omitted on a TTY, or by an explicit `--interactive` / `-i`. With both
 Prompts:
 
 1. `Environment Name:` (required, re-prompt if empty).
-2. `Is shared [y/N]:`.
-3. Agent management menu (`promptSelect`): `Add agents` / `Remove agents` /
+2. `Description (optional):` (verified: the v2 create body accepts `description`
+   and it round-trips; also exposed as a `--description` flag).
+3. `Is shared [y/N]:`.
+4. Agent management menu (`promptSelect`): `Add agents` / `Remove agents` /
    Done.
    - Add: lists unassigned agents (`ListAgents` with `IncludeUnassignedOnly`),
      multi-select, appended to the working set (deduped).

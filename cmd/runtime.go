@@ -78,6 +78,7 @@ func runtimeEnvAttrs(rt *client.RuntimeEnvironment) []output.KVRow {
 		output.KV("id", rt.ID),
 		output.KV("orgId", rt.OrgID),
 		output.KV("orgUUID", rt.OrgUUID),
+		output.KV("description", rt.Description),
 		output.KV("federatedId", rt.FederatedID),
 		output.KV("isShared", shared),
 		output.KV("createdBy", rt.CreatedBy),
@@ -232,6 +233,7 @@ func newRuntimeCreateCmd() *cobra.Command {
 	var (
 		fromFile    string
 		interactive bool
+		description string
 	)
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -239,8 +241,8 @@ func newRuntimeCreateCmd() *cobra.Command {
 		Long: `Create a runtime environment.
 
 Provide --from-file with a JSON definition, or run interactively (--interactive/-i,
-or omit --from-file on a terminal) to be prompted for the name, shared flag, and
-member agents.`,
+or omit --from-file on a terminal) to be prompted for the name, description,
+shared flag, and member agents.`,
 		Example: `  iics environment create --from-file my-runtime.json
   iics environment create
   iics environment create -i --from-file seed.json`,
@@ -256,6 +258,10 @@ member agents.`,
 				if err := json.Unmarshal(data, &rt); err != nil {
 					return fmt.Errorf("parsing JSON: %w", err)
 				}
+			}
+
+			if cmd.Flags().Changed("description") {
+				rt.Description = description
 			}
 
 			useWizard := interactive || (fromFile == "" && config.IsTerminal())
@@ -283,7 +289,8 @@ member agents.`,
 		},
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with the runtime environment definition")
-	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "create interactively (prompt for name, shared flag, and agents)")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "create interactively (prompt for name, description, shared flag, and agents)")
+	cmd.Flags().StringVar(&description, "description", "", "environment description (overrides the file value)")
 	return cmd
 }
 

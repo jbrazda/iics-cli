@@ -58,6 +58,7 @@ type RuntimeEnvironment struct {
 	ID               string                    `json:"id,omitempty"`
 	OrgID            string                    `json:"orgId,omitempty"`
 	Name             string                    `json:"name"`
+	Description      string                    `json:"description,omitempty"`
 	CreateTime       string                    `json:"createTime,omitempty"`
 	UpdateTime       string                    `json:"updateTime,omitempty"`
 	CreatedBy        string                    `json:"createdBy,omitempty"`
