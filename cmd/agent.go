@@ -86,13 +86,21 @@ func agentBoolStr(b bool) string {
 	return "false"
 }
 
-// resolveAgentID resolves an agent ID from mutually exclusive selectors. Exactly
+// resolveAgent resolves a full agent from mutually exclusive selectors. Exactly
 // one of id/name/host/fid must be non-empty.
+func resolveAgent(ctx context.Context, c *client.Client, id, name, host, fid string) (*client.Agent, error) {
+	if id != "" {
+		return c.GetAgent(ctx, id)
+	}
+	return c.FindAgent(ctx, client.AgentSelector{Name: name, Hostname: host, FederatedID: fid})
+}
+
+// resolveAgentID resolves an agent ID from mutually exclusive selectors.
 func resolveAgentID(ctx context.Context, c *client.Client, id, name, host, fid string) (string, error) {
 	if id != "" {
 		return id, nil
 	}
-	a, err := c.FindAgent(ctx, client.AgentSelector{Name: name, Hostname: host, FederatedID: fid})
+	a, err := resolveAgent(ctx, c, id, name, host, fid)
 	if err != nil {
 		return "", err
 	}
@@ -439,27 +447,29 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 			ctx := context.Background()
 
 			// Resolve the agent: explicit selector, or an interactive picker.
-			var agentID, agentLabel string
+			var agent *client.Agent
 			if id != "" || name != "" || hostname != "" {
-				agentID, err = resolveAgentID(ctx, c, id, name, hostname, "")
+				agent, err = resolveAgent(ctx, c, id, name, hostname, "")
 				if err != nil {
 					return err
 				}
-				agentLabel = agentID
 			} else if interactive {
-				a, perr := pickAgent(ctx, c)
-				if perr != nil {
-					return perr
+				agent, err = pickAgent(ctx, c)
+				if err != nil {
+					return err
 				}
-				if a == nil {
+				if agent == nil {
 					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
 					return nil
 				}
-				agentID = a.ID
-				agentLabel = fmt.Sprintf("%s (%s)", a.Name, a.AgentHost)
 			} else {
 				return fmt.Errorf("one of --id, --name, --hostname, or --interactive is required")
 			}
+			if agent.FederatedID == "" {
+				return fmt.Errorf("agent %q has no federated ID; cannot control its services", agent.Name)
+			}
+			agentID := agent.ID
+			agentLabel := fmt.Sprintf("%s (%s)", agent.Name, agent.AgentHost)
 
 			// Resolve the service: --service, or pick from the agent's engines.
 			svc := service
@@ -488,7 +498,7 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 				}
 			}
 
-			if err := c.SetAgentServiceState(ctx, agentID, svc, action); err != nil {
+			if err := c.SetAgentServiceState(ctx, agent.FederatedID, svc, action); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %q %s on agent %s\n", svc, past, agentID)

@@ -20,13 +20,10 @@
   Endpoint and body confirmed against the official docs and by schema probing
   (renaming or dropping any of the three fields returns `V3API_007`). The old
   `.../services` path 404s.
-  NOTE: on the test org, every real agent ID is rejected with
-  `AgentServiceV3APIError_003` "Invalid agent: <id>". The v2 `agent` and
-  `agent/details` endpoints accept the same IDs, so this looks like an
-  org/permission nuance (API service control may be disabled, or the agents are
-  platform-only). The fix is still correct-by-spec and strictly better than the
-  current 404. End-to-end start/stop must be confirmed on an org where API
-  service control is enabled.
+  RESOLVED (CR-0035): the `agentId` field must be the agent's **federatedId**,
+  not its v2 `id`. Passing the federatedId works end-to-end (start/stop verified
+  live). The `serviceName` is the service display name. Fixed in
+  `SetAgentServiceState` + `cmd/agent.go`.
 - Group service properties: `GET` / `PUT api/v2/runtimeEnvironment/<id>/configs`.
   GET returns `{}` when the group has no property overrides. PUT body is keyed by
   service name: `{"<Service_Name>":[{...settings...}]}`.

@@ -284,9 +284,13 @@ const (
 // SetAgentServiceState starts or stops a service on a secure agent using the v3
 // API: POST public/core/v3/agent/service with
 // {"agentId","serviceName","serviceAction"}.
-func (c *Client) SetAgentServiceState(ctx context.Context, agentID, serviceName string, action AgentServiceAction) error {
+//
+// agentFederatedID must be the agent's federatedId (not its v2 id); the v3
+// endpoint rejects the v2 id with "Invalid agent". serviceName is the service
+// display name (e.g. "Data Integration Server").
+func (c *Client) SetAgentServiceState(ctx context.Context, agentFederatedID, serviceName string, action AgentServiceAction) error {
 	body := map[string]string{
-		"agentId":       agentID,
+		"agentId":       agentFederatedID,
 		"serviceName":   serviceName,
 		"serviceAction": string(action),
 	}

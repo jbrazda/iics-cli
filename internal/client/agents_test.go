@@ -111,13 +111,13 @@ func TestSetAgentServiceState(t *testing.T) {
 		}
 		var body map[string]string
 		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body["agentId"] != "a1" || body["serviceName"] != "Data Integration Server" || body["serviceAction"] != "stop" {
+		if body["agentId"] != "fed-1" || body["serviceName"] != "Data Integration Server" || body["serviceAction"] != "stop" {
 			t.Errorf("unexpected body: %+v", body)
 		}
 		w.WriteHeader(http.StatusOK)
 	})
 	c := newTestClient(handler)
-	if err := c.SetAgentServiceState(context.Background(), "a1", "Data Integration Server", AgentServiceStop); err != nil {
+	if err := c.SetAgentServiceState(context.Background(), "fed-1", "Data Integration Server", AgentServiceStop); err != nil {
 		t.Fatalf("SetAgentServiceState() error: %v", err)
 	}
 }

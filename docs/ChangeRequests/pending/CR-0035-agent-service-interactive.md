@@ -27,7 +27,15 @@ required when `--interactive` is not used.
 - `cmd/agent.go` - `--interactive` flag on `newAgentServiceCmd`; helpers
   `pickAgent` (reuses `ListAgents`) and `pickAgentService` (reuses
   `GetAgentDetails`), plus `promptSelect` / `promptYesNo` and the
-  `config.IsTerminal()` gate.
+  `config.IsTerminal()` gate. `resolveAgent` now returns the full `*Agent`.
+- `internal/client/agents.go` - `SetAgentServiceState` documented as taking the
+  agent's **federatedId** (see below).
 - Docs: `docs/documentation/agent.md`; `make completions`.
 
-No client changes.
+## Bug fix folded in
+
+`POST public/core/v3/agent/service` rejected the v2 agent `id` with
+`AgentServiceV3APIError_003` "Invalid agent" (the caveat noted in CR-0030). The
+`agentId` field must be the agent's **federatedId**. `cmd/agent.go` now resolves
+the full agent and passes `agent.FederatedID`; a guard errors if the agent has
+no federatedId. Start/stop verified end-to-end live.
