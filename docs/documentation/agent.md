@@ -15,6 +15,7 @@ iics agent <subcommand> [flags]
 | `list`     | List Secure Agents                   |
 | `get`      | Get a single agent                   |
 | `details`  | Get agent service engine details     |
+| `delete`   | Delete a Secure Agent                |
 | `start`    | Start an agent service               |
 | `stop`     | Stop an agent service                |
 | `installer-info`     | Get Secure Agent installer download information |
@@ -26,51 +27,59 @@ iics agent <subcommand> [flags]
 
 ### Flags
 
-| Flag           | Type | Default | Description                             |
-| -------------- | ---- | ------- | --------------------------------------- |
-| `--limit`      | int  | 200     | Max results                             |
-| `--skip`       | int  | 0       | Results to skip                         |
-| `--unassigned` | bool | false   | Include only agents not in a group      |
+| Flag           | Type         | Default | Description                                                              |
+| -------------- | ------------ | ------- | ---------------------------------------------------------------------- |
+| `--unassigned` | bool         | false   | Include only agents not in a group                                      |
+| `--basic-info` | bool         | false   | Include package and configuration details in the response              |
+| `--fields`     | string       |         | Comma-separated columns to display, by technical field name             |
+| `--filter`     | string array |         | Client-side filter, e.g. `agentHost==host01` or `active!=true`. Repeatable; conditions are AND-ed |
+| `--limit`      | int          | 200     | Accepted for compatibility; the API currently ignores it               |
+| `--skip`       | int          | 0       | Accepted for compatibility; the API currently ignores it               |
 
 All [global flags](../../README.md#global-flags) apply.
 
+### Filtering
+
+`--filter` matches on the raw API field names (the same names accepted by
+`--fields`). Only `==` and `!=` are supported. String comparison is
+case-insensitive. Booleans and numbers are compared by value. Dot notation
+selects nested fields.
+
 ### Output columns
 
-| Column         | Description                        |
-| -------------- | ---------------------------------- |
-| `id`           | Agent ID                           |
-| `name`         | Agent name                         |
-| `agentHost`    | Hostname of the agent machine      |
-| `active`       | Whether the agent is active        |
-| `readyToRun`   | Whether the agent can run tasks    |
-| `platform`     | OS platform (linux64, win64, etc.) |
-| `agentVersion` | Installed agent version            |
-| `agentGroupId` | Runtime environment group ID       |
+Default columns: `name`, `agentHost`, `active`, `readyToRun`, `platform`,
+`agentVersion`, `upgradeStatus`, `agentGroupId`.
+
+`--fields` accepts any of: `id`, `orgId`, `name`, `description`, `agentHost`,
+`active`, `readyToRun`, `platform`, `agentVersion`, `upgradeStatus`,
+`agentGroupId`, `proxyHost`, `createdBy`, `updatedBy`, `createTime`,
+`updateTime`, `lastStatusChange`, `lastUpgraded`, `lastUpgradeCheck`,
+`configUpdateTime`. Unknown names are ignored.
 
 ### Examples
 
 ```bash
 iics agent list
 
-iics agent list --output json
+iics agent list --fields name,agentHost,agentVersion,configUpdateTime
 
-# Find agents that are active and ready
-iics agent list --output json | jq '.[] | select(.active == true and .readyToRun == true)'
+# Client-side filtering on technical field names
+iics agent list --filter agentHost==devinfacld01
+iics agent list --filter active==true --filter platform==win64
 
-# List unassigned agents
 iics agent list --unassigned
+
+iics agent list --output json
 ```
 
 ```powershell
 iics agent list
 
-iics agent list --output json
+iics agent list --fields name,agentHost,agentVersion,configUpdateTime
 
-# Find agents that are active and ready
-$agents = iics agent list --output json | ConvertFrom-Json
-$agents | Where-Object { $_.active -eq $true -and $_.readyToRun -eq $true }
+iics agent list --filter agentHost==devinfacld01
+iics agent list --filter active==true --filter platform==win64
 
-# List unassigned agents
 iics agent list --unassigned
 ```
 
@@ -78,43 +87,38 @@ iics agent list --unassigned
 
 ## agent get
 
-Get full details for a single Secure Agent.
+Get a single Secure Agent by ID or name.
 
 ### Flags
 
-| Flag   | Type   | Required | Description |
-| ------ | ------ | -------- | ----------- |
-| `--id` | string | yes      | Agent ID    |
+| Flag     | Type   | Description |
+| -------- | ------ | ----------- |
+| `--id`   | string | Agent ID    |
+| `--name` | string | Agent name (uses `GET /api/v2/agent/name/<name>`) |
+
+Exactly one of `--id` / `--name` is required; they are mutually exclusive.
 
 All [global flags](../../README.md#global-flags) apply.
 
-### Output columns
+### Output
 
-| Column          | Description                     |
-| --------------- | ------------------------------- |
-| `id`            | Agent ID                        |
-| `name`          | Agent name                      |
-| `agentHost`     | Hostname                        |
-| `active`        | Active status                   |
-| `readyToRun`    | Ready-to-run status             |
-| `platform`      | OS platform                     |
-| `agentVersion`  | Agent version string            |
-| `upgradeStatus` | Upgrade status                  |
-| `agentGroupId`  | Runtime environment group ID    |
-| `createdBy`     | Creator                         |
-| `createTime`    | Creation timestamp              |
-| `updateTime`    | Last modification timestamp     |
+In table mode the agent is printed as a vertical `PROPERTY` / `VALUE` listing.
+`--output json`, `yaml`, and `csv` render the agent record directly.
 
 ### Examples
 
 ```bash
 iics agent get --id <agent-id>
 
+iics agent get --name "My Agent"
+
 iics agent get --id <agent-id> --output json
 ```
 
 ```powershell
 iics agent get --id <agent-id>
+
+iics agent get --name "My Agent"
 
 iics agent get --id <agent-id> --output json
 ```
@@ -123,42 +127,91 @@ iics agent get --id <agent-id> --output json
 
 ## agent details
 
-Get the service engine details for an agent, including per-service status.
+Get the service engine details for an agent: the agent summary, then each
+service (engine) with its status and, optionally, its configuration properties.
 
 ### Flags
 
-| Flag   | Type   | Required | Description |
-| ------ | ------ | -------- | ----------- |
-| `--id` | string | yes      | Agent ID    |
+| Flag         | Type   | Description |
+| ------------ | ------ | ----------- |
+| `--id`       | string | Agent ID    |
+| `--fid`      | string | Agent federated ID |
+| `--name`     | string | Agent name  |
+| `--hostname` | string | Agent host name |
+| `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`) |
+
+Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required; they are
+mutually exclusive. Only `--id` maps to the API directly; the other selectors
+are resolved to an ID via the agent list (`--fid` via runtime environments,
+since the agent list objects do not carry a federated ID).
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Output
 
-Prints a summary of the agent followed by a table of services:
+Table mode prints, in order:
 
-| Column           | Description                       |
-| ---------------- | --------------------------------- |
-| `appDisplayName` | Service display name              |
-| `appname`        | Internal service name             |
-| `appversion`     | Service version                   |
-| `status`         | Current status (running, stopped) |
-| `subState`       | Sub-state detail                  |
+1. `Agent:` - a vertical `PROPERTY` / `VALUE` listing of the agent summary.
+2. `Agent Config:` (only with `--full`, when present) - a table of agent-level
+   configuration properties.
+3. For each service: a `Service: <display name> (<appname> v<version>)` header,
+   a vertical status listing, and (with `--full`) a configuration table.
+
+Configuration tables have columns `TYPE`, `NAME`, `VALUE`, `DEFAULT`,
+`CUSTOMIZED`. Long `VALUE` / `DEFAULT` cells are wrapped onto multiple lines.
+
+`--output json` / `yaml` render the full nested details document.
 
 ### Examples
 
 ```bash
 iics agent details --id <agent-id>
 
-# Show all service statuses for a specific agent
-iics agent details --id <agent-id> --verbose
+iics agent details --hostname devinfacld01 --full
+
+iics agent details --name "My Agent" --output json
 ```
 
 ```powershell
 iics agent details --id <agent-id>
 
-# Show all service statuses for a specific agent
-iics agent details --id <agent-id> --verbose
+iics agent details --hostname devinfacld01 --full
+
+iics agent details --name "My Agent" --output json
+```
+
+---
+
+## agent delete
+
+Delete a Secure Agent.
+
+### Flags
+
+| Flag         | Type   | Description |
+| ------------ | ------ | ----------- |
+| `--id`       | string | Agent ID    |
+| `--name`     | string | Agent name  |
+| `--hostname` | string | Agent host name |
+| `--yes` / `-y` | bool | Skip the confirmation prompt |
+
+Exactly one of `--id` / `--name` / `--hostname` is required; they are mutually
+exclusive.
+
+All [global flags](../../README.md#global-flags) apply.
+
+### Examples
+
+```bash
+iics agent delete --id <agent-id>
+
+iics agent delete --hostname devinfacld01 --yes
+```
+
+```powershell
+iics agent delete --id <agent-id>
+
+iics agent delete --hostname devinfacld01 --yes
 ```
 
 ---

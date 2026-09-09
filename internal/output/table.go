@@ -110,13 +110,62 @@ func computeColWidths(rows []map[string]interface{}, columns []Column) []int {
 	}
 	for _, row := range rows {
 		for i, col := range columns {
-			l := visibleLen(extractField(row, col))
+			l := maxLineLen(extractField(row, col))
 			if l > widths[i] {
 				widths[i] = l
 			}
 		}
 	}
 	return widths
+}
+
+// maxLineLen returns the visible length of the longest physical line in s
+// (cells may contain embedded newlines for multi-line rendering).
+func maxLineLen(s string) int {
+	if !strings.Contains(s, "\n") {
+		return visibleLen(s)
+	}
+	max := 0
+	for _, line := range strings.Split(s, "\n") {
+		if l := visibleLen(line); l > max {
+			max = l
+		}
+	}
+	return max
+}
+
+// splitCellLines expands a logical row whose cells may contain embedded newlines
+// into the physical lines needed to render it, padding shorter cells with "".
+func splitCellLines(cells []string) [][]string {
+	maxLines := 1
+	parts := make([][]string, len(cells))
+	for i, c := range cells {
+		parts[i] = strings.Split(c, "\n")
+		if len(parts[i]) > maxLines {
+			maxLines = len(parts[i])
+		}
+	}
+	lines := make([][]string, maxLines)
+	for l := 0; l < maxLines; l++ {
+		row := make([]string, len(cells))
+		for i := range cells {
+			if l < len(parts[i]) {
+				row[i] = parts[i][l]
+			}
+		}
+		lines[l] = row
+	}
+	return lines
+}
+
+// flattenCells replaces embedded newlines with spaces for renderers that cannot
+// display multi-line cells.
+func flattenCells(cells []string) []string {
+	out := make([]string, len(cells))
+	for i, c := range cells {
+		out[i] = strings.ReplaceAll(c, "\n", " ")
+	}
+	return out
 }
 
 // padRight right-pads s to exactly width visible runes.
@@ -249,7 +298,9 @@ func renderDefault(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, borderedRow(b, headers, widths, headerFn))
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.midLeft, b.midMid, b.midRight))
 	for _, row := range rows {
-		_, _ = fmt.Fprintln(w, borderedRow(b, dataCells(row, columns), widths, noStyle))
+		for _, line := range splitCellLines(dataCells(row, columns)) {
+			_, _ = fmt.Fprintln(w, borderedRow(b, line, widths, noStyle))
+		}
 	}
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.botLeft, b.botMid, b.botRight))
 }
@@ -262,7 +313,9 @@ func renderPlain(w io.Writer, rows []map[string]interface{}, columns []Column, w
 	_, _ = fmt.Fprintln(w, borderedRow(b, headers, widths, noStyle))
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.midLeft, b.midMid, b.midRight))
 	for _, row := range rows {
-		_, _ = fmt.Fprintln(w, borderedRow(b, sanitizedDataCells(row, columns), widths, noStyle))
+		for _, line := range splitCellLines(sanitizedDataCells(row, columns)) {
+			_, _ = fmt.Fprintln(w, borderedRow(b, line, widths, noStyle))
+		}
 	}
 	_, _ = fmt.Fprintln(w, hSep(b, widths, b.botLeft, b.botMid, b.botRight))
 }
@@ -298,7 +351,7 @@ func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, ul.String())
 
 	for _, row := range rows {
-		cells := sanitizedDataCells(row, columns)
+		cells := flattenCells(sanitizedDataCells(row, columns))
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))
@@ -331,7 +384,7 @@ func renderCompact(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, hdr.String())
 
 	for _, row := range rows {
-		cells := sanitizedDataCells(row, columns)
+		cells := flattenCells(sanitizedDataCells(row, columns))
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))
@@ -375,7 +428,7 @@ func renderMarkdown(w io.Writer, rows []map[string]interface{}, columns []Column
 
 	// Data rows
 	for _, row := range rows {
-		cells := sanitizedDataCells(row, columns)
+		cells := flattenCells(sanitizedDataCells(row, columns))
 		var rb strings.Builder
 		rb.WriteString("| ")
 		for i, cell := range cells {
@@ -405,7 +458,7 @@ func renderGH(w io.Writer, rows []map[string]interface{}, columns []Column, widt
 	_, _ = fmt.Fprintln(w, hdr.String())
 
 	for _, row := range rows {
-		cells := sanitizedDataCells(row, columns)
+		cells := flattenCells(sanitizedDataCells(row, columns))
 		var rb strings.Builder
 		for i, cell := range cells {
 			rb.WriteString(padRight(cell, widths[i]))

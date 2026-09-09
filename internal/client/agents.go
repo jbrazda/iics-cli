@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 )
 
 // Agent represents an IICS Secure Agent as returned by the v2 API.
@@ -34,31 +36,48 @@ type Agent struct {
 	GroupID          string `json:"agentGroupId,omitempty"`
 }
 
-// AgentEngineConfig represents a single engine configuration property.
+// AgentEngineConfig represents a single engine (or agent) configuration property
+// as returned inside GET /api/v2/agent/details/<agentID>?onlyStatus=false.
 type AgentEngineConfig struct {
-	Type       string `json:"type,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Value      string `json:"value,omitempty"`
-	Customized bool   `json:"customized,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Value        string `json:"value,omitempty"`
+	Platform     string `json:"platform,omitempty"`
+	DefaultValue string `json:"defaultValue,omitempty"`
+	Customized   bool   `json:"customized,omitempty"`
 }
 
-// AgentEngineStatus represents the status of a service running on the agent.
+// AgentEngineStatus represents the status of a service (engine) running on the agent.
 type AgentEngineStatus struct {
+	Type           string `json:"@type,omitempty"`
 	AppName        string `json:"appname,omitempty"`
 	AppDisplayName string `json:"appDisplayName,omitempty"`
 	AppVersion     string `json:"appversion,omitempty"`
+	ReplacePolicy  string `json:"replacePolicy,omitempty"`
 	Status         string `json:"status,omitempty"`
+	DesiredStatus  string `json:"desiredStatus,omitempty"`
 	SubState       string `json:"subState,omitempty"`
 	CreateTime     string `json:"createTime,omitempty"`
 	UpdateTime     string `json:"updateTime,omitempty"`
 }
 
-// AgentDetails extends Agent with service engine status and configuration,
+// AgentEngine is one service engine entry in an agent details response.
+type AgentEngine struct {
+	Type               string              `json:"@type,omitempty"`
+	AgentEngineStatus  AgentEngineStatus   `json:"agentEngineStatus,omitempty"`
+	AgentEngineConfigs []AgentEngineConfig `json:"agentEngineConfigs,omitempty"`
+}
+
+// AgentDetails extends Agent with per-engine service status and configuration,
 // as returned by GET /api/v2/agent/details/<agentID>.
 type AgentDetails struct {
 	Agent
-	AgentEngineStatus  []AgentEngineStatus `json:"agentEngineStatus,omitempty"`
-	AgentEngineConfigs []AgentEngineConfig `json:"agentEngineConfigs,omitempty"`
+	Type          string                   `json:"@type,omitempty"`
+	PlatformAgent bool                     `json:"platformAgent,omitempty"`
+	ServerURL     string                   `json:"serverUrl,omitempty"`
+	Packages      []map[string]interface{} `json:"packages,omitempty"`
+	AgentConfigs  []AgentEngineConfig      `json:"agentConfigs,omitempty"`
+	AgentEngines  []AgentEngine            `json:"agentEngines,omitempty"`
 }
 
 // AgentListOptions holds query parameters for listing agents.
@@ -66,6 +85,15 @@ type AgentListOptions struct {
 	Limit                 int
 	Skip                  int
 	IncludeUnassignedOnly bool
+	BasicInfo             bool
+}
+
+// AgentSelector identifies a single agent by exactly one attribute.
+type AgentSelector struct {
+	ID          string
+	Name        string
+	Hostname    string
+	FederatedID string
 }
 
 // ListAgents retrieves secure agents using the v2 API.
@@ -79,6 +107,9 @@ func (c *Client) ListAgents(ctx context.Context, opts AgentListOptions) ([]Agent
 	}
 	if opts.IncludeUnassignedOnly {
 		query["includeUnassignedOnly"] = "true"
+	}
+	if opts.BasicInfo {
+		query["basicInfo"] = "true"
 	}
 
 	var resp []Agent
@@ -97,15 +128,72 @@ func (c *Client) GetAgent(ctx context.Context, id string) (*Agent, error) {
 	return &resp, nil
 }
 
-// GetAgentDetails retrieves agent details including engine service status and configuration.
-// Uses GET /api/v2/agent/details/<agentID>?onlyStatus=false.
-func (c *Client) GetAgentDetails(ctx context.Context, id string) (*AgentDetails, error) {
+// GetAgentDetails retrieves agent details including per-engine service status.
+// When full is true it requests onlyStatus=false, which also includes the
+// agent-level and per-engine configuration properties.
+func (c *Client) GetAgentDetails(ctx context.Context, id string, full bool) (*AgentDetails, error) {
 	var resp AgentDetails
-	query := map[string]string{"onlyStatus": "false"}
+	var query map[string]string
+	if full {
+		query = map[string]string{"onlyStatus": "false"}
+	}
 	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/agent/details/%s", BaseAPIPathV2, id), query, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
+}
+
+// GetAgentByName retrieves a single secure agent by name using the v2 API.
+func (c *Client) GetAgentByName(ctx context.Context, name string) (*Agent, error) {
+	var resp Agent
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/agent/name/%s", BaseAPIPathV2, url.PathEscape(name)), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// DeleteAgent deletes a secure agent by ID using the v2 API.
+func (c *Client) DeleteAgent(ctx context.Context, id string) error {
+	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/agent/%s", BaseAPIPathV2, id), nil, nil)
+}
+
+// FindAgent resolves an agent from a selector. Name lookups use the dedicated
+// by-name endpoint; hostname lookups scan the agent list; federatedId lookups
+// scan runtime environments (the agent list objects do not carry federatedId)
+// and then fetch the agent by the resolved ID.
+func (c *Client) FindAgent(ctx context.Context, sel AgentSelector) (*Agent, error) {
+	switch {
+	case sel.ID != "":
+		return c.GetAgent(ctx, sel.ID)
+	case sel.Name != "":
+		return c.GetAgentByName(ctx, sel.Name)
+	case sel.Hostname != "":
+		agents, err := c.ListAgents(ctx, AgentListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for i := range agents {
+			if strings.EqualFold(agents[i].AgentHost, sel.Hostname) {
+				return &agents[i], nil
+			}
+		}
+		return nil, fmt.Errorf("no agent found with hostname %q", sel.Hostname)
+	case sel.FederatedID != "":
+		envs, err := c.ListRuntimeEnvironments(ctx, RuntimeListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for _, env := range envs {
+			for _, a := range env.Agents {
+				if a.FederatedID == sel.FederatedID {
+					return c.GetAgent(ctx, a.ID)
+				}
+			}
+		}
+		return nil, fmt.Errorf("no agent found with federatedId %q", sel.FederatedID)
+	default:
+		return nil, fmt.Errorf("no agent selector provided")
+	}
 }
 
 // AgentInstallerInfo holds the Secure Agent installer download details returned by
