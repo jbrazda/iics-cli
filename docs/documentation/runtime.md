@@ -119,7 +119,10 @@ iics rt get --id <runtime-id> --output json
 
 ## runtime create
 
-Create a runtime environment from a JSON definition file.
+Create a runtime environment from a JSON definition file. The minimal file is
+just `{"name": "..."}`; the `@type: "runtimeEnvironment"` discriminator that the
+v2 API requires is added automatically (an explicit `@type` in the file is
+honored).
 
 ### Flags
 
@@ -138,6 +141,8 @@ iics runtime create --from-file my-runtime.json
 ---
 
 ## runtime update
+
+The `@type` discriminator is added automatically, as for `create`.
 
 ### Flags
 

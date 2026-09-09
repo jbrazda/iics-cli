@@ -1,0 +1,5 @@
+{
+  "@type": "runtimeEnvironment",
+  "name": "TEST_ENV",
+  "isShared": false
+}

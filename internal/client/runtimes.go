@@ -53,6 +53,7 @@ type ServerlessConfig struct {
 
 // RuntimeEnvironment represents an IICS runtime environment (V2 API).
 type RuntimeEnvironment struct {
+	Type             string                    `json:"@type,omitempty"`
 	ID               string                    `json:"id,omitempty"`
 	OrgID            string                    `json:"orgId,omitempty"`
 	Name             string                    `json:"name"`
@@ -110,10 +111,18 @@ func (c *Client) GetRuntimeEnvironmentByName(ctx context.Context, name string) (
 	return &resp, nil
 }
 
+// runtimeEnvironmentType is the v2 API @type discriminator required on
+// runtimeEnvironment create/update request bodies.
+const runtimeEnvironmentType = "runtimeEnvironment"
+
 // CreateRuntimeEnvironment creates a new runtime environment.
 func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
+	reqBody := *rt
+	if reqBody.Type == "" {
+		reqBody.Type = runtimeEnvironmentType
+	}
 	var resp RuntimeEnvironment
-	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV2+"/runtimeEnvironment", rt, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV2+"/runtimeEnvironment", &reqBody, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -121,8 +130,12 @@ func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnviro
 
 // UpdateRuntimeEnvironment updates an existing runtime environment.
 func (c *Client) UpdateRuntimeEnvironment(ctx context.Context, id string, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
+	reqBody := *rt
+	if reqBody.Type == "" {
+		reqBody.Type = runtimeEnvironmentType
+	}
 	var resp RuntimeEnvironment
-	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/runtimeEnvironment/%s", BaseAPIPathV2, id), rt, &resp); err != nil {
+	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/runtimeEnvironment/%s", BaseAPIPathV2, id), &reqBody, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

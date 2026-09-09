@@ -127,6 +127,9 @@ func TestCreateRuntimeEnvironment(t *testing.T) {
 
 		var rt RuntimeEnvironment
 		json.NewDecoder(r.Body).Decode(&rt)
+		if rt.Type != "runtimeEnvironment" {
+			t.Errorf("expected @type runtimeEnvironment, got %q", rt.Type)
+		}
 		rt.ID = "new-rt"
 		rt.FederatedID = "fed-new"
 		w.Header().Set("Content-Type", "application/json")
@@ -158,6 +161,9 @@ func TestUpdateRuntimeEnvironment(t *testing.T) {
 
 		var rt RuntimeEnvironment
 		json.NewDecoder(r.Body).Decode(&rt)
+		if rt.Type != "runtimeEnvironment" {
+			t.Errorf("expected @type runtimeEnvironment, got %q", rt.Type)
+		}
 		rt.ID = "rt123"
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(rt)
