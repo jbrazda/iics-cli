@@ -240,13 +240,18 @@ Start or stop a service on a Secure Agent. Uses
 
 Exactly one of `--id` / `--name` / `--hostname` is required, unless
 `--interactive` is used. `--interactive` lists the Secure Agents to choose from,
-then the selected agent's services, asks for confirmation, and (unless
-`--blocking` was passed explicitly) asks `Wait for service "<name>" to
-start/stop`.
+asks for confirmation, and (unless `--blocking` was passed explicitly) asks
+`Wait for service "<name>" to start/stop`.
 
-With `--blocking` the command returns only once the service reaches `RUNNING`
-(start) or is stopped (stop), or `--max-wait-time` elapses (non-zero exit). A
-service in `ERROR` also fails the wait.
+- `stop -i` lists the agent's running services to pick from.
+- `start -i` prompts for the service **display name as free text** (the running
+  services are shown for reference). There is no API that lists an agent's
+  stopped services, so a stopped service cannot be offered in a menu.
+
+With `--blocking` the command returns only once the service is fully started
+(`RUNNING` with `subState 0`) or stopped (gone from the listing), or
+`--max-wait-time` elapses (non-zero exit). A service in `ERROR` also fails the
+wait.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -264,6 +269,37 @@ iics agent stop -i
 ```powershell
 iics agent stop  --id <agent-id> --service "Data Integration Server"
 iics agent start --hostname devinfacld01 --service "Data Integration Server"
+```
+
+---
+
+## agent restart
+
+Restart a service on a Secure Agent: stop it, wait for it to leave the agent's
+service listing, then start it again.
+
+### Flags
+
+Same as `agent start` / `agent stop`
+(`--id` / `--name` / `--hostname`, `--service`, `--interactive` / `-i`,
+`--blocking`, `--poll-interval`, `--max-wait-time`).
+
+The wait for the **stop** to complete is always performed. The wait for the
+**start** to complete happens with `--blocking`, or after answering yes to the
+interactive `Wait for service "<name>" to start` prompt. `--max-wait-time`
+bounds the whole operation (stop wait + start wait combined). "Fully started"
+means the engine reports `RUNNING` with `subState 0`.
+
+### Examples
+
+```bash
+iics agent restart --id <agent-id> --service "Data Integration Server" --blocking
+
+iics agent restart -i
+```
+
+```powershell
+iics agent restart --id <agent-id> --service "Data Integration Server" --blocking
 ```
 
 ---

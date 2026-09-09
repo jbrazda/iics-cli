@@ -226,7 +226,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | Command                                              | Alias  | Subcommands                                                            | Description                                                        |
 |------------------------------------------------------|--------|------------------------------------------------------------------------|--------------------------------------------------------------------|
 | [activitylog](docs/documentation/activitylog.md)     |        | `list`, `get`                                                          | Query activity logs for completed jobs                             |
-| [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `delete`, `start`, `stop`, `installer-info`, `installer-download` | Manage Secure Agents                         |
+| [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `delete`, `start`, `stop`, `restart`, `installer-info`, `installer-download` | Manage Secure Agents              |
 | [auditlog](docs/documentation/auditlog.md)           |        | `list`                                                                 | Query organization audit log (V2 API)                              |
 | [completion](docs/documentation/completion.md)       |        | `bash`, `zsh`, `fish`, `powershell`                                    | Generate shell completion scripts                                  |
 | [connection](docs/documentation/connection.md)       | `conn` | `list`, `get`, `create`, `update`, `delete`                            | Manage connections                                                 |
