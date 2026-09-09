@@ -399,47 +399,26 @@ func newAgentDeleteCmd() *cobra.Command {
 }
 
 func newAgentStartCmd() *cobra.Command {
-	var (
-		id      string
-		service string
-	)
-	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Start an agent service",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
-			}
-			if service == "" {
-				return fmt.Errorf("--service is required")
-			}
-			c, err := getClient(cmd)
-			if err != nil {
-				return err
-			}
-			if err := c.StartAgentService(context.Background(), id, service); err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %s started on agent %s\n", service, id)
-			return nil
-		},
-	}
-	cmd.Flags().StringVar(&id, "id", "", "agent ID (required)")
-	cmd.Flags().StringVar(&service, "service", "", "service name (required)")
-	return cmd
+	return newAgentServiceCmd("start", "Start an agent service", client.AgentServiceStart, "started")
 }
 
 func newAgentStopCmd() *cobra.Command {
+	return newAgentServiceCmd("stop", "Stop an agent service", client.AgentServiceStop, "stopped")
+}
+
+func newAgentServiceCmd(use, short string, action client.AgentServiceAction, past string) *cobra.Command {
 	var (
-		id      string
-		service string
+		id, name, hostname string
+		service            string
 	)
 	cmd := &cobra.Command{
-		Use:   "stop",
-		Short: "Stop an agent service",
+		Use:   use,
+		Short: short,
+		Example: fmt.Sprintf(`  iics agent %s --id <agent-id> --service "Data Integration Server"
+  iics agent %s --hostname devinfacld01 --service "Process Server"`, use, use),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
+			if id == "" && name == "" && hostname == "" {
+				return fmt.Errorf("one of --id, --name, or --hostname is required")
 			}
 			if service == "" {
 				return fmt.Errorf("--service is required")
@@ -448,14 +427,22 @@ func newAgentStopCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := c.StopAgentService(context.Background(), id, service); err != nil {
+			ctx := context.Background()
+			agentID, err := resolveAgentID(ctx, c, id, name, hostname, "")
+			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %s stopped on agent %s\n", service, id)
+			if err := c.SetAgentServiceState(ctx, agentID, service, action); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %q %s on agent %s\n", service, past, agentID)
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "agent ID (required)")
+	cmd.Flags().StringVar(&id, "id", "", "agent ID")
+	cmd.Flags().StringVar(&name, "name", "", "agent name")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "agent host name")
 	cmd.Flags().StringVar(&service, "service", "", "service name (required)")
+	cmd.MarkFlagsMutuallyExclusive("id", "name", "hostname")
 	return cmd
 }

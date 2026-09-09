@@ -102,6 +102,7 @@ func newRuntimeCmd() *cobra.Command {
 	cmd.AddCommand(newRuntimeGetCmd())
 	cmd.AddCommand(newRuntimeCreateCmd())
 	cmd.AddCommand(newRuntimeUpdateCmd())
+	cmd.AddCommand(newRuntimeConfigsCmd())
 	return cmd
 }
 

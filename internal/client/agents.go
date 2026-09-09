@@ -259,14 +259,22 @@ func (c *Client) FetchText(ctx context.Context, url string) (string, error) {
 	return string(body), nil
 }
 
-// StartAgentService starts a service on a secure agent.
-func (c *Client) StartAgentService(ctx context.Context, agentID, serviceName string) error {
-	body := map[string]string{"serviceName": serviceName, "action": "start"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV3, agentID), body, nil)
-}
+// AgentServiceAction is the operation to perform on an agent service.
+type AgentServiceAction string
 
-// StopAgentService stops a service on a secure agent.
-func (c *Client) StopAgentService(ctx context.Context, agentID, serviceName string) error {
-	body := map[string]string{"serviceName": serviceName, "action": "stop"}
-	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/%s/services", BaseAPIPathV3, agentID), body, nil)
+const (
+	AgentServiceStart AgentServiceAction = "start"
+	AgentServiceStop  AgentServiceAction = "stop"
+)
+
+// SetAgentServiceState starts or stops a service on a secure agent using the v3
+// API: POST public/core/v3/agent/service with
+// {"agentId","serviceName","serviceAction"}.
+func (c *Client) SetAgentServiceState(ctx context.Context, agentID, serviceName string, action AgentServiceAction) error {
+	body := map[string]string{
+		"agentId":       agentID,
+		"serviceName":   serviceName,
+		"serviceAction": string(action),
+	}
+	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/agent/service", BaseAPIPathV3), body, nil)
 }

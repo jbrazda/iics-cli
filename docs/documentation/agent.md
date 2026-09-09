@@ -216,62 +216,35 @@ iics agent delete --hostname devinfacld01 --yes
 
 ---
 
-## agent start
+## agent start / agent stop
 
-Start a specific service on a Secure Agent.
+Start or stop a service on a Secure Agent. Uses
+`POST public/core/v3/agent/service`.
 
 ### Flags
 
-| Flag        | Type   | Required | Description                    |
-| ----------- | ------ | -------- | ------------------------------ |
-| `--id`      | string | yes      | Agent ID                       |
-| `--service` | string | yes      | Service name to start          |
+| Flag         | Type   | Description |
+| ------------ | ------ | ----------- |
+| `--id`       | string | Agent ID    |
+| `--name`     | string | Agent name  |
+| `--hostname` | string | Agent host name |
+| `--service`  | string | Service display name, e.g. `"Data Integration Server"` (required) |
+
+Exactly one of `--id` / `--name` / `--hostname` is required; they are mutually
+exclusive.
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
 
 ```bash
-# Start the Data Integration Server service
-iics agent start --id <agent-id> --service "Data Integration Server"
+iics agent stop  --id <agent-id> --service "Data Integration Server"
+iics agent start --hostname devinfacld01 --service "Data Integration Server"
 ```
 
 ```powershell
-# Start the Data Integration Server service
-iics agent start --id <agent-id> --service "Data Integration Server"
-```
-
----
-
-## agent stop
-
-Stop a specific service on a Secure Agent.
-
-### Flags
-
-| Flag        | Type   | Required | Description                  |
-| ----------- | ------ | -------- | ---------------------------- |
-| `--id`      | string | yes      | Agent ID                     |
-| `--service` | string | yes      | Service name to stop         |
-
-All [global flags](../../README.md#global-flags) apply.
-
-### Examples
-
-```bash
-iics agent stop --id <agent-id> --service "Data Integration Server"
-
-# Restart a service (stop then start)
 iics agent stop  --id <agent-id> --service "Data Integration Server"
-iics agent start --id <agent-id> --service "Data Integration Server"
-```
-
-```powershell
-iics agent stop --id <agent-id> --service "Data Integration Server"
-
-# Restart a service (stop then start)
-iics agent stop  --id <agent-id> --service "Data Integration Server"
-iics agent start --id <agent-id> --service "Data Integration Server"
+iics agent start --hostname devinfacld01 --service "Data Integration Server"
 ```
 
 ---
