@@ -279,6 +279,19 @@ func wrapConfigField(field string) func(v interface{}) string {
 	}
 }
 
+// agentServiceCols is the horizontal (one row per service) status table for
+// `agent details --services`.
+var agentServiceCols = []output.Column{
+	{Header: "SERVICE", Field: "appDisplayName", Width: 26},
+	{Header: "APP NAME", Field: "appname", Width: 24},
+	{Header: "VERSION", Field: "appversion", Width: 12},
+	{Header: "STATUS", Field: "status", Width: 12},
+	{Header: "DESIRED", Field: "desiredStatus", Width: 12},
+	{Header: "SUBSTATE", Field: "subState", Width: 9},
+	{Header: "REPLACE", Field: "replacePolicy", Width: 16},
+	{Header: "UPDATED", Field: "updateTime", Width: 22},
+}
+
 func engineStatusKVRows(s client.AgentEngineStatus) []output.KVRow {
 	return []output.KVRow{
 		output.KV("status", s.Status),
@@ -294,12 +307,14 @@ func newAgentDetailsCmd() *cobra.Command {
 	var (
 		id, fid, name, hostname string
 		full                    bool
+		servicesOnly            bool
 	)
 	cmd := &cobra.Command{
 		Use:   "details",
 		Short: "Get agent service engine details",
 		Example: `  iics agent details --id <agent-id>
   iics agent details --hostname devinfacld01 --full
+  iics agent details --id <agent-id> --services
   iics agent details --name "My Agent" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" && fid == "" && name == "" && hostname == "" {
@@ -336,6 +351,20 @@ func newAgentDetailsCmd() *cobra.Command {
 				return err
 			}
 
+			// --services: agent summary + a single horizontal services table.
+			if servicesOnly {
+				_, _ = fmt.Fprintf(w, "\nServices (%d):\n", len(details.AgentEngines))
+				if len(details.AgentEngines) == 0 {
+					_, _ = fmt.Fprintln(w, "  (none)")
+					return nil
+				}
+				statuses := make([]client.AgentEngineStatus, len(details.AgentEngines))
+				for i, e := range details.AgentEngines {
+					statuses[i] = e.AgentEngineStatus
+				}
+				return tf.Format(statuses, agentServiceCols)
+			}
+
 			if full && len(details.AgentConfigs) > 0 {
 				_, _ = fmt.Fprintln(w)
 				_, _ = fmt.Fprintln(w, "Agent Config:")
@@ -368,7 +397,9 @@ func newAgentDetailsCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "agent name")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "agent host name")
 	cmd.Flags().BoolVar(&full, "full", false, "include agent and service configuration properties")
+	cmd.Flags().BoolVar(&servicesOnly, "services", false, "show the agent summary and a single services table (no per-service or config sections)")
 	cmd.MarkFlagsMutuallyExclusive("id", "fid", "name", "hostname")
+	cmd.MarkFlagsMutuallyExclusive("full", "services")
 	return cmd
 }
 

@@ -143,6 +143,7 @@ service (engine) with its status and, optionally, its configuration properties.
 | `--name`     | string | Agent name  |
 | `--hostname` | string | Agent host name |
 | `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`) |
+| `--services` | bool   | Show only the agent summary and one horizontal table of services (mutually exclusive with `--full`) |
 
 Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required; they are
 mutually exclusive. Only `--id` maps to the API directly; `--name` uses the
@@ -164,12 +165,18 @@ Table mode prints, in order:
 Configuration tables have columns `TYPE`, `NAME`, `VALUE`, `DEFAULT`,
 `CUSTOMIZED`. Long `VALUE` / `DEFAULT` cells are wrapped onto multiple lines.
 
+With `--services`, only the `Agent:` summary and a single `Services (N):` table
+are printed, one row per service with columns `SERVICE`, `APP NAME`, `VERSION`,
+`STATUS`, `DESIRED`, `SUBSTATE`, `REPLACE`, `UPDATED`.
+
 `--output json` / `yaml` render the full nested details document.
 
 ### Examples
 
 ```bash
 iics agent details --id <agent-id>
+
+iics agent details --id <agent-id> --services
 
 iics agent details --hostname devinfacld01 --full
 
@@ -179,9 +186,9 @@ iics agent details --name "My Agent" --output json
 ```powershell
 iics agent details --id <agent-id>
 
-iics agent details --hostname devinfacld01 --full
+iics agent details --id <agent-id> --services
 
-iics agent details --name "My Agent" --output json
+iics agent details --hostname devinfacld01 --full
 ```
 
 ---
