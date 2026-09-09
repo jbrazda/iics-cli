@@ -574,6 +574,96 @@ _iics_agent_get()
     noun_aliases=()
 }
 
+_iics_agent_installer-download()
+{
+    last_command="iics_agent_installer-download"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--installer-info=")
+    two_word_flags+=("--installer-info")
+    local_nonpersistent_flags+=("--installer-info")
+    local_nonpersistent_flags+=("--installer-info=")
+    flags+=("--os=")
+    two_word_flags+=("--os")
+    local_nonpersistent_flags+=("--os")
+    local_nonpersistent_flags+=("--os=")
+    flags+=("--target=")
+    two_word_flags+=("--target")
+    local_nonpersistent_flags+=("--target")
+    local_nonpersistent_flags+=("--target=")
+    flags+=("--verify")
+    local_nonpersistent_flags+=("--verify")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_agent_installer-info()
+{
+    last_command="iics_agent_installer-info"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--os=")
+    two_word_flags+=("--os")
+    local_nonpersistent_flags+=("--os")
+    local_nonpersistent_flags+=("--os=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_agent_list()
 {
     last_command="iics_agent_list"
@@ -717,6 +807,8 @@ _iics_agent()
     commands=()
     commands+=("details")
     commands+=("get")
+    commands+=("installer-download")
+    commands+=("installer-info")
     commands+=("list")
     commands+=("start")
     commands+=("stop")

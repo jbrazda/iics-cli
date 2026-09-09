@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 )
@@ -105,6 +106,69 @@ func (c *Client) GetAgentDetails(ctx context.Context, id string) (*AgentDetails,
 		return nil, err
 	}
 	return &resp, nil
+}
+
+// AgentInstallerInfo holds the Secure Agent installer download details returned by
+// GET /api/v2/agent/installerInfo/<platform>.
+type AgentInstallerInfo struct {
+	Type                string `json:"@type,omitempty"`
+	DownloadURL         string `json:"downloadUrl,omitempty"`
+	InstallToken        string `json:"installToken,omitempty"`
+	ChecksumDownloadURL string `json:"checksumDownloadUrl,omitempty"`
+}
+
+// GetAgentInstallerInfo retrieves the Secure Agent installer information for a
+// platform. Valid platform values are "win64" and "linux64".
+func (c *Client) GetAgentInstallerInfo(ctx context.Context, platform string) (*AgentInstallerInfo, error) {
+	var resp AgentInstallerInfo
+	if err := c.doJSON(ctx, http.MethodGet, fmt.Sprintf("%s/agent/installerInfo/%s", BaseAPIPathV2, platform), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// DownloadFile streams an absolute URL to dest and returns the number of bytes written.
+// The installer binary and checksum files are served from a public CDN and require
+// no session header.
+func (c *Client) DownloadFile(ctx context.Context, url string, dest io.Writer) (int64, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return 0, fmt.Errorf("creating request: %w", err)
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, fmt.Errorf("downloading %s: unexpected status %s", url, resp.Status)
+	}
+	n, err := io.Copy(dest, resp.Body)
+	if err != nil {
+		return n, fmt.Errorf("downloading %s: %w", url, err)
+	}
+	return n, nil
+}
+
+// FetchText fetches an absolute URL and returns the response body as a string.
+func (c *Client) FetchText(ctx context.Context, url string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("creating request: %w", err)
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading %s: %w", url, err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("fetching %s: unexpected status %s", url, resp.Status)
+	}
+	return string(body), nil
 }
 
 // StartAgentService starts a service on a secure agent.
