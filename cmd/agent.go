@@ -3,8 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -432,6 +434,9 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 		id, name, hostname string
 		service            string
 		interactive        bool
+		blocking           bool
+		pollInterval       int
+		maxWaitTime        int
 	)
 	cmd := &cobra.Command{
 		Use:   use,
@@ -498,10 +503,24 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 				}
 			}
 
+			// Decide whether to wait for the service to reach its target state.
+			doBlock := blocking
+			if interactive && !cmd.Flags().Changed("blocking") {
+				doBlock, err = promptYesNo(fmt.Sprintf("Wait for service %q to %s", svc, use), true)
+				if err != nil {
+					return err
+				}
+			}
+
 			if err := c.SetAgentServiceState(ctx, agent.FederatedID, svc, action); err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %q %s on agent %s\n", svc, past, agentID)
+			w := cmd.OutOrStdout()
+			_, _ = fmt.Fprintf(w, "Service %q %s on agent %s\n", svc, past, agentID)
+
+			if doBlock {
+				return waitForAgentService(ctx, c, agentID, svc, use, past, pollInterval, maxWaitTime, w)
+			}
 			return nil
 		},
 	}
@@ -510,8 +529,102 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 	cmd.Flags().StringVar(&hostname, "hostname", "", "agent host name")
 	cmd.Flags().StringVar(&service, "service", "", "service name (required unless --interactive)")
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "select the agent and service interactively")
+	cmd.Flags().BoolVar(&blocking, "blocking", false, fmt.Sprintf("poll the service status until it has %s", past))
+	cmd.Flags().IntVar(&pollInterval, "poll-interval", 10, "seconds between status polls (with --blocking)")
+	cmd.Flags().IntVar(&maxWaitTime, "max-wait-time", 300, "maximum seconds to wait (with --blocking)")
 	cmd.MarkFlagsMutuallyExclusive("id", "name", "hostname")
 	return cmd
+}
+
+// serviceStates returns the statuses of every engine on the agent matching the
+// given service display name.
+func serviceStates(d *client.AgentDetails, svc string) []client.AgentEngineStatus {
+	var out []client.AgentEngineStatus
+	for _, e := range d.AgentEngines {
+		if e.AgentEngineStatus.AppDisplayName == svc {
+			out = append(out, e.AgentEngineStatus)
+		}
+	}
+	return out
+}
+
+// serviceReached reports whether the service has reached the target state for
+// verb ("start"/"stop"). It returns an error if any matching engine is in ERROR.
+func serviceReached(verb string, states []client.AgentEngineStatus) (bool, error) {
+	for _, s := range states {
+		if strings.EqualFold(s.Status, "ERROR") {
+			return false, fmt.Errorf("service is in ERROR state")
+		}
+	}
+	pending := func(status string) bool {
+		switch strings.ToUpper(status) {
+		case "NEED_RUNNING", "NEED_STOP", "DEPLOYING", "STARTING", "STOPPING":
+			return true
+		}
+		return false
+	}
+	if verb == "start" {
+		running := false
+		for _, s := range states {
+			if strings.EqualFold(s.Status, "RUNNING") {
+				running = true
+			}
+			if pending(s.Status) {
+				return false, nil
+			}
+		}
+		return running, nil
+	}
+	// stop
+	for _, s := range states {
+		if strings.EqualFold(s.Status, "RUNNING") || pending(s.Status) {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// waitForAgentService polls the agent details until the service reaches the
+// target state for verb, printing each poll, or until maxWaitSec elapses.
+func waitForAgentService(ctx context.Context, c *client.Client, agentID, svc, verb, past string, pollSec, maxWaitSec int, w io.Writer) error {
+	if pollSec < 1 {
+		pollSec = 1
+	}
+	poll := time.Duration(pollSec) * time.Second
+	deadline := time.Now().Add(time.Duration(maxWaitSec) * time.Second)
+	for {
+		// Wait before each poll (including the first) so the control plane has
+		// time to reflect the action just initiated.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(poll):
+		}
+
+		details, err := c.GetAgentDetails(ctx, agentID, false)
+		if err != nil {
+			return err
+		}
+		states := serviceStates(details, svc)
+		if len(states) == 0 {
+			_, _ = fmt.Fprintf(w, "%s%s: (not reported)\n", ts(), svc)
+		}
+		for _, s := range states {
+			_, _ = fmt.Fprintf(w, "%s%s: %s (desired %s)\n", ts(), svc, s.Status, s.DesiredStatus)
+		}
+
+		done, rerr := serviceReached(verb, states)
+		if rerr != nil {
+			return fmt.Errorf("%s: %w", svc, rerr)
+		}
+		if done {
+			_, _ = fmt.Fprintf(w, "%sService %q %s.\n", ts(), svc, past)
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %ds waiting for service %q to %s", maxWaitSec, svc, verb)
+		}
+	}
 }
 
 // pickAgent lists the secure agents and lets the operator choose one.

@@ -17,17 +17,28 @@ Add `--interactive` / `-i` to both commands:
    `--hostname` was given).
 2. Fetch that agent's service engines (`agent/details`) and prompt for one.
 3. Ask for confirmation (`<Verb> service "<name>" on agent <label>`), default yes.
-4. Call `POST public/core/v3/agent/service`.
+4. Ask `Wait for service "<name>" to start/stop` (unless `--blocking` was passed).
+5. Call `POST public/core/v3/agent/service`.
 
 Cancelling at any prompt exits cleanly with `Canceled.`. `--service` is still
 required when `--interactive` is not used.
 
+### `--blocking` mode (start / stop, interactive or not)
+
+`--blocking` polls `agent/details` until the service reaches its target state
+(`RUNNING` for start; stopped/absent for stop), printing a timestamped status
+line per poll. `--poll-interval` (default 10s) and `--max-wait-time` (default
+300s). Timeout or an `ERROR` state exits non-zero. The first poll happens after
+one interval so the control plane has time to reflect the action.
+
 ## Implementation
 
-- `cmd/agent.go` - `--interactive` flag on `newAgentServiceCmd`; helpers
-  `pickAgent` (reuses `ListAgents`) and `pickAgentService` (reuses
-  `GetAgentDetails`), plus `promptSelect` / `promptYesNo` and the
-  `config.IsTerminal()` gate. `resolveAgent` now returns the full `*Agent`.
+- `cmd/agent.go` - `--interactive` / `--blocking` / `--poll-interval` /
+  `--max-wait-time` flags on `newAgentServiceCmd`; helpers `pickAgent` (reuses
+  `ListAgents`), `pickAgentService` (reuses `GetAgentDetails`),
+  `serviceStates` / `serviceReached` / `waitForAgentService`, plus
+  `promptSelect` / `promptYesNo` / `ts()` and the `config.IsTerminal()` gate.
+  `resolveAgent` now returns the full `*Agent`.
 - `internal/client/agents.go` - `SetAgentServiceState` documented as taking the
   agent's **federatedId** (see below).
 - Docs: `docs/documentation/agent.md`; `make completions`.

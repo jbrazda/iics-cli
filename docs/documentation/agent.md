@@ -227,17 +227,26 @@ Start or stop a service on a Secure Agent. Uses
 
 ### Flags
 
-| Flag                  | Type   | Description |
-| --------------------- | ------ | ----------- |
-| `--id`                | string | Agent ID    |
-| `--name`              | string | Agent name  |
-| `--hostname`          | string | Agent host name |
-| `--service`           | string | Service display name, e.g. `"Data Integration Server"` (required unless `--interactive`) |
-| `--interactive`, `-i` | bool   | Select the agent and service interactively |
+| Flag                  | Type   | Default | Description |
+| --------------------- | ------ | ------- | ----------- |
+| `--id`                | string |         | Agent ID    |
+| `--name`              | string |         | Agent name  |
+| `--hostname`          | string |         | Agent host name |
+| `--service`           | string |         | Service display name, e.g. `"Data Integration Server"` (required unless `--interactive`) |
+| `--interactive`, `-i` | bool   | false   | Select the agent and service interactively |
+| `--blocking`          | bool   | false   | Poll the service status until it has started/stopped, printing each poll |
+| `--poll-interval`     | int    | 10      | Seconds between status polls (with `--blocking`) |
+| `--max-wait-time`     | int    | 300     | Maximum seconds to wait (with `--blocking`) |
 
 Exactly one of `--id` / `--name` / `--hostname` is required, unless
 `--interactive` is used. `--interactive` lists the Secure Agents to choose from,
-then the selected agent's services, and asks for confirmation before acting.
+then the selected agent's services, asks for confirmation, and (unless
+`--blocking` was passed explicitly) asks `Wait for service "<name>" to
+start/stop`.
+
+With `--blocking` the command returns only once the service reaches `RUNNING`
+(start) or is stopped (stop), or `--max-wait-time` elapses (non-zero exit). A
+service in `ERROR` also fails the wait.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -246,6 +255,8 @@ All [global flags](../../README.md#global-flags) apply.
 ```bash
 iics agent stop  --id <agent-id> --service "Data Integration Server"
 iics agent start --hostname devinfacld01 --service "Data Integration Server"
+
+iics agent start --id <agent-id> --service "Process Server" --blocking --poll-interval 5
 
 iics agent stop -i
 ```
