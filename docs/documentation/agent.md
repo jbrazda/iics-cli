@@ -49,14 +49,16 @@ present (for example `active==true`).
 
 ### Output columns
 
-Default columns: `name`, `agentHost`, `active`, `readyToRun`, `platform`,
-`agentVersion`, `upgradeStatus`, `agentGroupId`.
+Default columns: `id`, `name`, `agentHost`, `active`, `readyToRun`, `platform`,
+`agentVersion`, `agentGroupId`.
 
 `--fields` accepts any of: `id`, `orgId`, `name`, `description`, `agentHost`,
 `active`, `readyToRun`, `platform`, `agentVersion`, `upgradeStatus`,
-`agentGroupId`, `proxyHost`, `createdBy`, `updatedBy`, `createTime`,
-`updateTime`, `lastStatusChange`, `lastUpgraded`, `lastUpgradeCheck`,
-`configUpdateTime`. Unknown names are ignored.
+`agentGroupId`, `federatedId`, `serverUrl`, `spiUrl`, `proxyHost`, `createdBy`,
+`updatedBy`, `createTime`, `updateTime`, `createTimeUTC`, `updateTimeUTC`,
+`lastStatusChange`, `lastUpgraded`, `lastUpgradeCheck`, `configUpdateTime`.
+Unknown names are ignored. `--output json` / `yaml` always emit the full agent
+record regardless of `--fields`.
 
 ### Examples
 
@@ -143,9 +145,9 @@ service (engine) with its status and, optionally, its configuration properties.
 | `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`) |
 
 Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required; they are
-mutually exclusive. Only `--id` maps to the API directly; the other selectors
-are resolved to an ID via the agent list (`--fid` via runtime environments,
-since the agent list objects do not carry a federated ID).
+mutually exclusive. Only `--id` maps to the API directly; `--name` uses the
+by-name endpoint, and `--fid` / `--hostname` are resolved to an ID by scanning
+the agent list (with a runtime-environment fallback for `--fid`).
 
 All [global flags](../../README.md#global-flags) apply.
 

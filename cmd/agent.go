@@ -42,6 +42,9 @@ var agentColumnMap = map[string]output.Column{
 	"agentVersion":     {Header: "VERSION", Field: "agentVersion", Width: 9},
 	"upgradeStatus":    {Header: "UPGRADE", Field: "upgradeStatus", Width: 13},
 	"agentGroupId":     {Header: "GROUP ID", Field: "agentGroupId", Width: 24},
+	"federatedId":      {Header: "FEDERATED ID", Field: "federatedId", Width: 24},
+	"serverUrl":        {Header: "SERVER URL", Field: "serverUrl", Width: 30},
+	"spiUrl":           {Header: "SPI URL", Field: "spiUrl", Width: 30},
 	"proxyHost":        {Header: "PROXY HOST", Field: "proxyHost", Width: 18},
 	"createdBy":        {Header: "CREATED BY", Field: "createdBy", Width: 18},
 	"updatedBy":        {Header: "UPDATED BY", Field: "updatedBy", Width: 18},
@@ -51,9 +54,11 @@ var agentColumnMap = map[string]output.Column{
 	"lastUpgraded":     {Header: "LAST UPGRADED", Field: "lastUpgraded", Width: 22},
 	"lastUpgradeCheck": {Header: "LAST UPGRADE CHECK", Field: "lastUpgradeCheck", Width: 22},
 	"configUpdateTime": {Header: "CONFIG UPDATED", Field: "configUpdateTime", Width: 22},
+	"createTimeUTC":    {Header: "CREATED (UTC)", Field: "createTimeUTC", Width: 22},
+	"updateTimeUTC":    {Header: "UPDATED (UTC)", Field: "updateTimeUTC", Width: 22},
 }
 
-const agentListDefaultFields = "name,agentHost,active,readyToRun,platform,agentVersion,upgradeStatus,agentGroupId"
+const agentListDefaultFields = "id,name,agentHost,active,readyToRun,platform,agentVersion,agentGroupId"
 
 // agentColumnsFromFields resolves a comma-separated field list into columns,
 // silently skipping unknown names. An empty string yields the default set.
@@ -153,6 +158,7 @@ func agentToKVRows(a *client.Agent) []output.KVRow {
 		rows = append(rows, output.KV("description", a.Description))
 	}
 	rows = append(rows,
+		output.KV("federatedId", a.FederatedID),
 		output.KV("active", agentBoolStr(a.Active)),
 		output.KV("readyToRun", agentBoolStr(a.ReadyToRun)),
 		output.KV("platform", a.Platform),
@@ -165,6 +171,12 @@ func agentToKVRows(a *client.Agent) []output.KVRow {
 		output.KV("configUpdateTime", a.ConfigUpdateTime),
 		output.KV("agentGroupId", a.GroupID),
 	)
+	if a.SpiURL != "" {
+		rows = append(rows, output.KV("spiUrl", a.SpiURL))
+	}
+	if a.ServerURL != "" {
+		rows = append(rows, output.KV("serverUrl", a.ServerURL))
+	}
 	if a.ProxyHost != "" {
 		rows = append(rows,
 			output.KV("proxyHost", a.ProxyHost),

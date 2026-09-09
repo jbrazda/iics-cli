@@ -12,18 +12,24 @@ import (
 
 // Agent represents an IICS Secure Agent as returned by the v2 API.
 type Agent struct {
+	Type             string `json:"@type,omitempty"`
 	ID               string `json:"id,omitempty"`
 	OrgID            string `json:"orgId,omitempty"`
 	Name             string `json:"name"`
 	Description      string `json:"description,omitempty"`
 	CreateTime       string `json:"createTime,omitempty"`
 	UpdateTime       string `json:"updateTime,omitempty"`
+	CreateTimeUTC    string `json:"createTimeUTC,omitempty"`
+	UpdateTimeUTC    string `json:"updateTimeUTC,omitempty"`
 	CreatedBy        string `json:"createdBy,omitempty"`
 	UpdatedBy        string `json:"updatedBy,omitempty"`
 	Active           bool   `json:"active,omitempty"`
 	ReadyToRun       bool   `json:"readyToRun,omitempty"`
 	Platform         string `json:"platform,omitempty"`
 	AgentHost        string `json:"agentHost,omitempty"`
+	ServerURL        string `json:"serverUrl,omitempty"`
+	SpiURL           string `json:"spiUrl,omitempty"`
+	FederatedID      string `json:"federatedId,omitempty"`
 	ProxyHost        string `json:"proxyHost,omitempty"`
 	ProxyPort        int    `json:"proxyPort,omitempty"`
 	ProxyUser        string `json:"proxyUser,omitempty"`
@@ -72,9 +78,7 @@ type AgentEngine struct {
 // as returned by GET /api/v2/agent/details/<agentID>.
 type AgentDetails struct {
 	Agent
-	Type          string                   `json:"@type,omitempty"`
 	PlatformAgent bool                     `json:"platformAgent,omitempty"`
-	ServerURL     string                   `json:"serverUrl,omitempty"`
 	Packages      []map[string]interface{} `json:"packages,omitempty"`
 	AgentConfigs  []AgentEngineConfig      `json:"agentConfigs,omitempty"`
 	AgentEngines  []AgentEngine            `json:"agentEngines,omitempty"`
@@ -158,9 +162,9 @@ func (c *Client) DeleteAgent(ctx context.Context, id string) error {
 }
 
 // FindAgent resolves an agent from a selector. Name lookups use the dedicated
-// by-name endpoint; hostname lookups scan the agent list; federatedId lookups
-// scan runtime environments (the agent list objects do not carry federatedId)
-// and then fetch the agent by the resolved ID.
+// by-name endpoint; hostname and federatedId lookups scan the agent list (which
+// carries both fields). As a fallback, a federatedId that is not in the list is
+// looked up via runtime environment membership.
 func (c *Client) FindAgent(ctx context.Context, sel AgentSelector) (*Agent, error) {
 	switch {
 	case sel.ID != "":
@@ -179,6 +183,16 @@ func (c *Client) FindAgent(ctx context.Context, sel AgentSelector) (*Agent, erro
 		}
 		return nil, fmt.Errorf("no agent found with hostname %q", sel.Hostname)
 	case sel.FederatedID != "":
+		agents, err := c.ListAgents(ctx, AgentListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for i := range agents {
+			if agents[i].FederatedID == sel.FederatedID {
+				return &agents[i], nil
+			}
+		}
+		// Fallback: resolve via runtime environment membership.
 		envs, err := c.ListRuntimeEnvironments(ctx, RuntimeListOptions{})
 		if err != nil {
 			return nil, err

@@ -20,7 +20,7 @@ func TestListAgentsQueryParams(t *testing.T) {
 		if q.Get("basicInfo") != "true" || q.Get("includeUnassignedOnly") != "true" {
 			t.Errorf("unexpected query: %s", r.URL.RawQuery)
 		}
-		_ = json.NewEncoder(w).Encode([]Agent{{ID: "a1", Name: "A1"}})
+		_, _ = w.Write([]byte(`[{"@type":"agent","id":"a1","name":"A1","spiUrl":"https://spi","federatedId":"fed-1","serverUrl":"","createTimeUTC":"2020-01-01T00:00:00Z"}]`))
 	})
 	c := newTestClient(handler)
 	agents, err := c.ListAgents(context.Background(), AgentListOptions{BasicInfo: true, IncludeUnassignedOnly: true})
@@ -29,6 +29,9 @@ func TestListAgentsQueryParams(t *testing.T) {
 	}
 	if len(agents) != 1 || agents[0].ID != "a1" {
 		t.Fatalf("unexpected agents: %+v", agents)
+	}
+	if agents[0].SpiURL != "https://spi" || agents[0].FederatedID != "fed-1" || agents[0].CreateTimeUTC == "" || agents[0].Type != "agent" {
+		t.Errorf("extended fields not parsed: %+v", agents[0])
 	}
 }
 
@@ -151,7 +154,29 @@ func TestFindAgentByHostname(t *testing.T) {
 
 func TestFindAgentByFederatedID(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v2/agent" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode([]Agent{
+			{ID: "a4", Name: "A4", FederatedID: "fed-4"},
+			{ID: "a5", Name: "A5", FederatedID: "fed-5"},
+		})
+	})
+	c := newTestClient(handler)
+	a, err := c.FindAgent(context.Background(), AgentSelector{FederatedID: "fed-5"})
+	if err != nil {
+		t.Fatalf("FindAgent() error: %v", err)
+	}
+	if a.ID != "a5" {
+		t.Errorf("expected a5, got %s", a.ID)
+	}
+}
+
+func TestFindAgentByFederatedIDViaRuntimeFallback(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case "/api/v2/agent":
+			_ = json.NewEncoder(w).Encode([]Agent{{ID: "a1", Name: "A1", FederatedID: "fed-1"}})
 		case "/api/v2/runtimeEnvironment":
 			_ = json.NewEncoder(w).Encode([]RuntimeEnvironment{
 				{ID: "e1", Name: "Env", Agents: []RuntimeEnvironmentAgent{{ID: "a5", FederatedID: "fed-5"}}},
