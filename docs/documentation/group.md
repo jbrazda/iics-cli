@@ -77,12 +77,20 @@ prompted to pick one from a list.
 | `--id`   | string | User group ID       |
 | `--name` | string | User group name     |
 
+### Output
+
+Table mode prints three sections: a vertical `PROPERTY` / `VALUE` detail table
+for the group, a `Roles (N):` table (name, id, description), and a
+`Members (N):` table (username, id). `--output json` / `yaml` render the full
+group record.
+
 ### Examples
 
 ```bash
 iics group get --id <group-id>
 iics group get --name "Data Engineering"
 iics group get            # interactive picker
+iics group get --name "Data Engineering" --output json
 ```
 
 ---

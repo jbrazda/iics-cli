@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
@@ -113,22 +114,71 @@ func newUsergroupGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			f, err := getFormatter()
-			if err != nil {
-				return err
+			if outputFmt != "" && outputFmt != "table" {
+				f, ferr := getFormatter()
+				if ferr != nil {
+					return ferr
+				}
+				return f.Format(group, nil)
 			}
-			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "userGroupName", Width: 30},
-				{Header: "DESCRIPTION", Field: "description"},
-			}
-			return f.Format(group, columns)
+			return printUserGroupSections(cmd.OutOrStdout(), group)
 		},
 	}
 	cmd.Flags().StringVar(&id, "id", "", "user group ID")
 	cmd.Flags().StringVar(&name, "name", "", "user group name")
 	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
+}
+
+// printUserGroupSections renders a group as a vertical detail table followed by
+// its roles and members.
+func printUserGroupSections(w io.Writer, g *client.UserGroup) error {
+	cfg, _ := loadConfig()
+	tf := output.New(output.FormatTable, w, resolveTableStyle(cfg))
+
+	_, _ = fmt.Fprintf(w, "User Group: %s\n\n", g.UserGroupName)
+	rows := []output.KVRow{
+		output.KV("id", g.ID),
+		output.KV("orgId", g.OrgID),
+		output.KV("description", g.Description),
+		output.KV("createdBy", g.CreatedBy),
+		output.KV("createTime", g.CreateTime),
+		output.KV("updatedBy", g.UpdatedBy),
+		output.KV("updateTime", g.UpdateTime),
+		output.KV("countMembers", strconv.Itoa(len(g.Users))),
+		output.KV("countRoles", strconv.Itoa(len(g.Roles))),
+	}
+	if err := tf.Format(rows, output.KVCols); err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintf(w, "\nRoles (%d):\n", len(g.Roles))
+	if len(g.Roles) > 0 {
+		roleCols := []output.Column{
+			{Header: "NAME", Field: "roleName", Width: 30},
+			{Header: "ID", Field: "id", Width: 24},
+			{Header: "DESCRIPTION", Field: "description"},
+		}
+		if err := tf.Format(g.Roles, roleCols); err != nil {
+			return err
+		}
+	} else {
+		_, _ = fmt.Fprintln(w, "  (none)")
+	}
+
+	_, _ = fmt.Fprintf(w, "\nMembers (%d):\n", len(g.Users))
+	if len(g.Users) > 0 {
+		memberCols := []output.Column{
+			{Header: "USERNAME", Field: "userName", Width: 40},
+			{Header: "ID", Field: "id", Width: 24},
+		}
+		if err := tf.Format(g.Users, memberCols); err != nil {
+			return err
+		}
+	} else {
+		_, _ = fmt.Fprintln(w, "  (none)")
+	}
+	return nil
 }
 
 // groupOpResult is one row of a bulk create/update summary.
