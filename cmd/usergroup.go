@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -38,8 +41,8 @@ func columnsFromFields(fields string) []output.Column {
 
 func newUsergroupCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "usergroup",
-		Aliases: []string{"ug"},
+		Use:     "group",
+		Aliases: []string{"usergroup", "ug"},
 		Short:   "Manage user groups",
 	}
 
@@ -95,19 +98,18 @@ func newUsergroupListCmd() *cobra.Command {
 }
 
 func newUsergroupGetCmd() *cobra.Command {
-	var id string
+	var id, name string
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get user group details",
+		Example: `  iics group get --id <group-id>
+  iics group get --name "Data Engineering"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
-			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			group, err := c.GetUserGroup(context.Background(), id)
+			group, err := resolveUserGroup(context.Background(), c, id, name, "view")
 			if err != nil {
 				return err
 			}
@@ -123,73 +125,211 @@ func newUsergroupGetCmd() *cobra.Command {
 			return f.Format(group, columns)
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "user group ID (required)")
+	cmd.Flags().StringVar(&id, "id", "", "user group ID")
+	cmd.Flags().StringVar(&name, "name", "", "user group name")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
 }
 
+// groupOpResult is one row of a bulk create/update summary.
+type groupOpResult struct {
+	Name   string `json:"name"`
+	ID     string `json:"id"`
+	Status string `json:"status"`
+	Detail string `json:"detail,omitempty"`
+}
+
+var groupOpResultCols = []output.Column{
+	{Header: "NAME", Field: "name", Width: 30},
+	{Header: "ID", Field: "id", Width: 24},
+	{Header: "STATUS", Field: "status", Width: 10},
+	{Header: "DETAIL", Field: "detail"},
+}
+
+// groupInput is the parsed result of readGroupInput.
+type groupInput struct {
+	groups  []client.UserGroup
+	present bool // an input source (file or piped stdin) was found
+	isArray bool // the JSON was an array (bulk)
+}
+
+// readGroupInput returns the group payload(s) from --from-file or piped stdin.
+func readGroupInput(fromFile string) (groupInput, error) {
+	var data []byte
+	switch {
+	case fromFile != "":
+		b, err := os.ReadFile(fromFile)
+		if err != nil {
+			return groupInput{}, fmt.Errorf("reading file: %w", err)
+		}
+		data = b
+	case hasPipedStdin():
+		b, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return groupInput{}, fmt.Errorf("reading stdin: %w", err)
+		}
+		data = b
+	default:
+		return groupInput{}, nil
+	}
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 {
+		return groupInput{}, nil
+	}
+	if trimmed[0] == '[' {
+		var groups []client.UserGroup
+		if err := json.Unmarshal(data, &groups); err != nil {
+			return groupInput{}, fmt.Errorf("parsing JSON array: %w", err)
+		}
+		return groupInput{groups: groups, present: true, isArray: true}, nil
+	}
+	var g client.UserGroup
+	if err := json.Unmarshal(data, &g); err != nil {
+		return groupInput{}, fmt.Errorf("parsing JSON: %w", err)
+	}
+	return groupInput{groups: []client.UserGroup{g}, present: true}, nil
+}
+
+// printGroupOpResults renders the bulk summary and returns an error when any row failed.
+func printGroupOpResults(w io.Writer, results []groupOpResult) error {
+	cfg, _ := loadConfig()
+	tf := output.New(output.FormatTable, w, resolveTableStyle(cfg))
+	_ = tf.Format(results, groupOpResultCols)
+	failed := 0
+	for _, r := range results {
+		if r.Status == "error" {
+			failed++
+		}
+	}
+	if failed > 0 {
+		return fmt.Errorf("%d of %d group(s) failed", failed, len(results))
+	}
+	return nil
+}
+
 func newUsergroupCreateCmd() *cobra.Command {
-	var fromFile string
+	var (
+		fromFile    string
+		interactive bool
+	)
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create a user group",
+		Short: "Create one or more user groups",
+		Long: `Create user groups.
+
+Provide a JSON definition via --from-file or piped stdin (a single object or an
+array for bulk creation), or run interactively (--interactive/-i, or omit all
+input on a terminal) to be prompted for the name, description, and roles.`,
+		Example: `  iics group create --from-file group.json
+  cat groups.json | iics group create
+  iics group create -i`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if fromFile == "" {
-				return fmt.Errorf("--from-file is required")
-			}
-			data, err := os.ReadFile(fromFile)
+			ctx := context.Background()
+			in, err := readGroupInput(fromFile)
 			if err != nil {
-				return fmt.Errorf("reading file: %w", err)
+				return err
 			}
-			var group client.UserGroup
-			err = json.Unmarshal(data, &group)
-			if err != nil {
-				return fmt.Errorf("parsing JSON: %w", err)
-			}
+
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			created, err := c.CreateUserGroup(context.Background(), &group)
-			if err != nil {
-				return err
+
+			if !in.present {
+				if !interactive && !config.IsTerminal() {
+					return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")
+				}
+				var g client.UserGroup
+				if werr := runGroupWizard(ctx, c, &g, true); werr != nil {
+					return werr
+				}
+				in.groups = []client.UserGroup{g}
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group created: %s (ID: %s)\n", created.UserGroupName, created.ID)
-			return nil
+
+			if !in.isArray {
+				created, err := c.CreateUserGroup(ctx, &in.groups[0])
+				if err != nil {
+					return err
+				}
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group created: %s (ID: %s)\n", created.UserGroupName, created.ID)
+				return nil
+			}
+
+			results := make([]groupOpResult, 0, len(in.groups))
+			for i := range in.groups {
+				g := in.groups[i]
+				created, cerr := c.CreateUserGroup(ctx, &g)
+				res := groupOpResult{Name: g.ResolvedName(), Status: "created"}
+				if cerr != nil {
+					res.Status = "error"
+					res.Detail = cerr.Error()
+				} else {
+					res.ID = created.ID
+				}
+				results = append(results, res)
+			}
+			return printGroupOpResults(cmd.OutOrStdout(), results)
 		},
 	}
-	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with group definition (required)")
+	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file (object or array) with group definition(s); omit to read piped stdin")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "create interactively")
 	return cmd
 }
 
 func newUsergroupUpdateCmd() *cobra.Command {
 	var (
-		id       string
-		fromFile string
+		id          string
+		name        string
+		fromFile    string
+		interactive bool
 	)
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "Update a user group",
+		Short: "Update one or more user groups",
+		Long: `Update user groups.
+
+Single update: identify the group with --id or --name (or pick from a list when
+neither is given on a terminal), then supply changes via --from-file / stdin or
+--interactive.
+
+Bulk update: pipe or pass a JSON array; each element is matched to an existing
+group by its "id", or by "userGroupName" when no id is present.`,
+		Example: `  iics group update --id <group-id> --from-file changes.json
+  iics group update --name "Data Engineering" -i
+  cat groups.json | iics group update`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
-			}
-			if fromFile == "" {
-				return fmt.Errorf("--from-file is required")
-			}
-			data, err := os.ReadFile(fromFile)
+			ctx := context.Background()
+			in, err := readGroupInput(fromFile)
 			if err != nil {
-				return fmt.Errorf("reading file: %w", err)
-			}
-			var group client.UserGroup
-			err = json.Unmarshal(data, &group)
-			if err != nil {
-				return fmt.Errorf("parsing JSON: %w", err)
+				return err
 			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			updated, err := c.UpdateUserGroup(context.Background(), id, &group)
+
+			if in.isArray {
+				return runBulkGroupUpdate(ctx, cmd, c, in.groups)
+			}
+
+			// Single update: resolve the target group.
+			target, err := resolveUserGroup(ctx, c, id, name, "edit")
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case in.present:
+				applyGroupPatch(target, &in.groups[0])
+			case interactive || config.IsTerminal():
+				if werr := runGroupWizard(ctx, c, target, false); werr != nil {
+					return werr
+				}
+			default:
+				return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")
+			}
+
+			updated, err := c.UpdateUserGroup(ctx, target.ID, target)
 			if err != nil {
 				return err
 			}
@@ -197,25 +337,93 @@ func newUsergroupUpdateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "user group ID (required)")
-	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with group updates (required)")
+	cmd.Flags().StringVar(&id, "id", "", "user group ID")
+	cmd.Flags().StringVar(&name, "name", "", "user group name")
+	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file (object or array) with updates; omit to read piped stdin")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "edit interactively")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
+}
+
+// applyGroupPatch overlays non-zero fields from patch onto target.
+func applyGroupPatch(target, patch *client.UserGroup) {
+	if n := patch.ResolvedName(); n != "" {
+		target.UserGroupName = n
+	}
+	if patch.Description != "" {
+		target.Description = patch.Description
+	}
+	if patch.Roles != nil {
+		target.Roles = patch.Roles
+	}
+	if patch.Users != nil {
+		target.Users = patch.Users
+	}
+}
+
+func runBulkGroupUpdate(ctx context.Context, cmd *cobra.Command, c *client.Client, groups []client.UserGroup) error {
+	results := make([]groupOpResult, 0, len(groups))
+	for i := range groups {
+		patch := groups[i]
+		res := groupOpResult{Name: patch.ResolvedName(), ID: patch.ID, Status: "updated"}
+
+		var existing *client.UserGroup
+		var lerr error
+		switch {
+		case patch.ID != "":
+			existing, lerr = c.GetUserGroup(ctx, patch.ID)
+		case patch.ResolvedName() != "":
+			existing, lerr = c.GetUserGroupByName(ctx, patch.ResolvedName())
+		default:
+			res.Status = "error"
+			res.Detail = "element has neither id/name nor userGroupName"
+			results = append(results, res)
+			continue
+		}
+		if lerr != nil {
+			res.Status = "error"
+			res.Detail = lerr.Error()
+			results = append(results, res)
+			continue
+		}
+
+		applyGroupPatch(existing, &patch)
+		updated, uerr := c.UpdateUserGroup(ctx, existing.ID, existing)
+		if uerr != nil {
+			res.Status = "error"
+			res.Detail = uerr.Error()
+		} else {
+			res.ID = updated.ID
+			res.Name = updated.UserGroupName
+		}
+		results = append(results, res)
+	}
+	return printGroupOpResults(cmd.OutOrStdout(), results)
 }
 
 func newUsergroupDeleteCmd() *cobra.Command {
 	var (
-		id  string
-		yes bool
+		id   string
+		name string
+		yes  bool
 	)
 	cmd := &cobra.Command{
 		Use:   "delete",
 		Short: "Delete a user group",
+		Example: `  iics group delete --id <group-id>
+  iics group delete --name "Data Engineering" --yes`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" {
-				return fmt.Errorf("--id is required")
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			group, err := resolveUserGroup(ctx, c, id, name, "delete")
+			if err != nil {
+				return err
 			}
 			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user group %s? [y/N]: ", id)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user group %s (%s)? [y/N]: ", group.UserGroupName, group.ID)
 				var confirm string
 				_, _ = fmt.Scanln(&confirm)
 				if confirm != "y" && confirm != "Y" {
@@ -223,18 +431,16 @@ func newUsergroupDeleteCmd() *cobra.Command {
 					return nil
 				}
 			}
-			c, err := getClient(cmd)
-			if err != nil {
+			if err := c.DeleteUserGroup(ctx, group.ID); err != nil {
 				return err
 			}
-			if err := c.DeleteUserGroup(context.Background(), id); err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group deleted: %s\n", id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "User group deleted: %s (%s)\n", group.UserGroupName, group.ID)
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "user group ID (required)")
+	cmd.Flags().StringVar(&id, "id", "", "user group ID")
+	cmd.Flags().StringVar(&name, "name", "", "user group name")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "skip confirmation prompt")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
 }

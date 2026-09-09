@@ -187,4 +187,4 @@ iics role delete --id <role-id> --yes
 
 - [privilege](privilege.md) - list available privileges to assign to roles
 - [user](user.md) - assign roles to users
-- [usergroup](usergroup.md) - assign roles to user groups
+- [group](group.md) - assign roles to user groups

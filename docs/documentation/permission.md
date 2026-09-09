@@ -143,4 +143,4 @@ iics perm delete --object-id <object-id> --yes
 
 - [lookup](lookup.md) - resolve object paths to IDs
 - [user](user.md) - manage users referenced in permissions
-- [usergroup](usergroup.md) - manage groups referenced in permissions
+- [group](group.md) - manage groups referenced in permissions

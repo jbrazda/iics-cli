@@ -2378,6 +2378,289 @@ _iics_folder()
     noun_aliases=()
 }
 
+_iics_group_create()
+{
+    last_command="iics_group_create"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--interactive")
+    flags+=("-i")
+    local_nonpersistent_flags+=("--interactive")
+    local_nonpersistent_flags+=("-i")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_group_delete()
+{
+    last_command="iics_group_delete"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--yes")
+    flags+=("-y")
+    local_nonpersistent_flags+=("--yes")
+    local_nonpersistent_flags+=("-y")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_group_get()
+{
+    last_command="iics_group_get"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_group_list()
+{
+    last_command="iics_group_list"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--fields=")
+    two_word_flags+=("--fields")
+    local_nonpersistent_flags+=("--fields")
+    local_nonpersistent_flags+=("--fields=")
+    flags+=("--limit=")
+    two_word_flags+=("--limit")
+    local_nonpersistent_flags+=("--limit")
+    local_nonpersistent_flags+=("--limit=")
+    flags+=("--query=")
+    two_word_flags+=("--query")
+    two_word_flags+=("-q")
+    local_nonpersistent_flags+=("--query")
+    local_nonpersistent_flags+=("--query=")
+    local_nonpersistent_flags+=("-q")
+    flags+=("--skip=")
+    two_word_flags+=("--skip")
+    local_nonpersistent_flags+=("--skip")
+    local_nonpersistent_flags+=("--skip=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_group_update()
+{
+    last_command="iics_group_update"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--from-file=")
+    two_word_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file")
+    local_nonpersistent_flags+=("--from-file=")
+    flags+=("--id=")
+    two_word_flags+=("--id")
+    local_nonpersistent_flags+=("--id")
+    local_nonpersistent_flags+=("--id=")
+    flags+=("--interactive")
+    flags+=("-i")
+    local_nonpersistent_flags+=("--interactive")
+    local_nonpersistent_flags+=("-i")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_group()
+{
+    last_command="iics_group"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("create")
+    commands+=("delete")
+    commands+=("get")
+    commands+=("list")
+    commands+=("update")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_help()
 {
     last_command="iics_help"
@@ -6210,269 +6493,6 @@ _iics_user()
     noun_aliases=()
 }
 
-_iics_usergroup_create()
-{
-    last_command="iics_usergroup_create"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--from-file=")
-    two_word_flags+=("--from-file")
-    local_nonpersistent_flags+=("--from-file")
-    local_nonpersistent_flags+=("--from-file=")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
-_iics_usergroup_delete()
-{
-    last_command="iics_usergroup_delete"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--id=")
-    two_word_flags+=("--id")
-    local_nonpersistent_flags+=("--id")
-    local_nonpersistent_flags+=("--id=")
-    flags+=("--yes")
-    flags+=("-y")
-    local_nonpersistent_flags+=("--yes")
-    local_nonpersistent_flags+=("-y")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
-_iics_usergroup_get()
-{
-    last_command="iics_usergroup_get"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--id=")
-    two_word_flags+=("--id")
-    local_nonpersistent_flags+=("--id")
-    local_nonpersistent_flags+=("--id=")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
-_iics_usergroup_list()
-{
-    last_command="iics_usergroup_list"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--fields=")
-    two_word_flags+=("--fields")
-    local_nonpersistent_flags+=("--fields")
-    local_nonpersistent_flags+=("--fields=")
-    flags+=("--limit=")
-    two_word_flags+=("--limit")
-    local_nonpersistent_flags+=("--limit")
-    local_nonpersistent_flags+=("--limit=")
-    flags+=("--query=")
-    two_word_flags+=("--query")
-    two_word_flags+=("-q")
-    local_nonpersistent_flags+=("--query")
-    local_nonpersistent_flags+=("--query=")
-    local_nonpersistent_flags+=("-q")
-    flags+=("--skip=")
-    two_word_flags+=("--skip")
-    local_nonpersistent_flags+=("--skip")
-    local_nonpersistent_flags+=("--skip=")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
-_iics_usergroup_update()
-{
-    last_command="iics_usergroup_update"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--from-file=")
-    two_word_flags+=("--from-file")
-    local_nonpersistent_flags+=("--from-file")
-    local_nonpersistent_flags+=("--from-file=")
-    flags+=("--id=")
-    two_word_flags+=("--id")
-    local_nonpersistent_flags+=("--id")
-    local_nonpersistent_flags+=("--id=")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
-_iics_usergroup()
-{
-    last_command="iics_usergroup"
-
-    command_aliases=()
-
-    commands=()
-    commands+=("create")
-    commands+=("delete")
-    commands+=("get")
-    commands+=("list")
-    commands+=("update")
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    flags+=("--debug")
-    flags+=("--http-timeout=")
-    two_word_flags+=("--http-timeout")
-    flags+=("--no-color")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    two_word_flags+=("-o")
-    flags+=("--profile=")
-    two_word_flags+=("--profile")
-    two_word_flags+=("-p")
-    flags+=("--theme=")
-    two_word_flags+=("--theme")
-    flags+=("--verbose")
-    flags+=("-v")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
 _iics_root_command()
 {
     last_command="iics"
@@ -6500,6 +6520,13 @@ _iics_root_command()
     fi
     commands+=("export")
     commands+=("folder")
+    commands+=("group")
+    if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
+        command_aliases+=("ug")
+        aliashash["ug"]="group"
+        command_aliases+=("usergroup")
+        aliashash["usergroup"]="group"
+    fi
     commands+=("help")
     commands+=("import")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
@@ -6534,11 +6561,6 @@ _iics_root_command()
     commands+=("tag")
     commands+=("unpublish")
     commands+=("user")
-    commands+=("usergroup")
-    if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
-        command_aliases+=("ug")
-        aliashash["ug"]="usergroup"
-    fi
 
     flags=()
     two_word_flags=()
