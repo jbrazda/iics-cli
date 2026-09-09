@@ -44,34 +44,24 @@ func resolveInstallerOS(osFlag string) (string, error) {
 	return "", fmt.Errorf("invalid --os %q: must be one of: %s", v, strings.Join(installerOSValues, ", "))
 }
 
-// installerInfoRow is a two-column field/value row for vertical table output.
-type installerInfoRow struct {
-	Field string `json:"field"`
-	Value string `json:"value"`
-}
-
-func installerInfoRows(info *client.AgentInstallerInfo) []installerInfoRow {
-	return []installerInfoRow{
-		{Field: "type", Value: info.Type},
-		{Field: "downloadUrl", Value: info.DownloadURL},
-		{Field: "checksumDownloadUrl", Value: info.ChecksumDownloadURL},
-		{Field: "installToken", Value: info.InstallToken},
+func installerInfoRows(info *client.AgentInstallerInfo) []output.KVRow {
+	return []output.KVRow{
+		output.KV("type", info.Type),
+		output.KV("downloadUrl", info.DownloadURL),
+		output.KV("checksumDownloadUrl", info.ChecksumDownloadURL),
+		output.KV("installToken", info.InstallToken),
 	}
 }
 
-// printInstallerInfo renders installer info: a vertical field/value table for the
-// default table format, otherwise the raw struct via --output semantics.
+// printInstallerInfo renders installer info: a vertical property/value table for
+// the default table format, otherwise the raw struct via --output semantics.
 func printInstallerInfo(info *client.AgentInstallerInfo) error {
 	f, err := getFormatter()
 	if err != nil {
 		return err
 	}
 	if outputFmt == "" || outputFmt == "table" {
-		cols := []output.Column{
-			{Header: "FIELD", Field: "field", Width: 22},
-			{Header: "VALUE", Field: "value"},
-		}
-		return f.Format(installerInfoRows(info), cols)
+		return f.Format(installerInfoRows(info), output.KVCols)
 	}
 	cols := []output.Column{
 		{Header: "type", Field: "@type"},
@@ -200,32 +190,28 @@ func printInstallerDownloadResult(res *installerDownloadResult) error {
 		return err
 	}
 	if outputFmt == "" || outputFmt == "table" {
-		rows := []installerInfoRow{
-			{Field: "file", Value: res.File},
-			{Field: "fileName", Value: res.FileName},
-			{Field: "size", Value: fmt.Sprintf("%d", res.Size)},
-			{Field: "downloadUrl", Value: res.DownloadURL},
+		rows := []output.KVRow{
+			output.KV("file", res.File),
+			output.KV("fileName", res.FileName),
+			output.KV("size", fmt.Sprintf("%d", res.Size)),
+			output.KV("downloadUrl", res.DownloadURL),
 		}
 		if res.ChecksumDownloadURL != "" {
-			rows = append(rows, installerInfoRow{Field: "checksumDownloadUrl", Value: res.ChecksumDownloadURL})
+			rows = append(rows, output.KV("checksumDownloadUrl", res.ChecksumDownloadURL))
 		}
 		if res.Verified != nil {
 			rows = append(rows,
-				installerInfoRow{Field: "checksumAlgorithm", Value: res.ChecksumAlgorithm},
-				installerInfoRow{Field: "expectedChecksum", Value: res.ExpectedChecksum},
-				installerInfoRow{Field: "actualChecksum", Value: res.ActualChecksum},
+				output.KV("checksumAlgorithm", res.ChecksumAlgorithm),
+				output.KV("expectedChecksum", res.ExpectedChecksum),
+				output.KV("actualChecksum", res.ActualChecksum),
 			)
 			verified := "false"
 			if *res.Verified {
 				verified = "true"
 			}
-			rows = append(rows, installerInfoRow{Field: "verified", Value: verified})
+			rows = append(rows, output.KV("verified", verified))
 		}
-		cols := []output.Column{
-			{Header: "FIELD", Field: "field", Width: 20},
-			{Header: "VALUE", Field: "value"},
-		}
-		return f.Format(rows, cols)
+		return f.Format(rows, output.KVCols)
 	}
 	cols := []output.Column{
 		{Header: "file", Field: "file"},

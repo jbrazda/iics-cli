@@ -43,7 +43,9 @@ All [global flags](../../README.md#global-flags) apply.
 `--filter` matches on the raw API field names (the same names accepted by
 `--fields`). Only `==` and `!=` are supported. String comparison is
 case-insensitive. Booleans and numbers are compared by value. Dot notation
-selects nested fields.
+selects nested fields. A boolean field with a `false` value is omitted from the
+API response, so `field==false` will not match; filter on the value that is
+present (for example `active==true`).
 
 ### Output columns
 
@@ -266,7 +268,7 @@ All [global flags](../../README.md#global-flags) apply.
 
 ### Output
 
-By default the fields are printed as a vertical `FIELD`/`VALUE` table. With
+By default the fields are printed as a vertical `PROPERTY`/`VALUE` table. With
 `--output json`, `--output yaml`, or `--output csv` the raw response is rendered.
 
 | Field                 | Description                                      |
@@ -325,7 +327,7 @@ All [global flags](../../README.md#global-flags) apply.
 
 ### Output
 
-By default a vertical `FIELD`/`VALUE` table describes the downloaded file. With
+By default a vertical `PROPERTY`/`VALUE` table describes the downloaded file. With
 `--verify` the expected and actual checksums and the `verified` result are included.
 Use `--verbose` to print download and verification progress. `--output json`,
 `yaml`, and `csv` render the structured result.

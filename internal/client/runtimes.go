@@ -65,6 +65,7 @@ type RuntimeEnvironment struct {
 	FederatedID      string                    `json:"federatedId,omitempty"`
 	CreateTimeUTC    string                    `json:"createTimeUTC,omitempty"`
 	UpdateTimeUTC    string                    `json:"updateTimeUTC,omitempty"`
+	OrgUUID          string                    `json:"orgUUID,omitempty"`
 	ServerlessConfig *ServerlessConfig         `json:"serverlessConfig,omitempty"`
 }
 

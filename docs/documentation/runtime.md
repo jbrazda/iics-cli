@@ -27,21 +27,28 @@ iics rt <subcommand> [flags]
 
 ### Flags
 
-| Flag      | Type | Default | Description     |
-| --------- | ---- | ------- | --------------- |
-| `--limit` | int  | 200     | Max results     |
-| `--skip`  | int  | 0       | Results to skip |
+| Flag       | Type         | Default | Description                                              |
+| ---------- | ------------ | ------- | ------------------------------------------------------- |
+| `--limit`  | int          | 200     | Max results                                             |
+| `--skip`   | int          | 0       | Results to skip                                         |
+| `--filter` | string array |         | Client-side filter, e.g. `isShared==true`. Repeatable; AND-ed |
+
+`--filter` supports `==` and `!=` on the raw API field names. Note that boolean
+fields absent from the response (a `false` value) do not match; filter on the
+value that is present.
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column   | Description                     |
-| -------- | ------------------------------- |
-| `id`     | Runtime environment ID          |
-| `name`   | Runtime environment name        |
-| `type`   | Type (CLOUD, HYBRID, LOCAL)     |
-| `status` | Current status                  |
+| Column        | Description                          |
+| ------------- | ----------------------------------- |
+| `id`          | Runtime environment ID              |
+| `name`        | Runtime environment name            |
+| `federatedId` | Federated ID                        |
+| `isShared`    | Whether the environment is shared   |
+| `agents`      | Number of Secure Agents in the group |
+| `updateTime`  | Last modification timestamp         |
 
 ### Examples
 
@@ -50,8 +57,7 @@ iics runtime list
 
 iics rt list --output json
 
-# List only HYBRID environments
-iics runtime list --output json | jq '.[] | select(.type == "HYBRID")'
+iics runtime list --filter isShared==true
 ```
 
 ```powershell
@@ -59,9 +65,7 @@ iics runtime list
 
 iics rt list --output json
 
-# List only HYBRID environments
-$runtimes = iics runtime list --output json | ConvertFrom-Json
-$runtimes | Where-Object { $_.type -eq "HYBRID" }
+iics runtime list --filter isShared==true
 ```
 
 ---
@@ -70,32 +74,43 @@ $runtimes | Where-Object { $_.type -eq "HYBRID" }
 
 ### Flags
 
-| Flag   | Type   | Required | Description             |
-| ------ | ------ | -------- | ----------------------- |
-| `--id` | string | yes      | Runtime environment ID  |
+| Flag     | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| `--id`   | string | Runtime environment ID  |
+| `--name` | string | Runtime environment name |
+
+Exactly one of `--id` / `--name` is required; they are mutually exclusive.
 
 All [global flags](../../README.md#global-flags) apply.
 
-### Output columns
+### Output
 
-| Column        | Description                  |
-| ------------- | ---------------------------- |
-| `id`          | Runtime environment ID       |
-| `name`        | Name                         |
-| `type`        | Type                         |
-| `status`      | Current status               |
-| `description` | Description                  |
+Table mode prints:
+
+1. `Runtime Environment: <name>` followed by a vertical `PROPERTY` / `VALUE`
+   listing (`id`, `orgId`, `orgUUID`, `federatedId`, `isShared`, `createdBy`,
+   `updatedBy`, create/update timestamps).
+2. A `Serverless Config:` section when the environment has one.
+3. `Agents (N):` and a table of the member agents with columns `NAME`, `HOST`,
+   `PLATFORM`, `VERSION`, `ACTIVE`, `READY`, `UPGRADE`, `FEDERATED ID`,
+   `GROUP ID`.
+
+`--output json` / `yaml` / `csv` render the environment record directly.
 
 ### Examples
 
 ```bash
 iics runtime get --id <runtime-id>
 
+iics runtime get --name "My Group"
+
 iics rt get --id <runtime-id> --output json
 ```
 
 ```powershell
 iics runtime get --id <runtime-id>
+
+iics runtime get --name "My Group"
 
 iics rt get --id <runtime-id> --output json
 ```
