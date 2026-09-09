@@ -227,15 +227,17 @@ Start or stop a service on a Secure Agent. Uses
 
 ### Flags
 
-| Flag         | Type   | Description |
-| ------------ | ------ | ----------- |
-| `--id`       | string | Agent ID    |
-| `--name`     | string | Agent name  |
-| `--hostname` | string | Agent host name |
-| `--service`  | string | Service display name, e.g. `"Data Integration Server"` (required) |
+| Flag                  | Type   | Description |
+| --------------------- | ------ | ----------- |
+| `--id`                | string | Agent ID    |
+| `--name`              | string | Agent name  |
+| `--hostname`          | string | Agent host name |
+| `--service`           | string | Service display name, e.g. `"Data Integration Server"` (required unless `--interactive`) |
+| `--interactive`, `-i` | bool   | Select the agent and service interactively |
 
-Exactly one of `--id` / `--name` / `--hostname` is required; they are mutually
-exclusive.
+Exactly one of `--id` / `--name` / `--hostname` is required, unless
+`--interactive` is used. `--interactive` lists the Secure Agents to choose from,
+then the selected agent's services, and asks for confirmation before acting.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -244,6 +246,8 @@ All [global flags](../../README.md#global-flags) apply.
 ```bash
 iics agent stop  --id <agent-id> --service "Data Integration Server"
 iics agent start --hostname devinfacld01 --service "Data Integration Server"
+
+iics agent stop -i
 ```
 
 ```powershell

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/filter"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
@@ -422,39 +423,134 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 	var (
 		id, name, hostname string
 		service            string
+		interactive        bool
 	)
 	cmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Example: fmt.Sprintf(`  iics agent %s --id <agent-id> --service "Data Integration Server"
-  iics agent %s --hostname devinfacld01 --service "Process Server"`, use, use),
+  iics agent %s --hostname devinfacld01 --service "Process Server"
+  iics agent %s -i`, use, use, use),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" && name == "" && hostname == "" {
-				return fmt.Errorf("one of --id, --name, or --hostname is required")
-			}
-			if service == "" {
-				return fmt.Errorf("--service is required")
-			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
 			ctx := context.Background()
-			agentID, err := resolveAgentID(ctx, c, id, name, hostname, "")
-			if err != nil {
+
+			// Resolve the agent: explicit selector, or an interactive picker.
+			var agentID, agentLabel string
+			if id != "" || name != "" || hostname != "" {
+				agentID, err = resolveAgentID(ctx, c, id, name, hostname, "")
+				if err != nil {
+					return err
+				}
+				agentLabel = agentID
+			} else if interactive {
+				a, perr := pickAgent(ctx, c)
+				if perr != nil {
+					return perr
+				}
+				if a == nil {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
+				}
+				agentID = a.ID
+				agentLabel = fmt.Sprintf("%s (%s)", a.Name, a.AgentHost)
+			} else {
+				return fmt.Errorf("one of --id, --name, --hostname, or --interactive is required")
+			}
+
+			// Resolve the service: --service, or pick from the agent's engines.
+			svc := service
+			if svc == "" {
+				if !interactive {
+					return fmt.Errorf("--service is required")
+				}
+				svc, err = pickAgentService(ctx, c, agentID, use)
+				if err != nil {
+					return err
+				}
+				if svc == "" {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
+				}
+			}
+
+			if interactive {
+				ok, cerr := promptYesNo(fmt.Sprintf("%s service %q on agent %s", strings.ToUpper(use[:1])+use[1:], svc, agentLabel), true)
+				if cerr != nil {
+					return cerr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
+				}
+			}
+
+			if err := c.SetAgentServiceState(ctx, agentID, svc, action); err != nil {
 				return err
 			}
-			if err := c.SetAgentServiceState(ctx, agentID, service, action); err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %q %s on agent %s\n", service, past, agentID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Service %q %s on agent %s\n", svc, past, agentID)
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&id, "id", "", "agent ID")
 	cmd.Flags().StringVar(&name, "name", "", "agent name")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "agent host name")
-	cmd.Flags().StringVar(&service, "service", "", "service name (required)")
+	cmd.Flags().StringVar(&service, "service", "", "service name (required unless --interactive)")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "select the agent and service interactively")
 	cmd.MarkFlagsMutuallyExclusive("id", "name", "hostname")
 	return cmd
+}
+
+// pickAgent lists the secure agents and lets the operator choose one.
+func pickAgent(ctx context.Context, c *client.Client) (*client.Agent, error) {
+	if !config.IsTerminal() {
+		return nil, fmt.Errorf("--interactive requires a terminal")
+	}
+	agents, err := c.ListAgents(ctx, client.AgentListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(agents) == 0 {
+		return nil, fmt.Errorf("no agents found")
+	}
+	labels := make([]string, len(agents))
+	for i, a := range agents {
+		labels[i] = fmt.Sprintf("%s (%s) - v%s", a.Name, a.AgentHost, a.AgentVersion)
+	}
+	idx, err := promptSelect("Select an agent", labels)
+	if err != nil {
+		return nil, err
+	}
+	if idx < 0 {
+		return nil, nil
+	}
+	return &agents[idx], nil
+}
+
+// pickAgentService fetches the agent's service engines and lets the operator
+// choose one. verb is the action name used in the prompt ("start"/"stop").
+func pickAgentService(ctx context.Context, c *client.Client, agentID, verb string) (string, error) {
+	details, err := c.GetAgentDetails(ctx, agentID, false)
+	if err != nil {
+		return "", err
+	}
+	if len(details.AgentEngines) == 0 {
+		return "", fmt.Errorf("no services found on agent %s", agentID)
+	}
+	labels := make([]string, len(details.AgentEngines))
+	for i, e := range details.AgentEngines {
+		st := e.AgentEngineStatus
+		labels[i] = fmt.Sprintf("%s (%s)", st.AppDisplayName, st.Status)
+	}
+	idx, err := promptSelect(fmt.Sprintf("Select a service to %s", verb), labels)
+	if err != nil {
+		return "", err
+	}
+	if idx < 0 {
+		return "", nil
+	}
+	return details.AgentEngines[idx].AgentEngineStatus.AppDisplayName, nil
 }
