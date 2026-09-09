@@ -119,16 +119,31 @@ iics rt get --id <runtime-id> --output json
 
 ## runtime create
 
-Create a runtime environment from a JSON definition file. The minimal file is
-just `{"name": "..."}`; the `@type: "runtimeEnvironment"` discriminator that the
-v2 API requires is added automatically (an explicit `@type` in the file is
-honored).
+Create a runtime environment (Secure Agent group). Provide a JSON definition
+file, or run interactively.
+
+The minimal file is just `{"name": "..."}`; the `@type` discriminators the v2 API
+requires (`"runtimeEnvironment"` on the body, `"agent"` on each `agents[]`
+element) are added automatically. An explicit `@type` in the file is honored.
 
 ### Flags
 
-| Flag          | Type   | Required | Description                                    |
-| ------------- | ------ | -------- | ---------------------------------------------- |
-| `--from-file` | string | yes      | JSON file with runtime environment definition  |
+| Flag                | Type   | Description                                              |
+| ------------------- | ------ | ------------------------------------------------------- |
+| `--from-file`       | string | JSON file with the runtime environment definition       |
+| `--interactive`, `-i` | bool | Prompt for the fields interactively                     |
+
+The interactive wizard runs when `-i` is given, or when `--from-file` is omitted
+and stdin is a terminal. With both `--from-file` and `-i`, the file pre-fills the
+prompts. Without a file and without a terminal, `--from-file` is required.
+
+### Interactive prompts
+
+1. `Environment Name` (required).
+2. `Is shared` (y/N).
+3. Agent management menu - `Add agents` lists the currently unassigned Secure
+   Agents to pick from; `Remove agents` removes from the working selection;
+   `Done` creates the environment with the selected agents.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -136,6 +151,10 @@ All [global flags](../../README.md#global-flags) apply.
 
 ```bash
 iics runtime create --from-file my-runtime.json
+
+# interactive
+iics runtime create
+iics runtime create -i --from-file seed.json
 ```
 
 ---

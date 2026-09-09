@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/filter"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
@@ -227,28 +228,52 @@ func newRuntimeGetCmd() *cobra.Command {
 }
 
 func newRuntimeCreateCmd() *cobra.Command {
-	var fromFile string
+	var (
+		fromFile    string
+		interactive bool
+	)
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a runtime environment",
+		Long: `Create a runtime environment.
+
+Provide --from-file with a JSON definition, or run interactively (--interactive/-i,
+or omit --from-file on a terminal) to be prompted for the name, shared flag, and
+member agents.`,
+		Example: `  iics runtime create --from-file my-runtime.json
+  iics runtime create
+  iics runtime create -i --from-file seed.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if fromFile == "" {
-				return fmt.Errorf("--from-file is required")
-			}
-			data, err := os.ReadFile(fromFile)
-			if err != nil {
-				return fmt.Errorf("reading file: %w", err)
-			}
+			ctx := context.Background()
+
 			var rt client.RuntimeEnvironment
-			err = json.Unmarshal(data, &rt)
-			if err != nil {
-				return fmt.Errorf("parsing JSON: %w", err)
+			if fromFile != "" {
+				data, err := os.ReadFile(fromFile)
+				if err != nil {
+					return fmt.Errorf("reading file: %w", err)
+				}
+				if err := json.Unmarshal(data, &rt); err != nil {
+					return fmt.Errorf("parsing JSON: %w", err)
+				}
 			}
+
+			useWizard := interactive || (fromFile == "" && config.IsTerminal())
+			if !useWizard && fromFile == "" {
+				return fmt.Errorf("--from-file or --interactive is required")
+			}
+
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			created, err := c.CreateRuntimeEnvironment(context.Background(), &rt)
+
+			if useWizard {
+				if werr := runRuntimeCreateWizard(ctx, c, &rt); werr != nil {
+					return werr
+				}
+			}
+
+			created, err := c.CreateRuntimeEnvironment(ctx, &rt)
 			if err != nil {
 				return err
 			}
@@ -256,7 +281,8 @@ func newRuntimeCreateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file (required)")
+	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with the runtime environment definition")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "create interactively (prompt for name, shared flag, and agents)")
 	return cmd
 }
 

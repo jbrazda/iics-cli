@@ -9,6 +9,7 @@ import (
 
 // RuntimeEnvironmentAgent represents an agent embedded in a runtime environment response.
 type RuntimeEnvironmentAgent struct {
+	Type             string `json:"@type,omitempty"`
 	ID               string `json:"id,omitempty"`
 	OrgID            string `json:"orgId,omitempty"`
 	Name             string `json:"name,omitempty"`
@@ -111,16 +112,36 @@ func (c *Client) GetRuntimeEnvironmentByName(ctx context.Context, name string) (
 	return &resp, nil
 }
 
-// runtimeEnvironmentType is the v2 API @type discriminator required on
-// runtimeEnvironment create/update request bodies.
-const runtimeEnvironmentType = "runtimeEnvironment"
+// The v2 API requires an @type discriminator on runtimeEnvironment create/update
+// request bodies and on each element of the nested agents array.
+const (
+	runtimeEnvironmentType = "runtimeEnvironment"
+	runtimeAgentType       = "agent"
+)
 
-// CreateRuntimeEnvironment creates a new runtime environment.
-func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
+// withRuntimeReqTypes returns a copy of rt with the @type discriminators set on
+// the body and every agent element that lacks one.
+func withRuntimeReqTypes(rt *RuntimeEnvironment) RuntimeEnvironment {
 	reqBody := *rt
 	if reqBody.Type == "" {
 		reqBody.Type = runtimeEnvironmentType
 	}
+	if len(reqBody.Agents) > 0 {
+		agents := make([]RuntimeEnvironmentAgent, len(reqBody.Agents))
+		for i, a := range reqBody.Agents {
+			if a.Type == "" {
+				a.Type = runtimeAgentType
+			}
+			agents[i] = a
+		}
+		reqBody.Agents = agents
+	}
+	return reqBody
+}
+
+// CreateRuntimeEnvironment creates a new runtime environment.
+func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
+	reqBody := withRuntimeReqTypes(rt)
 	var resp RuntimeEnvironment
 	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV2+"/runtimeEnvironment", &reqBody, &resp); err != nil {
 		return nil, err
@@ -130,10 +151,7 @@ func (c *Client) CreateRuntimeEnvironment(ctx context.Context, rt *RuntimeEnviro
 
 // UpdateRuntimeEnvironment updates an existing runtime environment.
 func (c *Client) UpdateRuntimeEnvironment(ctx context.Context, id string, rt *RuntimeEnvironment) (*RuntimeEnvironment, error) {
-	reqBody := *rt
-	if reqBody.Type == "" {
-		reqBody.Type = runtimeEnvironmentType
-	}
+	reqBody := withRuntimeReqTypes(rt)
 	var resp RuntimeEnvironment
 	if err := c.doJSON(ctx, http.MethodPut, fmt.Sprintf("%s/runtimeEnvironment/%s", BaseAPIPathV2, id), &reqBody, &resp); err != nil {
 		return nil, err

@@ -130,6 +130,9 @@ func TestCreateRuntimeEnvironment(t *testing.T) {
 		if rt.Type != "runtimeEnvironment" {
 			t.Errorf("expected @type runtimeEnvironment, got %q", rt.Type)
 		}
+		if len(rt.Agents) != 1 || rt.Agents[0].Type != "agent" || rt.Agents[0].ID != "a1" {
+			t.Errorf("agent element not sent with @type: %+v", rt.Agents)
+		}
 		rt.ID = "new-rt"
 		rt.FederatedID = "fed-new"
 		w.Header().Set("Content-Type", "application/json")
@@ -138,7 +141,10 @@ func TestCreateRuntimeEnvironment(t *testing.T) {
 	})
 
 	c := newTestClient(handler)
-	rt, err := c.CreateRuntimeEnvironment(context.Background(), &RuntimeEnvironment{Name: "New Runtime"})
+	rt, err := c.CreateRuntimeEnvironment(context.Background(), &RuntimeEnvironment{
+		Name:   "New Runtime",
+		Agents: []RuntimeEnvironmentAgent{{ID: "a1"}},
+	})
 	if err != nil {
 		t.Fatalf("CreateRuntimeEnvironment() error: %v", err)
 	}
