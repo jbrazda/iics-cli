@@ -241,7 +241,7 @@ func pickAgent(ctx context.Context, c *client.Client) (*client.Agent, error) {
 	}
 	labels := make([]string, len(agents))
 	for i, a := range agents {
-		labels[i] = fmt.Sprintf("%s (%s) - v%s", a.Name, a.AgentHost, a.AgentVersion)
+		labels[i] = fmt.Sprintf("%s (%s) - %s", a.Name, a.AgentHost, a.ID)
 	}
 	idx, err := promptSelect("Select an agent", labels)
 	if err != nil {
