@@ -322,7 +322,8 @@ for a platform.
 | ------ | ------ | -------- | ------------------------------------ |
 | `--os` | string | yes      | Operating system: `win64` or `linux64` |
 
-When `--os` is omitted and the session is interactive, the command prompts for it.
+When `--os` is omitted and the session is interactive, the command shows a numbered
+selection menu (`win64`/`linux64`); enter `0`, press Enter, or type `q` to cancel.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -364,7 +365,8 @@ Installer info can be supplied three ways:
 1. Piped as JSON on stdin (for example from `iics agent installer-info --output json`).
 2. From a file via `--installer-info <path>`.
 3. Omitted entirely, in which case the info is requested for the default or
-   `--profile` account using `--os` (prompted when interactive).
+   `--profile` account using `--os` (shown as a selection menu when interactive;
+   `0`, Enter, or `q` cancels).
 
 ### Flags
 
@@ -374,6 +376,7 @@ Installer info can be supplied three ways:
 | `--installer-info` | string |                      | Path to installer info JSON (omit to read piped stdin)             |
 | `--target`         | string | system temp directory | Destination file or directory                                     |
 | `--verify`         | bool   | false                | Download the checksum file and verify the installer               |
+| `--progress`       | bool   | false                | Print live download progress to stderr                            |
 
 `--target` behavior:
 
@@ -389,7 +392,9 @@ All [global flags](../../README.md#global-flags) apply.
 
 By default a vertical `PROPERTY`/`VALUE` table describes the downloaded file. With
 `--verify` the expected and actual checksums and the `verified` result are included.
-Use `--verbose` to print download and verification progress. `--output json`,
+Use `--verbose` to print download and verification progress messages, or `--progress`
+for a live, updating transfer line (bytes transferred, percentage when the server
+reports a content length, and transfer rate) written to stderr. `--output json`,
 `yaml`, and `csv` render the structured result.
 
 | Field                 | Description                                       |
@@ -417,6 +422,9 @@ iics agent installer-info --os win64 --output json | iics agent installer-downlo
 
 # Use a saved info file and an explicit file path
 iics agent installer-download --installer-info info.json --target /tmp/agent.exe --verify
+
+# Show live download progress
+iics agent installer-download --os linux64 --target ./downloads/ --progress
 ```
 
 ```powershell

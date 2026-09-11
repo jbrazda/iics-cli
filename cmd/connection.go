@@ -52,11 +52,11 @@ func newConnectionListCmd() *cobra.Command {
 			}
 
 			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "NAME", Field: "name", Width: 30},
-				{Header: "TYPE", Field: "type", Width: 15},
-				{Header: "UPDATED BY", Field: "updatedBy", Width: 20},
-				{Header: "UPDATED", Field: "updateTime", Width: 20},
+				{Header: "ID", Field: "id", Width: 24, Priority: 5, Shrink: output.ShrinkNever},
+				{Header: "NAME", Field: "name", Width: 30, Priority: 1},
+				{Header: "TYPE", Field: "type", Width: 15, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "UPDATED BY", Field: "updatedBy", Width: 20, Priority: 3, Shrink: output.ShrinkTruncate},
+				{Header: "UPDATED", Field: "updateTime", Width: 20, Priority: 2, Shrink: output.ShrinkNever},
 			}
 
 			return f.Format(conns, columns)

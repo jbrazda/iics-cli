@@ -6,12 +6,17 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-isatty"
 )
+
+// minColumnWidth is the floor a column is shrunk to before it is dropped
+// instead (CR-0038 D5).
+const minColumnWidth = 8
 
 // visibleLen returns the number of visible runes in s, ignoring ANSI escape sequences.
 func visibleLen(s string) int {
@@ -51,8 +56,23 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 	}
 
 	theme := effectiveTheme(f.w, f.style)
-	widths := computeColWidths(rows, columns)
-	renderTable(f.w, rows, columns, widths, theme, f.style)
+	termWidth := adaptWidth(f.w, f.style, theme)
+
+	var dropped []string
+	if termWidth <= 0 {
+		widths := computeColWidths(rows, columns)
+		renderTable(f.w, rows, columns, widths, theme, f.style)
+	} else {
+		kept, widths, drop, vertical := planColumns(rows, columns, termWidth, theme)
+		dropped = drop
+		if vertical {
+			renderVertical(f.w, rows, kept)
+		} else {
+			kept, widths = reorderWrappedLast(kept, widths)
+			shrunk := applyShrink(kept, widths)
+			renderTable(f.w, rows, shrunk, widths, theme, f.style)
+		}
+	}
 
 	// Row count footer
 	n := len(rows)
@@ -70,7 +90,30 @@ func (f *tableFormatter) Format(data interface{}, columns []Column) error {
 		}
 	}
 
+	if len(dropped) > 0 {
+		_, _ = fmt.Fprintf(os.Stderr, "# %d column(s) hidden (%s) - use --wide or -o json\n",
+			len(dropped), strings.Join(dropped, ", "))
+	}
+
 	return nil
+}
+
+// adaptWidth returns the terminal width to adapt the table to, or 0 to
+// disable adaptation entirely. Adaptation is disabled when the style says so
+// (SkipAdapt, e.g. --wide or config style.responsiveTables: false), when the
+// theme is markdown/gh (always colorless, script-friendly output), or when
+// the writer is not a TTY - matching effectiveTheme's TTY check (CR-0038 D2).
+func adaptWidth(w io.Writer, style TableStyle, theme string) int {
+	if style.SkipAdapt || theme == "markdown" || theme == "gh" {
+		return 0
+	}
+	if !isTerminal(w) {
+		return 0
+	}
+	if style.Width > 0 {
+		return style.Width
+	}
+	return 0
 }
 
 // effectiveTheme resolves the theme to use, downgrading to "plain" when
@@ -95,6 +138,256 @@ func isTerminal(w io.Writer) bool {
 		return false
 	}
 	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
+}
+
+// planColumns fits columns to termWidth, applying the CR-0038 tier strategy:
+// drop priority-5 columns first, then shrink (wrap/truncate) priority-4 and
+// priority-3 columns, then drop priority-4 if that still isn't enough, then
+// truncate priority-2. If priority-1 columns alone still overflow, useVertical
+// is true and the caller should fall back to a vertical layout instead.
+// Columns with Priority == 0 get a default Priority and Shrink inferred from
+// Field/Width (see resolveDefaults).
+func planColumns(rows []map[string]interface{}, columns []Column, termWidth int, theme string) (kept []Column, widths []int, dropped []string, useVertical bool) {
+	kept = resolveDefaults(columns)
+	widths = cappedWidths(rows, kept)
+
+	fits := func() bool { return sumInts(widths)+layoutOverhead(theme, len(kept)) <= termWidth }
+	if fits() {
+		return kept, widths, nil, false
+	}
+
+	kept, widths, dropped = dropTier(kept, widths, dropped, theme, termWidth, 5, fits)
+	if fits() {
+		return kept, widths, dropped, false
+	}
+
+	shrinkTier(kept, widths, theme, termWidth, 4)
+	if fits() {
+		return kept, widths, dropped, false
+	}
+	shrinkTier(kept, widths, theme, termWidth, 3)
+	if fits() {
+		return kept, widths, dropped, false
+	}
+
+	kept, widths, dropped = dropTier(kept, widths, dropped, theme, termWidth, 4, fits)
+	if fits() {
+		return kept, widths, dropped, false
+	}
+
+	shrinkTier(kept, widths, theme, termWidth, 2)
+	if fits() {
+		return kept, widths, dropped, false
+	}
+
+	return kept, widths, dropped, true
+}
+
+// resolveDefaults returns a copy of columns with Priority/Shrink filled in
+// for any column that left Priority unset (CR-0038 D4):
+//
+//  1. an opaque 24-char ID column (Field == "id" or ending in Id/ID, Width
+//     == 24) -> priority 5, ShrinkNever
+//  2. no Width floor set -> priority 4, ShrinkWrap
+//  3. a short Width (<= 16) -> priority 2, ShrinkNever
+//  4. the first column, if not already caught above -> priority 1
+//  5. everything else -> priority 3, ShrinkTruncate
+func resolveDefaults(columns []Column) []Column {
+	out := make([]Column, len(columns))
+	for i, c := range columns {
+		if c.Priority != 0 {
+			out[i] = c
+			continue
+		}
+		switch {
+		case looksLikeIDColumn(c):
+			c.Priority, c.Shrink = 5, ShrinkNever
+		case c.Width == 0:
+			c.Priority, c.Shrink = 4, ShrinkWrap
+		case c.Width > 0 && c.Width <= 16:
+			c.Priority, c.Shrink = 2, ShrinkNever
+		case i == 0:
+			c.Priority = 1
+		default:
+			c.Priority, c.Shrink = 3, ShrinkTruncate
+		}
+		out[i] = c
+	}
+	return out
+}
+
+func looksLikeIDColumn(c Column) bool {
+	if c.Width != 24 {
+		return false
+	}
+	return c.Field == "id" || strings.HasSuffix(c.Field, "Id") || strings.HasSuffix(c.Field, "ID")
+}
+
+// cappedWidths returns each column's natural width, capped by MaxWidth.
+func cappedWidths(rows []map[string]interface{}, columns []Column) []int {
+	widths := computeColWidths(rows, columns)
+	for i, c := range columns {
+		if c.MaxWidth > 0 && widths[i] > c.MaxWidth {
+			widths[i] = c.MaxWidth
+		}
+	}
+	return widths
+}
+
+// layoutOverhead approximates the non-content characters (borders, padding,
+// gaps) a theme adds around n columns, for width-fitting purposes.
+func layoutOverhead(theme string, n int) int {
+	if n == 0 {
+		return 0
+	}
+	switch theme {
+	case "minimal", "gh":
+		return (n - 1) * colGap
+	case "compact":
+		return (n - 1) * compactColGap
+	case "markdown":
+		return (n+1)*3 - 1
+	default: // default, plain: bordered
+		return n*(2*cellPad+1) + 1
+	}
+}
+
+func sumInts(xs []int) int {
+	s := 0
+	for _, x := range xs {
+		s += x
+	}
+	return s
+}
+
+// dropTier removes columns in the given priority tier, widest first, until
+// fits() is true or no more columns in that tier remain.
+func dropTier(kept []Column, widths []int, dropped []string, theme string, termWidth, tier int, fits func() bool) ([]Column, []int, []string) {
+	for !fits() {
+		idx := widestInTier(kept, widths, tier, false)
+		if idx < 0 {
+			return kept, widths, dropped
+		}
+		dropped = append(dropped, kept[idx].Header)
+		kept = append(append([]Column{}, kept[:idx]...), kept[idx+1:]...)
+		widths = append(append([]int{}, widths[:idx]...), widths[idx+1:]...)
+	}
+	return kept, widths, dropped
+}
+
+// shrinkTier narrows columns in the given priority tier (skipping
+// ShrinkNever columns) one visible column at a time, widest first, down to
+// minColumnWidth, until the layout fits within termWidth.
+func shrinkTier(kept []Column, widths []int, theme string, termWidth, tier int) {
+	budget := termWidth - layoutOverhead(theme, len(kept))
+	for sumInts(widths) > budget {
+		idx := widestInTier(kept, widths, tier, true)
+		if idx < 0 || widths[idx] <= minColumnWidth {
+			return
+		}
+		widths[idx]--
+	}
+}
+
+// widestInTier returns the index of the widest column in the given priority
+// tier, or -1 if none qualify. When shrinkableOnly is true, ShrinkNever
+// columns are excluded.
+func widestInTier(kept []Column, widths []int, tier int, shrinkableOnly bool) int {
+	best := -1
+	for i, c := range kept {
+		if c.Priority != tier {
+			continue
+		}
+		if shrinkableOnly && c.Shrink == ShrinkNever {
+			continue
+		}
+		if best < 0 || widths[i] > widths[best] {
+			best = i
+		}
+	}
+	return best
+}
+
+// reorderWrappedLast moves any kept column with Shrink == ShrinkWrap to the
+// end of the display order, widest first among those, so a wrapped cell's
+// extra physical lines never disrupt the alignment of columns to its right
+// (CR-0038 D4 display-order rule). Column order for json/yaml/csv output is
+// unaffected - this only reorders what is passed to the table renderer.
+func reorderWrappedLast(kept []Column, widths []int) ([]Column, []int) {
+	type pair struct {
+		col   Column
+		width int
+	}
+	var front, wrapped []pair
+	for i, c := range kept {
+		p := pair{c, widths[i]}
+		if c.Shrink == ShrinkWrap {
+			wrapped = append(wrapped, p)
+		} else {
+			front = append(front, p)
+		}
+	}
+	if len(wrapped) == 0 {
+		return kept, widths
+	}
+	sort.SliceStable(wrapped, func(i, j int) bool { return wrapped[i].width > wrapped[j].width })
+	out := append(front, wrapped...)
+	newCols := make([]Column, len(out))
+	newWidths := make([]int, len(out))
+	for i, p := range out {
+		newCols[i] = p.col
+		newWidths[i] = p.width
+	}
+	return newCols, newWidths
+}
+
+// applyShrink returns columns whose Func wraps or truncates the underlying
+// value to fit the planned width, per each column's Shrink mode.
+// ShrinkNever columns are left untouched (planColumns never shrinks them
+// below their natural width).
+func applyShrink(kept []Column, widths []int) []Column {
+	out := make([]Column, len(kept))
+	for i, c := range kept {
+		orig := c
+		width := widths[i]
+		shrink := c.Shrink
+		c.Func = func(row interface{}) string {
+			m, _ := row.(map[string]interface{})
+			raw := extractField(m, orig)
+			switch shrink {
+			case ShrinkWrap:
+				return WrapCell(raw, width)
+			case ShrinkTruncateLeft:
+				return TruncateCellLeft(raw, width)
+			case ShrinkNever:
+				return raw
+			default:
+				return TruncateCell(raw, width)
+			}
+		}
+		out[i] = c
+	}
+	return out
+}
+
+// renderVertical prints one PROPERTY: VALUE block per row - the fallback
+// when even the priority-1 columns don't fit the terminal width side by
+// side (CR-0038 D1).
+func renderVertical(w io.Writer, rows []map[string]interface{}, columns []Column) {
+	labelWidth := 0
+	for _, c := range columns {
+		if l := utf8.RuneCountInString(c.Header); l > labelWidth {
+			labelWidth = l
+		}
+	}
+	for i, row := range rows {
+		if i > 0 {
+			_, _ = fmt.Fprintln(w)
+		}
+		for _, c := range columns {
+			_, _ = fmt.Fprintf(w, "%s  %s\n", padRight(c.Header, labelWidth), extractField(row, c))
+		}
+	}
 }
 
 // computeColWidths returns the minimum display width for each column.
@@ -351,15 +644,20 @@ func renderMinimal(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, ul.String())
 
 	for _, row := range rows {
-		cells := flattenCells(sanitizedDataCells(row, columns))
-		var rb strings.Builder
-		for i, cell := range cells {
-			rb.WriteString(padRight(cell, widths[i]))
-			if i < len(widths)-1 {
-				rb.WriteString(strings.Repeat(" ", colGap))
+		lines := splitCellLines(sanitizedDataCells(row, columns))
+		for _, line := range lines {
+			var rb strings.Builder
+			for i, cell := range line {
+				rb.WriteString(padRight(cell, widths[i]))
+				if i < len(widths)-1 {
+					rb.WriteString(strings.Repeat(" ", colGap))
+				}
 			}
+			_, _ = fmt.Fprintln(w, rb.String())
 		}
-		_, _ = fmt.Fprintln(w, rb.String())
+		if len(lines) > 1 {
+			_, _ = fmt.Fprintln(w)
+		}
 	}
 }
 
@@ -384,15 +682,20 @@ func renderCompact(w io.Writer, rows []map[string]interface{}, columns []Column,
 	_, _ = fmt.Fprintln(w, hdr.String())
 
 	for _, row := range rows {
-		cells := flattenCells(sanitizedDataCells(row, columns))
-		var rb strings.Builder
-		for i, cell := range cells {
-			rb.WriteString(padRight(cell, widths[i]))
-			if i < len(widths)-1 {
-				rb.WriteString(strings.Repeat(" ", compactColGap))
+		lines := splitCellLines(sanitizedDataCells(row, columns))
+		for _, line := range lines {
+			var rb strings.Builder
+			for i, cell := range line {
+				rb.WriteString(padRight(cell, widths[i]))
+				if i < len(widths)-1 {
+					rb.WriteString(strings.Repeat(" ", compactColGap))
+				}
 			}
+			_, _ = fmt.Fprintln(w, rb.String())
 		}
-		_, _ = fmt.Fprintln(w, rb.String())
+		if len(lines) > 1 {
+			_, _ = fmt.Fprintln(w)
+		}
 	}
 }
 

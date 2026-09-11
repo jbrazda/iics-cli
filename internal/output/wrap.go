@@ -1,6 +1,9 @@
 package output
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // WrapCell hard-wraps s onto lines of at most width visible columns, breaking on
 // spaces where possible and hard-splitting tokens longer than width. Newlines
@@ -51,4 +54,48 @@ func wrapParagraph(s string, width int) []string {
 		flush()
 	}
 	return lines
+}
+
+const ellipsis = "…"
+
+// TruncateCell right-truncates s to at most width visible columns, appending
+// an ellipsis when content is cut. Any embedded newlines are truncated line
+// by line. ANSI styling on a truncated line is dropped along with the cut
+// text; width <= 0 disables truncation.
+func TruncateCell(s string, width int) string {
+	return truncateCell(s, width, false)
+}
+
+// TruncateCellLeft left-truncates s to at most width visible columns,
+// keeping the tail - useful for paths and URLs where the end (filename,
+// last segment) matters more than the start.
+func TruncateCellLeft(s string, width int) string {
+	return truncateCell(s, width, true)
+}
+
+func truncateCell(s string, width int, fromLeft bool) string {
+	if width <= 0 {
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lines[i] = truncateLine(line, width, fromLeft)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func truncateLine(s string, width int, fromLeft bool) string {
+	plain := stripANSIText(s)
+	if utf8.RuneCountInString(plain) <= width {
+		return s
+	}
+	if width <= utf8.RuneCountInString(ellipsis) {
+		return ellipsis
+	}
+	r := []rune(plain)
+	keep := width - utf8.RuneCountInString(ellipsis)
+	if fromLeft {
+		return ellipsis + string(r[len(r)-keep:])
+	}
+	return string(r[:keep]) + ellipsis
 }

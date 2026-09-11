@@ -115,6 +115,7 @@ style:
   theme: default     # default | minimal | compact | plain | markdown | gh
   noColor: false     # true = disable color permanently (same as --no-color)
   headerColor: ""    # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex (empty = theme default)
+  responsiveTables: true  # false = never drop/truncate/wrap columns to fit (same as --wide)
 profiles:
   dev:
     name: "Development Org"
@@ -157,6 +158,26 @@ The `style.headerColor` field accepts a lipgloss color string (`"6"` for cyan, `
 gray, `"#FF0000"` for hex) and overrides the built-in header color for `default` and `minimal`
 themes. Leave empty to use the theme default.
 
+### Responsive table output
+
+See [docs/documentation/output.md](docs/documentation/output.md) for the full column-priority
+and width-detection reference. On a TTY, table output adapts to the terminal width: columns are ranked by priority and, when
+a table is too wide to fit, opaque ID columns are dropped first, free-text columns (like
+`description` or `message`) wrap, and secondary columns truncate with an ellipsis - in that
+order - before the essential columns are ever touched. If a hidden or truncated column would
+help, a hint is printed to stderr naming what was hidden. This never applies to non-TTY output,
+`--output csv|json|yaml`, or the `markdown`/`gh` themes, which always render in full.
+
+| Flag/setting                  | Description                                                                 |
+|--------------------------------|-----------------------------------------------------------------------------|
+| `--width`                     | Terminal width to adapt to; 0 (default) auto-detects                       |
+| `--wide`                      | Never drop, truncate, or wrap columns, regardless of terminal width        |
+| `style.responsiveTables: false` | Config equivalent of `--wide`                                            |
+| `IICS_WIDTH`                  | Override the auto-detected width (same precedence as `--width`)            |
+
+Width resolution order: `--width` flag > `IICS_WIDTH` env > detected terminal size > `$COLUMNS`
+env > `80`.
+
 ### Environment variable overrides
 
 | Variable                    | Description                                                                              |
@@ -169,6 +190,7 @@ themes. Leave empty to use the theme default.
 | `IICS_CAI_URL`              | Override profile `caiUrl`                                                                |
 | `IICS_OUTPUT`               | Override default output format                                                           |
 | `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
+| `IICS_WIDTH`                 | Override auto-detected terminal width for responsive table output                        |
 | `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set) |
 | `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
 | `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |
@@ -269,6 +291,8 @@ it easy to override credentials in CI pipelines without touching the config file
 | `--verbose`  | `-v`  | Enable verbose output                                                                      |
 | `--no-color` |       | Disable colored output and force `plain` table theme                                       |
 | `--theme`    |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config) |
+| `--width`    |       | Terminal width to adapt table output to; 0 (default) auto-detects                          |
+| `--wide`     |       | Never drop, truncate, or wrap table columns to fit the terminal width                      |
 | `--config`   |       | Config file path (default `~/.iics/config.yaml`)                                           |
 | `--debug`    |       | Print full HTTP request/response trace to stderr                                           |
 | `--http-timeout` |   | Per-HTTP-request timeout in seconds (default `120`; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT` env var). Independent of `export`/`import` `--max-wait-time`, which only bounds job polling. |

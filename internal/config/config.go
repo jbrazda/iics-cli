@@ -16,6 +16,17 @@ type StyleConfig struct {
 	Theme       string `yaml:"theme,omitempty"       mapstructure:"theme"`
 	NoColor     bool   `yaml:"noColor,omitempty"     mapstructure:"noColor"`
 	HeaderColor string `yaml:"headerColor,omitempty" mapstructure:"headerColor"`
+	// ResponsiveTables controls whether table output adapts to the terminal
+	// width (dropping/truncating/wrapping columns to fit). Defaults to true
+	// when unset; a pointer so an explicit "false" can be distinguished from
+	// "not configured".
+	ResponsiveTables *bool `yaml:"responsiveTables,omitempty" mapstructure:"responsiveTables"`
+}
+
+// ResponsiveTablesEnabled reports the effective style.responsiveTables
+// setting, defaulting to true when unset.
+func (s StyleConfig) ResponsiveTablesEnabled() bool {
+	return s.ResponsiveTables == nil || *s.ResponsiveTables
 }
 
 // Config represents the full YAML configuration file.
@@ -274,7 +285,7 @@ func (c *Config) Save(configPath string) error {
 	v := viper.New()
 	v.Set("defaultProfile", c.DefaultProfile)
 	v.Set("profiles", c.Profiles)
-	if c.Style.Theme != "" || c.Style.NoColor || c.Style.HeaderColor != "" {
+	if c.Style.Theme != "" || c.Style.NoColor || c.Style.HeaderColor != "" || c.Style.ResponsiveTables != nil {
 		v.Set("style", c.Style)
 	}
 

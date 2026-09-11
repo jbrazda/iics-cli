@@ -16,11 +16,39 @@ const (
 	FormatYAML  Format = "yaml"
 )
 
+// ShrinkMode controls how a column behaves when the table is wider than the
+// terminal and must be narrowed to fit.
+type ShrinkMode int
+
+const (
+	// ShrinkTruncate right-truncates the cell content with an ellipsis. Default.
+	ShrinkTruncate ShrinkMode = iota
+	// ShrinkTruncateLeft truncates from the left, keeping the tail (paths, URLs).
+	ShrinkTruncateLeft
+	// ShrinkWrap hard-wraps the cell content onto multiple physical lines.
+	ShrinkWrap
+	// ShrinkNever never squeezes the column; it is dropped instead when it
+	// doesn't fit.
+	ShrinkNever
+)
+
 // Column defines a table column for human-readable output.
 type Column struct {
 	Header string
 	Field  string
-	Width  int
+	Width  int // minimum/floor width
+	// MaxWidth caps the column's natural width even when the terminal is wide
+	// enough to show it in full. 0 means unbounded.
+	MaxWidth int
+	// Priority ranks the column for width-adaptation purposes: 1 (essential,
+	// never dropped or shrunk) through 5 (reference, dropped first). 0 means
+	// unset - a default priority and shrink mode are inferred from Field and
+	// Width.
+	Priority int
+	// Shrink controls how the column narrows under width pressure. Only
+	// applied when Priority is explicitly set; an unset Priority infers both
+	// Priority and Shrink together.
+	Shrink ShrinkMode
 	Func   func(v interface{}) string
 }
 
@@ -33,6 +61,14 @@ type TableStyle struct {
 	Theme       string
 	NoColor     bool
 	HeaderColor string
+	// Width is an explicit terminal-width override for responsive tables
+	// (from --width or IICS_WIDTH). 0 means auto-detect.
+	Width int
+	// SkipAdapt disables width adaptation (dropping/truncating/wrapping
+	// columns) entirely - set by --wide or config style.responsiveTables:
+	// false. Detected/overridden width, if any, is still used for layout
+	// info but never causes a column to be dropped, truncated, or wrapped.
+	SkipAdapt bool
 }
 
 // Formatter is the interface for rendering API results.

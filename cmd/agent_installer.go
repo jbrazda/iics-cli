@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -22,19 +23,23 @@ import (
 // installerOSValues are the platform identifiers accepted by the agentInstallerInfo API.
 var installerOSValues = []string{"win64", "linux64"}
 
-// resolveInstallerOS validates the --os flag, prompting for it when it is empty
-// and stdin is a terminal.
+// resolveInstallerOS validates the --os flag, prompting with a selection menu
+// when it is empty and stdin is a terminal. Returns "" with a nil error when
+// the operator cancels the prompt.
 func resolveInstallerOS(osFlag string) (string, error) {
 	v := strings.ToLower(strings.TrimSpace(osFlag))
 	if v == "" {
 		if !config.IsTerminal() {
 			return "", fmt.Errorf("--os is required (one of: %s)", strings.Join(installerOSValues, ", "))
 		}
-		in, err := promptText(fmt.Sprintf("Operating system (%s)", strings.Join(installerOSValues, "/")), "")
+		idx, err := promptSelect("Operating system", installerOSValues)
 		if err != nil {
 			return "", err
 		}
-		v = strings.ToLower(strings.TrimSpace(in))
+		if idx < 0 {
+			return "", nil
+		}
+		return installerOSValues[idx], nil
 	}
 	for _, allowed := range installerOSValues {
 		if v == allowed {
@@ -83,6 +88,10 @@ func newAgentInstallerInfoCmd() *cobra.Command {
 			platform, err := resolveInstallerOS(osFlag)
 			if err != nil {
 				return err
+			}
+			if platform == "" {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+				return nil
 			}
 			c, err := getClient(cmd)
 			if err != nil {
@@ -230,6 +239,7 @@ func newAgentInstallerDownloadCmd() *cobra.Command {
 		installerInfoFile string
 		target            string
 		verify            bool
+		progressFlag      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "installer-download",
@@ -242,10 +252,14 @@ and the --os platform (prompted when running interactively).
 
 With --target: a directory (existing or trailing slash) downloads using the file
 name from the installer metadata; otherwise --target is treated as the full file
-path. Without --target the file is written to the system temp directory.`,
+path. Without --target the file is written to the system temp directory.
+
+--progress prints a live progress line to stderr (bytes transferred, percentage
+when the server reports a content length, and transfer rate).`,
 		Example: `  iics agent installer-download --os linux64 --target ./downloads/
   iics agent installer-info --os win64 --output json | iics agent installer-download --verify
-  iics agent installer-download --installer-info info.json --target /tmp/agent.exe --verify`,
+  iics agent installer-download --installer-info info.json --target /tmp/agent.exe --verify
+  iics agent installer-download --os linux64 --target ./downloads/ --progress`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := getClient(cmd)
 			if err != nil {
@@ -261,6 +275,10 @@ path. Without --target the file is written to the system temp directory.`,
 				platform, perr := resolveInstallerOS(osFlag)
 				if perr != nil {
 					return perr
+				}
+				if platform == "" {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
 				}
 				info, err = c.GetAgentInstallerInfo(ctx, platform)
 				if err != nil {
@@ -286,7 +304,14 @@ path. Without --target the file is written to the system temp directory.`,
 				return fmt.Errorf("creating output file: %w", err)
 			}
 			hasher := sha256.New()
-			n, err := c.DownloadFile(ctx, info.DownloadURL, io.MultiWriter(file, hasher))
+			var progress client.DownloadProgressFunc
+			if progressFlag {
+				progress = newDownloadProgressPrinter(cmd.ErrOrStderr())
+			}
+			n, err := c.DownloadFile(ctx, info.DownloadURL, io.MultiWriter(file, hasher), progress)
+			if progressFlag {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr())
+			}
 			if cerr := file.Close(); cerr != nil && err == nil {
 				err = cerr
 			}
@@ -336,5 +361,49 @@ path. Without --target the file is written to the system temp directory.`,
 	cmd.Flags().StringVar(&installerInfoFile, "installer-info", "", "path to installer info JSON (omit to read from stdin when piped)")
 	cmd.Flags().StringVar(&target, "target", "", "destination file or directory (default: system temp directory)")
 	cmd.Flags().BoolVar(&verify, "verify", false, "download the checksum and verify the installer")
+	cmd.Flags().BoolVar(&progressFlag, "progress", false, "print download progress to stderr")
 	return cmd
+}
+
+// newDownloadProgressPrinter returns a DownloadProgressFunc that prints a
+// single, carriage-return-updated progress line to w, throttled to at most
+// once every 200ms plus a final call at completion.
+func newDownloadProgressPrinter(w io.Writer) client.DownloadProgressFunc {
+	start := time.Now()
+	var lastPrint time.Time
+	return func(written, total int64) {
+		now := time.Now()
+		done := total > 0 && written >= total
+		if !done && now.Sub(lastPrint) < 200*time.Millisecond {
+			return
+		}
+		lastPrint = now
+
+		elapsed := now.Sub(start).Seconds()
+		rate := float64(written)
+		if elapsed > 0 {
+			rate = float64(written) / elapsed
+		}
+		if total > 0 {
+			pct := float64(written) / float64(total) * 100
+			_, _ = fmt.Fprintf(w, "\rDownloading... %s / %s (%.0f%%) %s/s",
+				formatBytes(written), formatBytes(total), pct, formatBytes(int64(rate)))
+		} else {
+			_, _ = fmt.Fprintf(w, "\rDownloading... %s %s/s", formatBytes(written), formatBytes(int64(rate)))
+		}
+	}
+}
+
+// formatBytes renders n as a human-readable size (B, KB, MB, GB).
+func formatBytes(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%dB", n)
+	}
+	div, exp := int64(unit), 0
+	for v := n / unit; v >= unit; v /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f%cB", float64(n)/float64(div), "KMGT"[exp])
 }

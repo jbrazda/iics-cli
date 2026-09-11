@@ -229,10 +229,16 @@ func (c *Client) GetAgentInstallerInfo(ctx context.Context, platform string) (*A
 	return &resp, nil
 }
 
+// DownloadProgressFunc is called after each chunk written during a DownloadFile
+// transfer with the cumulative bytes written so far and the total content
+// length reported by the server, or -1 when the server didn't report one
+// (e.g. chunked transfer encoding).
+type DownloadProgressFunc func(written, total int64)
+
 // DownloadFile streams an absolute URL to dest and returns the number of bytes written.
 // The installer binary and checksum files are served from a public CDN and require
-// no session header.
-func (c *Client) DownloadFile(ctx context.Context, url string, dest io.Writer) (int64, error) {
+// no session header. progress, if non-nil, is called after each write to dest.
+func (c *Client) DownloadFile(ctx context.Context, url string, dest io.Writer, progress DownloadProgressFunc) (int64, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("creating request: %w", err)
@@ -245,11 +251,31 @@ func (c *Client) DownloadFile(ctx context.Context, url string, dest io.Writer) (
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return 0, fmt.Errorf("downloading %s: unexpected status %s", url, resp.Status)
 	}
-	n, err := io.Copy(dest, resp.Body)
+	w := dest
+	if progress != nil {
+		w = &progressWriter{w: dest, total: resp.ContentLength, onWrite: progress}
+	}
+	n, err := io.Copy(w, resp.Body)
 	if err != nil {
 		return n, fmt.Errorf("downloading %s: %w", url, err)
 	}
 	return n, nil
+}
+
+// progressWriter wraps an io.Writer, invoking onWrite with the cumulative
+// bytes written after each Write call.
+type progressWriter struct {
+	w       io.Writer
+	written int64
+	total   int64
+	onWrite DownloadProgressFunc
+}
+
+func (p *progressWriter) Write(b []byte) (int, error) {
+	n, err := p.w.Write(b)
+	p.written += int64(n)
+	p.onWrite(p.written, p.total)
+	return n, err
 }
 
 // FetchText fetches an absolute URL and returns the response body as a string.

@@ -62,12 +62,12 @@ func newUserListCmd() *cobra.Command {
 			}
 
 			columns := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "USERNAME", Field: "userName", Width: 30},
-				{Header: "EMAIL", Field: "email", Width: 35},
-				{Header: "STATE", Field: "state", Width: 10},
-				{Header: "AUTH", Field: "authentication", Width: 10},
-				{Header: "UPDATED", Field: "updateTime", Width: 22},
+				{Header: "ID", Field: "id", Width: 24, Priority: 5, Shrink: output.ShrinkNever},
+				{Header: "USERNAME", Field: "userName", Width: 30, Priority: 1},
+				{Header: "EMAIL", Field: "email", Width: 35, Priority: 3, Shrink: output.ShrinkTruncate},
+				{Header: "STATE", Field: "state", Width: 10, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "AUTH", Field: "authentication", Width: 10, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "UPDATED", Field: "updateTime", Width: 22, Priority: 2, Shrink: output.ShrinkNever},
 			}
 
 			return f.Format(users, columns)
