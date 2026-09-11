@@ -322,7 +322,8 @@ for a platform.
 | ------ | ------ | -------- | ------------------------------------ |
 | `--os` | string | yes      | Operating system: `win64` or `linux64` |
 
-When `--os` is omitted and the session is interactive, the command prompts for it.
+When `--os` is omitted and the session is interactive, the command shows a numbered
+selection menu (`win64`/`linux64`); enter `0`, press Enter, or type `q` to cancel.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -364,7 +365,8 @@ Installer info can be supplied three ways:
 1. Piped as JSON on stdin (for example from `iics agent installer-info --output json`).
 2. From a file via `--installer-info <path>`.
 3. Omitted entirely, in which case the info is requested for the default or
-   `--profile` account using `--os` (prompted when interactive).
+   `--profile` account using `--os` (shown as a selection menu when interactive;
+   `0`, Enter, or `q` cancels).
 
 ### Flags
 

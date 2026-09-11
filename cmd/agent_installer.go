@@ -23,19 +23,23 @@ import (
 // installerOSValues are the platform identifiers accepted by the agentInstallerInfo API.
 var installerOSValues = []string{"win64", "linux64"}
 
-// resolveInstallerOS validates the --os flag, prompting for it when it is empty
-// and stdin is a terminal.
+// resolveInstallerOS validates the --os flag, prompting with a selection menu
+// when it is empty and stdin is a terminal. Returns "" with a nil error when
+// the operator cancels the prompt.
 func resolveInstallerOS(osFlag string) (string, error) {
 	v := strings.ToLower(strings.TrimSpace(osFlag))
 	if v == "" {
 		if !config.IsTerminal() {
 			return "", fmt.Errorf("--os is required (one of: %s)", strings.Join(installerOSValues, ", "))
 		}
-		in, err := promptText(fmt.Sprintf("Operating system (%s)", strings.Join(installerOSValues, "/")), "")
+		idx, err := promptSelect("Operating system", installerOSValues)
 		if err != nil {
 			return "", err
 		}
-		v = strings.ToLower(strings.TrimSpace(in))
+		if idx < 0 {
+			return "", nil
+		}
+		return installerOSValues[idx], nil
 	}
 	for _, allowed := range installerOSValues {
 		if v == allowed {
@@ -84,6 +88,10 @@ func newAgentInstallerInfoCmd() *cobra.Command {
 			platform, err := resolveInstallerOS(osFlag)
 			if err != nil {
 				return err
+			}
+			if platform == "" {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+				return nil
 			}
 			c, err := getClient(cmd)
 			if err != nil {
@@ -267,6 +275,10 @@ when the server reports a content length, and transfer rate).`,
 				platform, perr := resolveInstallerOS(osFlag)
 				if perr != nil {
 					return perr
+				}
+				if platform == "" {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
 				}
 				info, err = c.GetAgentInstallerInfo(ctx, platform)
 				if err != nil {

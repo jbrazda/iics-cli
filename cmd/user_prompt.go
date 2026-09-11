@@ -66,7 +66,7 @@ func promptPasswordConfirm(label string) (string, error) {
 }
 
 // promptSelect presents a numbered menu and returns the 0-based index of the chosen
-// option, or -1 if the user selects 0 (exit/cancel).
+// option, or -1 if the user cancels (selects 0, presses Enter, or types 'q').
 func promptSelect(label string, options []string) (int, error) {
 	_, _ = fmt.Fprintf(os.Stderr, "%s:\n", label)
 	for i, opt := range options {
@@ -76,18 +76,18 @@ func promptSelect(label string, options []string) (int, error) {
 
 	r := bufio.NewReader(os.Stdin)
 	for {
-		_, _ = fmt.Fprint(os.Stderr, "Selection: ")
+		_, _ = fmt.Fprint(os.Stderr, "Selection (q to cancel): ")
 		line, err := r.ReadString('\n')
 		if err != nil {
 			return -1, fmt.Errorf("reading selection: %w", err)
 		}
 		line = strings.TrimSpace(line)
-		if line == "0" || line == "" {
+		if line == "0" || line == "" || strings.EqualFold(line, "q") {
 			return -1, nil
 		}
 		n, convErr := strconv.Atoi(line)
 		if convErr != nil || n < 1 || n > len(options) {
-			_, _ = fmt.Fprintf(os.Stderr, "Enter a number between 0 and %d.\n", len(options))
+			_, _ = fmt.Fprintf(os.Stderr, "Enter a number between 0 and %d, or 'q' to cancel.\n", len(options))
 			continue
 		}
 		return n - 1, nil
