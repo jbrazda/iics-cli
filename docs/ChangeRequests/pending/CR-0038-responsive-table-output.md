@@ -6,8 +6,8 @@
 
 ## Status
 
-Design captured from a grilling session. **Implementation deferred.** Open
-questions in the section at the end must be answered before coding.
+Design fully settled across two grilling sessions. All open questions
+resolved (see Decisions made). Ready for implementation.
 
 ## Problem
 
@@ -80,7 +80,65 @@ truncate. Covers "wide terminal piped into `less -S`".
 `golang.org/x/term` is already an indirect dependency (used in
 `internal/config/prompt.go`).
 
-## Proposed implementation (subject to open questions)
+### D3 - `Column` struct shape (confirmed)
+
+Add `MaxWidth`, `Priority`, `Shrink ShrinkMode` directly to `output.Column`
+(not a separate per-command registry). Same file the columns are already
+declared in; keeps the tier visible at the definition site.
+
+### D4 - Heuristic signals for un-annotated columns (confirmed)
+
+For any column with `Priority == 0`:
+
+1. `Field == "id"` or `Field` matches `/Id$/`/`/ID$/` with `Width == 24` -> P5, `ShrinkNever`
+2. `Width == 0` (no floor set) -> P4, `ShrinkWrap`
+3. `Width > 0 && Width <= 16` -> P2, `ShrinkNever`
+4. everything else -> P3, `ShrinkTruncate`
+5. the first column in the slice, if not already caught above -> P1
+
+Document these verbatim in the ADR.
+
+**Display-order rule:** independent of `Priority` (which drives drop
+decisions) and independent of column order in `json`/`yaml`/`csv` output
+(unaffected), any *kept* column with `Shrink == ShrinkWrap` is rendered in
+the rightmost position among the kept columns for the `table` format only,
+so its multi-line wrapping never disrupts alignment of columns to its right.
+If more than one kept column wraps, order those by descending natural width
+(widest last).
+
+### D5 - Config/flag surface (confirmed, final)
+
+`style.responsiveTables: bool` (default `true`) in config. `--width int` and
+`--wide bool` persistent flags. `IICS_WIDTH` env. Precedence: `--width` >
+`IICS_WIDTH` > detected TTY size > `$COLUMNS` > `80`. `--wide` or
+`responsiveTables: false` => detect width for layout but skip drop / truncate
+/ wrap entirely. `minColumnWidth` stays a package constant (`8`), not exposed
+in config.
+
+### D6 - Dropped-columns hint placement (confirmed)
+
+stderr, after the table and after the existing stdout `N rows` footer (not
+before). Keeps primary output uninterrupted; the hint reads as a trailing
+note about what was omitted.
+
+### D7 - Row separators for wrapped rows (confirmed)
+
+- `default` (bordered) theme: no change needed, the border already delimits
+  rows.
+- `minimal` / `compact` (borderless) themes: insert one blank line between
+  rows **only when** that row wrapped to more than one line; single-line
+  rows stay tight, no added vertical noise in the common case.
+- `plain` / `markdown` / `gh`: unaffected (existing one-record-per-line or
+  bordered semantics already delimit rows).
+
+### D8 - Left-truncation for paths/URLs (confirmed)
+
+Build `ShrinkTruncateLeft` now (v1), not deferred. Small function, mirrors
+the existing right-truncate. Used for `path`, `assetPath`, `sourcePath`,
+`targetPath`, `location` and URL columns so the meaningful tail (filename,
+last path segment) survives truncation instead of the prefix.
+
+## Proposed implementation
 
 ### `internal/output/formatter.go` - extend `Column`
 
@@ -108,14 +166,20 @@ type Column struct {
 ### `internal/output/table.go`
 
 - New `planColumns(rows, columns, termWidth, wide bool) (kept []Column, widths []int, dropped []string)`.
-- Heuristic defaults when `Priority == 0` (see open question Q4):
-  - `Field == "id"` or `Header` contains `ID` with `Width == 24` -> P5, `ShrinkNever`
-  - `Width == 0` and content long -> P4, `ShrinkWrap`
-  - short enum widths (<= 16) -> P2, `ShrinkNever`
-  - first name-ish column -> P1
+  Applies the D4 heuristic to fill in `Priority`/`Shrink` when unset, then the
+  D1 drop/wrap/truncate order.
+- A display-order step (D4) moves any kept `ShrinkWrap` column to the end of
+  the slice used for rendering only - `planColumns` returns `kept` already in
+  render order; the `Priority`-driven drop decision happens before reordering.
+- `ShrinkTruncateLeft` (D8): new helper alongside the existing right-truncate
+  in `wrap.go`, keeps the tail (e.g. `...target/final_report.csv`).
+- Row-separator handling (D7): `renderCompact`/`renderDefault` (or whichever
+  borderless renderer) insert a blank line after a row only when that row's
+  `splitCellLines` produced more than one line.
 - `renderTable` consumes the plan; wrapped cells already supported via
   `splitCellLines` / `WrapCell`.
-- Hint written to `os.Stderr` (not `f.w`) when `len(dropped) > 0`.
+- Hint written to `os.Stderr` (not `f.w`) when `len(dropped) > 0`, after the
+  stdout table and row-count footer (D6).
 
 ### `cmd/root.go`
 
@@ -140,24 +204,6 @@ Hybrid: rely on the central heuristic for most of the 22 files; add explicit
 - `docs/documentation/` - new page or section on responsive output, `--width`,
   `--wide`, `style.responsiveTables`.
 - `README.md` global flags table.
-- ADR under `docs/` (or `docs/adr/`) for the column-dropping decision.
+- ADR under `docs/` (or `docs/adr/`) for the column-dropping decision (D1),
+  covering the P1-P5 tiers, the heuristic (D4), and the display-order rule.
 - `make completions` after the flag additions.
-
-## Open questions (answer before implementing)
-
-- **Q3 - `Column` shape**: confirm the `ShrinkMode` enum + `MaxWidth` +
-  `Priority` fields as proposed, or prefer a separate per-command column
-  registry keyed by field name instead of struct fields.
-- **Q4 - migration approach**: confirm hybrid (central heuristic + explicit
-  annotation on 6 high-traffic commands). Confirm the exact heuristic signals
-  so they can be documented in the ADR.
-- **Q6 - config/flag surface**: confirm `style.responsiveTables` as the only
-  config key, `minColumnWidth` as a constant, and the `--width` / `--wide`
-  precedence chain.
-- **Q7 - hint channel**: confirm the dropped-columns hint goes to stderr and
-  names the hidden columns.
-- **Q8 (not yet discussed)**: when cells wrap, do multi-line rows need a row
-  separator for readability, and how does that interact with the existing
-  themes (`default`, `minimal`, `compact`, `plain`, `markdown`, `gh`)?
-- **Q9 (not yet discussed)**: is `ShrinkTruncateLeft` actually wanted for
-  paths/URLs, or is right-truncation good enough everywhere?

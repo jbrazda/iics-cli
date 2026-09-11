@@ -25,6 +25,30 @@ func TestWrapCell(t *testing.T) {
 	}
 }
 
+func TestTruncateCell(t *testing.T) {
+	if got := TruncateCell("hello world", 8); got != "hello w…" {
+		t.Errorf("TruncateCell = %q", got)
+	}
+	if got := TruncateCell("short", 10); got != "short" {
+		t.Errorf("TruncateCell should pass through short content: %q", got)
+	}
+	if got := TruncateCell("short", 0); got != "short" {
+		t.Errorf("width 0 should pass through")
+	}
+	if got := TruncateCell("hello", 1); got != "…" {
+		t.Errorf("TruncateCell width 1 = %q", got)
+	}
+}
+
+func TestTruncateCellLeft(t *testing.T) {
+	if got := TruncateCellLeft("/a/b/c/final_report.csv", 12); got != "…_report.csv" {
+		t.Errorf("TruncateCellLeft = %q", got)
+	}
+	if got := TruncateCellLeft("short", 10); got != "short" {
+		t.Errorf("TruncateCellLeft should pass through short content: %q", got)
+	}
+}
+
 func TestTableMultiLineCell(t *testing.T) {
 	var buf bytes.Buffer
 	f := New(FormatTable, &buf, TableStyle{NoColor: true})

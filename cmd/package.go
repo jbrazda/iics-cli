@@ -1850,23 +1850,26 @@ func newPackageDependenciesCmd() *cobra.Command {
 				}
 
 				cols := []output.Column{
-					{Header: "LOCATION", Field: "location"},
-					{Header: "DEPENDENCY", Field: "dependency", Width: 12},
+					{Header: "LOCATION", Field: "location", Priority: 1, Shrink: output.ShrinkTruncateLeft},
+					{Header: "DEPENDENCY", Field: "dependency", Width: 12, Priority: 2, Shrink: output.ShrinkNever},
 				}
 				for _, prof := range reportProfiles {
 					key := strings.ReplaceAll(prof, "-", "_")
 					cols = append(cols, output.Column{
-						Header: fmt.Sprintf("STATUS (%s)", prof),
-						Field:  "status_" + key,
-						Func:   makeProfileStatusFunc(key),
+						Header:   fmt.Sprintf("STATUS (%s)", prof),
+						Field:    "status_" + key,
+						Func:     makeProfileStatusFunc(key),
+						Priority: 1,
 					})
 				}
 				if outputFmt == "csv" {
 					for _, prof := range reportProfiles {
 						key := strings.ReplaceAll(prof, "-", "_")
 						cols = append(cols, output.Column{
-							Header: fmt.Sprintf("WARNING (%s)", prof),
-							Field:  "warning_" + key,
+							Header:   fmt.Sprintf("WARNING (%s)", prof),
+							Field:    "warning_" + key,
+							Priority: 4,
+							Shrink:   output.ShrinkWrap,
 						})
 					}
 				}
@@ -1897,17 +1900,18 @@ func newPackageDependenciesCmd() *cobra.Command {
 			}
 
 			columns := []output.Column{
-				{Header: "LOCATION", Field: "location"},
-				{Header: "DEPENDENCY", Field: "dependency", Width: 12},
-				{Header: "TYPE", Field: "type", Width: 20},
-				{Header: "PATH", Field: "path", Width: 55},
+				{Header: "LOCATION", Field: "location", Priority: 1, Shrink: output.ShrinkTruncateLeft},
+				{Header: "DEPENDENCY", Field: "dependency", Width: 12, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "TYPE", Field: "type", Width: 20, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "PATH", Field: "path", Width: 55, Priority: 3, Shrink: output.ShrinkTruncateLeft},
 			}
 			if targetProfile != "" {
 				columns = append(columns,
 					output.Column{
-						Header: fmt.Sprintf("STATUS (%s)", targetProfile),
-						Field:  "status",
-						Func:   targetStatusFunc,
+						Header:   fmt.Sprintf("STATUS (%s)", targetProfile),
+						Field:    "status",
+						Func:     targetStatusFunc,
+						Priority: 1,
 					},
 				)
 				hasWarnings := false
@@ -1919,7 +1923,7 @@ func newPackageDependenciesCmd() *cobra.Command {
 				}
 				if hasWarnings {
 					columns = append(columns,
-						output.Column{Header: "WARNING", Field: "warning", Width: 40},
+						output.Column{Header: "WARNING", Field: "warning", Width: 40, Priority: 4, Shrink: output.ShrinkWrap},
 					)
 				}
 			}

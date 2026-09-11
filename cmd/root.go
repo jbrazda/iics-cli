@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -27,6 +29,8 @@ var (
 	debug           bool
 	themeFlag       string
 	httpTimeoutFlag int
+	widthFlag       int
+	wideFlag        bool
 	versionStr      = "dev"
 	commitStr       = "none"
 	dateStr         = "unknown"
@@ -187,6 +191,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	rootCmd.PersistentFlags().StringVar(&themeFlag, "theme", "", "table theme: default|minimal|compact|plain|markdown|gh (overrides config)")
+	rootCmd.PersistentFlags().IntVar(&widthFlag, "width", 0,
+		"terminal width to adapt table output to; 0 auto-detects (overrides IICS_WIDTH env and detected size)")
+	rootCmd.PersistentFlags().BoolVar(&wideFlag, "wide", false,
+		"never drop, truncate, or wrap table columns to fit the terminal width")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "print request body to stderr on API error")
 	rootCmd.PersistentFlags().IntVar(&httpTimeoutFlag, "http-timeout", 0,
 		"HTTP request timeout in seconds, applied per request (login, API calls, downloads); "+
@@ -402,7 +410,33 @@ func resolveTableStyle(cfg *config.Config) output.TableStyle {
 		style.Theme = "plain"
 	}
 
+	style.Width = resolveTableWidth()
+	style.SkipAdapt = wideFlag || (cfg != nil && !cfg.Style.ResponsiveTablesEnabled())
+
 	return style
+}
+
+// resolveTableWidth resolves the terminal width to adapt table output to.
+// Precedence (highest first): --width flag > IICS_WIDTH env > detected
+// terminal size (stdout) > $COLUMNS env > 80 (CR-0038 D5).
+func resolveTableWidth() int {
+	if widthFlag > 0 {
+		return widthFlag
+	}
+	if v := os.Getenv("IICS_WIDTH"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+		return w
+	}
+	if v := os.Getenv("COLUMNS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 80
 }
 
 // getFormatter returns a formatter for the current output format.

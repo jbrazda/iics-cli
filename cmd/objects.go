@@ -34,13 +34,13 @@ const defaultObjectFields = "id,path,type,updatedBy,updateTime"
 
 // objectsColumnDefs maps field names to their column definitions for console output.
 var objectsColumnDefs = map[string]output.Column{
-	"id":          {Header: "ID", Field: "id", Width: 24},
-	"type":        {Header: "TYPE", Field: "type", Width: 12},
-	"path":        {Header: "PATH", Field: "path"},
-	"description": {Header: "DESCRIPTION", Field: "description"},
-	"updatedBy":   {Header: "UPDATED BY", Field: "updatedBy", Width: 20},
-	"updateTime":  {Header: "UPDATED", Field: "updateTime", Width: 20},
-	"location":    {Header: "LOCATION", Field: "location"},
+	"id":          {Header: "ID", Field: "id", Width: 24, Priority: 5, Shrink: output.ShrinkNever},
+	"type":        {Header: "TYPE", Field: "type", Width: 12, Priority: 2, Shrink: output.ShrinkNever},
+	"path":        {Header: "PATH", Field: "path", Priority: 1, Shrink: output.ShrinkTruncateLeft},
+	"description": {Header: "DESCRIPTION", Field: "description", Priority: 4, Shrink: output.ShrinkWrap},
+	"updatedBy":   {Header: "UPDATED BY", Field: "updatedBy", Width: 20, Priority: 3, Shrink: output.ShrinkTruncate},
+	"updateTime":  {Header: "UPDATED", Field: "updateTime", Width: 20, Priority: 2, Shrink: output.ShrinkNever},
+	"location":    {Header: "LOCATION", Field: "location", Priority: 3, Shrink: output.ShrinkTruncateLeft},
 }
 
 func parseFields(s string) []string {
