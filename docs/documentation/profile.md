@@ -229,7 +229,7 @@ profile's password is stored in the OS keychain rather than in the config file.
 | NAME   | USERNAME          | ENDPOINT                                          | POD  | DEFAULT | KEYCHAIN |
 +--------+-------------------+---------------------------------------------------+------+---------+----------+
 | prod   | admin@company.com | https://use4.dm-us.informaticacloud.com/saas/...  | USE4 | yes     | yes      |
-| qa     | qa@company.com    | https://dm-em.informaticacloud.com/saas/...       | EU1  |         |          |
+| qa     | qa@company.com    | https://dm-em.informaticacloud.com/saas/...       | EU1  |         | no       |
 +--------+-------------------+---------------------------------------------------+------+---------+----------+
 ```
 

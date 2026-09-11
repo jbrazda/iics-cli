@@ -128,7 +128,7 @@ func newProfileListCmd() *cobra.Command {
 				if cfg.DefaultProfile == name {
 					defaultMark = "yes"
 				}
-				keychain := ""
+				keychain := "no"
 				if config.IsKeyringSentinel(p.Password) {
 					keychain = "yes"
 				}
