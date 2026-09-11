@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"testing"
 )
 
@@ -244,7 +245,7 @@ func TestDownloadFileAndFetchText(t *testing.T) {
 	base := c.BaseAPIURL()
 
 	var buf bytes.Buffer
-	n, err := c.DownloadFile(context.Background(), base+"/binary", &buf)
+	n, err := c.DownloadFile(context.Background(), base+"/binary", &buf, nil)
 	if err != nil {
 		t.Fatalf("DownloadFile() error: %v", err)
 	}
@@ -258,5 +259,35 @@ func TestDownloadFileAndFetchText(t *testing.T) {
 	}
 	if text != "abc123  agent64.exe\n" {
 		t.Errorf("unexpected checksum text: %q", text)
+	}
+}
+
+func TestDownloadFileProgress(t *testing.T) {
+	body := []byte("installer-bytes")
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+		_, _ = w.Write(body)
+	})
+
+	c := newTestClient(handler)
+	base := c.BaseAPIURL()
+
+	var buf bytes.Buffer
+	var calls []struct{ written, total int64 }
+	n, err := c.DownloadFile(context.Background(), base+"/binary", &buf, func(written, total int64) {
+		calls = append(calls, struct{ written, total int64 }{written, total})
+	})
+	if err != nil {
+		t.Fatalf("DownloadFile() error: %v", err)
+	}
+	if n != int64(len(body)) {
+		t.Errorf("unexpected n: %d", n)
+	}
+	if len(calls) == 0 {
+		t.Fatal("expected at least one progress callback")
+	}
+	last := calls[len(calls)-1]
+	if last.written != int64(len(body)) || last.total != int64(len(body)) {
+		t.Errorf("final progress callback = %+v, want written=total=%d", last, len(body))
 	}
 }
