@@ -219,17 +219,18 @@ iics --profile prod connection list
 
 ## `profile list` output
 
-`profile list` renders a table with one row per profile. The REGION column shows the
-configured region code; the ENDPOINT column shows the discovered login URL (populated after
-the first `iics login`).
+`profile list` renders a table with one row per profile: NAME, USERNAME, ENDPOINT, POD,
+DEFAULT, KEYCHAIN. The ENDPOINT column shows the discovered login URL (populated after the
+first `iics login`); POD shows the configured region/pod code; KEYCHAIN shows `yes` when the
+profile's password is stored in the OS keychain rather than in the config file.
 
 ```text
-+--------+---------+--------+---------------------------------------------------+-------------------+
-| NAME   | DEFAULT | REGION | ENDPOINT                                          | USERNAME          |
-+--------+---------+--------+---------------------------------------------------+-------------------+
-| prod   | yes     | USE4   | https://use4.dm-us.informaticacloud.com/saas/...  | admin@company.com |
-| qa     |         | EU1    | https://dm-em.informaticacloud.com/saas/...       | qa@company.com    |
-+--------+---------+--------+---------------------------------------------------+-------------------+
++--------+-------------------+---------------------------------------------------+------+---------+----------+
+| NAME   | USERNAME          | ENDPOINT                                          | POD  | DEFAULT | KEYCHAIN |
++--------+-------------------+---------------------------------------------------+------+---------+----------+
+| prod   | admin@company.com | https://use4.dm-us.informaticacloud.com/saas/...  | USE4 | yes     | yes      |
+| qa     | qa@company.com    | https://dm-em.informaticacloud.com/saas/...       | EU1  |         |          |
++--------+-------------------+---------------------------------------------------+------+---------+----------+
 ```
 
 ## `profile show` output

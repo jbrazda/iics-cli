@@ -147,12 +147,12 @@ func newProfileListCmd() *cobra.Command {
 				return err
 			}
 			columns := []output.Column{
-				{Header: "NAME", Field: "name"},
-				{Header: "DEFAULT", Field: "default"},
-				{Header: "REGION", Field: "region"},
-				{Header: "ENDPOINT", Field: "endpoint"},
-				{Header: "USERNAME", Field: "username"},
-				{Header: "KEYCHAIN", Field: "keychain", Width: 8},
+				{Header: "NAME", Field: "name", Priority: 1},
+				{Header: "USERNAME", Field: "username", Priority: 2, Shrink: output.ShrinkTruncate},
+				{Header: "ENDPOINT", Field: "endpoint", Priority: 3, Shrink: output.ShrinkTruncate},
+				{Header: "POD", Field: "region", Width: 8, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "DEFAULT", Field: "default", Width: 8, Priority: 2, Shrink: output.ShrinkNever},
+				{Header: "KEYCHAIN", Field: "keychain", Width: 8, Priority: 2, Shrink: output.ShrinkNever},
 			}
 			return f.Format(rows, columns)
 		},
