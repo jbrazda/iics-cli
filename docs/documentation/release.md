@@ -168,6 +168,27 @@ Two checks are performed against the resolved target client:
   to be deployed); assets that **already exist** are **excluded** (assumed stable).
 - Use `--include-found-transitive` to disable this filtering.
 
+#### Publish-only transitive inclusion and excludes (CLI-only, ad hoc)
+
+These flags affect the generated **publish file only**; the package file's deployment scope
+and transitive policy are always governed by `--include-found-transitive` as described above.
+They are independent of each other and of `--include-found-transitive`. There is no manifest
+schema field for these; they exist for manual, ad hoc `release plan` runs, not automated
+pipeline manifests.
+
+- `--publish-include-found-transitive` (bool, default `false`): include transitive dependencies
+  already found in the target in the generated publish file, even when they are excluded from
+  the package file. Useful for forcing a republish of assets that already exist in the target.
+- `--publish-exclude-regex <pattern>`: a regex matched against an asset's `location`; matches
+  are excluded from the publish file only.
+- `--publish-exclude-file <path>`: path to a regex-patterns file (one pattern per line, `#`
+  comments), same format as the manifest's `excludeFile`, matched against `location` to exclude
+  assets from the publish file only. Combined with `--publish-exclude-regex` using OR semantics
+  when both are given.
+
+Excludes always apply to the publish file regardless of whether
+`--publish-include-found-transitive` is set. Default behavior (no new flags) is unchanged.
+
 #### Per-asset validation (always runs)
 
 - Checks every asset and annotates the output with `Status` and `Warning` values, written as a
@@ -191,6 +212,9 @@ Two checks are performed against the resolved target client:
 | `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
 | `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
 | `--include-found-transitive`    | bool   | `false`                                         | Keep all resolved transitive dependencies, even when they already exist in the target environment                        |
+| `--publish-include-found-transitive` | bool | `false`                                    | Include transitive dependencies already found in the target in the generated publish file only (package file unaffected; independent of `--include-found-transitive`) |
+| `--publish-exclude-regex`       | string |                                                 | Regex matched against an asset's `location` to exclude it from the generated publish file only                          |
+| `--publish-exclude-file`        | string |                                                 | Path to regex patterns file (same format as `excludeFile`) to exclude assets from the generated publish file only        |
 | `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
 | `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
 | `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |

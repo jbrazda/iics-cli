@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -286,6 +287,167 @@ func TestBuildPlanReusesPrecomputedValidations(t *testing.T) {
 	}
 	if _, ok := byLocation["Explore/Existing.TASKFLOW"]; ok {
 		t.Fatalf("Explore/Existing.TASKFLOW should have been filtered out via precomputed validations: %#v", packageAssets)
+	}
+}
+
+func TestBuildPlanPublishIncludeFoundTransitive(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Path: "Explore/A", Type: "PROCESS", Dependency: "explicit"},
+		{Location: "Explore/Missing.GUIDE", Path: "Explore/Missing", Type: "GUIDE", Dependency: "transitive"},
+		{Location: "Explore/Existing.TASKFLOW", Path: "Explore/Existing", Type: "TASKFLOW", Dependency: "transitive"},
+	}
+	validations := map[string]map[string]AssetValidation{
+		"QA": {
+			"Explore/A.PROCESS":         {Status: "missing"},
+			"Explore/Missing.GUIDE":     {Status: "missing"},
+			"Explore/Existing.TASKFLOW": {Status: "found"},
+		},
+	}
+
+	runPlan := func(includeFoundTransitive bool) PlanResult {
+		outputRoot := t.TempDir()
+		result, err := BuildPlan(context.Background(), PlanOptions{
+			Assets:                        assets,
+			ConnectorSourceAssets:         assets,
+			Targets:                       []string{"QA"},
+			FilterMissingTransitive:       true,
+			Validations:                   validations,
+			OutputRoot:                    outputRoot,
+			PackageFileBaseName:           "full_build.package",
+			PlanExt:                       "csv",
+			WriteAssets:                   WriteAssetsCSV,
+			PackageFields:                 []string{"location", "type", "path", "dependency"},
+			PublishFields:                 []string{"location", "type", "path", "dependency"},
+			PublishIncludeFoundTransitive: includeFoundTransitive,
+			CompletedLabel:                "full mode",
+		})
+		if err != nil {
+			t.Fatalf("BuildPlan() error = %v", err)
+		}
+		return result
+	}
+
+	withoutFlag := runPlan(false)
+	packageAssets := withoutFlag.AssetsByTarget["QA"]
+	if len(packageAssets) != 2 {
+		t.Fatalf("AssetsByTarget[QA] len = %d, want 2: %#v", len(packageAssets), packageAssets)
+	}
+	publishAssets := withoutFlag.PublishByTarget["QA"]
+	for _, a := range publishAssets {
+		if a.Location == "Explore/Existing.TASKFLOW" {
+			t.Fatalf("Existing.TASKFLOW should not be in publish output when PublishIncludeFoundTransitive is false: %#v", publishAssets)
+		}
+	}
+
+	withFlag := runPlan(true)
+	packageAssetsWithFlag := withFlag.AssetsByTarget["QA"]
+	if len(packageAssetsWithFlag) != len(packageAssets) {
+		t.Fatalf("AssetsByTarget[QA] changed when PublishIncludeFoundTransitive set: got %d, want %d", len(packageAssetsWithFlag), len(packageAssets))
+	}
+	publishAssetsWithFlag := withFlag.PublishByTarget["QA"]
+	found := false
+	for _, a := range publishAssetsWithFlag {
+		if a.Location == "Explore/Existing.TASKFLOW" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("Existing.TASKFLOW should be in publish output when PublishIncludeFoundTransitive is true: %#v", publishAssetsWithFlag)
+	}
+}
+
+func TestBuildPlanPublishExcludePatterns(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Path: "Explore/A", Type: "PROCESS", Dependency: "explicit"},
+		{Location: "Explore/Secret.GUIDE", Path: "Explore/Secret", Type: "GUIDE", Dependency: "explicit"},
+	}
+	validations := map[string]map[string]AssetValidation{
+		"QA": {
+			"Explore/A.PROCESS":    {Status: "missing"},
+			"Explore/Secret.GUIDE": {Status: "missing"},
+		},
+	}
+	excludePattern := regexp.MustCompile(`Secret`)
+
+	outputRoot := t.TempDir()
+	result, err := BuildPlan(context.Background(), PlanOptions{
+		Assets:                  assets,
+		ConnectorSourceAssets:   assets,
+		Targets:                 []string{"QA"},
+		FilterMissingTransitive: true,
+		Validations:             validations,
+		OutputRoot:              outputRoot,
+		PackageFileBaseName:     "full_build.package",
+		PlanExt:                 "csv",
+		WriteAssets:             WriteAssetsCSV,
+		PackageFields:           []string{"location", "type", "path", "dependency"},
+		PublishFields:           []string{"location", "type", "path", "dependency"},
+		PublishExcludePatterns:  []*regexp.Regexp{excludePattern},
+		CompletedLabel:          "full mode",
+	})
+	if err != nil {
+		t.Fatalf("BuildPlan() error = %v", err)
+	}
+
+	packageAssets := result.AssetsByTarget["QA"]
+	if len(packageAssets) != 2 {
+		t.Fatalf("AssetsByTarget[QA] len = %d, want 2 (package unaffected by publish excludes): %#v", len(packageAssets), packageAssets)
+	}
+
+	publishAssets := result.PublishByTarget["QA"]
+	if len(publishAssets) != 1 {
+		t.Fatalf("PublishByTarget[QA] len = %d, want 1: %#v", len(publishAssets), publishAssets)
+	}
+	if publishAssets[0].Location != "Explore/A.PROCESS" {
+		t.Fatalf("PublishByTarget[QA][0].Location = %q, want Explore/A.PROCESS", publishAssets[0].Location)
+	}
+}
+
+func TestBuildPlanPublishExcludeAppliesWithIncludeFoundTransitive(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Path: "Explore/A", Type: "PROCESS", Dependency: "explicit"},
+		{Location: "Explore/Existing.TASKFLOW", Path: "Explore/Existing", Type: "TASKFLOW", Dependency: "transitive"},
+	}
+	validations := map[string]map[string]AssetValidation{
+		"QA": {
+			"Explore/A.PROCESS":         {Status: "missing"},
+			"Explore/Existing.TASKFLOW": {Status: "found"},
+		},
+	}
+	excludePattern := regexp.MustCompile(`Existing`)
+
+	outputRoot := t.TempDir()
+	result, err := BuildPlan(context.Background(), PlanOptions{
+		Assets:                        assets,
+		ConnectorSourceAssets:         assets,
+		Targets:                       []string{"QA"},
+		FilterMissingTransitive:       true,
+		Validations:                   validations,
+		OutputRoot:                    outputRoot,
+		PackageFileBaseName:           "full_build.package",
+		PlanExt:                       "csv",
+		WriteAssets:                   WriteAssetsCSV,
+		PackageFields:                 []string{"location", "type", "path", "dependency"},
+		PublishFields:                 []string{"location", "type", "path", "dependency"},
+		PublishIncludeFoundTransitive: true,
+		PublishExcludePatterns:        []*regexp.Regexp{excludePattern},
+		CompletedLabel:                "full mode",
+	})
+	if err != nil {
+		t.Fatalf("BuildPlan() error = %v", err)
+	}
+
+	publishAssets := result.PublishByTarget["QA"]
+	for _, a := range publishAssets {
+		if a.Location == "Explore/Existing.TASKFLOW" {
+			t.Fatalf("Existing.TASKFLOW should still be excluded from publish despite PublishIncludeFoundTransitive: %#v", publishAssets)
+		}
 	}
 }
 
