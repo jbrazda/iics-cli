@@ -27,27 +27,39 @@ func wrapParagraph(s string, width int) []string {
 	}
 	var lines []string
 	var cur strings.Builder
+	curLen := 0
 	flush := func() {
 		lines = append(lines, cur.String())
 		cur.Reset()
+		curLen = 0
 	}
 	for _, word := range strings.Fields(s) {
-		for len(word) > width {
+		wordLen := visibleLen(word)
+		for wordLen > width {
 			if cur.Len() > 0 {
 				flush()
 			}
-			lines = append(lines, word[:width])
-			word = word[width:]
+			// A word wider than the column can't be split without cutting
+			// through its ANSI escape bytes, so fall back to its plain text
+			// for the overflow line (styling is dropped, same trade-off
+			// TruncateCell makes on a truncated line).
+			r := []rune(stripANSIText(word))
+			lines = append(lines, string(r[:width]))
+			word = string(r[width:])
+			wordLen = len(r) - width
 		}
 		switch {
 		case cur.Len() == 0:
 			cur.WriteString(word)
-		case cur.Len()+1+len(word) <= width:
+			curLen = wordLen
+		case curLen+1+wordLen <= width:
 			cur.WriteByte(' ')
 			cur.WriteString(word)
+			curLen += 1 + wordLen
 		default:
 			flush()
 			cur.WriteString(word)
+			curLen = wordLen
 		}
 	}
 	if cur.Len() > 0 || len(lines) == 0 {
