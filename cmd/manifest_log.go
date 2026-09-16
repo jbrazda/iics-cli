@@ -24,18 +24,3 @@ func appendManifestLogWarning(cmd *cobra.Command, path, markdown string) {
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not append release log %s: %v\n", path, err)
 	}
 }
-
-func releaseAssetsToManifestLog(assets []release.Asset) []release.ManifestLogAsset {
-	rows := make([]release.ManifestLogAsset, 0, len(assets))
-	for _, asset := range assets {
-		rows = append(rows, release.ManifestLogAsset{
-			ID:         asset.ID,
-			Location:   asset.Location,
-			Type:       asset.Type,
-			Path:       asset.Path,
-			Dependency: asset.Dependency,
-			Status:     asset.Status,
-		})
-	}
-	return rows
-}

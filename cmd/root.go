@@ -374,9 +374,14 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 // Precedence (highest first):
 //
 //	--no-color flag / NO_COLOR env > --theme flag > IICS_THEME env >
-//	config style.noColor > config style.theme > "default"
+//	config style.noColor > config style.theme > unset (effectiveTheme's default)
+//
+// Theme is left unset ("") rather than defaulting to "default" here, so
+// effectiveTheme can tell "nothing configured" apart from an explicit
+// "--theme default" and apply its own TTY-aware default (default on a
+// terminal, markdown when piped/redirected).
 func resolveTableStyle(cfg *config.Config) output.TableStyle {
-	style := output.TableStyle{Theme: "default"}
+	style := output.TableStyle{}
 
 	// Config-level preferences (lowest named precedence)
 	if cfg != nil {

@@ -93,6 +93,37 @@ func TestGHThemeNonTTY(t *testing.T) {
 	}
 }
 
+// TestEffectiveThemeDefaultNonTTY verifies that an unset theme resolves to
+// "markdown" (not "plain") on a non-TTY writer, and "default" on a TTY.
+func TestEffectiveThemeDefaultNonTTY(t *testing.T) {
+	var buf bytes.Buffer
+	if got := effectiveTheme(&buf, TableStyle{}); got != "markdown" {
+		t.Errorf("effectiveTheme() with unset theme on non-TTY = %q, want %q", got, "markdown")
+	}
+}
+
+// TestEffectiveThemeExplicitNonTTYStillDowngrades verifies that an
+// explicitly-configured non-colorless theme (anything but markdown/gh) still
+// downgrades to "plain" on a non-TTY writer, unaffected by the new
+// unset-theme default.
+func TestEffectiveThemeExplicitNonTTYStillDowngrades(t *testing.T) {
+	var buf bytes.Buffer
+	for _, theme := range []string{"default", "compact", "minimal", "plain"} {
+		if got := effectiveTheme(&buf, TableStyle{Theme: theme}); got != "plain" {
+			t.Errorf("effectiveTheme() with Theme:%q on non-TTY = %q, want %q", theme, got, "plain")
+		}
+	}
+}
+
+// TestEffectiveThemeNoColorOverridesMarkdownDefault verifies that NoColor
+// still forces "plain" on a non-TTY writer even when no theme is set.
+func TestEffectiveThemeNoColorOverridesMarkdownDefault(t *testing.T) {
+	var buf bytes.Buffer
+	if got := effectiveTheme(&buf, TableStyle{NoColor: true}); got != "plain" {
+		t.Errorf("effectiveTheme() with NoColor on non-TTY = %q, want %q", got, "plain")
+	}
+}
+
 // TestRowFooterPlural verifies that 3 rows appends "3 rows" on a separate line.
 func TestRowFooterPlural(t *testing.T) {
 	var buf bytes.Buffer

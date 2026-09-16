@@ -6,7 +6,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -264,14 +263,17 @@ func newReleasePlanCmd() *cobra.Command {
 					"explicitAssets", stats.ExplicitAssets,
 					"transitiveAssets", stats.TransitiveAssets,
 				)
+				validationsByTarget, valErr := release.ValidateAssetsForTargets(context.Background(), opts.Targets, fullAssets, targetResolutionOpts)
+				if valErr != nil {
+					return valErr
+				}
 				if infoEnabled {
 					slog.Info("release plan: full mode dependency status table")
 					if renderErr := renderDependencyStatusTable(
-						context.Background(),
 						logWriter,
 						fullAssets,
 						opts.Targets,
-						targetResolutionOpts,
+						validationsByTarget,
 					); renderErr != nil {
 						return renderErr
 					}
@@ -280,103 +282,38 @@ func newReleasePlanCmd() *cobra.Command {
 					}
 				}
 
-				assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
-				publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
-				filesWritten := 0
-				for _, env := range opts.Targets {
-					envDir := filepath.Join(outputRoot, strings.ToLower(env))
-					if mkErr := os.MkdirAll(envDir, 0o755); mkErr != nil {
-						return fmt.Errorf("creating env directory: %w", mkErr)
-					}
-					envAssets := fullAssets
-					if filterMissingTrans {
-						filtered, filterErr := release.FilterMissingTransitiveForTarget(
-							context.Background(),
-							env,
-							fullAssets,
-							targetResolutionOpts,
-						)
-						if filterErr != nil {
-							return filterErr
-						}
-						envAssets = filtered
-						slog.Info("release plan: missing-transitive filter applied",
+				planResult, buildErr := release.BuildPlan(context.Background(), release.PlanOptions{
+					Assets:                  fullAssets,
+					ConnectorSourceAssets:   fullAssets,
+					Targets:                 opts.Targets,
+					FilterMissingTransitive: filterMissingTrans,
+					TargetResolutionOptions: targetResolutionOpts,
+					Validations:             validationsByTarget,
+					OutputRoot:              outputRoot,
+					PackageFileBaseName:     "full_build.package",
+					PlanExt:                 planExt,
+					WriteAssets:             writeAssets,
+					PackageFields:           packageFields,
+					PublishFields:           publishFields,
+					IncludeConnectors:       opts.IncludeConnectors,
+					IncludeConnections:      opts.IncludeConnections,
+					InfoEnabled:             infoEnabled,
+					RenderPackageTotals:     makeTypeCountRenderer(logWriter),
+					RenderPublishTotals:     makeTypeCountRenderer(logWriter),
+					RenderConnectorTotals:   makeTypeCountRenderer(logWriter),
+					OnTargetFilesGenerated: func(env, packageFile, publishFile string, publishAssetCount int) {
+						slog.Info("release plan: full mode files generated",
 							"environment", env,
-							"before", len(fullAssets),
-							"after", len(envAssets),
+							"packageFile", packageFile,
+							"publishFile", publishFile,
+							"publishAssets", publishAssetCount,
 						)
-					}
-					envPackageAssets, annotateErr := release.AnnotateAssetsWithTargetValidation(
-						context.Background(),
-						env,
-						envAssets,
-						targetResolutionOpts,
-					)
-					if annotateErr != nil {
-						return annotateErr
-					}
-					envPackageFields := release.EnsureCurrentTargetStatusField(packageFields, env)
-					targetCfg := filepath.Join(envDir, "full_build.package."+planExt)
-					if writeErr := writeAssets(targetCfg, envPackageAssets, envPackageFields); writeErr != nil {
-						return writeErr
-					}
-					publishAssets := release.PublishAssets(envAssets)
-					publishFile := filepath.Join(envDir, "publish_assets."+planExt)
-					if writeErr := writeAssets(publishFile, publishAssets, publishFields); writeErr != nil {
-						return writeErr
-					}
-					filesWritten += 2
-					if infoEnabled {
-						if renderErr := renderTypeCountTable(
-							logWriter,
-							fmt.Sprintf("release plan: package totals by type for %s", env),
-							release.AssetCountsByType(envAssets),
-							len(envAssets),
-						); renderErr != nil {
-							return renderErr
-						}
-						if renderErr := renderTypeCountTable(
-							logWriter,
-							fmt.Sprintf("release plan: publish totals by type for %s", env),
-							release.AssetCountsByType(publishAssets),
-							len(publishAssets),
-						); renderErr != nil {
-							return renderErr
-						}
-					}
-					assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
-					publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
-					slog.Info("release plan: full mode files generated",
-						"environment", env,
-						"packageFile", targetCfg,
-						"publishFile", publishFile,
-						"publishAssets", len(publishAssets),
-					)
+					},
+					CompletedLabel: "full mode",
+				})
+				if buildErr != nil {
+					return buildErr
 				}
-				if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
-					connectorAssets := release.ConnectorPackageAssets(fullAssets)
-					connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
-					if writeErr := writeAssets(connectorsFile, connectorAssets, packageFields); writeErr != nil {
-						return writeErr
-					}
-					filesWritten++
-					if infoEnabled {
-						if renderErr := renderTypeCountTable(
-							logWriter,
-							"release plan: connector totals by type",
-							release.AssetCountsByType(connectorAssets),
-							len(connectorAssets),
-						); renderErr != nil {
-							return renderErr
-						}
-					}
-					slog.Info("release plan: connectors file generated", "connectorsFile", connectorsFile)
-				}
-				slog.Info("release plan: completed full mode",
-					"targets", strings.Join(opts.Targets, ","),
-					"outputRoot", outputRoot,
-					"filesWritten", filesWritten,
-				)
 				if logEnabled {
 					appendManifestLogWarning(cmd, logPath, release.RenderReleasePlanLog(release.ReleasePlanLog{
 						SchemaVersion:      "v1",
@@ -387,8 +324,8 @@ func newReleasePlanCmd() *cobra.Command {
 						Targets:            opts.Targets,
 						IncludeConnectors:  opts.IncludeConnectors,
 						IncludeConnections: opts.IncludeConnections,
-						AssetsByTarget:     assetsByTarget,
-						PublishByTarget:    publishByTarget,
+						AssetsByTarget:     planResult.AssetsByTarget,
+						PublishByTarget:    planResult.PublishByTarget,
 					}))
 				}
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Generated full-deployment plan files.")
@@ -411,14 +348,17 @@ func newReleasePlanCmd() *cobra.Command {
 			}
 
 			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.IncludeConnections, excludes)
+			validationsByTarget, valErr := release.ValidateAssetsForTargets(context.Background(), opts.Targets, allFiltered, targetResolutionOpts)
+			if valErr != nil {
+				return valErr
+			}
 			if infoEnabled {
 				slog.Info("release plan: dependency status table")
 				if err := renderDependencyStatusTable(
-					context.Background(),
 					logWriter,
 					allFiltered,
 					opts.Targets,
-					targetResolutionOpts,
+					validationsByTarget,
 				); err != nil {
 					return err
 				}
@@ -427,105 +367,41 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 			}
 			connectorDependencyAssets := release.ApplyPolicies(assets, true, true, excludes)
-			assetsByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
-			publishByTarget := make(map[string][]release.ManifestLogAsset, len(opts.Targets))
-			filesWritten := 0
 
-			for _, env := range opts.Targets {
-				slog.Info("release plan: processing target", "environment", env)
-				envAssets := allFiltered
-				if filterMissingTrans {
-					envFiltered, filterErr := release.FilterMissingTransitiveForTarget(
-						context.Background(),
-						env,
-						allFiltered,
-						targetResolutionOpts,
-					)
-					if filterErr != nil {
-						return filterErr
-					}
-					envAssets = envFiltered
-					slog.Info("release plan: missing-transitive filter applied",
+			planResult, buildErr := release.BuildPlan(context.Background(), release.PlanOptions{
+				Assets:                  allFiltered,
+				ConnectorSourceAssets:   connectorDependencyAssets,
+				Targets:                 opts.Targets,
+				FilterMissingTransitive: filterMissingTrans,
+				TargetResolutionOptions: targetResolutionOpts,
+				Validations:             validationsByTarget,
+				OutputRoot:              outputRoot,
+				PackageFileBaseName:     "tag_build.package",
+				PlanExt:                 planExt,
+				WriteAssets:             writeAssets,
+				PackageFields:           packageFields,
+				PublishFields:           publishFields,
+				IncludeConnectors:       opts.IncludeConnectors,
+				IncludeConnections:      opts.IncludeConnections,
+				InfoEnabled:             infoEnabled,
+				RenderPackageTotals:     makeTypeCountRenderer(logWriter),
+				RenderPublishTotals:     makeTypeCountRenderer(logWriter),
+				RenderConnectorTotals:   makeTypeCountRenderer(logWriter),
+				OnTargetProcessing: func(env string) {
+					slog.Info("release plan: processing target", "environment", env)
+				},
+				OnTargetFilesGenerated: func(env, packageFile, publishFile string, _ int) {
+					slog.Info("release plan: target files generated",
 						"environment", env,
-						"before", len(allFiltered),
-						"after", len(envAssets),
+						"packageFile", packageFile,
+						"publishFile", publishFile,
 					)
-				}
-				envPackageAssets, annotateErr := release.AnnotateAssetsWithTargetValidation(
-					context.Background(),
-					env,
-					envAssets,
-					targetResolutionOpts,
-				)
-				if annotateErr != nil {
-					return annotateErr
-				}
-				envPackageFields := release.EnsureCurrentTargetStatusField(packageFields, env)
-				publishAssets := release.PublishAssets(envAssets)
-				if infoEnabled {
-					if err := renderTypeCountTable(
-						logWriter,
-						fmt.Sprintf("release plan: package totals by type for %s", env),
-						release.AssetCountsByType(envAssets),
-						len(envAssets),
-					); err != nil {
-						return err
-					}
-					if err := renderTypeCountTable(
-						logWriter,
-						fmt.Sprintf("release plan: publish totals by type for %s", env),
-						release.AssetCountsByType(publishAssets),
-						len(publishAssets),
-					); err != nil {
-						return err
-					}
-				}
-				envDir := filepath.Join(outputRoot, strings.ToLower(env))
-				if err := os.MkdirAll(envDir, 0o755); err != nil {
-					return fmt.Errorf("creating env directory: %w", err)
-				}
-				packageFile := filepath.Join(envDir, "tag_build.package."+planExt)
-				publishFile := filepath.Join(envDir, "publish_assets."+planExt)
-				if err := writeAssets(packageFile, envPackageAssets, envPackageFields); err != nil {
-					return err
-				}
-				filesWritten++
-				if err := writeAssets(publishFile, publishAssets, publishFields); err != nil {
-					return err
-				}
-				assetsByTarget[env] = releaseAssetsToManifestLog(envPackageAssets)
-				publishByTarget[env] = releaseAssetsToManifestLog(publishAssets)
-				filesWritten++
-				slog.Info("release plan: target files generated",
-					"environment", env,
-					"packageFile", packageFile,
-					"publishFile", publishFile,
-				)
+				},
+				CompletedLabel: "selective mode",
+			})
+			if buildErr != nil {
+				return buildErr
 			}
-			if release.ShouldWriteConnectorPackage(opts.IncludeConnectors, opts.IncludeConnections) {
-				connectorAssets := release.ConnectorPackageAssets(connectorDependencyAssets)
-				connectorsFile := filepath.Join(outputRoot, "connectors.package."+planExt)
-				if err := writeAssets(connectorsFile, connectorAssets, packageFields); err != nil {
-					return err
-				}
-				filesWritten++
-				if infoEnabled {
-					if err := renderTypeCountTable(
-						logWriter,
-						"release plan: connector totals by type",
-						release.AssetCountsByType(connectorAssets),
-						len(connectorAssets),
-					); err != nil {
-						return err
-					}
-				}
-				slog.Info("release plan: connectors file generated", "connectorsFile", connectorsFile)
-			}
-			slog.Info("release plan: completed selective mode",
-				"targets", strings.Join(opts.Targets, ","),
-				"outputRoot", outputRoot,
-				"filesWritten", filesWritten,
-			)
 			if logEnabled {
 				appendManifestLogWarning(cmd, logPath, release.RenderReleasePlanLog(release.ReleasePlanLog{
 					SchemaVersion:      "v1",
@@ -536,8 +412,8 @@ func newReleasePlanCmd() *cobra.Command {
 					Targets:            opts.Targets,
 					IncludeConnectors:  opts.IncludeConnectors,
 					IncludeConnections: opts.IncludeConnections,
-					AssetsByTarget:     assetsByTarget,
-					PublishByTarget:    publishByTarget,
+					AssetsByTarget:     planResult.AssetsByTarget,
+					PublishByTarget:    planResult.PublishByTarget,
 				}))
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Generated selective plan files for targets: %s\n", strings.Join(opts.Targets, ","))
@@ -601,11 +477,10 @@ func resolvePlanAssetsWriter(raw string) (func(string, []release.Asset, []string
 }
 
 func renderDependencyStatusTable(
-	ctx context.Context,
 	w io.Writer,
 	assets []release.Asset,
 	targets []string,
-	opts release.TargetResolutionOptions,
+	validationsByTarget map[string]map[string]release.AssetValidation,
 ) error {
 	sortedAssets := release.SortAssetsByLocation(assets)
 	tableRows := make([]map[string]interface{}, len(sortedAssets))
@@ -621,14 +496,12 @@ func renderDependencyStatusTable(
 	}
 
 	for _, target := range targets {
-		validations, err := release.ValidateAssetsForTarget(ctx, target, sortedAssets, opts)
-		if err != nil {
-			return fmt.Errorf("profile %q: %w", target, err)
-		}
+		validations := validationsByTarget[target]
 		key := strings.ReplaceAll(target, "-", "_")
 		for i := range tableRows {
-			tableRows[i]["status_"+key] = validations[i].Status
-			tableRows[i]["warning_"+key] = validations[i].Warning
+			v := validations[sortedAssets[i].Location]
+			tableRows[i]["status_"+key] = v.Status
+			tableRows[i]["warning_"+key] = v.Warning
 		}
 	}
 
@@ -664,6 +537,15 @@ func renderTypeCountTable(w io.Writer, title string, counts []release.AssetTypeC
 		{Header: "TYPE", Field: "type"},
 		{Header: "COUNT", Field: "count"},
 	})
+}
+
+// makeTypeCountRenderer adapts renderTypeCountTable to release.TypeCountRenderer
+// so release.BuildPlan can render per-target type-count tables without depending
+// on cmd-only presentation helpers.
+func makeTypeCountRenderer(w io.Writer) release.TypeCountRenderer {
+	return func(title string, counts []release.AssetTypeCount, total int) error {
+		return renderTypeCountTable(w, title, counts, total)
+	}
 }
 
 func renderThemedTable(w io.Writer, rows interface{}, columns []output.Column) error {

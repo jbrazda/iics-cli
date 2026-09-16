@@ -145,14 +145,16 @@ The `style` section controls table output appearance. Available themes:
 | `default`  | Unicode rounded borders, cyan bold headers (TTY only)                                                  |
 | `minimal`  | No borders, colored bold headers with unicode underline                                                |
 | `compact`  | No borders, gray bold headers, 1-space column gap (TTY only)                                           |
-| `plain`    | ASCII borders, no color - used automatically for non-TTY output                                        |
+| `plain`    | ASCII borders, no color - used automatically when a non-default theme is set but output is non-TTY     |
 | `markdown` | GitHub-flavored markdown table, no color, always rendered regardless of TTY                            |
 | `gh`       | GitHub CLI-style: no borders, no separator, plain headers, no color, always rendered regardless of TTY |
 
-Non-TTY output (piped, redirected) always uses `plain` regardless of the configured theme.
-The `markdown` and `gh` themes are exceptions - they always render as-is even when output
-is piped, since they are already colorless.
-The `NO_COLOR` environment variable is also respected.
+Non-TTY output (piped, redirected) with no theme configured uses `markdown` by default, since it
+is already colorless and safe to read or parse without a terminal. If you explicitly configure a
+different theme (`--theme compact`, `style.theme: minimal`, etc.), non-TTY output falls back to
+`plain` instead of forcing that theme's formatting. The `markdown` and `gh` themes are exceptions -
+they always render as-is even when output is piped, since they are already colorless.
+The `NO_COLOR` environment variable is also respected and always forces `plain`.
 
 The `style.headerColor` field accepts a lipgloss color string (`"6"` for cyan, `"244"` for
 gray, `"#FF0000"` for hex) and overrides the built-in header color for `default` and `minimal`

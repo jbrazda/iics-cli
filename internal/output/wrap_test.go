@@ -25,6 +25,32 @@ func TestWrapCell(t *testing.T) {
 	}
 }
 
+func TestWrapCellANSI(t *testing.T) {
+	// An ANSI-colored word whose visible length fits the column must not be
+	// split mid-escape-sequence just because its raw byte length exceeds
+	// width (regression: "found" rendered as "\x1b[1;32mfound\x1b[0m" was
+	// hard-split into "foun" / "d").
+	colored := "\x1b[1;32mfound\x1b[0m"
+	if got := WrapCell(colored, 12); got != colored {
+		t.Errorf("WrapCell corrupted a short colored word: got %q, want %q", got, colored)
+	}
+	if visibleLen(colored) != len("found") {
+		t.Fatalf("test fixture invariant broken: visibleLen(%q) = %d", colored, visibleLen(colored))
+	}
+
+	// A colored word whose visible length genuinely exceeds width still
+	// hard-splits, without panicking or leaving stray escape bytes; styling
+	// on the overflow line is dropped, matching TruncateCell's behavior.
+	longColored := "\x1b[1;32mexceedinglylongstatus\x1b[0m"
+	got := WrapCell(longColored, 8)
+	if strings.Contains(got, "\x1b") {
+		t.Errorf("hard-split of colored word left stray escape bytes: %q", got)
+	}
+	if !strings.Contains(got, "exceedin") {
+		t.Errorf("hard-split of colored word = %q", got)
+	}
+}
+
 func TestTruncateCell(t *testing.T) {
 	if got := TruncateCell("hello world", 8); got != "hello w…" {
 		t.Errorf("TruncateCell = %q", got)

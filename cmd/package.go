@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/dependencies"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/packaging"
 	"github.com/jbrazda/iics-cli/internal/release"
 	"github.com/spf13/cobra"
 )
@@ -403,200 +403,33 @@ func newPackageCreateCmd() *cobra.Command {
 			var reportSelectedCount int
 			var reportExcludedCount int
 			if hasSelectionManifest {
-				if len(manifestEntries) == 0 {
-					return fmt.Errorf("selection manifest is empty")
+				buildResult, buildErr := packaging.BuildSelectivePackage(
+					fileContents,
+					absSource,
+					manifestEntries,
+					manifestStats,
+					packaging.BuildOptions{
+						ExcludeFoundTransitive: excludeFoundTransitive,
+						PackageName:            packageName,
+						IncludeTags:            includeTags,
+						Target:                 target,
+					},
+				)
+				if buildErr != nil {
+					return buildErr
 				}
-				meta, metaErr := readExportMetadata("", absSource)
-				if metaErr != nil {
-					return fmt.Errorf("reading source metadata for selective packaging: %w", metaErr)
-				}
-
-				exported := make([]dependencies.ExportedObjectRef, 0, len(meta.ExportedObjects))
-				for _, o := range meta.ExportedObjects {
-					exported = append(exported, dependencies.ExportedObjectRef{
-						ObjectGUID: o.ObjectGUID,
-						ObjectName: o.ObjectName,
-						ObjectType: o.ObjectType,
-						Path:       o.Path,
-					})
-				}
-				selectedIDs, warnings, selErr := dependencies.SelectExportedObjects(manifestEntries, exported)
-				if selErr != nil {
-					return selErr
-				}
-				parentAdded := dependencies.IncludeParentContainers(exported, selectedIDs)
-				closureNodes := make([]dependencies.RefClosureNode, 0, len(meta.ExportedObjects))
-				for _, o := range meta.ExportedObjects {
-					if o.ObjectGUID == "" {
-						continue
-					}
-					closureNodes = append(closureNodes, dependencies.RefClosureNode{
-						ID:   o.ObjectGUID,
-						Refs: o.objectRefs(),
-					})
-				}
-				excludedSelectedIDs := make(map[string]bool)
-				if excludeFoundTransitive && len(manifestStats.ExcludedEntries) > 0 {
-					resolvedExcluded, _, excludedSelErr := dependencies.SelectExportedObjects(manifestStats.ExcludedEntries, exported)
-					if excludedSelErr != nil {
-						return fmt.Errorf("resolving excluded transitive-found entries: %w", excludedSelErr)
-					}
-					excludedSelectedIDs = resolvedExcluded
-				}
-
-				closureAdded := 0
-				closureSuppressedExcluded := 0
-				if !excludeFoundTransitive {
-					closureAdded = dependencies.IncludeReferencedClosure(closureNodes, selectedIDs)
-				} else {
-					closureAddedIDs := dependencies.AddedIDsAfterClosure(closureNodes, selectedIDs)
-					closureSuppressedExcluded = len(closureAddedIDs)
-					if len(excludedSelectedIDs) > 0 && len(closureAddedIDs) > 0 {
-						// Keep a floor count based on all closure-suppressed additions and
-						// use excluded-entry overlap to avoid undercounting when manifest rows
-						// and closure additions are both present.
-						overlap := dependencies.CountSetIntersection(closureAddedIDs, excludedSelectedIDs)
-						if overlap > closureSuppressedExcluded {
-							closureSuppressedExcluded = overlap
-						}
-					}
-				}
-				if len(selectedIDs) == 0 {
-					return fmt.Errorf("no assets matched selection manifest")
-				}
-				for _, w := range warnings {
+				for _, w := range buildResult.Warnings {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: %s\n", w)
 				}
-				if verbose && excludeFoundTransitive {
-					totalExcluded := manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
-					_, _ = fmt.Fprintf(
-						cmd.OutOrStdout(),
-						"Selection filter: excluded %d transitive found rows using %s (manifest rows: %d, closure-suppressed: %d)\n",
-						totalExcluded,
-						manifestStats.SelectedStatusColumnName,
-						manifestStats.ExcludedTransitiveFound,
-						closureSuppressedExcluded,
-					)
-				}
-				if verbose && parentAdded > 0 {
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d inferred parent Project/Folder objects\n", parentAdded)
-				}
-				if verbose && closureAdded > 0 {
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d in-package referenced dependencies\n", closureAdded)
-				}
-				cdiRefAdded := 0
-				if excludeFoundTransitive {
-					refNodes := make([]dependencies.CDIObjectRefNode, 0, len(meta.ExportedObjects))
-					for _, o := range meta.ExportedObjects {
-						if o.ObjectGUID == "" {
-							continue
-						}
-						refNodes = append(refNodes, dependencies.CDIObjectRefNode{
-							ID:         o.ObjectGUID,
-							Type:       o.ObjectType,
-							ObjectRefs: o.objectRefs(),
-						})
-					}
-					cdiRefAdded = dependencies.IncludeCDISysRefsFromObjectRefs(refNodes, selectedIDs)
-					if verbose && cdiRefAdded > 0 {
-						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: included %d CDI Connection/AgentGroup refs from objectRefs\n", cdiRefAdded)
+				if verbose {
+					for _, n := range buildResult.Notices {
+						_, _ = fmt.Fprint(cmd.OutOrStdout(), n)
 					}
 				}
-
-				selectedObjects := make([]exportedObject, 0, len(selectedIDs))
-				for _, o := range meta.ExportedObjects {
-					if selectedIDs[o.ObjectGUID] {
-						selectedObjects = append(selectedObjects, o)
-					}
-				}
-				if len(selectedObjects) == 0 {
-					return fmt.Errorf("selection manifest resolved no exported objects")
-				}
-				reportIncluded = exportedObjectsToManifestLog(selectedObjects)
-				reportSelectedCount = len(selectedObjects)
-				reportExcludedCount = manifestStats.ExcludedTransitiveFound + closureSuppressedExcluded
-				metadataObjects := selectedObjects
-				if !excludeFoundTransitive {
-					selectedNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-					for i, o := range selectedObjects {
-						selectedNodes[i] = dependencies.ObjectRefsNode{
-							ID:         o.ObjectGUID,
-							ObjectRefs: o.objectRefs(),
-						}
-					}
-					prunedRefsByID, prunedCount := dependencies.PruneDanglingObjectRefs(selectedNodes)
-					for i := range selectedObjects {
-						if setErr := selectedObjects[i].setObjectRefs(prunedRefsByID[selectedObjects[i].ObjectGUID]); setErr != nil {
-							return setErr
-						}
-					}
-					postPruneNodes := make([]dependencies.ObjectRefsNode, len(selectedObjects))
-					for i, o := range selectedObjects {
-						postPruneNodes[i] = dependencies.ObjectRefsNode{
-							ID:         o.ObjectGUID,
-							ObjectRefs: o.objectRefs(),
-						}
-					}
-					if dangling := dependencies.CountDanglingObjectRefs(postPruneNodes); dangling > 0 {
-						return fmt.Errorf("selection produced %d unresolved objectRefs after pruning; cannot create import-safe package", dangling)
-					}
-					if verbose && prunedCount > 0 {
-						_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Selection refinement: pruned %d dangling metadata objectRefs\n", prunedCount)
-					}
-				} else {
-					metadataIDs := buildMetadataGraphForSelection(meta.ExportedObjects, selectedIDs, excludedSelectedIDs)
-					metadataObjectList := make([]exportedObject, 0, len(metadataIDs))
-					for _, o := range meta.ExportedObjects {
-						if metadataIDs[o.ObjectGUID] {
-							metadataObjectList = append(metadataObjectList, o)
-						}
-					}
-					if len(metadataObjectList) == 0 {
-						return fmt.Errorf("selection metadata graph resolved no exported objects")
-					}
-					metadataNodes := make([]dependencies.ObjectRefsNode, len(metadataObjectList))
-					for i, o := range metadataObjectList {
-						metadataNodes[i] = dependencies.ObjectRefsNode{
-							ID:         o.ObjectGUID,
-							ObjectRefs: o.objectRefs(),
-						}
-					}
-					prunedRefsByID, _ := dependencies.PruneDanglingObjectRefs(metadataNodes)
-					for i := range metadataObjectList {
-						if setErr := metadataObjectList[i].setObjectRefs(prunedRefsByID[metadataObjectList[i].ObjectGUID]); setErr != nil {
-							return setErr
-						}
-					}
-					metadataObjects = metadataObjectList
-				}
-
-				filtered := filterPackageFilesForSelection(fileContents, meta.ExportedObjects, selectedIDs)
-				if len(filtered) == 0 {
-					return fmt.Errorf("no package files remained after selection filtering")
-				}
-
-				finalPackageName := packageName
-				if finalPackageName == "" {
-					finalPackageName = strings.TrimSuffix(filepath.Base(target), filepath.Ext(target))
-				}
-
-				meta.Name = finalPackageName
-				if !includeTags {
-					meta.Tags = nil
-				}
-				meta.ExportedObjects = metadataObjects
-				metaData, marshalErr := json.MarshalIndent(meta, "", "  ")
-				if marshalErr != nil {
-					return fmt.Errorf("serializing filtered exportMetadata.v2.json: %w", marshalErr)
-				}
-				filtered["exportMetadata.v2.json"] = metaData
-
-				contentsCSV, csvErr := buildContentsOfExportPackageCSV(selectedObjects)
-				if csvErr != nil {
-					return csvErr
-				}
-				filtered["ContentsofExportPackage_"+finalPackageName+".csv"] = contentsCSV
-				fileContents = filtered
+				reportIncluded = buildResult.ReportIncluded
+				reportSelectedCount = buildResult.ReportSelected
+				reportExcludedCount = buildResult.ReportExcluded
+				fileContents = buildResult.Files
 			}
 
 			// 4. Generate checksum from all collected files
@@ -798,134 +631,6 @@ func readPackageSelectionManifest(
 	return entries, parseStats, true, nil
 }
 
-func filterPackageFilesForSelection(
-	fileContents map[string][]byte,
-	allObjects []exportedObject,
-	selectedIDs map[string]bool,
-) map[string][]byte {
-	allObjectFiles := make(map[string]bool)
-	selectedObjectFiles := make(map[string]bool)
-	for _, o := range allObjects {
-		candidates := dependencies.ObjectChecksumCandidates(o.Path, o.ObjectName, o.ObjectType)
-		for _, c := range candidates {
-			if _, ok := fileContents[c]; ok {
-				allObjectFiles[c] = true
-				if selectedIDs[o.ObjectGUID] {
-					selectedObjectFiles[c] = true
-				}
-			}
-		}
-	}
-
-	out := make(map[string][]byte)
-	for path, data := range fileContents {
-		if path == "exportPackage.chksum" || path == "exportMetadata.v2.json" {
-			continue
-		}
-		if strings.HasPrefix(path, "ContentsofExportPackage_") && strings.HasSuffix(path, ".csv") {
-			continue
-		}
-		if allObjectFiles[path] {
-			if selectedObjectFiles[path] {
-				out[path] = data
-			}
-			continue
-		}
-		out[path] = data
-	}
-	return out
-}
-
-func buildMetadataGraphForSelection(
-	allObjects []exportedObject,
-	selectedIDs map[string]bool,
-	excludedIDs map[string]bool,
-) map[string]bool {
-	metadataIDs := make(map[string]bool, len(selectedIDs))
-	for id := range selectedIDs {
-		metadataIDs[id] = true
-	}
-	byID := make(map[string]exportedObject, len(allObjects))
-	exportedRefs := make([]dependencies.ExportedObjectRef, 0, len(allObjects))
-	for _, o := range allObjects {
-		if o.ObjectGUID == "" {
-			continue
-		}
-		byID[o.ObjectGUID] = o
-		exportedRefs = append(exportedRefs, dependencies.ExportedObjectRef{
-			ObjectGUID: o.ObjectGUID,
-			ObjectName: o.ObjectName,
-			ObjectType: o.ObjectType,
-			Path:       o.Path,
-		})
-	}
-
-	queue := make([]string, 0, len(metadataIDs))
-	for id := range metadataIDs {
-		queue = append(queue, id)
-	}
-	for len(queue) > 0 {
-		id := queue[0]
-		queue = queue[1:]
-		obj, ok := byID[id]
-		if !ok {
-			continue
-		}
-		for _, refID := range obj.objectRefs() {
-			if excludedIDs[refID] && !selectedIDs[refID] {
-				continue
-			}
-			if _, exists := byID[refID]; !exists {
-				continue
-			}
-			if metadataIDs[refID] {
-				continue
-			}
-			metadataIDs[refID] = true
-			queue = append(queue, refID)
-		}
-	}
-
-	// Include container hierarchy needed for selected/closure objects.
-	_ = dependencies.IncludeParentContainers(exportedRefs, metadataIDs)
-	for id := range excludedIDs {
-		if selectedIDs[id] {
-			continue
-		}
-		delete(metadataIDs, id)
-	}
-	return metadataIDs
-}
-
-func buildContentsOfExportPackageCSV(objects []exportedObject) ([]byte, error) {
-	rows := make([][]string, 0, len(objects)+1)
-	rows = append(rows, []string{"objectPath", "objectName", "objectType", "id"})
-
-	sorted := make([]exportedObject, len(objects))
-	copy(sorted, objects)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		a := client.NormalizeLocationPath(sorted[i].Path) + "/" + sorted[i].ObjectName + "." + sorted[i].ObjectType
-		b := client.NormalizeLocationPath(sorted[j].Path) + "/" + sorted[j].ObjectName + "." + sorted[j].ObjectType
-		return a < b
-	})
-
-	for _, o := range sorted {
-		rows = append(rows, []string{
-			o.Path,
-			o.ObjectName,
-			o.ObjectType,
-			o.ObjectGUID,
-		})
-	}
-
-	var b bytes.Buffer
-	w := csv.NewWriter(&b)
-	if err := w.WriteAll(rows); err != nil {
-		return nil, fmt.Errorf("writing ContentsofExportPackage csv: %w", err)
-	}
-	return b.Bytes(), nil
-}
-
 // ---------------------------------------------------------------------------
 // package dependencies
 // ---------------------------------------------------------------------------
@@ -950,79 +655,13 @@ var typePriority = map[string]int{
 	"TASKFLOW":             5,
 }
 
-// exportMetadata represents the exportMetadata.v2.json file in an IICS export package.
-type exportMetadata struct {
-	Name            string           `json:"name"`
-	SourceOrgID     string           `json:"sourceOrgId"`
-	SourceOrgName   string           `json:"sourceOrgName"`
-	Tags            []exportTag      `json:"tags,omitempty"`
-	ExportedObjects []exportedObject `json:"exportedObjects"`
-}
-
-type exportTag struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-}
-
-// exportedObject is one asset record in exportMetadata.v2.json.
-type exportedObject struct {
-	ObjectGUID   string          `json:"objectGuid"`
-	ObjectName   string          `json:"objectName"`
-	ObjectType   string          `json:"objectType"`
-	Path         string          `json:"path"`
-	ProviderName json.RawMessage `json:"providerName,omitempty"`
-	Metadata     json.RawMessage `json:"metadata"`
-}
-
-func exportedObjectsToManifestLog(objects []exportedObject) []release.ManifestLogAsset {
-	rows := make([]release.ManifestLogAsset, 0, len(objects))
-	for _, object := range objects {
-		rows = append(rows, release.ManifestLogAsset{
-			ID:   object.ObjectGUID,
-			Type: object.ObjectType,
-			Path: object.Path,
-		})
-	}
-	return rows
-}
-
-// objectRefs extracts metadata.objectRefs while preserving all other metadata fields.
-func (o exportedObject) objectRefs() []string {
-	metadata := bytes.TrimSpace(o.Metadata)
-	if len(metadata) == 0 || bytes.Equal(metadata, []byte("null")) {
-		return nil
-	}
-	var m struct {
-		ObjectRefs []string `json:"objectRefs"`
-	}
-	if err := json.Unmarshal(metadata, &m); err != nil {
-		return nil
-	}
-	return append([]string(nil), m.ObjectRefs...)
-}
-
-// setObjectRefs updates metadata.objectRefs without dropping other metadata fields.
-func (o *exportedObject) setObjectRefs(refs []string) error {
-	metadata := bytes.TrimSpace(o.Metadata)
-	m := make(map[string]json.RawMessage)
-	if len(metadata) > 0 && !bytes.Equal(metadata, []byte("null")) {
-		if err := json.Unmarshal(metadata, &m); err != nil {
-			return fmt.Errorf("parsing metadata for %s: %w", o.ObjectGUID, err)
-		}
-	}
-	rawRefs, err := json.Marshal(refs)
-	if err != nil {
-		return fmt.Errorf("serializing metadata refs for %s: %w", o.ObjectGUID, err)
-	}
-	m["objectRefs"] = rawRefs
-	updated, err := json.Marshal(m)
-	if err != nil {
-		return fmt.Errorf("serializing metadata for %s: %w", o.ObjectGUID, err)
-	}
-	o.Metadata = updated
-	return nil
-}
+// exportMetadata and exportedObject are aliases for the corresponding
+// internal/packaging types (moved there as part of the selective-export
+// orchestration pipeline). Aliasing keeps every existing call site in this file
+// (readExportMetadata, resolveDependencies, package dependencies, etc.) source
+// compatible without behavioral change.
+type exportMetadata = packaging.ExportMetadata
+type exportedObject = packaging.ExportedObject
 
 // dependencyItem is one row in the dependency output.
 type dependencyItem struct {
@@ -1173,41 +812,7 @@ type dependencyEdge struct {
 
 // readExportMetadata reads exportMetadata.v2.json from a ZIP file or workspace directory.
 func readExportMetadata(filePath, workspace string) (*exportMetadata, error) {
-	if workspace != "" {
-		data, err := os.ReadFile(filepath.Join(workspace, "exportMetadata.v2.json"))
-		if err != nil {
-			return nil, fmt.Errorf("reading exportMetadata.v2.json: %w", err)
-		}
-		var meta exportMetadata
-		if err := json.Unmarshal(data, &meta); err != nil {
-			return nil, fmt.Errorf("parsing exportMetadata.v2.json: %w", err)
-		}
-		return &meta, nil
-	}
-	r, err := zip.OpenReader(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("opening package file: %w", err)
-	}
-	defer func() { _ = r.Close() }()
-	for _, f := range r.File {
-		if f.Name == "exportMetadata.v2.json" {
-			rc, oErr := f.Open()
-			if oErr != nil {
-				return nil, fmt.Errorf("opening exportMetadata.v2.json in ZIP: %w", oErr)
-			}
-			data, rErr := io.ReadAll(rc)
-			_ = rc.Close()
-			if rErr != nil {
-				return nil, fmt.Errorf("reading exportMetadata.v2.json from ZIP: %w", rErr)
-			}
-			var meta exportMetadata
-			if err := json.Unmarshal(data, &meta); err != nil {
-				return nil, fmt.Errorf("parsing exportMetadata.v2.json: %w", err)
-			}
-			return &meta, nil
-		}
-	}
-	return nil, fmt.Errorf("exportMetadata.v2.json not found in package")
+	return packaging.ReadExportMetadata(filePath, workspace)
 }
 
 func readExportChecksumEntries(filePath, workspace string) (map[string]bool, error) {
@@ -1351,7 +956,7 @@ func resolveDependencies(
 				}
 			}
 
-			for _, refGUID := range obj.objectRefs() {
+			for _, refGUID := range obj.ObjectRefs() {
 				rawEdges = append(rawEdges, [2]string{guid, refGUID})
 				if refGUID != "" && !visited[refGUID] {
 					queue = append(queue, refGUID)

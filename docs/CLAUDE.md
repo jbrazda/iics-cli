@@ -128,7 +128,9 @@ _ = f.Format(data, cols)
 ```
 
 `TableStyle.NoColor = true` forces plain ASCII rendering (no color, no Unicode borders).
-When the output writer is not a TTY the renderer automatically falls back to plain style.
+When the output writer is not a TTY and no theme is explicitly configured, the renderer
+defaults to `markdown` (colorless, pipe/script-friendly) instead of `default`; an explicitly
+configured theme other than `markdown`/`gh` still falls back to `plain` on a non-TTY writer.
 
 ---
 

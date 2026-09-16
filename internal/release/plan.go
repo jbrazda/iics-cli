@@ -270,20 +270,24 @@ func FilterMissingTransitiveForTarget(ctx context.Context, targetProfileName str
 	if err != nil {
 		return nil, err
 	}
+	validations := validateAssetsExistInTarget(ctx, tc, assets)
+	return FilterMissingTransitiveWithValidations(assets, validations), nil
+}
 
+// FilterMissingTransitiveWithValidations applies the missing-transitive policy
+// using a precomputed validation matrix (asset Location -> AssetValidation),
+// avoiding a network round trip when the matrix was already computed
+// elsewhere (e.g. by ValidateAssetsForTargets for the status table).
+func FilterMissingTransitiveWithValidations(assets []Asset, validations map[string]AssetValidation) []Asset {
 	missingByLocation := make(map[string]bool, len(assets))
 	for _, a := range assets {
 		if a.Dependency != "transitive" {
 			continue
 		}
-		exists, existsErr := assetExistsInTarget(ctx, tc, a)
-		if existsErr != nil {
-			return nil, fmt.Errorf("checking target %q for %s: %w", targetProfileName, a.Location, existsErr)
-		}
-		missingByLocation[a.Location] = !exists
+		v, ok := validations[a.Location]
+		missingByLocation[a.Location] = !ok || v.Status != "found"
 	}
-
-	return ApplyMissingTransitivePolicy(assets, missingByLocation), nil
+	return ApplyMissingTransitivePolicy(assets, missingByLocation)
 }
 
 func ValidateAssetsForTarget(ctx context.Context, targetProfileName string, assets []Asset, opts TargetResolutionOptions) ([]AssetValidation, error) {
@@ -291,19 +295,32 @@ func ValidateAssetsForTarget(ctx context.Context, targetProfileName string, asse
 	if err != nil {
 		return nil, err
 	}
-
+	validations := validateAssetsExistInTarget(ctx, tc, assets)
 	out := make([]AssetValidation, len(assets))
 	for i, a := range assets {
-		exists, existsErr := assetExistsInTarget(ctx, tc, a)
-		if existsErr != nil {
-			out[i] = AssetValidation{Status: "unknown", Warning: existsErr.Error()}
-			continue
+		if v, ok := validations[a.Location]; ok {
+			out[i] = v
+		} else {
+			out[i] = AssetValidation{Status: "unknown"}
 		}
-		if exists {
-			out[i] = AssetValidation{Status: "found"}
-			continue
+	}
+	return out, nil
+}
+
+// ValidateAssetsForTargets computes an existence validation matrix for every
+// (target, asset) pair, batching each target's non-Connection assets into a
+// single Lookup call rather than one call per asset. The result (keyed by
+// target, then by asset Location) can be reused across the status table
+// render and BuildPlan's package/publish annotation instead of re-querying
+// the same assets twice.
+func ValidateAssetsForTargets(ctx context.Context, targets []string, assets []Asset, opts TargetResolutionOptions) (map[string]map[string]AssetValidation, error) {
+	out := make(map[string]map[string]AssetValidation, len(targets))
+	for _, target := range targets {
+		tc, _, err := resolveTargetClient(target, opts)
+		if err != nil {
+			return nil, fmt.Errorf("profile %q: %w", target, err)
 		}
-		out[i] = AssetValidation{Status: "missing"}
+		out[target] = validateAssetsExistInTarget(ctx, tc, assets)
 	}
 	return out, nil
 }
@@ -324,6 +341,21 @@ func AnnotateAssetsWithTargetValidation(ctx context.Context, targetProfileName s
 		}
 	}
 	return out, nil
+}
+
+// AnnotateAssetsWithValidations returns a copy of assets with Status/Warning
+// populated from a precomputed validation matrix (asset Location ->
+// AssetValidation), avoiding a network round trip.
+func AnnotateAssetsWithValidations(assets []Asset, validations map[string]AssetValidation) []Asset {
+	out := make([]Asset, len(assets))
+	copy(out, assets)
+	for i := range out {
+		if v, ok := validations[out[i].Location]; ok {
+			out[i].Status = v.Status
+			out[i].Warning = v.Warning
+		}
+	}
+	return out
 }
 
 func statusFieldForTarget(target string) string {
@@ -564,32 +596,74 @@ func resolveTargetClient(targetProfileName string, opts TargetResolutionOptions)
 	return client.NewClient(loginURL, profile.Username, profile.Password, clientOptions...), resolvedProfileName, nil
 }
 
-func assetExistsInTarget(ctx context.Context, tc *client.Client, a Asset) (bool, error) {
-	if a.Type == "Connection" {
-		name := a.Path
-		if idx := strings.LastIndex(name, "/"); idx >= 0 {
-			name = name[idx+1:]
+// validateAssetsExistInTarget checks existence of every asset against tc,
+// batching everything except Connection-typed assets (which have no bulk
+// lookup API) into a single Lookup call instead of one round trip per asset.
+// A lookup failure is recorded as an "unknown" status against the affected
+// assets rather than aborting the whole pass, matching the previous
+// per-asset error handling.
+func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, assets []Asset) map[string]AssetValidation {
+	out := make(map[string]AssetValidation, len(assets))
+
+	var lookupAssets []Asset
+	var lookupObjs []client.LookupObject
+	for _, a := range assets {
+		if a.Type == "Connection" {
+			out[a.Location] = validateConnectionExists(ctx, tc, a)
+			continue
 		}
-		_, err := tc.GetConnectionByName(ctx, name)
-		if err == nil {
-			return true, nil
-		}
-		if isMissingConnectionError(err) {
-			return false, nil
-		}
-		return false, err
+		lookupAssets = append(lookupAssets, a)
+		lookupObjs = append(lookupObjs, client.LookupObject{Path: a.Path, Type: a.Type})
 	}
 
-	resp, err := tc.Lookup(ctx, []client.LookupObject{{Path: a.Path, Type: a.Type}})
+	if len(lookupObjs) == 0 {
+		return out
+	}
+
+	resp, err := tc.Lookup(ctx, lookupObjs)
 	if err != nil {
 		var apiErr *client.APIError
 		if errors.As(err, &apiErr) &&
 			bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
-			return false, nil
+			for _, a := range lookupAssets {
+				out[a.Location] = AssetValidation{Status: "missing"}
+			}
+			return out
 		}
-		return false, err
+		warning := err.Error()
+		for _, a := range lookupAssets {
+			out[a.Location] = AssetValidation{Status: "unknown", Warning: warning}
+		}
+		return out
 	}
-	return len(resp.Objects) > 0, nil
+
+	found := make(map[string]bool, len(resp.Objects))
+	for _, obj := range resp.Objects {
+		found[client.BuildLookupMatchKey(obj.Path, obj.Type)] = true
+	}
+	for _, a := range lookupAssets {
+		if found[client.BuildLookupMatchKey(a.Path, a.Type)] {
+			out[a.Location] = AssetValidation{Status: "found"}
+		} else {
+			out[a.Location] = AssetValidation{Status: "missing"}
+		}
+	}
+	return out
+}
+
+func validateConnectionExists(ctx context.Context, tc *client.Client, a Asset) AssetValidation {
+	name := a.Path
+	if idx := strings.LastIndex(name, "/"); idx >= 0 {
+		name = name[idx+1:]
+	}
+	_, err := tc.GetConnectionByName(ctx, name)
+	if err == nil {
+		return AssetValidation{Status: "found"}
+	}
+	if isMissingConnectionError(err) {
+		return AssetValidation{Status: "missing"}
+	}
+	return AssetValidation{Status: "unknown", Warning: err.Error()}
 }
 
 func isMissingConnectionError(err error) bool {

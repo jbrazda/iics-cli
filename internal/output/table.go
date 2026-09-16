@@ -116,14 +116,23 @@ func adaptWidth(w io.Writer, style TableStyle, theme string) int {
 	return 0
 }
 
-// effectiveTheme resolves the theme to use, downgrading to "plain" when
-// no-color is set or the output writer is not a TTY.
+// effectiveTheme resolves the theme to use. No-color always downgrades to
+// "plain". On a non-TTY writer, an unset theme now defaults to "markdown"
+// (script/pipe-friendly, and already colorless) rather than "plain"; an
+// explicitly-configured theme other than markdown/gh still downgrades to
+// "plain" there, same as before.
 // The "markdown" and "gh" themes are always colorless and bypass the TTY check.
 func effectiveTheme(w io.Writer, style TableStyle) string {
 	if style.Theme == "markdown" || style.Theme == "gh" {
 		return style.Theme
 	}
-	if style.NoColor || !isTerminal(w) {
+	if style.NoColor {
+		return "plain"
+	}
+	if !isTerminal(w) {
+		if style.Theme == "" {
+			return "markdown"
+		}
 		return "plain"
 	}
 	if style.Theme == "" {
