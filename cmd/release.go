@@ -263,14 +263,17 @@ func newReleasePlanCmd() *cobra.Command {
 					"explicitAssets", stats.ExplicitAssets,
 					"transitiveAssets", stats.TransitiveAssets,
 				)
+				validationsByTarget, valErr := release.ValidateAssetsForTargets(context.Background(), opts.Targets, fullAssets, targetResolutionOpts)
+				if valErr != nil {
+					return valErr
+				}
 				if infoEnabled {
 					slog.Info("release plan: full mode dependency status table")
 					if renderErr := renderDependencyStatusTable(
-						context.Background(),
 						logWriter,
 						fullAssets,
 						opts.Targets,
-						targetResolutionOpts,
+						validationsByTarget,
 					); renderErr != nil {
 						return renderErr
 					}
@@ -285,6 +288,7 @@ func newReleasePlanCmd() *cobra.Command {
 					Targets:                 opts.Targets,
 					FilterMissingTransitive: filterMissingTrans,
 					TargetResolutionOptions: targetResolutionOpts,
+					Validations:             validationsByTarget,
 					OutputRoot:              outputRoot,
 					PackageFileBaseName:     "full_build.package",
 					PlanExt:                 planExt,
@@ -344,14 +348,17 @@ func newReleasePlanCmd() *cobra.Command {
 			}
 
 			allFiltered := release.ApplyPolicies(assets, opts.IncludeConnectors, opts.IncludeConnections, excludes)
+			validationsByTarget, valErr := release.ValidateAssetsForTargets(context.Background(), opts.Targets, allFiltered, targetResolutionOpts)
+			if valErr != nil {
+				return valErr
+			}
 			if infoEnabled {
 				slog.Info("release plan: dependency status table")
 				if err := renderDependencyStatusTable(
-					context.Background(),
 					logWriter,
 					allFiltered,
 					opts.Targets,
-					targetResolutionOpts,
+					validationsByTarget,
 				); err != nil {
 					return err
 				}
@@ -367,6 +374,7 @@ func newReleasePlanCmd() *cobra.Command {
 				Targets:                 opts.Targets,
 				FilterMissingTransitive: filterMissingTrans,
 				TargetResolutionOptions: targetResolutionOpts,
+				Validations:             validationsByTarget,
 				OutputRoot:              outputRoot,
 				PackageFileBaseName:     "tag_build.package",
 				PlanExt:                 planExt,
@@ -469,11 +477,10 @@ func resolvePlanAssetsWriter(raw string) (func(string, []release.Asset, []string
 }
 
 func renderDependencyStatusTable(
-	ctx context.Context,
 	w io.Writer,
 	assets []release.Asset,
 	targets []string,
-	opts release.TargetResolutionOptions,
+	validationsByTarget map[string]map[string]release.AssetValidation,
 ) error {
 	sortedAssets := release.SortAssetsByLocation(assets)
 	tableRows := make([]map[string]interface{}, len(sortedAssets))
@@ -489,14 +496,12 @@ func renderDependencyStatusTable(
 	}
 
 	for _, target := range targets {
-		validations, err := release.ValidateAssetsForTarget(ctx, target, sortedAssets, opts)
-		if err != nil {
-			return fmt.Errorf("profile %q: %w", target, err)
-		}
+		validations := validationsByTarget[target]
 		key := strings.ReplaceAll(target, "-", "_")
 		for i := range tableRows {
-			tableRows[i]["status_"+key] = validations[i].Status
-			tableRows[i]["warning_"+key] = validations[i].Warning
+			v := validations[sortedAssets[i].Location]
+			tableRows[i]["status_"+key] = v.Status
+			tableRows[i]["warning_"+key] = v.Warning
 		}
 	}
 

@@ -38,6 +38,13 @@ type PlanOptions struct {
 	FilterMissingTransitive bool
 	TargetResolutionOptions TargetResolutionOptions
 
+	// Validations, when set, is a precomputed target -> Location ->
+	// AssetValidation matrix (e.g. from ValidateAssetsForTargets, already
+	// used to render a verbose dependency status table) reused here to skip
+	// re-querying the target for assets it was already validated against.
+	// A target missing from the map falls back to querying live.
+	Validations map[string]map[string]AssetValidation
+
 	OutputRoot string
 	// PackageFileBaseName is the per-target package file name without its
 	// extension, e.g. "full_build.package" or "tag_build.package".
@@ -93,13 +100,19 @@ func BuildPlan(ctx context.Context, opts PlanOptions) (PlanResult, error) {
 			return PlanResult{}, fmt.Errorf("creating env directory: %w", err)
 		}
 
+		validations := opts.Validations[env]
+
 		envAssets := opts.Assets
 		if opts.FilterMissingTransitive {
-			filtered, err := FilterMissingTransitiveForTarget(ctx, env, opts.Assets, opts.TargetResolutionOptions)
-			if err != nil {
-				return PlanResult{}, err
+			if validations != nil {
+				envAssets = FilterMissingTransitiveWithValidations(opts.Assets, validations)
+			} else {
+				filtered, err := FilterMissingTransitiveForTarget(ctx, env, opts.Assets, opts.TargetResolutionOptions)
+				if err != nil {
+					return PlanResult{}, err
+				}
+				envAssets = filtered
 			}
-			envAssets = filtered
 			slog.Info("release plan: missing-transitive filter applied",
 				"environment", env,
 				"before", len(opts.Assets),
@@ -107,9 +120,15 @@ func BuildPlan(ctx context.Context, opts PlanOptions) (PlanResult, error) {
 			)
 		}
 
-		envPackageAssets, err := AnnotateAssetsWithTargetValidation(ctx, env, envAssets, opts.TargetResolutionOptions)
-		if err != nil {
-			return PlanResult{}, err
+		var envPackageAssets []Asset
+		if validations != nil {
+			envPackageAssets = AnnotateAssetsWithValidations(envAssets, validations)
+		} else {
+			annotated, err := AnnotateAssetsWithTargetValidation(ctx, env, envAssets, opts.TargetResolutionOptions)
+			if err != nil {
+				return PlanResult{}, err
+			}
+			envPackageAssets = annotated
 		}
 		envPackageFields := EnsureCurrentTargetStatusField(opts.PackageFields, env)
 		publishAssets := PublishAssets(envAssets)

@@ -17,8 +17,11 @@ import (
 // lookup responses for BuildPlan's target-resolution calls (FilterMissingTransitiveForTarget,
 // AnnotateAssetsWithTargetValidation). An asset is reported as already existing in the
 // target when its path contains "Existing"; every other asset is reported missing.
-func newBuildPlanTestServer(t *testing.T) *httptest.Server {
+// The returned counter tracks how many /lookup requests were made, so tests
+// can assert assets are validated in as few batched calls as possible.
+func newBuildPlanTestServer(t *testing.T) (*httptest.Server, *int) {
 	t.Helper()
+	lookupCalls := 0
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		resp := client.LoginResponse{
@@ -29,6 +32,7 @@ func newBuildPlanTestServer(t *testing.T) *httptest.Server {
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 	mux.HandleFunc("/public/core/v3/lookup", func(w http.ResponseWriter, r *http.Request) {
+		lookupCalls++
 		var req client.LookupRequest
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		var resp client.LookupResponse
@@ -42,7 +46,7 @@ func newBuildPlanTestServer(t *testing.T) *httptest.Server {
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
-	return srv
+	return srv, &lookupCalls
 }
 
 // setEnvTargetCredentials points target-profile resolution at the given
@@ -72,7 +76,7 @@ func readCSVRows(t *testing.T, path string) [][]string {
 }
 
 func TestBuildPlanFullMode(t *testing.T) {
-	srv := newBuildPlanTestServer(t)
+	srv, lookupCalls := newBuildPlanTestServer(t)
 	setEnvTargetCredentials(t, "QA", srv.URL+"/login")
 
 	assets := []Asset{
@@ -155,10 +159,17 @@ func TestBuildPlanFullMode(t *testing.T) {
 	if _, statErr := os.Stat(publishPath); statErr != nil {
 		t.Fatalf("expected publish file at %s: %v", publishPath, statErr)
 	}
+
+	// The missing-transitive filter and the package annotation each validate
+	// existence for the same 3 assets; both must batch all their assets into
+	// a single /lookup call rather than one call per asset.
+	if *lookupCalls != 2 {
+		t.Errorf("lookupCalls = %d, want 2 (one batched call per validation pass)", *lookupCalls)
+	}
 }
 
 func TestBuildPlanSelectiveModeWithConnectors(t *testing.T) {
-	srv := newBuildPlanTestServer(t)
+	srv, _ := newBuildPlanTestServer(t)
 	setEnvTargetCredentials(t, "TST", srv.URL+"/login")
 
 	allFiltered := []Asset{
@@ -215,6 +226,66 @@ func TestBuildPlanSelectiveModeWithConnectors(t *testing.T) {
 	}
 	if connectorRows[1][0] != "Explore/Conn.AI_CONNECTION" {
 		t.Fatalf("unexpected connector row: %#v", connectorRows[1])
+	}
+}
+
+func TestBuildPlanReusesPrecomputedValidations(t *testing.T) {
+	// No profile or CI env credentials configured for "QA" at all: if
+	// BuildPlan resolved a target client despite a precomputed validation
+	// matrix being supplied, resolveTargetClient would fail immediately.
+	// Succeeding here proves the missing-transitive filter and package
+	// annotation both reused the matrix instead of validating over the
+	// network.
+	t.Setenv("HOME", t.TempDir())
+
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Path: "Explore/A", Type: "PROCESS", Dependency: "explicit"},
+		{Location: "Explore/Missing.GUIDE", Path: "Explore/Missing", Type: "GUIDE", Dependency: "transitive"},
+		{Location: "Explore/Existing.TASKFLOW", Path: "Explore/Existing", Type: "TASKFLOW", Dependency: "transitive"},
+	}
+	validations := map[string]map[string]AssetValidation{
+		"QA": {
+			"Explore/A.PROCESS":         {Status: "missing"},
+			"Explore/Missing.GUIDE":     {Status: "missing"},
+			"Explore/Existing.TASKFLOW": {Status: "found"},
+		},
+	}
+
+	outputRoot := t.TempDir()
+	result, err := BuildPlan(context.Background(), PlanOptions{
+		Assets:                  assets,
+		ConnectorSourceAssets:   assets,
+		Targets:                 []string{"QA"},
+		FilterMissingTransitive: true,
+		Validations:             validations,
+		OutputRoot:              outputRoot,
+		PackageFileBaseName:     "full_build.package",
+		PlanExt:                 "csv",
+		WriteAssets:             WriteAssetsCSV,
+		PackageFields:           []string{"location", "type", "path", "dependency"},
+		PublishFields:           []string{"location", "type", "path", "dependency"},
+		CompletedLabel:          "full mode",
+	})
+	if err != nil {
+		t.Fatalf("BuildPlan() error = %v", err)
+	}
+
+	// Existing.TASKFLOW is transitive and marked "found" in the precomputed
+	// matrix, so it is filtered out; the explicit PROCESS and the still-
+	// missing transitive GUIDE remain, stamped with the matrix's statuses.
+	packageAssets := result.AssetsByTarget["QA"]
+	if len(packageAssets) != 2 {
+		t.Fatalf("AssetsByTarget[QA] len = %d, want 2: %#v", len(packageAssets), packageAssets)
+	}
+	byLocation := map[string]ManifestLogAsset{}
+	for _, a := range packageAssets {
+		byLocation[a.Location] = a
+	}
+	if got := byLocation["Explore/A.PROCESS"].Status; got != "missing" {
+		t.Errorf("Explore/A.PROCESS status = %q, want missing", got)
+	}
+	if _, ok := byLocation["Explore/Existing.TASKFLOW"]; ok {
+		t.Fatalf("Explore/Existing.TASKFLOW should have been filtered out via precomputed validations: %#v", packageAssets)
 	}
 }
 
