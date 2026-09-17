@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-09-17
+
+### Added
+
+- `agent restart` command; interactive `agent start`/`stop` (`--interactive`/`-i`)
+  with a service picker built from startable (not just running) services
+  (CR-0035, CR-0036)
+- `--blocking` mode for `agent start`/`stop` with status polling
+- `agent details --services` prints a single horizontal services table
+  instead of a vertical per-service listing (CR-0037)
+- `agent installer-info` and `agent installer-download` commands
+- `agent list --filter`; more detail fields surfaced for `agent` and
+  `environment`
+- `environment` command gains an interactive create wizard, `delete`, and
+  `create --description` support (CR-0032, CR-0033)
+- `group` command gains interactive and bulk create/update and name lookup;
+  `group get` shows roles and members tables (CR-0034)
+- Responsive table output: columns are now dropped, wrapped, or truncated by
+  priority tier to fit the detected terminal width, with a `--wide` override
+  and a `style.responsiveTables` config option (CR-0038)
+- `release plan`: `--publish-include-found-transitive`,
+  `--publish-exclude-regex`, and `--publish-exclude-file` add publish-file-only
+  transitive-dependency inclusion and location-based excludes, independent of
+  the package file (CR-0039)
+
+### Changed
+
+- `runtime` command renamed to `environment`; `usergroup` command renamed to
+  `group`
+- `agent start`/`stop` now target the agent's `federatedId` instead of the v2
+  id
+- Internal restructuring of selective package export
+  (`internal/packaging`) and release-plan orchestration
+  (`internal/release.BuildPlan`) for maintainability; no CLI-visible change
+
+### Fixed
+
+- `agent`'s interactive picker now shows the agent ID in its label
+- `agent list` default output restores the `id` column; full agent record is
+  exposed
+- `runtime`/`environment` create and update now send the `@type`
+  discriminator correctly
+
 ## [0.5.4] - 2026-09-01
 
 ### Fixed
