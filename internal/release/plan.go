@@ -186,18 +186,9 @@ func LoadExcludePatterns(filePath string) ([]*regexp.Regexp, error) {
 }
 
 func ApplyPolicies(assets []Asset, includeConnectors, includeConnections bool, excludePatterns []*regexp.Regexp) []Asset {
+	assets = ExcludeAssetsByLocation(assets, excludePatterns)
 	filtered := make([]Asset, 0, len(assets))
 	for _, a := range assets {
-		excluded := false
-		for _, re := range excludePatterns {
-			if re.MatchString(a.Location) {
-				excluded = true
-				break
-			}
-		}
-		if excluded {
-			continue
-		}
 		if !includeConnectors && isConnectorType(a.Type) {
 			continue
 		} else if !includeConnections && isConnectionType(a.Type) {
@@ -206,6 +197,27 @@ func ApplyPolicies(assets []Asset, includeConnectors, includeConnections bool, e
 		filtered = append(filtered, a)
 	}
 	return filtered
+}
+
+// ExcludeAssetsByLocation drops assets whose Location matches any of patterns.
+func ExcludeAssetsByLocation(assets []Asset, patterns []*regexp.Regexp) []Asset {
+	if len(patterns) == 0 {
+		return assets
+	}
+	out := make([]Asset, 0, len(assets))
+	for _, a := range assets {
+		excluded := false
+		for _, re := range patterns {
+			if re.MatchString(a.Location) {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 func ConnectorAssets(assets []Asset) []Asset {

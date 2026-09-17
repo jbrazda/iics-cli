@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -56,6 +57,16 @@ type PlanOptions struct {
 
 	IncludeConnectors  bool
 	IncludeConnections bool
+
+	// PublishIncludeFoundTransitive, when true, computes the publish file's
+	// assets from the unfiltered per-plan Assets (explicit + all transitive,
+	// found and missing) instead of the missing-transitive-filtered envAssets
+	// used for the package file. Package file output is unaffected.
+	PublishIncludeFoundTransitive bool
+	// PublishExcludePatterns, when non-empty, drops assets whose Location
+	// matches any pattern from the publish file only (package file output is
+	// unaffected).
+	PublishExcludePatterns []*regexp.Regexp
 
 	InfoEnabled            bool
 	RenderPackageTotals    TypeCountRenderer
@@ -131,7 +142,14 @@ func BuildPlan(ctx context.Context, opts PlanOptions) (PlanResult, error) {
 			envPackageAssets = annotated
 		}
 		envPackageFields := EnsureCurrentTargetStatusField(opts.PackageFields, env)
-		publishAssets := PublishAssets(envAssets)
+		publishSource := envAssets
+		if opts.PublishIncludeFoundTransitive {
+			publishSource = opts.Assets // unfiltered per-plan input: explicit + all transitive (found and missing)
+		}
+		publishAssets := PublishAssets(publishSource)
+		if len(opts.PublishExcludePatterns) > 0 {
+			publishAssets = ExcludeAssetsByLocation(publishAssets, opts.PublishExcludePatterns)
+		}
 
 		if opts.InfoEnabled {
 			if opts.RenderPackageTotals != nil {

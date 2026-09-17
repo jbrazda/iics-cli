@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -156,6 +157,10 @@ func newReleasePlanCmd() *cobra.Command {
 		packageFieldsRaw       string
 		publishFieldsRaw       string
 		logFile                string
+
+		publishIncludeFoundTransitive bool
+		publishExcludeRegex           string
+		publishExcludeFile            string
 	)
 	cmd := &cobra.Command{
 		Use:   "plan",
@@ -203,6 +208,26 @@ func newReleasePlanCmd() *cobra.Command {
 				return err
 			}
 			slog.Info("release plan: exclude policy loaded", "patterns", len(excludes))
+
+			var publishExcludes []*regexp.Regexp
+			if publishExcludeFile != "" {
+				fileExcludes, loadErr := release.LoadExcludePatterns(publishExcludeFile)
+				if loadErr != nil {
+					return loadErr
+				}
+				publishExcludes = append(publishExcludes, fileExcludes...)
+			}
+			if publishExcludeRegex != "" {
+				re, compileErr := regexp.Compile(publishExcludeRegex)
+				if compileErr != nil {
+					return fmt.Errorf("invalid --publish-exclude-regex pattern: %w", compileErr)
+				}
+				publishExcludes = append(publishExcludes, re)
+			}
+			slog.Info("release plan: publish exclude policy loaded",
+				"publishIncludeFoundTransitive", publishIncludeFoundTransitive,
+				"publishExcludePatterns", len(publishExcludes),
+			)
 
 			packageFields := splitCSVFields(packageFieldsRaw, []string{"location", "type", "path", "dependency"})
 			publishFields := splitCSVFields(publishFieldsRaw, []string{"location", "type", "path", "dependency"})
@@ -283,24 +308,26 @@ func newReleasePlanCmd() *cobra.Command {
 				}
 
 				planResult, buildErr := release.BuildPlan(context.Background(), release.PlanOptions{
-					Assets:                  fullAssets,
-					ConnectorSourceAssets:   fullAssets,
-					Targets:                 opts.Targets,
-					FilterMissingTransitive: filterMissingTrans,
-					TargetResolutionOptions: targetResolutionOpts,
-					Validations:             validationsByTarget,
-					OutputRoot:              outputRoot,
-					PackageFileBaseName:     "full_build.package",
-					PlanExt:                 planExt,
-					WriteAssets:             writeAssets,
-					PackageFields:           packageFields,
-					PublishFields:           publishFields,
-					IncludeConnectors:       opts.IncludeConnectors,
-					IncludeConnections:      opts.IncludeConnections,
-					InfoEnabled:             infoEnabled,
-					RenderPackageTotals:     makeTypeCountRenderer(logWriter),
-					RenderPublishTotals:     makeTypeCountRenderer(logWriter),
-					RenderConnectorTotals:   makeTypeCountRenderer(logWriter),
+					Assets:                        fullAssets,
+					ConnectorSourceAssets:         fullAssets,
+					Targets:                       opts.Targets,
+					FilterMissingTransitive:       filterMissingTrans,
+					TargetResolutionOptions:       targetResolutionOpts,
+					Validations:                   validationsByTarget,
+					OutputRoot:                    outputRoot,
+					PackageFileBaseName:           "full_build.package",
+					PlanExt:                       planExt,
+					WriteAssets:                   writeAssets,
+					PackageFields:                 packageFields,
+					PublishFields:                 publishFields,
+					IncludeConnectors:             opts.IncludeConnectors,
+					IncludeConnections:            opts.IncludeConnections,
+					PublishIncludeFoundTransitive: publishIncludeFoundTransitive,
+					PublishExcludePatterns:        publishExcludes,
+					InfoEnabled:                   infoEnabled,
+					RenderPackageTotals:           makeTypeCountRenderer(logWriter),
+					RenderPublishTotals:           makeTypeCountRenderer(logWriter),
+					RenderConnectorTotals:         makeTypeCountRenderer(logWriter),
 					OnTargetFilesGenerated: func(env, packageFile, publishFile string, publishAssetCount int) {
 						slog.Info("release plan: full mode files generated",
 							"environment", env,
@@ -369,24 +396,26 @@ func newReleasePlanCmd() *cobra.Command {
 			connectorDependencyAssets := release.ApplyPolicies(assets, true, true, excludes)
 
 			planResult, buildErr := release.BuildPlan(context.Background(), release.PlanOptions{
-				Assets:                  allFiltered,
-				ConnectorSourceAssets:   connectorDependencyAssets,
-				Targets:                 opts.Targets,
-				FilterMissingTransitive: filterMissingTrans,
-				TargetResolutionOptions: targetResolutionOpts,
-				Validations:             validationsByTarget,
-				OutputRoot:              outputRoot,
-				PackageFileBaseName:     "tag_build.package",
-				PlanExt:                 planExt,
-				WriteAssets:             writeAssets,
-				PackageFields:           packageFields,
-				PublishFields:           publishFields,
-				IncludeConnectors:       opts.IncludeConnectors,
-				IncludeConnections:      opts.IncludeConnections,
-				InfoEnabled:             infoEnabled,
-				RenderPackageTotals:     makeTypeCountRenderer(logWriter),
-				RenderPublishTotals:     makeTypeCountRenderer(logWriter),
-				RenderConnectorTotals:   makeTypeCountRenderer(logWriter),
+				Assets:                        allFiltered,
+				ConnectorSourceAssets:         connectorDependencyAssets,
+				Targets:                       opts.Targets,
+				FilterMissingTransitive:       filterMissingTrans,
+				TargetResolutionOptions:       targetResolutionOpts,
+				Validations:                   validationsByTarget,
+				OutputRoot:                    outputRoot,
+				PackageFileBaseName:           "tag_build.package",
+				PlanExt:                       planExt,
+				WriteAssets:                   writeAssets,
+				PackageFields:                 packageFields,
+				PublishFields:                 publishFields,
+				IncludeConnectors:             opts.IncludeConnectors,
+				IncludeConnections:            opts.IncludeConnections,
+				PublishIncludeFoundTransitive: publishIncludeFoundTransitive,
+				PublishExcludePatterns:        publishExcludes,
+				InfoEnabled:                   infoEnabled,
+				RenderPackageTotals:           makeTypeCountRenderer(logWriter),
+				RenderPublishTotals:           makeTypeCountRenderer(logWriter),
+				RenderConnectorTotals:         makeTypeCountRenderer(logWriter),
 				OnTargetProcessing: func(env string) {
 					slog.Info("release plan: processing target", "environment", env)
 				},
@@ -429,6 +458,12 @@ func newReleasePlanCmd() *cobra.Command {
 	cmd.Flags().StringVar(&planOutput, "output", "csv", "plan file output format: csv|json|yaml")
 	cmd.Flags().StringVar(&packageFieldsRaw, "package-fields", "location,type,path,dependency", "fields for generated package files")
 	cmd.Flags().StringVar(&publishFieldsRaw, "publish-fields", "location,type,path,dependency", "fields for generated publish files")
+	cmd.Flags().BoolVar(&publishIncludeFoundTransitive, "publish-include-found-transitive", false,
+		"include transitive dependencies already found in the target in the generated publish file (package file is unaffected; independent of --include-found-transitive)")
+	cmd.Flags().StringVar(&publishExcludeRegex, "publish-exclude-regex", "",
+		"regex matched against an asset's location to exclude it from the generated publish file only")
+	cmd.Flags().StringVar(&publishExcludeFile, "publish-exclude-file", "",
+		"path to regex patterns file (one per line, # comments) matched against location to exclude assets from the generated publish file only; same format as the release manifest's excludeFile")
 	bindManifestLogFlag(cmd, &logFile)
 	return cmd
 }

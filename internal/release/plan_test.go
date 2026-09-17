@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -69,6 +70,30 @@ func TestApplyPoliciesIncludeFlags(t *testing.T) {
 		if a.Type == "AI_SERVICE_CONNECTOR" {
 			t.Fatalf("onlyConnections should not include connector type: %#v", onlyConnections)
 		}
+	}
+}
+
+func TestExcludeAssetsByLocation(t *testing.T) {
+	assets := []Asset{
+		{Location: "Explore/A.PROCESS", Type: "PROCESS"},
+		{Location: "Explore/Secret.GUIDE", Type: "GUIDE"},
+		{Location: "Explore/SYS/B.TASKFLOW", Type: "TASKFLOW"},
+	}
+
+	patterns := []*regexp.Regexp{
+		regexp.MustCompile(`Secret`),
+		regexp.MustCompile(`^Explore/SYS/`),
+	}
+	got := ExcludeAssetsByLocation(assets, patterns)
+	if len(got) != 1 || got[0].Location != "Explore/A.PROCESS" {
+		t.Fatalf("unexpected filtered assets: %#v", got)
+	}
+
+	if got := ExcludeAssetsByLocation(assets, nil); len(got) != len(assets) {
+		t.Fatalf("nil patterns should return input unchanged: got %#v", got)
+	}
+	if got := ExcludeAssetsByLocation(assets, []*regexp.Regexp{}); len(got) != len(assets) {
+		t.Fatalf("empty patterns should return input unchanged: got %#v", got)
 	}
 }
 
