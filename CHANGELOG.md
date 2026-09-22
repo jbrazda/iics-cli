@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-09-22
+
+### Fixed
+
+- `agent installer-download` output now includes `installToken` (was
+  dropped from the result even though it was retrieved during the
+  installer-info step)
+
 ## [0.5.5] - 2026-09-17
 
 ### Added
