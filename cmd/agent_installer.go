@@ -187,6 +187,7 @@ type installerDownloadResult struct {
 	Size                int64  `json:"size"`
 	DownloadURL         string `json:"downloadUrl"`
 	ChecksumDownloadURL string `json:"checksumDownloadUrl,omitempty"`
+	InstallToken        string `json:"installToken,omitempty"`
 	ChecksumAlgorithm   string `json:"checksumAlgorithm,omitempty"`
 	ExpectedChecksum    string `json:"expectedChecksum,omitempty"`
 	ActualChecksum      string `json:"actualChecksum,omitempty"`
@@ -208,6 +209,9 @@ func printInstallerDownloadResult(res *installerDownloadResult) error {
 		if res.ChecksumDownloadURL != "" {
 			rows = append(rows, output.KV("checksumDownloadUrl", res.ChecksumDownloadURL))
 		}
+		if res.InstallToken != "" {
+			rows = append(rows, output.KV("installToken", res.InstallToken))
+		}
 		if res.Verified != nil {
 			rows = append(rows,
 				output.KV("checksumAlgorithm", res.ChecksumAlgorithm),
@@ -228,6 +232,7 @@ func printInstallerDownloadResult(res *installerDownloadResult) error {
 		{Header: "size", Field: "size"},
 		{Header: "downloadUrl", Field: "downloadUrl"},
 		{Header: "checksumDownloadUrl", Field: "checksumDownloadUrl"},
+		{Header: "installToken", Field: "installToken"},
 		{Header: "verified", Field: "verified"},
 	}
 	return f.Format(res, cols)
@@ -326,6 +331,7 @@ when the server reports a content length, and transfer rate).`,
 				Size:                n,
 				DownloadURL:         info.DownloadURL,
 				ChecksumDownloadURL: info.ChecksumDownloadURL,
+				InstallToken:        info.InstallToken,
 			}
 
 			if verify {

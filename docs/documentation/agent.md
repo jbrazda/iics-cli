@@ -404,6 +404,7 @@ reports a content length, and transfer rate) written to stderr. `--output json`,
 | `size`                | Downloaded size in bytes                          |
 | `downloadUrl`         | Source URL                                        |
 | `checksumDownloadUrl` | Checksum file URL (when known)                    |
+| `installToken`        | Token used to register the agent after install (when known) |
 | `expectedChecksum`    | SHA-256 digest from the checksum file (`--verify`) |
 | `actualChecksum`      | SHA-256 digest of the downloaded file (`--verify`) |
 | `verified`            | Whether the checksums matched (`--verify`)        |
