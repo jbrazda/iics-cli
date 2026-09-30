@@ -40,9 +40,12 @@ call sites change behavior without code changes:
   `cmd/user_prompt.go` so call sites are unchanged.
 - Add generic `tui.PickOne[T]` / `tui.PickMany[T]` helpers that take items and
   a label function, used by the pickers below.
-- Non-terminal stdin (answers piped in by scripts): run huh in accessible mode
-  (`WithAccessible(true)`), which reads line-based answers. Existing scripted
-  usage keeps working. Also honor an `IICS_ACCESSIBLE=1` environment variable
+- Non-terminal stdin or stderr (answers piped in by scripts, stderr
+  redirected): keep the existing line-based prompts, moved to
+  `internal/tui` with one shared buffered reader. huh accessible mode is not
+  used here because its line protocol differs (for example a multi-select
+  toggles one number per line), which would break scripted answers.
+- `IICS_ACCESSIBLE=1` runs the huh forms in accessible mode on a terminal,
   for screen readers.
 - Output goes to stderr, as today.
 
@@ -103,14 +106,17 @@ directly (filterable) instead of the query loop.
 - New helper `confirmDelete` replacing duplicated `fmt.Scanln` blocks.
 - Tests: `internal/tui/prompt_test.go` (accessible-mode line input for each
   helper, defaults, cancel), diff helpers for group/role/agent review.
-- Docs: `docs/documentation/user.md`, `usergroup.md`, `runtime.md`,
-  `agent.md` interactive sections (key bindings, accessible mode,
-  `IICS_ACCESSIBLE`); `make completions`.
+- Docs: shared `docs/documentation/interactive.md` (keys, accessible mode,
+  piped input format) linked from `user.md`, `group.md`, `environment.md`,
+  `agent.md`, `role.md`; `IICS_ACCESSIBLE` in the README environment table;
+  `make completions`.
 
 ## Acceptance Criteria
 
-- [ ] Existing interactive commands work with arrow keys and `/` filtering
-- [ ] Piped answers on non-terminal stdin still work (accessible mode)
+- [x] Existing interactive commands work with arrow keys and `/` filtering
+      (Step 0)
+- [x] Piped answers on non-terminal stdin still work (line-based fallback,
+      Step 0)
 - [ ] User wizard: paged form, filterable time zone, group and role
       multi-selects pre-checked, review on update
 - [ ] User group and runtime wizards: pre-checked multi-select plus review

@@ -281,6 +281,7 @@ iics user reset-password --id <user-id> --security-answer <answer> --new-passwor
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [group](group.md) - manage user groups
 - [role](role.md) - manage roles assignable to users
 - [privilege](privilege.md) - list available privileges

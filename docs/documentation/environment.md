@@ -150,6 +150,8 @@ prompts. Without a file and without a terminal, `--from-file` is required.
    Agents to pick from; `Remove agents` removes from the working selection;
    `Done` creates the environment with the selected agents.
 
+See [Interactive prompts](interactive.md) for keys and piped input.
+
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
@@ -265,4 +267,5 @@ iics environment configs set --id <groupId> --from-file props.json --yes
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [agent](agent.md) - manage Secure Agents within runtime environments

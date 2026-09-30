@@ -200,5 +200,6 @@ iics group delete            # interactive picker
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [user](user.md) - manage individual users
 - [role](role.md) - manage roles assignable to groups

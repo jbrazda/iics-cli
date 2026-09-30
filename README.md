@@ -193,6 +193,7 @@ env > `80`.
 | `IICS_OUTPUT`               | Override default output format                                                           |
 | `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
 | `IICS_WIDTH`                 | Override auto-detected terminal width for responsive table output                        |
+| `IICS_ACCESSIBLE`           | Set to `1` for screen-reader friendly line-by-line prompts ([interactive prompts](docs/documentation/interactive.md)) |
 | `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set) |
 | `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
 | `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |

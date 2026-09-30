@@ -50,17 +50,12 @@ func pickRole(ctx context.Context, c *client.Client, action string) (*client.Rol
 		return nil, fmt.Errorf("no roles found")
 	}
 	sortRoles(roles)
-	idx := 0
-	sel := huh.NewSelect[int]().
-		Title(fmt.Sprintf("Select a role to %s (/ to filter)", action)).
-		Options(roleOptions(roles)...).
-		Height(min(len(roles)+2, 22)).
-		Value(&idx)
-	if err := huh.NewForm(huh.NewGroup(sel)).WithOutput(os.Stderr).Run(); err != nil {
-		if errors.Is(err, huh.ErrUserAborted) {
-			return nil, fmt.Errorf("canceled")
-		}
+	idx, err := tui.PickOne(prompter, fmt.Sprintf("Select a role to %s", action), roles, roleLabel)
+	if err != nil {
 		return nil, err
+	}
+	if idx < 0 {
+		return nil, fmt.Errorf("canceled")
 	}
 	return &roles[idx], nil
 }
@@ -71,14 +66,18 @@ func sortRoles(roles []client.Role) {
 	})
 }
 
+func roleLabel(r client.Role) string {
+	kind := "custom"
+	if r.SystemRole {
+		kind = "system"
+	}
+	return fmt.Sprintf("%s (%s)", r.RoleName, kind)
+}
+
 func roleOptions(roles []client.Role) []huh.Option[int] {
 	opts := make([]huh.Option[int], len(roles))
 	for i, r := range roles {
-		kind := "custom"
-		if r.SystemRole {
-			kind = "system"
-		}
-		opts[i] = huh.NewOption(fmt.Sprintf("%s (%s)", r.RoleName, kind), i)
+		opts[i] = huh.NewOption(roleLabel(r), i)
 	}
 	return opts
 }

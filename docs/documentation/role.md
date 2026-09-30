@@ -465,6 +465,7 @@ iics role delete --name "CAI Viewer" --yes
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [privilege](privilege.md) - list available privileges to assign to roles
 - [user](user.md) - assign roles to users
 - [group](group.md) - assign roles to user groups

@@ -322,8 +322,9 @@ for a platform.
 | ------ | ------ | -------- | ------------------------------------ |
 | `--os` | string | yes      | Operating system: `win64` or `linux64` |
 
-When `--os` is omitted and the session is interactive, the command shows a numbered
-selection menu (`win64`/`linux64`); enter `0`, press Enter, or type `q` to cancel.
+When `--os` is omitted and the session is interactive, the command shows a
+selection list (`win64`/`linux64`); press `Esc` to cancel. See
+[Interactive prompts](interactive.md).
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -438,4 +439,5 @@ iics agent installer-download --installer-info info.json --target C:\Temp\agent.
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [environment](environment.md) - manage runtime environments (Secure Agent groups) that contain agents
