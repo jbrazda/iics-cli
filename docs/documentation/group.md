@@ -109,6 +109,10 @@ A JSON **array** creates groups in bulk and prints a per-group result table
 | `--interactive`, `-i` | bool   | Prompt for name, description, and roles                 |
 
 The wizard runs with `-i`, or when no input source is present on a terminal.
+It asks for the group name (existing names are rejected) and description, then
+shows the roles as a filterable checklist (at least one role is required), and
+ends with a review: **Create group**, **Back to editing** or **Cancel**. See
+[Interactive prompts](interactive.md) for keys.
 
 ### JSON definition
 
@@ -160,6 +164,12 @@ the identifiers the add/remove endpoints use). A file produced by
 | `--name`              | string | User group name                                     |
 | `--from-file`         | string | JSON file (object or array); omit to read piped stdin |
 | `--interactive`, `-i` | bool   | Edit the role selection interactively               |
+
+The interactive editor shows the group's current roles pre-checked in a
+filterable checklist. Name and description are shown read-only because the
+API cannot change them. The review lists the changes (`+ Role: ...`,
+`- Role: ...`) before they are applied; with no changes only **Back to
+editing** and **Cancel** are offered.
 
 ### Examples
 

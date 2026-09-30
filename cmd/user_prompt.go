@@ -52,12 +52,6 @@ func promptSelect(label string, options []string) (int, error) {
 	return prompter.Select(label, options)
 }
 
-// promptMultiSelect presents a checklist with defaults pre-selected. Returns the
-// 0-based indices of selected items, or nil for none.
-func promptMultiSelect(label string, options []string, defaults []int) ([]int, error) {
-	return prompter.MultiSelect(label, options, defaults)
-}
-
 // promptYesNo prompts for a yes/no answer. defaultYes controls what pressing Enter
 // returns. Returns true for yes, false for no.
 func promptYesNo(label string, defaultYes bool) (bool, error) {

@@ -275,8 +275,13 @@ shared flag, and member agents.`,
 			}
 
 			if useWizard {
-				if werr := runRuntimeCreateWizard(ctx, c, &rt); werr != nil {
+				ok, werr := runRuntimeCreateWizard(ctx, c, &rt)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 			}
 

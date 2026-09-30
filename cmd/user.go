@@ -349,14 +349,6 @@ func buildRoleMap(ctx context.Context, c *client.Client) (map[string]string, err
 	return m, nil
 }
 
-// truncate shortens s to at most max bytes, appending "..." if truncated.
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "..."
-}
-
 // detectInputFormat infers the file format from extension or content.
 func detectInputFormat(filename string, data []byte) string {
 	if filename != "-" && filename != "" {

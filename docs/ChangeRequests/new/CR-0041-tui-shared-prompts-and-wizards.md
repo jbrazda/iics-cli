@@ -122,7 +122,9 @@ directly (filterable) instead of the query loop.
       pre-checked, review on update. Applying updates is blocked by the
       existing V2 update failure
       (`docs/issues/new/2026-09-30-user-update-v2-403.md`).
-- [ ] User group and runtime wizards: pre-checked multi-select plus review
+- [x] User group and runtime wizards: pre-checked multi-select plus review
+      (runtime wizard is create-only, as before; agent checklist not
+      exercised live because `dev` has no unassigned agents)
 - [ ] All pickers are filterable
 - [ ] Delete confirmations unchanged in behavior, deduplicated
 - [ ] Live test on `dev`: create/update/delete a throwaway user, group and

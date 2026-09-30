@@ -143,12 +143,12 @@ prompts. Without a file and without a terminal, `--from-file` is required.
 
 ### Interactive prompts
 
-1. `Environment Name` (required).
-2. `Description` (optional).
-3. `Is shared` (y/N).
-4. Agent management menu - `Add agents` lists the currently unassigned Secure
-   Agents to pick from; `Remove agents` removes from the working selection;
-   `Done` creates the environment with the selected agents.
+1. **Runtime environment** - name (required; existing names are rejected),
+   description, and whether the environment is shared.
+2. **Agents** - a filterable checklist of unassigned Secure Agents (name, host,
+   active or inactive). Agents from `--from-file` are pre-checked. Selecting
+   agents is optional.
+3. **Review** - **Create environment**, **Back to editing** or **Cancel**.
 
 See [Interactive prompts](interactive.md) for keys and piped input.
 

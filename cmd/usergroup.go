@@ -290,8 +290,13 @@ input on a terminal) to be prompted for the name, description, and roles.`,
 					return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")
 				}
 				var g client.UserGroup
-				if werr := runGroupWizard(ctx, c, &g, true); werr != nil {
+				ok, werr := runGroupWizard(ctx, c, &g, true)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 				in.groups = []client.UserGroup{g}
 			}
@@ -372,8 +377,13 @@ group by its "id", or by "userGroupName" when no id is present.`,
 			case in.present:
 				applyGroupPatch(target, &in.groups[0])
 			case interactive || config.IsTerminal():
-				if werr := runGroupWizard(ctx, c, target, false); werr != nil {
+				ok, werr := runGroupWizard(ctx, c, target, false)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 			default:
 				return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")

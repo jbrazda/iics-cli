@@ -7,6 +7,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
+	"github.com/jbrazda/iics-cli/internal/tui"
 )
 
 // listAllUserGroups fetches every user group, following pagination.
@@ -66,74 +67,39 @@ func resolveUserGroup(ctx context.Context, c *client.Client, id, name, action st
 	}
 }
 
-// runGroupWizard interactively edits a user group. On create it prompts for
-// name, description, and roles. On update (forCreate=false) only roles can
-// change - the v3 API cannot rename a group or edit its description - so the
-// name/description are shown for context and only the role selection is prompted.
-func runGroupWizard(ctx context.Context, c *client.Client, g *client.UserGroup, forCreate bool) error {
+// runGroupWizard interactively edits a user group. On create it asks for the
+// name, description and roles; on update (forCreate=false) only roles can
+// change - the v3 API cannot rename a group or edit its description. It
+// returns false if the user canceled.
+func runGroupWizard(ctx context.Context, c *client.Client, g *client.UserGroup, forCreate bool) (bool, error) {
 	if !config.IsTerminal() {
-		return fmt.Errorf("--interactive requires a terminal")
+		return false, fmt.Errorf("--interactive requires a terminal")
 	}
-
-	if forCreate {
-		for {
-			name, err := promptText("Group Name", g.UserGroupName)
-			if err != nil {
-				return err
-			}
-			if name != "" {
-				g.UserGroupName = name
-				break
-			}
-			_, _ = fmt.Fprintln(os.Stderr, "Group name is required.")
-		}
-		desc, err := promptText("Description (optional)", g.Description)
-		if err != nil {
-			return err
-		}
-		g.Description = desc
-	} else {
-		_, _ = fmt.Fprintf(os.Stderr, "Editing group %q", g.UserGroupName)
-		if g.Description != "" {
-			_, _ = fmt.Fprintf(os.Stderr, " - %s", g.Description)
-		}
-		_, _ = fmt.Fprintln(os.Stderr, " (name and description cannot be changed via the API)")
-	}
-
 	roles, err := listAllRoles(ctx, c)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if len(roles) == 0 {
-		return fmt.Errorf("no roles available; a user group requires at least one role")
+		return false, fmt.Errorf("no roles available; a user group requires at least one role")
 	}
-	current := make(map[string]bool)
-	for _, r := range g.Roles {
-		current[r.ID] = true
-	}
-	labels := make([]string, len(roles))
-	defaults := make([]int, 0)
-	for i, r := range roles {
-		labels[i] = fmt.Sprintf("%s - %s", r.RoleName, truncate(r.Description, 80))
-		if current[r.ID] {
-			defaults = append(defaults, i)
+	var existing []string
+	if forCreate {
+		groups, gerr := listAllUserGroups(ctx, c)
+		if gerr != nil {
+			return false, gerr
+		}
+		for _, eg := range groups {
+			existing = append(existing, eg.UserGroupName)
 		}
 	}
-	for {
-		picks, perr := promptMultiSelect("Roles (at least one required)", labels, defaults)
-		if perr != nil {
-			return perr
-		}
-		if len(picks) == 0 {
-			_, _ = fmt.Fprintln(os.Stderr, "Select at least one role.")
-			continue
-		}
-		g.Roles = nil
-		for _, idx := range picks {
-			g.Roles = append(g.Roles, client.UserRole{ID: roles[idx].ID, RoleName: roles[idx].RoleName})
-		}
-		return nil
-	}
+	return tui.RunGroupWizard(tui.GroupWizardInput{
+		Group:         g,
+		Update:        !forCreate,
+		Roles:         roles,
+		ExistingNames: existing,
+		Out:           os.Stderr,
+		Accessible:    prompter.Accessible,
+	})
 }
 
 // listAllRoles fetches every role, following pagination.

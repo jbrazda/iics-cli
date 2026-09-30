@@ -83,9 +83,9 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 			return false, err
 		}
 		switch choice {
-		case "apply":
+		case reviewApply:
 			return true, nil
-		case "cancel":
+		case reviewCancel:
 			return false, nil
 		}
 	}
@@ -209,43 +209,23 @@ func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group
 }
 
 // reviewUser shows the result (create) or the changes (update) and returns
-// "apply", "back" or "cancel".
+// reviewApply, reviewBack or reviewCancel.
 func reviewUser(in UserWizardInput, before, after *client.User) (string, error) {
-	var desc string
-	title := "Create user " + after.UserName
-	applyLabel := "Create user"
 	if in.Update {
-		title = "Update user " + after.UserName
-		applyLabel = "Apply changes"
-		changes := UserChanges(before, after)
-		if len(changes) == 0 {
-			desc = "No changes."
-		} else {
-			desc = strings.Join(changes, "\n")
+		lines := UserChanges(before, after)
+		canApply := len(lines) > 0
+		if !canApply {
+			lines = []string{"No changes."}
 		}
-	} else {
-		desc = strings.Join(UserSummary(after), "\n")
+		return confirmReview(in.Out, in.Accessible, "Update user "+after.UserName, lines, "Apply changes", canApply)
 	}
-
-	options := []huh.Option[string]{
-		huh.NewOption(applyLabel, "apply"),
-		huh.NewOption("Back to editing", "back"),
-		huh.NewOption("Cancel", "cancel"),
-	}
+	lines := UserSummary(after)
 	// The create API requires at least one role or user group.
-	if !in.Update && len(after.Groups) == 0 && len(after.Roles) == 0 {
-		desc += "\n\nSelect at least one user group or role."
-		options = options[1:]
+	canApply := len(after.Groups) > 0 || len(after.Roles) > 0
+	if !canApply {
+		lines = append(lines, "", "Select at least one user group or role.")
 	}
-	choice := options[0].Value
-	sel := huh.NewSelect[string]().Title(title).Description(desc).Options(options...).Value(&choice)
-	if err := huh.NewForm(huh.NewGroup(sel)).WithOutput(in.Out).WithAccessible(in.Accessible).Run(); err != nil {
-		if errors.Is(err, huh.ErrUserAborted) {
-			return "cancel", nil
-		}
-		return "", err
-	}
-	return choice, nil
+	return confirmReview(in.Out, in.Accessible, "Create user "+after.UserName, lines, "Create user", canApply)
 }
 
 // UserSummary lists the fields of a user to be created.
@@ -299,21 +279,8 @@ func UserChanges(before, after *client.User) []string {
 	if before.ForcePasswordChange != after.ForcePasswordChange {
 		out = append(out, fmt.Sprintf("Force password change: %t -> %t", before.ForcePasswordChange, after.ForcePasswordChange))
 	}
-	add, remove := client.DiffPrivileges(groupNames(before.Groups), groupNames(after.Groups))
-	out = append(out, signed("Group", add, remove)...)
-	add, remove = client.DiffPrivileges(roleNames(before.Roles), roleNames(after.Roles))
-	out = append(out, signed("Role", add, remove)...)
-	return out
-}
-
-func signed(kind string, add, remove []string) []string {
-	var out []string
-	for _, n := range add {
-		out = append(out, fmt.Sprintf("+ %s: %s", kind, n))
-	}
-	for _, n := range remove {
-		out = append(out, fmt.Sprintf("- %s: %s", kind, n))
-	}
+	out = append(out, SetChanges("Group", groupNames(before.Groups), groupNames(after.Groups))...)
+	out = append(out, SetChanges("Role", roleNames(before.Roles), roleNames(after.Roles))...)
 	return out
 }
 
