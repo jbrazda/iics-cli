@@ -94,13 +94,32 @@ iics user get --id <user-id> --output json
 
 ## user create
 
-Create a user from a JSON definition file.
+Create a user from a definition file, or interactively with `--interactive`.
 
 ### Flags
 
-| Flag          | Type   | Required | Description                      |
-| ------------- | ------ | -------- | -------------------------------- |
-| `--from-file` | string | yes      | JSON file with user definition   |
+| Flag            | Type   | Required | Description                                            |
+| --------------- | ------ | -------- | ------------------------------------------------------ |
+| `--from-file`   | string | one of   | JSON, YAML or CSV file with user(s); `-` for stdin     |
+| `--interactive` | bool   | one of   | Launch the interactive creation wizard (terminal only) |
+
+### Interactive wizard
+
+`--interactive` opens a paged form (`Enter` next field, `Shift+Tab` back):
+
+1. **Identity** - authentication (Native or SSO), first name, last name, user
+   name (empty uses the suggestion `first.last@<your domain>`), email
+   (validated).
+2. **Single sign-on** - alias name in the identity provider; shown only for
+   SSO, where the API requires it.
+3. **Details** - phone, title, description, force password change.
+4. **Membership** - user groups and roles as filterable checklists
+   (`/` filter, `Space` toggle).
+5. **Review** - summary with **Create user**, **Back to editing** or
+   **Cancel**. At least one user group or role is required.
+
+The create API does not accept a time zone, so the wizard does not ask for
+one. See [Interactive prompts](interactive.md) for keys.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -127,10 +146,14 @@ All [global flags](../../README.md#global-flags) apply.
 
 ```bash
 iics user create --from-file new-user.json
+
+iics user create --interactive
 ```
 
 ```powershell
 iics user create --from-file new-user.json
+
+iics user create --interactive
 ```
 
 ---
@@ -153,6 +176,11 @@ iics user create --from-file new-user.json
 >
 > To update a user's group or role membership in the meantime, use the IICS
 > Administrator UI.
+>
+> The `--interactive` wizard pre-fills the current values, shows user name,
+> authentication and state read-only, and ends with a review of the changes
+> (`field: old -> new`, `+ Group`, `- Role`). Applying the changes is subject
+> to the limitation above.
 
 ### Flags
 

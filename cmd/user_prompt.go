@@ -156,12 +156,6 @@ var iicsTimezones = []string{
 	"Pacific/Kiritimati", "Pacific/Norfolk", "Pacific/Tahiti", "UTC", "VST",
 }
 
-// promptTimezone picks a timezone from iicsTimezones. The current value is
-// pre-selected (terminal) or kept on Enter (line mode, where "0" clears it).
-func promptTimezone(current string) (string, error) {
-	return prompter.Timezone(iicsTimezones, current)
-}
-
 // resolveUser returns the user identified by id or userName flags, falling back to
 // interactive search when both are empty and stdin is a terminal.
 func resolveUser(ctx context.Context, c *client.Client, id, userName string) (*client.User, error) {

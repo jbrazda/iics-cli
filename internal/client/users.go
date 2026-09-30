@@ -20,6 +20,7 @@ type createUserRequest struct {
 	Title               string   `json:"title,omitempty"`
 	Description         string   `json:"description,omitempty"`
 	Authentication      int      `json:"authentication"`
+	AliasName           string   `json:"aliasName,omitempty"`
 	ForcePasswordChange bool     `json:"forcePasswordChange,omitempty"`
 	Roles               []string `json:"roles,omitempty"`
 	Groups              []string `json:"groups,omitempty"`
@@ -40,6 +41,7 @@ func userToCreateRequest(u *User) *createUserRequest {
 	}
 	if strings.EqualFold(u.Authentication, "SSO") {
 		req.Authentication = 1 // 0 = Native (default)
+		req.AliasName = u.AliasName
 	}
 	for _, g := range u.Groups {
 		req.Groups = append(req.Groups, g.ID)
@@ -83,6 +85,7 @@ type User struct {
 	Title               string         `json:"title,omitempty"`
 	State               string         `json:"state,omitempty"`
 	Authentication      string         `json:"authentication,omitempty"`
+	AliasName           string         `json:"aliasName,omitempty"`
 	TimeZoneID          string         `json:"timeZoneId,omitempty"`
 	ForcePasswordChange bool           `json:"forcePasswordChange,omitempty"`
 	LastLoginTime       string         `json:"lastLoginTime,omitempty"`

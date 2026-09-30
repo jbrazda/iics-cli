@@ -117,8 +117,11 @@ directly (filterable) instead of the query loop.
       (Step 0)
 - [x] Piped answers on non-terminal stdin still work (line-based fallback,
       Step 0)
-- [ ] User wizard: paged form, filterable time zone, group and role
-      multi-selects pre-checked, review on update
+- [x] User wizard: paged form, filterable time zone (update only; the
+      create API has no time zone), group and role multi-selects
+      pre-checked, review on update. Applying updates is blocked by the
+      existing V2 update failure
+      (`docs/issues/new/2026-09-30-user-update-v2-403.md`).
 - [ ] User group and runtime wizards: pre-checked multi-select plus review
 - [ ] All pickers are filterable
 - [ ] Delete confirmations unchanged in behavior, deduplicated

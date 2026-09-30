@@ -15,6 +15,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -553,8 +554,9 @@ func resolveUserGroupsAndRoles(ctx context.Context, c *client.Client, users []cl
 	return nil
 }
 
-// runUserWizard interactively collects user fields. When existing is non-nil, current
-// values are shown as defaults. Returns the completed User.
+// runUserWizard interactively collects user fields in a paged form with a
+// review step. When existing is non-nil, its values are pre-filled and the
+// review shows the changes. Returns nil when the user cancels.
 func runUserWizard(ctx context.Context, c *client.Client, existing *client.User) (*client.User, error) {
 	if !config.IsTerminal() {
 		return nil, fmt.Errorf("--interactive requires an interactive terminal")
@@ -565,172 +567,35 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		*u = *existing
 	}
 
-	_, _ = fmt.Fprintln(os.Stderr)
-
-	// Authentication type
-	authIdx, err := promptSelect("Authentication type", []string{"Native", "SSO"})
+	groups, err := listAllUserGroups(ctx, c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetching groups: %w", err)
 	}
-	if authIdx < 0 {
-		return nil, fmt.Errorf("canceled")
-	}
-	authTypes := []string{"Native", "SSO"}
-	u.Authentication = authTypes[authIdx]
-
-	// Scalar fields
-	if u.FirstName, err = promptText("First Name", u.FirstName); err != nil {
-		return nil, err
-	}
-	if u.LastName, err = promptText("Last Name", u.LastName); err != nil {
-		return nil, err
-	}
-
-	// Username default: firstname.lastname@domain
-	if u.UserName == "" && u.FirstName != "" && u.LastName != "" {
-		_, p, _, _ := resolveProfile()
-		domain := ""
-		if p != nil && strings.Contains(p.Username, "@") {
-			domain = p.Username[strings.Index(p.Username, "@")+1:]
-		}
-		if domain != "" {
-			u.UserName = fmt.Sprintf("%s.%s@%s",
-				strings.ToLower(u.FirstName),
-				strings.ToLower(u.LastName),
-				domain)
-		}
-	}
-	if u.UserName, err = promptText("User Name", u.UserName); err != nil {
-		return nil, err
-	}
-	if u.UserName == "" {
-		return nil, fmt.Errorf("userName is required")
-	}
-
-	if u.Email, err = promptText("Email", u.Email); err != nil {
-		return nil, err
-	}
-	if u.Phone, err = promptText("Phone (optional)", u.Phone); err != nil {
-		return nil, err
-	}
-	if u.Title, err = promptText("Title (optional)", u.Title); err != nil {
-		return nil, err
-	}
-	if u.Description, err = promptText("Description (optional)", u.Description); err != nil {
-		return nil, err
-	}
-	if u.TimeZoneID, err = promptTimezone(u.TimeZoneID); err != nil {
-		return nil, err
-	}
-
-	// State is only settable on update, not create
-	if existing != nil {
-		stateDefault := 0
-		if u.State == "Disabled" {
-			stateDefault = 1
-		}
-		stateOptions := []string{"Active", "Disabled"}
-		var sIdx int
-		sIdx, err = promptSelect("State", stateOptions)
-		if err != nil {
-			return nil, err
-		}
-		if sIdx >= 0 {
-			u.State = stateOptions[sIdx]
-		} else if u.State == "" {
-			u.State = stateOptions[stateDefault]
-		}
-	}
-
-	// Force password change
-	forceChange, err := promptYesNo("Force password change on next login?", u.ForcePasswordChange)
+	roles, err := c.ListRoles(ctx, client.RoleListOptions{})
 	if err != nil {
+		return nil, fmt.Errorf("fetching roles: %w", err)
+	}
+
+	domain := ""
+	if _, p, _, _ := resolveProfile(); p != nil {
+		if i := strings.Index(p.Username, "@"); i >= 0 {
+			domain = p.Username[i+1:]
+		}
+	}
+
+	ok, err := tui.RunUserWizard(tui.UserWizardInput{
+		User:           u,
+		Update:         existing != nil,
+		Groups:         groups,
+		Roles:          roles,
+		Timezones:      iicsTimezones,
+		UserNameDomain: domain,
+		Out:            os.Stderr,
+		Accessible:     prompter.Accessible,
+	})
+	if err != nil || !ok {
 		return nil, err
 	}
-	u.ForcePasswordChange = forceChange
-
-	// Groups
-	var allGroups []client.UserGroup
-	grpOpts := client.UserGroupListOptions{Limit: 200}
-	for {
-		batch, err := c.ListUserGroups(ctx, grpOpts)
-		if err != nil {
-			return nil, fmt.Errorf("fetching groups: %w", err)
-		}
-		allGroups = append(allGroups, batch...)
-		if len(batch) < grpOpts.Limit {
-			break
-		}
-		grpOpts.Skip += grpOpts.Limit
-	}
-	if len(allGroups) > 0 {
-		groupOpts := make([]string, len(allGroups))
-		groupDefaults := make([]int, 0)
-		currentGroupIDs := make(map[string]bool)
-		for _, g := range u.Groups {
-			currentGroupIDs[g.ID] = true
-		}
-		for i, g := range allGroups {
-			groupOpts[i] = fmt.Sprintf("%s - %s", g.UserGroupName, truncate(g.Description, 100))
-			if currentGroupIDs[g.ID] {
-				groupDefaults = append(groupDefaults, i)
-			}
-		}
-		selected, sErr := promptMultiSelect("Groups", groupOpts, groupDefaults)
-		if sErr != nil {
-			return nil, sErr
-		}
-		u.Groups = nil
-		for _, idx := range selected {
-			g := allGroups[idx]
-			u.Groups = append(u.Groups, client.UserGroupRef{
-				ID:            g.ID,
-				UserGroupName: g.UserGroupName,
-			})
-		}
-	}
-
-	// Roles
-	var allRoles []client.Role
-	roleOpts := client.RoleListOptions{Limit: 200}
-	for {
-		batch, err := c.ListRoles(ctx, roleOpts)
-		if err != nil {
-			return nil, fmt.Errorf("fetching roles: %w", err)
-		}
-		allRoles = append(allRoles, batch...)
-		if len(batch) < roleOpts.Limit {
-			break
-		}
-		roleOpts.Skip += roleOpts.Limit
-	}
-	if len(allRoles) > 0 {
-		roleOpts := make([]string, len(allRoles))
-		roleDefaults := make([]int, 0)
-		currentRoleIDs := make(map[string]bool)
-		for _, r := range u.Roles {
-			currentRoleIDs[r.ID] = true
-		}
-		for i, r := range allRoles {
-			roleOpts[i] = fmt.Sprintf("%s - %s", r.RoleName, truncate(r.Description, 100))
-			if currentRoleIDs[r.ID] {
-				roleDefaults = append(roleDefaults, i)
-			}
-		}
-		selected, sErr := promptMultiSelect("Roles", roleOpts, roleDefaults)
-		if sErr != nil {
-			return nil, sErr
-		}
-		u.Roles = nil
-		for _, idx := range selected {
-			r := allRoles[idx]
-			u.Roles = append(u.Roles, client.UserRole{
-				ID:       r.ID,
-				RoleName: r.RoleName,
-			})
-		}
-	}
-
 	return u, nil
 }
 
@@ -770,6 +635,10 @@ func newUserCreateCmd() *cobra.Command {
 				u, wErr := runUserWizard(ctx, c, nil)
 				if wErr != nil {
 					return wErr
+				}
+				if u == nil {
+					_, _ = fmt.Fprintln(os.Stderr, "Canceled.")
+					return nil
 				}
 				created, cErr := c.CreateUser(ctx, u)
 				if cErr != nil {
@@ -909,6 +778,10 @@ func newUserUpdateCmd() *cobra.Command {
 				updated, wErr := runUserWizard(ctx, c, target)
 				if wErr != nil {
 					return wErr
+				}
+				if updated == nil {
+					_, _ = fmt.Fprintln(os.Stderr, "Canceled.")
+					return nil
 				}
 				result, uErr := c.UpdateUser(ctx, target.ID, updated)
 				if uErr != nil {
