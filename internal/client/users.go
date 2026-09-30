@@ -98,6 +98,9 @@ type User struct {
 type UserListOptions struct {
 	Limit int
 	Skip  int
+	// Query is the q filter, e.g. userName==jdoe@acme.com. The API supports
+	// exact matches on userId and userName only.
+	Query string
 }
 
 // ListUsers retrieves users.
@@ -109,6 +112,9 @@ func (c *Client) ListUsers(ctx context.Context, opts UserListOptions) ([]User, e
 	if opts.Skip > 0 {
 		query["skip"] = strconv.Itoa(opts.Skip)
 	}
+	if opts.Query != "" {
+		query["q"] = opts.Query
+	}
 
 	var resp []User
 	if err := c.doJSONWithQuery(ctx, http.MethodGet, BaseAPIPathV3+"/users", query, nil, &resp); err != nil {
@@ -117,52 +123,42 @@ func (c *Client) ListUsers(ctx context.Context, opts UserListOptions) ([]User, e
 	return resp, nil
 }
 
-// GetUser retrieves a single user by ID by scanning the users list.
+// GetUser retrieves a single user by ID with the q=userId== filter.
 // The IICS v3 API does not support GET /users/{id}; only DELETE is allowed on that path.
 func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
-	opts := UserListOptions{Limit: 200}
-	for {
-		users, err := c.ListUsers(ctx, opts)
-		if err != nil {
-			return nil, err
+	users, err := c.ListUsers(ctx, UserListOptions{Query: "userId==" + id, Limit: 1})
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		if users[i].ID == id {
+			return &users[i], nil
 		}
-		for i := range users {
-			if users[i].ID == id {
-				return &users[i], nil
-			}
-		}
-		if len(users) < opts.Limit {
-			break
-		}
-		opts.Skip += opts.Limit
 	}
 	return nil, fmt.Errorf("user %q not found", id)
 }
 
-// GetUserByName finds a user by exact userName match.
+// GetUserByName finds a user by exact userName (case-insensitive) with the
+// q=userName== filter.
 func (c *Client) GetUserByName(ctx context.Context, userName string) (*User, error) {
-	opts := UserListOptions{Limit: 200}
-	for {
-		users, err := c.ListUsers(ctx, opts)
-		if err != nil {
-			return nil, err
+	users, err := c.ListUsers(ctx, UserListOptions{Query: "userName==" + userName, Limit: 1})
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		if strings.EqualFold(users[i].UserName, userName) {
+			return &users[i], nil
 		}
-		for i := range users {
-			if users[i].UserName == userName {
-				return &users[i], nil
-			}
-		}
-		if len(users) < opts.Limit {
-			break
-		}
-		opts.Skip += opts.Limit
 	}
 	return nil, fmt.Errorf("user %q not found", userName)
 }
 
-// SearchUsers returns all users whose userName contains the given substring (case-insensitive).
-func (c *Client) SearchUsers(ctx context.Context, substring string) ([]User, error) {
-	lower := strings.ToLower(substring)
+// SearchUsers returns users whose user name, first name, last name, full
+// name or email contains text (case-insensitive). The API only filters
+// exact matches, so the users are listed page by page and filtered here; an
+// organization has at most 1000 users, groups and roles combined.
+func (c *Client) SearchUsers(ctx context.Context, text string) ([]User, error) {
+	lower := strings.ToLower(strings.TrimSpace(text))
 	opts := UserListOptions{Limit: 200}
 	var matches []User
 	for {
@@ -171,7 +167,8 @@ func (c *Client) SearchUsers(ctx context.Context, substring string) ([]User, err
 			return nil, err
 		}
 		for _, u := range users {
-			if strings.Contains(strings.ToLower(u.UserName), lower) {
+			hay := strings.ToLower(strings.Join([]string{u.UserName, u.FirstName, u.LastName, u.FirstName + " " + u.LastName, u.Email}, "\x1f"))
+			if strings.Contains(hay, lower) {
 				matches = append(matches, u)
 			}
 		}

@@ -259,7 +259,7 @@ func newUserGetCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get user details",
+		Short: "Get user details (searches interactively without --id/--username)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := getClient(cmd)
 			if err != nil {
@@ -272,6 +272,12 @@ func newUserGetCmd() *cobra.Command {
 				user, err = c.GetUser(context.Background(), id)
 			case userName != "":
 				user, err = c.GetUserByName(context.Background(), userName)
+			case isInteractiveTTY():
+				user, err = promptUserSearch(context.Background(), c)
+				if err == nil && user == nil {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
+				}
 			default:
 				return fmt.Errorf("--id or --username is required")
 			}

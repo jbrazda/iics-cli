@@ -70,10 +70,59 @@ $users | Where-Object { $_.userName -match "john" }
 
 ## user get
 
+Show a user's details (profile fields, groups and roles).
+
 ### Flags
 
-| Flag   | Type   | Required | Description |
-| ------ | ------ | -------- | ----------- |
+| Flag         | Type   | Required | Description                                  |
+| ------------ | ------ | -------- | -------------------------------------------- |
+| `--id`       | string | one of*  | User ID                                      |
+| `--username` | string | one of*  | User name (exact match, case-insensitive)    |
+| `--fields`   | string |          | Fields for CSV output                        |
+
+\* On a terminal both can be omitted: you are asked for a
+[user search](#finding-a-user).
+
+All [global flags](../../README.md#global-flags) apply.
+
+### Finding a user
+
+Without `--id` / `--username` on a terminal (also used by `user edit` and
+`user delete`), one prompt accepts a user name, a user ID, or part of a name
+or email:
+
+1. An exact user name or user ID is looked up on the server
+   (`q=userName==` / `q=userId==`).
+2. Otherwise the text is matched (case-insensitive) against user name, first
+   name, last name, full name and email. One match is used directly; several
+   are shown in a filterable list with user name, name, email and state.
+3. No match asks again; an empty answer cancels.
+
+The IICS API only filters exact user names and IDs, so partial matching
+lists the users page by page (200 per request). An organization has at most
+1000 users, user groups and roles combined, so this stays within a few
+requests.
+
+### Examples
+
+```bash
+iics user get --id <user-id>
+
+iics user get --username jdoe@example.com --output json
+
+# Search interactively
+iics user get
+```
+
+```powershell
+iics user get --id <user-id>
+
+iics user get --username jdoe@example.com --output json
+
+iics user get
+```
+
+------ | ------ | -------- | ----------- |
 | `--id` | string | yes      | User ID     |
 
 All [global flags](../../README.md#global-flags) apply.
@@ -223,7 +272,7 @@ changed: the IICS REST API has no working update endpoint for them. The V3
 | `--id`       | string |          | User ID                 |
 | `--username` | string |          | User name (exact match) |
 
-Without `--id` or `--username`, you are asked to search for the user.
+Without `--id` or `--username`, you are asked to [find the user](#finding-a-user).
 
 All [global flags](../../README.md#global-flags) apply.
 

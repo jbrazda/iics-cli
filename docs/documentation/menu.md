@@ -112,7 +112,7 @@ On a production profile:
 | Group                   | Entries                                                                 |
 | ----------------------- | ----------------------------------------------------------------------- |
 | Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎ |
-| Users                   | List users, Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎ |
+| Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎ |
 | User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                             |
 | Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎               |
 | Privileges              | List privileges                                                         |

@@ -152,3 +152,17 @@ flag), grouped by resource:
 - Verified on `dev`: fresh download with `--progress --verify` (365 MB,
   checksum verified), script rerun skipped in 1s, interactive prompt with
   matching file (kept), mismatching file (declined, kept).
+
+## Follow-up: Show user (2026-09-30)
+
+- New entry "Users > Show user" (`user get`). Without `--id` /
+  `--username` on a terminal, `user get` asks for a user name, ID, or part
+  of a name/email (same prompt now used by `user edit` / `user delete`).
+- `GetUser` / `GetUserByName` use the server-side `q=userId==` /
+  `q=userName==` filters instead of listing every user. Probed on `dev`: the
+  API supports exact matches only (no wildcard; `=like=` is rejected), so
+  partial search still lists users page by page and matches user name,
+  first/last/full name and email. Org limit: 1000 users, groups and roles
+  combined.
+- Verified on `dev`: exact user name and ID lookups, missing ID error,
+  interactive no-match and partial-match picker.

@@ -72,6 +72,7 @@ func DefaultEntries() []Entry {
 		{Group: "Session", Label: "Edit active profile", Description: "Update credentials, region and production flag of the active profile", Args: []string{"profile", "edit"}, ActiveProfileArg: true, NoProfileFlag: true, Writes: true},
 
 		{Group: "Users", Label: "List users", Description: "Show all users", Args: []string{"user", "list"}},
+		{Group: "Users", Label: "Show user", Description: "Find a user by user name, ID, or part of a name or email and show the details", Args: []string{"user", "get"}},
 		{Group: "Users", Label: "Create user", Description: "Create a user with the paged wizard", Args: []string{"user", "create", "--interactive"}, Writes: true},
 		{Group: "Users", Label: "Edit user groups and roles", Description: "Change a user's group and role assignments", Args: []string{"user", "edit"}, Writes: true},
 		{Group: "Users", Label: "Delete user", Description: "Search for a user and delete it", Args: []string{"user", "delete"}, Writes: true},

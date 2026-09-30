@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
@@ -58,70 +60,66 @@ func promptYesNo(label string, defaultYes bool) (bool, error) {
 	return prompter.Confirm(label, defaultYes)
 }
 
-// promptUserSearch interactively finds a user by searching by name or exact ID.
-// Returns nil if the user cancels. Returns an error if stdin is not a terminal.
+// promptUserSearch asks for a user name, user ID, or part of a name or
+// email. Exact user names and IDs are looked up on the server; other text
+// is matched against user name, first/last name and email, and several
+// matches are offered in a filterable list. Returns nil if the user cancels
+// (empty input). Returns an error if stdin is not a terminal.
 func promptUserSearch(ctx context.Context, c *client.Client) (*client.User, error) {
 	if !config.IsTerminal() {
 		return nil, fmt.Errorf("stdin is not a terminal; provide --id or --username flag")
 	}
-
 	for {
-		mode, err := promptSelect("Search user by", []string{"User Name (partial match)", "ID (exact match)"})
+		text, err := promptText("User name, ID, or part of a name/email (empty to cancel)", "")
 		if err != nil {
 			return nil, err
 		}
-		switch mode {
-		case -1:
+		if text == "" {
 			return nil, nil
-
-		case 0:
-			query, qErr := promptText("User Name (partial match)", "")
-			if qErr != nil {
-				return nil, fmt.Errorf("reading user name: %w", qErr)
-			}
-			if query == "" {
-				continue
-			}
-			users, sErr := c.SearchUsers(ctx, query)
-			if sErr != nil {
-				return nil, sErr
-			}
-			if len(users) == 0 {
-				_, _ = fmt.Fprintf(os.Stderr, "No users found matching %q.\n", query)
-				continue
-			}
-			if len(users) == 1 {
-				return &users[0], nil
-			}
-			opts := make([]string, len(users))
-			for i, u := range users {
-				opts[i] = fmt.Sprintf("%s (%s)", u.UserName, u.ID)
-			}
-			idx, sErr := promptSelect("Select user", opts)
-			if sErr != nil {
-				return nil, sErr
-			}
-			if idx < 0 {
-				continue
-			}
-			return &users[idx], nil
-
-		case 1:
-			id, iErr := promptText("User ID (exact match)", "")
-			if iErr != nil {
-				return nil, fmt.Errorf("reading user ID: %w", iErr)
-			}
-			if id == "" {
-				continue
-			}
-			u, gErr := c.GetUser(ctx, id)
-			if gErr != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", gErr)
-				continue
-			}
+		}
+		if u, lerr := c.GetUserByName(ctx, text); lerr == nil {
 			return u, nil
 		}
+		if !strings.ContainsAny(text, " @") {
+			if u, lerr := c.GetUser(ctx, text); lerr == nil {
+				return u, nil
+			}
+		}
+		users, err := c.SearchUsers(ctx, text)
+		if err != nil {
+			return nil, err
+		}
+		switch len(users) {
+		case 0:
+			_, _ = fmt.Fprintf(os.Stderr, "No users match %q.\n", text)
+			continue
+		case 1:
+			return &users[0], nil
+		}
+		sort.Slice(users, func(i, j int) bool { return strings.ToLower(users[i].UserName) < strings.ToLower(users[j].UserName) })
+		idx, err := tui.PickOne(prompter, fmt.Sprintf("%d users match %q", len(users), text), users, userLabel)
+		if err != nil {
+			return nil, err
+		}
+		if idx >= 0 {
+			return &users[idx], nil
+		}
 	}
+}
+
+// userLabel describes a user in pickers.
+func userLabel(u client.User) string {
+	label := u.UserName
+	if name := strings.TrimSpace(u.FirstName + " " + u.LastName); name != "" {
+		label += "  " + name
+	}
+	if u.Email != "" && !strings.EqualFold(u.Email, u.UserName) {
+		label += "  <" + u.Email + ">"
+	}
+	if u.State != "" {
+		label += "  (" + u.State + ")"
+	}
+	return label
 }
 
 // resolveUser returns the user identified by id or userName flags, falling back to
