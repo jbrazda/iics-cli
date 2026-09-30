@@ -1,0 +1,121 @@
+# CR-0041: Shared TUI prompts and interactive wizard refactor
+
+## CR Type
+
+- [x] Enhancement to existing command
+- [x] Refactor
+
+## Problem
+
+Interactive mode across the CLI uses line-based helpers in `cmd/user_prompt.go`
+(`promptSelect`, `promptMultiSelect`, `promptText`, `promptYesNo`). They print
+numbered menus and read typed numbers, which does not scale to real org data:
+
+- Group and role checklists list every group or role and require typing
+  comma-separated numbers.
+- The time zone prompt is a type-a-query-then-pick loop over ~600 zones.
+- Pickers (`pickUserGroup`, `pickAgent`, `pickAgentService`,
+  `promptUserSearch`) are numbered menus with no search.
+- The runtime wizard loops through "Add agents / Remove agents / Done" menus.
+
+CR-0040 introduced `charmbracelet/huh` and Bubble Tea for the role editor.
+The rest of the CLI should use the same style.
+
+## Proposed Solution
+
+### Step 0 - shared prompt layer on huh
+
+Reimplement the shared helpers on huh, keeping their signatures so existing
+call sites change behavior without code changes:
+
+| Helper | New behavior |
+| ------ | ------------ |
+| `promptSelect(label, options)` | `huh.Select`, `/` to filter, cursor keys; returns `-1` on Esc/Ctrl-C |
+| `promptMultiSelect(label, options, defaults)` | `huh.MultiSelect` with defaults pre-checked, `/` to filter, `space` toggle, `ctrl+a` select all |
+| `promptText(label, default)` | `huh.Input` with the default pre-filled |
+| `promptYesNo(label, defaultYes)` | `huh.Confirm` |
+| `promptPassword` / `promptPasswordConfirm` | `huh.Input` with password echo mode |
+
+- Move the implementations to `internal/tui/prompt.go`; keep thin wrappers in
+  `cmd/user_prompt.go` so call sites are unchanged.
+- Add generic `tui.PickOne[T]` / `tui.PickMany[T]` helpers that take items and
+  a label function, used by the pickers below.
+- Non-terminal stdin (answers piped in by scripts): run huh in accessible mode
+  (`WithAccessible(true)`), which reads line-based answers. Existing scripted
+  usage keeps working. Also honor an `IICS_ACCESSIBLE=1` environment variable
+  for screen readers.
+- Output goes to stderr, as today.
+
+### 1. User wizard (`user create`, `user update`)
+
+`runUserWizard` (18 prompts) becomes one huh form with pages:
+
+1. **Identity** - authentication type (Native/SSO), first name, last name,
+   user name, email (validated), phone, title, description.
+2. **Account** - state, force password change, time zone (filterable select
+   over the zone list, current value pre-selected).
+3. **Membership** - groups and roles as filterable multi-selects with current
+   membership pre-checked.
+4. **Review** (update only) - changed fields and `+/-` group and role changes,
+   then Apply / Back / Cancel.
+
+### 2. User group wizard (`usergroup create`, `usergroup update`)
+
+`runGroupWizard`: name and description inputs (create only, as today), roles
+as a filterable multi-select with current roles pre-checked, and a review of
+`+/-` role changes on update. Shares the role option builder with the user
+wizard.
+
+### 3. Runtime environment wizard (`runtime create`, `runtime update`)
+
+`runRuntimeCreateWizard`: replace the add/remove menu loop with one filterable
+multi-select of agents (assigned agents pre-checked; agents assigned to
+another environment shown with a note and excluded), then a review of
+`+/-` agents, then apply.
+
+### 4. Pickers
+
+`pickUserGroup`, `pickAgent`, `pickAgentService`, `promptUserSearch`,
+`pickRole` use `tui.PickOne` with filtering. `promptUserSearch` lists users
+directly (filterable) instead of the query loop.
+
+### Out of scope
+
+- Delete confirmations (`fmt.Scanln` in 7 commands) stay plain `[y/N]` so
+  scripts can pipe answers; they are consolidated into one `confirmDelete`
+  helper as a cleanup.
+- `profile add` / `profile edit` (prompting lives in `internal/config`) -
+  separate CR.
+- `permission set` grid - CR-0042.
+
+## Implementation
+
+- `internal/tui/prompt.go` - huh-based `Select`, `MultiSelect`, `Input`,
+  `Confirm`, `Password`, `PickOne[T]`, `PickMany[T]`, accessible mode
+  detection.
+- `cmd/user_prompt.go` - wrappers delegate to `internal/tui`; `promptTimezone`
+  becomes a filterable select.
+- `cmd/user.go` - `runUserWizard` rewritten as a paged form plus review.
+- `cmd/usergroup_prompt.go` - `runGroupWizard`, `pickUserGroup`.
+- `cmd/runtime_prompt.go` - agent multi-select plus review.
+- `cmd/agent_service.go` - `pickAgent`, `pickAgentService`.
+- `cmd/role_prompt.go` - `pickRole` uses `tui.PickOne`.
+- New helper `confirmDelete` replacing duplicated `fmt.Scanln` blocks.
+- Tests: `internal/tui/prompt_test.go` (accessible-mode line input for each
+  helper, defaults, cancel), diff helpers for group/role/agent review.
+- Docs: `docs/documentation/user.md`, `usergroup.md`, `runtime.md`,
+  `agent.md` interactive sections (key bindings, accessible mode,
+  `IICS_ACCESSIBLE`); `make completions`.
+
+## Acceptance Criteria
+
+- [ ] Existing interactive commands work with arrow keys and `/` filtering
+- [ ] Piped answers on non-terminal stdin still work (accessible mode)
+- [ ] User wizard: paged form, filterable time zone, group and role
+      multi-selects pre-checked, review on update
+- [ ] User group and runtime wizards: pre-checked multi-select plus review
+- [ ] All pickers are filterable
+- [ ] Delete confirmations unchanged in behavior, deduplicated
+- [ ] Live test on `dev`: create/update/delete a throwaway user, group and
+      runtime environment through the wizards
+- [ ] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
