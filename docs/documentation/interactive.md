@@ -44,9 +44,15 @@ format:
 | ----------- | --------------------------------------------------------------- |
 | Text input  | One line; empty keeps the default shown in brackets             |
 | Single list | Option number; `0`, `q` or empty cancels                        |
-| Checklist   | Comma-separated numbers (`1,3,5`); empty keeps defaults (marked `*`); `0` selects none |
 | Yes / No    | `y`, `yes`, `n`, `no`; empty uses the default                   |
-| Time zone   | Search text, then the number of a match; empty keeps the current value; `0` clears |
 
-Commands that require a terminal (for example `role edit`) report an error
-instead of prompting.
+Wizards with checklists (`user create`/`update --interactive`, `group
+create`/`update -i`, `environment create -i`, `role edit`) require a terminal
+and report an error instead of prompting; use `--from-file` in scripts.
+
+## Confirmations
+
+Destructive commands (`delete`, `package expand --clean`,
+`environment configs set`) ask a plain `[y/N]` question even on a terminal,
+so an answer can always be piped (`echo y | iics ...`). Only `y` or `Y`
+proceeds. Use `--yes` / `-y` to skip the question.

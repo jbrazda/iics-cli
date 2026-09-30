@@ -131,14 +131,8 @@ func newRuntimeConfigsSetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Replace service property overrides for group %s? [y/N]: ", groupID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Replace service property overrides for group %s?", groupID)) {
+				return nil
 			}
 			if _, err := c.UpdateAgentGroupConfigs(ctx, groupID, cfg); err != nil {
 				return err

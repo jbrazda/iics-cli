@@ -482,14 +482,8 @@ func newUsergroupDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user group %s (%s)? [y/N]: ", group.UserGroupName, group.ID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete user group %s (%s)?", group.UserGroupName, group.ID)) {
+				return nil
 			}
 			if err := c.DeleteUserGroup(ctx, group.ID); err != nil {
 				return err

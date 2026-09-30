@@ -411,14 +411,8 @@ func newRoleDeleteCmd() *cobra.Command {
 				id = role.ID
 				label = fmt.Sprintf("%s (ID: %s)", role.RoleName, role.ID)
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete role %s? [y/N]: ", label)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete role %s?", label)) {
+				return nil
 			}
 			if err := c.DeleteRole(context.Background(), id); err != nil {
 				return err

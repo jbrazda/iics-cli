@@ -10,6 +10,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -239,11 +240,9 @@ func pickAgent(ctx context.Context, c *client.Client) (*client.Agent, error) {
 	if len(agents) == 0 {
 		return nil, fmt.Errorf("no agents found")
 	}
-	labels := make([]string, len(agents))
-	for i, a := range agents {
-		labels[i] = fmt.Sprintf("%s (%s) - %s", a.Name, a.AgentHost, a.ID)
-	}
-	idx, err := promptSelect("Select an agent", labels)
+	idx, err := tui.PickOne(prompter, "Select an agent", agents, func(a client.Agent) string {
+		return fmt.Sprintf("%s (%s) - %s", a.Name, a.AgentHost, a.ID)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -263,12 +262,9 @@ func pickAgentService(ctx context.Context, c *client.Client, agentID, verb strin
 	if len(details.AgentEngines) == 0 {
 		return "", fmt.Errorf("no running services found on agent %s", agentID)
 	}
-	labels := make([]string, len(details.AgentEngines))
-	for i, e := range details.AgentEngines {
-		st := e.AgentEngineStatus
-		labels[i] = fmt.Sprintf("%s (%s)", st.AppDisplayName, st.Status)
-	}
-	idx, err := promptSelect(fmt.Sprintf("Select a service to %s", verb), labels)
+	idx, err := tui.PickOne(prompter, fmt.Sprintf("Select a service to %s", verb), details.AgentEngines, func(e client.AgentEngine) string {
+		return fmt.Sprintf("%s (%s)", e.AgentEngineStatus.AppDisplayName, e.AgentEngineStatus.Status)
+	})
 	if err != nil {
 		return "", err
 	}

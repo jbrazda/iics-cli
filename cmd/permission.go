@@ -110,14 +110,8 @@ func newPermissionDeleteCmd() *cobra.Command {
 			if objectID == "" {
 				return fmt.Errorf("--object-id is required")
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete permissions for object %s? [y/N]: ", objectID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete permissions for object %s?", objectID)) {
+				return nil
 			}
 			c, err := getClient(cmd)
 			if err != nil {

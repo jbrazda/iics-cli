@@ -426,14 +426,8 @@ func newAgentDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete agent %s? [y/N]: ", agentID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete agent %s?", agentID)) {
+				return nil
 			}
 			if err := c.DeleteAgent(ctx, agentID); err != nil {
 				return err

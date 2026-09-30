@@ -40,11 +40,9 @@ func pickUserGroup(ctx context.Context, c *client.Client, action string) (*clien
 	if len(groups) == 0 {
 		return nil, fmt.Errorf("no user groups found")
 	}
-	labels := make([]string, len(groups))
-	for i, g := range groups {
-		labels[i] = fmt.Sprintf("%s (%d members, %d roles)", g.UserGroupName, g.CountMembers, g.CountRoles)
-	}
-	idx, err := promptSelect(fmt.Sprintf("Select a user group to %s", action), labels)
+	idx, err := tui.PickOne(prompter, fmt.Sprintf("Select a user group to %s", action), groups, func(g client.UserGroup) string {
+		return fmt.Sprintf("%s (%d members, %d roles)", g.UserGroupName, g.CountMembers, g.CountRoles)
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -362,14 +362,8 @@ func newProfileDeleteCmd() *cobra.Command {
 				return fmt.Errorf("profile %q not found", name)
 			}
 
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Delete profile %q? [y/N]: ", name)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Delete profile %q?", name)) {
+				return nil
 			}
 
 			delete(cfg.Profiles, name)

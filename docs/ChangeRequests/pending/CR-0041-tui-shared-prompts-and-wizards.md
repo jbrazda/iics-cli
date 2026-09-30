@@ -125,8 +125,12 @@ directly (filterable) instead of the query loop.
 - [x] User group and runtime wizards: pre-checked multi-select plus review
       (runtime wizard is create-only, as before; agent checklist not
       exercised live because `dev` has no unassigned agents)
-- [ ] All pickers are filterable
-- [ ] Delete confirmations unchanged in behavior, deduplicated
-- [ ] Live test on `dev`: create/update/delete a throwaway user, group and
-      runtime environment through the wizards
-- [ ] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
+- [x] All pickers are filterable (`pickRole`, `pickUserGroup`, `pickAgent`,
+      `pickAgentService` use `tui.PickOne`)
+- [x] Delete confirmations unchanged in behavior, deduplicated into
+      `confirmAction` (12 call sites; `user delete` writes to stderr and
+      `login` asks `[Y/n]`, so both keep their own prompt)
+- [x] Live test on `dev`: create/update/delete a throwaway user, group and
+      runtime environment through the wizards (user update blocked by
+      `docs/issues/new/2026-09-30-user-update-v2-403.md`)
+- [x] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
