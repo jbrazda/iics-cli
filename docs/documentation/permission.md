@@ -1,8 +1,15 @@
 # permission
 
-Manage object-level permissions in IICS. Alias: `perm`.
+Manage object permissions in IICS. Alias: `perm`.
 
-Permissions control which users and groups can read, write, or execute a specific object.
+Each access control list (ACL) entry grants one user or user group a set of
+permissions on one object (project, folder or asset): `read`, `update`,
+`delete`, `execute` and `changePermission`. When an object has no ACLs, access
+follows the users' roles; once ACLs exist, they restrict access to the listed
+principals (administrators keep the right to change permissions).
+
+Uses the [Object permissions](https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/platform-rest-api-version-3-resources/object-permissions.html)
+API (`/public/core/v3/objects/<object ID>/permissions`).
 
 ## Synopsis
 
@@ -13,85 +20,201 @@ iics perm <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                     |
-| ---------- | ------------------------------- |
-| `get`      | Get permissions for an object   |
-| `set`      | Set permissions on an object    |
-| `delete`   | Delete permissions from an object |
+| Subcommand | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| `get`      | List the ACLs of an object                           |
+| `add`      | Grant permissions to a user or user group            |
+| `update`   | Set the permissions of an existing ACL               |
+| `delete`   | Delete one ACL, or all ACLs of an object             |
+| `set`      | Make an object's ACLs match a JSON file              |
+| `check`    | Show your own access to an object                    |
+
+## Selecting the object
+
+Every subcommand takes the object as either:
+
+| Flag               | Description                                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| `--object-id`      | Object ID                                                          |
+| `--path`, `--type` | Object path and type, resolved with [lookup](lookup.md), e.g. `--path "Default/Sales" --type Folder` |
+
+Common types: `Project`, `Folder`, `DTEMPLATE` (mapping), `MTT` (mapping task),
+`TASKFLOW`, `PROCESS`.
+
+## Permission names
+
+`--grant` takes a comma-separated list (or the flag repeated): `read`,
+`update`, `delete`, `execute`, `changePermission` (also `perm`), `all`,
+`none`. Names are case-insensitive.
 
 ---
 
 ## permission get
 
-Retrieve the current permission assignments for an object.
-
-### Flags
-
-| Flag          | Type   | Required | Description   |
-| ------------- | ------ | -------- | ------------- |
-| `--object-id` | string | yes      | Object ID     |
-
-All [global flags](../../README.md#global-flags) apply.
-
 ### Output columns
 
-| Column          | Description                                |
-| --------------- | ------------------------------------------ |
-| `principalId`   | User or group ID                           |
-| `principalType` | Type: `USER` or `GROUP`                    |
-| `principalName` | User or group name                         |
-| `permission`    | Permission level: `READ`, `WRITE`, `EXECUTE` |
+| Column        | Description                               |
+| ------------- | ----------------------------------------- |
+| `TYPE`        | `USER` or `GROUP`                         |
+| `NAME`        | User name or user group name              |
+| `READ` ... `CHANGE PERM` | Granted permissions (`true`/`false`) |
+| `ACL ID`      | ACL ID, used by `update` / `delete --acl-id` |
+
+`-o json` returns the API shape (see [permission set](#permission-set)).
 
 ### Examples
 
 ```bash
 iics permission get --object-id <object-id>
 
-iics perm get --object-id <object-id> --output json
-
-# Resolve object ID from path first
-ID=$(iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | jq -r '.id')
-iics permission get --object-id "$ID"
+iics perm get --path "Default/Sales" --type Folder -o json
 ```
 
 ```powershell
 iics permission get --object-id <object-id>
 
-iics perm get --object-id <object-id> --output json
+iics perm get --path "Default/Sales" --type Folder -o json
+```
 
-# Resolve object ID from path first
-$obj = iics lookup --path "My Project/ETL/LoadOrders" --type MTT --output json | ConvertFrom-Json
-iics permission get --object-id $obj.id
+---
+
+## permission add
+
+Create an ACL for a user or user group. Fails if the principal already has an
+ACL on the object; use `permission update` instead.
+
+### Flags
+
+| Flag      | Type     | Required | Description                         |
+| --------- | -------- | -------- | ----------------------------------- |
+| `--user`  | string   | one of   | User name                           |
+| `--group` | string   | one of   | User group name                     |
+| `--grant` | string[] | yes      | Permissions to grant                |
+
+### Examples
+
+```bash
+iics permission add --object-id <id> --group "Data Engineering" --grant read,execute
+
+iics perm add --path "Default/Sales" --type Folder --user jdoe@example.com --grant all
+```
+
+```powershell
+iics permission add --object-id <id> --group "Data Engineering" --grant read,execute
+
+iics perm add --path "Default/Sales" --type Folder --user jdoe@example.com --grant all
+```
+
+---
+
+## permission update
+
+Replace the permissions of an existing ACL. `--grant` is the complete new set.
+
+### Flags
+
+| Flag       | Type     | Required | Description                     |
+| ---------- | -------- | -------- | ------------------------------- |
+| `--acl-id` | string   | one of   | ACL ID                          |
+| `--user`   | string   | one of   | User name                       |
+| `--group`  | string   | one of   | User group name                 |
+| `--grant`  | string[] | yes      | Complete permission set         |
+
+### Examples
+
+```bash
+iics permission update --object-id <id> --group "Data Engineering" --grant read
+
+iics permission update --object-id <id> --acl-id <acl-id> --grant read,update,execute
+```
+
+```powershell
+iics permission update --object-id <id> --group "Data Engineering" --grant read
+
+iics permission update --object-id <id> --acl-id <acl-id> --grant read,update,execute
+```
+
+---
+
+## permission delete
+
+Delete one ACL (by `--acl-id`, `--user` or `--group`) or every ACL of the
+object (`--all`). Prompts for confirmation unless `--yes` is given.
+
+### Flags
+
+| Flag         | Short | Type   | Required | Description                 |
+| ------------ | ----- | ------ | -------- | --------------------------- |
+| `--acl-id`   |       | string | one of   | ACL ID                      |
+| `--user`     |       | string | one of   | User name                   |
+| `--group`    |       | string | one of   | User group name             |
+| `--all`      |       | bool   | one of   | Delete every ACL            |
+| `--yes`      | `-y`  | bool   |          | Skip confirmation prompt    |
+
+### Examples
+
+```bash
+iics permission delete --object-id <id> --group "Data Engineering"
+
+iics perm delete --object-id <id> --all --yes
+```
+
+```powershell
+iics permission delete --object-id <id> --group "Data Engineering"
+
+iics perm delete --object-id <id> --all --yes
 ```
 
 ---
 
 ## permission set
 
-Set or replace permissions on an object from a JSON file.
+Make an object's ACLs match a JSON file:
+
+- principals in the file without an ACL are added (`+`),
+- principals whose permissions differ are updated (`~`),
+- with `--prune`, ACLs of principals not in the file are deleted (`-`); this
+  asks for confirmation unless `--yes` is given.
+
+Principals match by type and case-insensitive name. The planned changes are
+printed to stderr; `--dry-run` stops there. Changes are applied in the order
+add, update, delete; on error the command stops and reports how many changes
+were applied.
 
 ### Flags
 
-| Flag          | Type   | Required | Description                        |
-| ------------- | ------ | -------- | ---------------------------------- |
-| `--object-id` | string | yes      | Object ID                          |
-| `--from-file` | string | yes      | JSON file with permission definitions |
+| Flag          | Short | Type   | Required | Description                                   |
+| ------------- | ----- | ------ | -------- | --------------------------------------------- |
+| `--from-file` |       | string | yes      | JSON file with the desired ACLs; `-` for stdin |
+| `--prune`     |       | bool   |          | Delete ACLs of principals not in the file     |
+| `--dry-run`   |       | bool   |          | Show changes without applying them            |
+| `--yes`       | `-y`  | bool   |          | Skip the confirmation for `--prune`           |
 
-All [global flags](../../README.md#global-flags) apply.
+### JSON file
 
-### JSON definition example
+The same shape as `permission get -o json`; `id` values are ignored.
 
 ```json
 [
   {
-    "principalId": "<user-id>",
-    "principalType": "USER",
-    "permission": "READ"
+    "principal": { "type": "GROUP", "name": "Data Engineering" },
+    "permissions": {
+      "read": true,
+      "update": true,
+      "delete": false,
+      "execute": true,
+      "changePermission": false
+    }
   },
   {
-    "principalId": "<group-id>",
-    "principalType": "GROUP",
-    "permission": "WRITE"
+    "principal": { "type": "USER", "name": "jdoe@example.com" },
+    "permissions": {
+      "read": true,
+      "update": false,
+      "delete": false,
+      "execute": false,
+      "changePermission": false
+    }
   }
 ]
 ```
@@ -99,44 +222,48 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
-iics permission set --object-id <object-id> --from-file permissions.json
+# Preview, then apply
+iics permission set --object-id <id> --from-file acls.json --dry-run
+iics permission set --object-id <id> --from-file acls.json
 
-iics perm set --object-id <object-id> --from-file permissions.json
+# Copy the ACLs of one folder to another
+iics perm get --path "Default/Sales" --type Folder -o json \
+  | iics perm set --path "Default/Marketing" --type Folder --from-file - --prune --yes
 ```
 
 ```powershell
-iics permission set --object-id <object-id> --from-file permissions.json
+iics permission set --object-id <id> --from-file acls.json --dry-run
+iics permission set --object-id <id> --from-file acls.json
 
-iics perm set --object-id <object-id> --from-file permissions.json
+iics perm get --path "Default/Sales" --type Folder -o json |
+  iics perm set --path "Default/Marketing" --type Folder --from-file - --prune --yes
 ```
 
 ---
 
-## permission delete
+## permission check
 
-Remove all permissions from an object. Prompts for confirmation unless `--yes` is given.
+Show the current user's access to an object. With `--asset-type` on a project
+or folder, `CREATE` reports whether that asset type can be created there.
 
 ### Flags
 
-| Flag          | Short | Type   | Required | Description              |
-| ------------- | ----- | ------ | -------- | ------------------------ |
-| `--object-id` |       | string | yes      | Object ID                |
-| `--yes`       | `-y`  | bool   |          | Skip confirmation prompt |
-
-All [global flags](../../README.md#global-flags) apply.
+| Flag           | Type   | Required | Description                                  |
+| -------------- | ------ | -------- | -------------------------------------------- |
+| `--asset-type` | string |          | Asset type to check create access for        |
 
 ### Examples
 
 ```bash
-iics permission delete --object-id <object-id>
+iics permission check --object-id <id>
 
-iics perm delete --object-id <object-id> --yes
+iics perm check --path "Default" --type Project --asset-type DTEMPLATE
 ```
 
 ```powershell
-iics permission delete --object-id <object-id>
+iics permission check --object-id <id>
 
-iics perm delete --object-id <object-id> --yes
+iics perm check --path "Default" --type Project --asset-type DTEMPLATE
 ```
 
 ## See also

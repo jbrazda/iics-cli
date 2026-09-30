@@ -105,3 +105,27 @@ docs/documentation/permission.md
 
 The interactive editor for permissions is tracked separately in CR-0042 and
 builds on this fix.
+
+---
+
+## Fix (filled in after resolution)
+
+**Root cause:** the client modeled a response shape and a `PUT
+/objects/<id>/permissions` endpoint that the API does not have.
+
+**Files changed:**
+
+```text
+internal/client/permissions.go      - ObjectACL/ACLPrincipal/ACLPermissions, ObjectAccess; List/Get/Create/
+                                      Update/Delete/DeleteAll ObjectACL(s), CheckObjectAccess; DiffACLs,
+                                      ParseACLPermissions, PrincipalKey
+internal/client/permissions_test.go - tests for every method, DiffACLs and permission parsing
+cmd/permission.go                   - get, add, update, delete (--acl-id/--user/--group/--all), set
+                                      (--from-file, --prune, --dry-run), check; --object-id or --path/--type
+docs/documentation/permission.md    - rewritten
+```
+
+**Verified on `dev`** (throwaway project): get on an empty object, add,
+duplicate add rejected, update, check, set dry-run/apply/no-change,
+prune (declined and confirmed), delete by group, delete --all, and a
+`get -o json | set --from-file -` round-trip.

@@ -264,7 +264,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [metering](docs/documentation/metering.md)           |        | `get`, `download`                                                      | Query usage and metering data                                      |
 | [objects](docs/documentation/objects.md)             |        | `list`, `dependencies`                                                 | List/search assets, find dependencies                              |
 | [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
-| [permission](docs/documentation/permission.md)       | `perm` | `get`, `set`, `delete`                                                 | Manage object-level permissions                                    |
+| [permission](docs/documentation/permission.md)       | `perm` | `get`, `add`, `update`, `delete`, `set`, `check` | Manage object-level permissions                                    |
 | [privilege](docs/documentation/privilege.md)         |        | `list`                                                                 | List available privileges                                          |
 | [profile](docs/documentation/profile.md)             |        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles                                         |
 | [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
