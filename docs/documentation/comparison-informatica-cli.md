@@ -181,7 +181,7 @@ It cannot manage users, connections, schedules, roles, or any other administrati
 | `folder`        | create, update, delete            |
 | `user`          | list, get, create, update, delete |
 | `usergroup`     | list, get, create, update, delete |
-| `role`          | list, get, create, update, delete |
+| `role`          | list, get, create, add-privileges, remove-privileges, delete |
 | `privilege`     | list                              |
 | `runtime`       | list, get, create, update         |
 | `agent`         | list, start, stop                 |
