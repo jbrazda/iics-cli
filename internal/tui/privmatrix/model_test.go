@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/tui/grid"
 )
 
 func testService() client.PrivilegeService {
@@ -64,6 +65,9 @@ func TestToggleCell(t *testing.T) {
 	if !strings.Contains(view, "[+]") || !strings.Contains(view, "[-]") {
 		t.Errorf("view should show pending add and remove marks:\n%s", view)
 	}
+	if !strings.Contains(view, "R > DI (6)") {
+		t.Errorf("title should name the service and count:\n%s", view)
+	}
 }
 
 func TestRowAndColumnToggle(t *testing.T) {
@@ -85,6 +89,9 @@ func TestRowAndColumnToggle(t *testing.T) {
 	if !selected["view.data.transfer.task"] || !selected["view.mapping"] {
 		t.Errorf("column toggle should select all views: %v", selected)
 	}
+	if selected["edc.iics.discovery"] {
+		t.Error("column toggle must not touch Other rows")
+	}
 }
 
 func TestOtherRowsSkipHeader(t *testing.T) {
@@ -92,11 +99,13 @@ func TestOtherRowsSkipHeader(t *testing.T) {
 	m := New(testService(), map[string]bool{}, selected, Options{NoColor: true})
 
 	press(m, "right", "right", "down", "down")
-	if m.rows[m.cursorRow].kind != rowOther {
-		t.Fatalf("cursor should skip the header and land on an Other row, got kind %v", m.rows[m.cursorRow].kind)
+	row, col := m.Cursor()
+	rows := m.VisibleRows()
+	if rows[row].Kind != grid.RowItem || rows[row].Label != "edc.iics.discovery" {
+		t.Fatalf("cursor should skip the header and land on the Other row, got %+v", rows[row])
 	}
-	if m.cursorCol != 0 {
-		t.Errorf("Other rows have one column, cursorCol=%d", m.cursorCol)
+	if col != 0 {
+		t.Errorf("Other rows have one column, cursor col=%d", col)
 	}
 	press(m, "space")
 	if !selected["edc.iics.discovery"] {
@@ -107,19 +116,19 @@ func TestOtherRowsSkipHeader(t *testing.T) {
 func TestFilter(t *testing.T) {
 	m := New(testService(), map[string]bool{}, map[string]bool{}, Options{NoColor: true})
 	press(m, "/", "m", "a", "p", "enter")
-	if len(m.rows) != 1 || m.rows[0].object.Key != "mapping" {
-		t.Fatalf("filter should leave only mapping, got %d rows", len(m.rows))
+	rows := m.VisibleRows()
+	if len(rows) != 1 || rows[0].Label != "mapping" {
+		t.Fatalf("filter should leave only mapping, got %+v", rows)
 	}
 	press(m, "/", "e", "d", "c")
-	if len(m.rows) != 0 {
-		// "mapedc" matches nothing
-		t.Fatalf("expected no rows, got %d", len(m.rows))
+	if len(m.VisibleRows()) != 0 {
+		t.Fatalf("expected no rows, got %+v", m.VisibleRows())
 	}
 	press(m, "esc", "ctrl+u")
-	m.filter.SetValue("discovery")
-	m.rebuildRows()
-	if len(m.rows) != 2 || m.rows[1].other.Name != "edc.iics.discovery" {
-		t.Errorf("description filter should match the Other row, got %+v", m.rows)
+	m.SetFilter("discovery")
+	rows = m.VisibleRows()
+	if len(rows) != 2 || rows[0].Kind != grid.RowHeader || rows[1].Label != "edc.iics.discovery" {
+		t.Errorf("description filter should match the Other row with its header, got %+v", rows)
 	}
 }
 
@@ -141,8 +150,9 @@ func TestRemoveModeShowsOnlyAssigned(t *testing.T) {
 	assigned := map[string]bool{"update.mapping": true}
 	selected := map[string]bool{"update.mapping": true}
 	m := New(testService(), assigned, selected, Options{Mode: ModeRemove, NoColor: true})
-	if len(m.rows) != 1 || m.rows[0].object.Key != "mapping" {
-		t.Fatalf("remove mode should show only objects with assigned privileges, got %d rows", len(m.rows))
+	rows := m.VisibleRows()
+	if len(rows) != 1 || rows[0].Label != "mapping" {
+		t.Fatalf("remove mode should show only objects with assigned privileges, got %+v", rows)
 	}
 	press(m, "a")
 	if selected["update.mapping"] {

@@ -11,7 +11,7 @@ terminal.
 | Prompt       | Keys                                                                 |
 | ------------ | -------------------------------------------------------------------- |
 | Text input   | Type, `Enter` to accept (an empty value keeps the shown default)     |
-| Single list  | Arrows or `j` / `k` to move, `/` to filter, `Enter` to choose, `Esc` to cancel |
+| Single list  | Arrows or `j` / `k` to move, `/` to filter (`Esc` clears the filter), `Enter` to choose, `Ctrl+C` to cancel |
 | Checklist    | `Space` or `x` to toggle, `/` to filter, `Ctrl+A` to select all, `Enter` to confirm |
 | Yes / No     | Left / right or `y` / `n`, `Enter` to confirm                        |
 | Any prompt   | `Ctrl+C` cancels the command                                         |

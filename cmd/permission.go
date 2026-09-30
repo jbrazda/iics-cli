@@ -30,6 +30,7 @@ Select the object with --object-id, or with --path and --type.`,
 	cmd.AddCommand(newPermissionDeleteCmd())
 	cmd.AddCommand(newPermissionSetCmd())
 	cmd.AddCommand(newPermissionCheckCmd())
+	cmd.AddCommand(newPermissionEditCmd())
 	return cmd
 }
 

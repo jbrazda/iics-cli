@@ -28,6 +28,7 @@ iics perm <subcommand> [flags]
 | `delete`   | Delete one ACL, or all ACLs of an object             |
 | `set`      | Make an object's ACLs match a JSON file              |
 | `check`    | Show your own access to an object                    |
+| `edit`     | Edit an object's ACLs in an interactive grid         |
 
 ## Selecting the object
 
@@ -265,6 +266,73 @@ iics permission check --object-id <id>
 
 iics perm check --path "Default" --type Project --asset-type DTEMPLATE
 ```
+
+## permission edit
+
+Edit an object's ACLs in an interactive grid (terminal only). User groups and
+users are rows; `READ`, `UPDATE`, `DELETE`, `EXEC` and `PERM` (change
+permission) are columns.
+
+```text
+Permissions: Default/Sales (Folder)
+
+  PRINCIPAL                  READ    UPDATE  DELETE  EXEC    PERM
+  Data Engineering group     [x]     [+]     [ ]     [x]     [ ]
+> Developer_ReadOnly group   [-]     [ ]     [ ]     [ ]     [ ]
+  jdoe@example.com user(new) [+]     [ ]     [ ]     [ ]     [ ]
+```
+
+| Mark  | Meaning                        |
+| ----- | ------------------------------ |
+| `[x]` | Granted, unchanged             |
+| `[+]` | Will be granted                |
+| `[-]` | Will be revoked                |
+| `[ ]` | Not granted                    |
+
+| Key                 | Action                                                  |
+| ------------------- | ------------------------------------------------------- |
+| Arrows or `h j k l` | Move                                                    |
+| `Space` or `x`      | Toggle the permission under the cursor                  |
+| `a`                 | Toggle every permission in the row                      |
+| `c`                 | Toggle the column for all visible rows                  |
+| `d`                 | Clear the row; the principal's ACL is deleted           |
+| `n`                 | Add a user group or user (filterable list)              |
+| `/`, `Ctrl+U`       | Filter rows, clear the filter                           |
+| `Enter`, `Esc`, `q` | Finish editing and review                               |
+
+A principal left with no permissions has its ACL deleted. The review lists the
+changes (`+` add, `~` update, `-` delete) with **Apply changes**, **Back to
+editing** or **Cancel**, and warns when the change removes change permission
+from your own user. Changes are applied in the order add, update, delete, and
+the resulting ACLs are printed.
+
+Without `--object-id` or `--path`, pick a project from a filterable list, then
+the project itself, a folder (to open it), or an asset.
+
+The command checks first that you have change permission on the object.
+
+> Once an object has ACLs, only the listed principals have access. Removing
+> your own groups can take away even your create access; administrators keep
+> change permission and can delete the ACLs again.
+
+### Examples
+
+```bash
+iics permission edit --path "Default/Sales" --type Folder
+
+iics perm edit --object-id <id>
+
+# Pick the object interactively
+iics perm edit
+```
+
+```powershell
+iics permission edit --path "Default/Sales" --type Folder
+
+iics perm edit
+```
+
+See [Interactive prompts](interactive.md) for general keys.
 
 ## See also
 

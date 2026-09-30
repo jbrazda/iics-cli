@@ -186,7 +186,7 @@ It cannot manage users, connections, schedules, roles, or any other administrati
 | `runtime`       | list, get, create, update         |
 | `agent`         | list, start, stop                 |
 | `tag`           | assign, remove                    |
-| `permission`    | get, set, delete                  |
+| `permission`    | get, add, update, delete, set, check, edit |
 | `securitylog`   | list                              |
 | `metering`      | get, download                     |
 | `sourcecontrol` | checkout, checkin, pull, commit   |

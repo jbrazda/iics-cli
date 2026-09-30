@@ -323,7 +323,7 @@ for a platform.
 | `--os` | string | yes      | Operating system: `win64` or `linux64` |
 
 When `--os` is omitted and the session is interactive, the command shows a
-selection list (`win64`/`linux64`); press `Esc` to cancel. See
+selection list (`win64`/`linux64`); press `Ctrl+C` to cancel. See
 [Interactive prompts](interactive.md).
 
 All [global flags](../../README.md#global-flags) apply.

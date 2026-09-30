@@ -7,8 +7,8 @@
 
 ## Dependencies
 
-- Bug `docs/issues/new/2026-09-30-permission-client-wrong-api-shape.md` must
-  be fixed first (correct ACL structs and per-ACL endpoints).
+- Bug `docs/issues/pending/2026-09-30-permission-client-wrong-api-shape.md`
+  (fixed in `089f26c`: correct ACL structs and per-ACL endpoints).
 - Reuses the TUI foundation from CR-0040 and CR-0041.
 
 ## Problem
@@ -41,7 +41,8 @@ object with several groups currently takes several hand-written requests.
 
    - `n` opens a filterable picker of users and user groups not yet in the
      ACL list; the new row starts with `read` checked.
-   - `d` marks a principal's ACL for deletion (row shown struck or `[-]`).
+   - `d` clears a principal's row; a principal with no permissions has its
+     ACL deleted (shown as `[-]` cells).
    - Same marks as CR-0040: `[x]` unchanged, `[+]` grant, `[-]` revoke.
 3. **Review** - per principal: create, update (changed permissions), or
    delete; then Apply / Back / Cancel.
@@ -78,11 +79,31 @@ applies the same diff declaratively, so the TUI and scripts share one
 
 ## Acceptance Criteria
 
-- [ ] `permission edit` shows current ACLs as a grid and applies
+- [x] `permission edit` shows current ACLs as a grid and applies
       create/update/delete changes after review
-- [ ] Principals can be added from a filterable user/group list and removed
-- [ ] Missing `changePermission` is detected before any change
-- [ ] `permission set --from-file` and the editor share `DiffACLs`
-- [ ] Role privilege editor behavior unchanged after the grid extraction
-- [ ] Live test on `dev` against a throwaway object, restoring ACLs afterwards
-- [ ] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
+- [x] Principals can be added from a filterable user/group list and removed
+- [x] Missing `changePermission` is detected before any change
+- [x] `permission set --from-file` and the editor share `DiffACLs`
+- [x] Role privilege editor behavior unchanged after the grid extraction
+- [x] Live test on `dev` against a throwaway object, restoring ACLs afterwards
+- [x] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
+
+## Implementation Notes
+
+- `internal/tui/grid/` - generic grid core (cells, marks, cursor, row/column
+  toggles, filter with section headers, scrolling, footer detail, clear-row
+  key, extra action keys that end the grid, empty-state text).
+- `internal/tui/privmatrix/` - now a thin adapter building grid rows from a
+  privilege service; `role edit` behavior unchanged (tests rewritten against
+  the public model API, same scenarios).
+- `internal/tui/acleditor.go` - `EditACLs`: grid, `n` add-principal picker,
+  review with `ACLPlanLines` and self-lockout warning; returns a
+  `client.ACLPlan` from `client.DiffACLs(current, desired, prune=true)`.
+- `cmd/permission_edit.go` - object resolution (`--object-id`,
+  `--path/--type`, or project/folder/asset picker via
+  `q=location=='<path>'`), `checkAccess` guard, apply with
+  `applyACLPlan` (shared with `permission set`).
+- Verified on `dev` with a throwaway project and folder: add principal,
+  toggle, clear row, review, apply; object picker drill-down; no-change
+  review. The location query also returns the location object itself, so
+  it is filtered out of its own child list.

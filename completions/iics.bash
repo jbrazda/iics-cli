@@ -4216,6 +4216,57 @@ _iics_permission_delete()
     noun_aliases=()
 }
 
+_iics_permission_edit()
+{
+    last_command="iics_permission_edit"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--object-id=")
+    two_word_flags+=("--object-id")
+    local_nonpersistent_flags+=("--object-id")
+    local_nonpersistent_flags+=("--object-id=")
+    flags+=("--path=")
+    two_word_flags+=("--path")
+    local_nonpersistent_flags+=("--path")
+    local_nonpersistent_flags+=("--path=")
+    flags+=("--type=")
+    two_word_flags+=("--type")
+    local_nonpersistent_flags+=("--type")
+    local_nonpersistent_flags+=("--type=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_permission_get()
 {
     last_command="iics_permission_get"
@@ -4409,6 +4460,7 @@ _iics_permission()
     commands+=("add")
     commands+=("check")
     commands+=("delete")
+    commands+=("edit")
     commands+=("get")
     commands+=("set")
     commands+=("update")
