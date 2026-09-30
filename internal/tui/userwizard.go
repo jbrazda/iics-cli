@@ -16,15 +16,13 @@ import (
 type UserWizardInput struct {
 	// User holds the starting values and receives the result.
 	User *client.User
-	// Update is true when editing an existing user. User name,
-	// authentication and state are then shown read-only because the update
-	// API does not change them.
+	// Update is true when editing an existing user. Only user group and role
+	// assignments are edited then; other fields are shown read-only because
+	// the API cannot update them.
 	Update bool
 	// Groups and Roles are all groups and roles in the organization.
 	Groups []client.UserGroup
 	Roles  []client.Role
-	// Timezones lists the accepted time zone IDs.
-	Timezones []string
 	// UserNameDomain suggests "first.last@<domain>" as the user name.
 	UserNameDomain string
 
@@ -33,7 +31,8 @@ type UserWizardInput struct {
 }
 
 // RunUserWizard collects user fields in a paged form (Identity, Details,
-// Membership) followed by a review. It returns false if the user canceled.
+// Membership) followed by a review. On update only the Membership page is
+// shown. It returns false if the user canceled.
 func RunUserWizard(in UserWizardInput) (bool, error) {
 	before := cloneUser(in.User)
 	u := in.User
@@ -52,12 +51,17 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 	}
 
 	for {
-		form := huh.NewForm(
+		pages := []*huh.Group{
 			identityGroup(in, u, &auth),
 			ssoGroup(in, u, &auth),
-			detailsGroup(in, u),
+			detailsGroup(u),
 			membershipGroup(in, &groupIDs, &roleIDs),
-		).WithOutput(in.Out).WithAccessible(in.Accessible)
+		}
+		if in.Update {
+			// Only role and user group assignments can be updated.
+			pages = []*huh.Group{membershipGroup(in, &groupIDs, &roleIDs)}
+		}
+		form := huh.NewForm(pages...).WithOutput(in.Out).WithAccessible(in.Accessible)
 		if err := form.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
 				return false, nil
@@ -92,24 +96,14 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 }
 
 func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group {
-	var fields []huh.Field
-	if in.Update {
-		fields = append(fields, huh.NewNote().
-			Title("User: "+u.UserName).
-			Description(fmt.Sprintf("Authentication: %s   State: %s\nUser name, authentication and state cannot be changed here.",
-				orDash(u.Authentication), orDash(u.State))))
-	} else {
-		fields = append(fields, huh.NewSelect[string]().
+	return huh.NewGroup(
+		huh.NewSelect[string]().
 			Title("Authentication").
 			Options(huh.NewOption("Native", "Native"), huh.NewOption("SSO", "SSO")).
-			Value(auth))
-	}
-	fields = append(fields,
+			Value(auth),
 		huh.NewInput().Title("First name").Value(&u.FirstName).Validate(required("first name")),
 		huh.NewInput().Title("Last name").Value(&u.LastName).Validate(required("last name")),
-	)
-	if !in.Update {
-		fields = append(fields, huh.NewInput().
+		huh.NewInput().
 			Title("User name").
 			Description("Leave empty to use the suggestion").
 			PlaceholderFunc(func() string {
@@ -121,13 +115,12 @@ func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group 
 					return errors.New("user name is required")
 				}
 				return nil
-			}))
-	}
-	fields = append(fields, huh.NewInput().Title("Email").Value(&u.Email).Validate(validEmail))
-	return huh.NewGroup(fields...).Title("Identity")
+			}),
+		huh.NewInput().Title("Email").Value(&u.Email).Validate(validEmail),
+	).Title("Identity")
 }
 
-// ssoGroup asks for the SSO alias name on create; the API requires it when
+// ssoGroup asks for the SSO alias name; the create API requires it when
 // authentication is SSO. Hidden otherwise.
 func ssoGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group {
 	return huh.NewGroup(
@@ -141,28 +134,13 @@ func ssoGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group {
 	})
 }
 
-func detailsGroup(in UserWizardInput, u *client.User) *huh.Group {
-	fields := []huh.Field{
+func detailsGroup(u *client.User) *huh.Group {
+	return huh.NewGroup(
 		huh.NewInput().Title("Phone (optional)").Value(&u.Phone),
 		huh.NewInput().Title("Title (optional)").Value(&u.Title),
 		huh.NewInput().Title("Description (optional)").Value(&u.Description),
-	}
-	// The create API does not accept a time zone; only update applies it.
-	if in.Update {
-		tzOpts := make([]huh.Option[string], 0, len(in.Timezones)+1)
-		tzOpts = append(tzOpts, huh.NewOption("(none)", ""))
-		for _, z := range in.Timezones {
-			tzOpts = append(tzOpts, huh.NewOption(z, z))
-		}
-		fields = append(fields, huh.NewSelect[string]().
-			Title("Time zone").
-			Description("/ to filter, e.g. New_York or Europe").
-			Options(tzOpts...).
-			Height(8).
-			Value(&u.TimeZoneID))
-	}
-	fields = append(fields, huh.NewConfirm().Title("Force password change on next login?").Value(&u.ForcePasswordChange))
-	return huh.NewGroup(fields...).Title("Details")
+		huh.NewConfirm().Title("Force password change on next login?").Value(&u.ForcePasswordChange),
+	).Title("Details")
 }
 
 func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group {
@@ -184,6 +162,13 @@ func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group
 	}
 
 	var fields []huh.Field
+	if in.Update {
+		u := in.User
+		fields = append(fields, huh.NewNote().
+			Title("User: "+u.UserName).
+			Description(fmt.Sprintf("%s  %s   Authentication: %s   State: %s\nOnly user group and role assignments can be changed.",
+				strings.TrimSpace(u.FirstName+" "+u.LastName), orDash(u.Email), orDash(u.Authentication), orDash(u.State))))
+	}
 	if len(gOpts) > 0 {
 		fields = append(fields, huh.NewMultiSelect[string]().
 			Title("User groups").
@@ -346,7 +331,7 @@ func rolesByID(all []client.Role, ids []string) []client.UserRole {
 	var out []client.UserRole
 	for _, r := range all {
 		if want[r.ID] {
-			out = append(out, client.UserRole{ID: r.ID, RoleName: r.RoleName})
+			out = append(out, client.UserRole{ID: r.ID, RoleName: r.RoleName, DisplayName: r.DisplayName})
 		}
 	}
 	return out

@@ -30,6 +30,8 @@ func newUserCmd() *cobra.Command {
 	cmd.AddCommand(newUserGetCmd())
 	cmd.AddCommand(newUserCreateCmd())
 	cmd.AddCommand(newUserUpdateCmd())
+	cmd.AddCommand(newUserMembershipCmd(userRoleMembership))
+	cmd.AddCommand(newUserMembershipCmd(userGroupMembership))
 	cmd.AddCommand(newUserDeleteCmd())
 	cmd.AddCommand(newUserChangePasswordCmd())
 	cmd.AddCommand(newUserResetPasswordCmd())
@@ -275,27 +277,7 @@ func newUserGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			f, err := output.ParseFormat(outputFmt)
-			if err != nil {
-				return err
-			}
-
-			cfg, _ := loadConfig()
-			style := resolveTableStyle(cfg)
-
-			switch f {
-			case output.FormatCSV:
-				cols := buildUserCSVColumns(csvFields)
-				csvFmt := output.New(output.FormatCSV, os.Stdout, style)
-				return csvFmt.Format([]*client.User{user}, cols)
-			case output.FormatTable:
-				return printUserSections(os.Stdout, user, style)
-			default:
-				// JSON / YAML: output the full struct
-				fmtr := output.New(f, os.Stdout, style)
-				return fmtr.Format(user, nil)
-			}
+			return printUser(user, csvFields)
 		},
 	}
 
@@ -580,7 +562,6 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		Update:         existing != nil,
 		Groups:         groups,
 		Roles:          roles,
-		Timezones:      iicsTimezones,
 		UserNameDomain: domain,
 		Out:            os.Stderr,
 		Accessible:     prompter.Accessible,
@@ -775,12 +756,14 @@ func newUserUpdateCmd() *cobra.Command {
 					_, _ = fmt.Fprintln(os.Stderr, "Canceled.")
 					return nil
 				}
-				result, uErr := c.UpdateUser(ctx, target.ID, updated)
-				if uErr != nil {
-					return uErr
+				if aErr := applyUserMembership(ctx, c, cmd.ErrOrStderr(), target, updated); aErr != nil {
+					return aErr
 				}
-				cfg, _ := loadConfig()
-				return printUserSections(os.Stdout, result, resolveTableStyle(cfg))
+				result, gErr := c.GetUser(ctx, target.ID)
+				if gErr != nil {
+					return gErr
+				}
+				return printUser(result, defaultCSVFields)
 			}
 
 			if fromFile == "" {

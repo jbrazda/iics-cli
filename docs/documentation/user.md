@@ -15,7 +15,9 @@ iics user <subcommand> [flags]
 | `list`             | List users                                      |
 | `get`              | Get a single user                               |
 | `create`           | Create a user                                   |
-| `update`           | Update a user                                   |
+| `update`           | Update a user (`--interactive`: groups and roles) |
+| `update-roles`     | Add, remove or replace a user's roles           |
+| `update-groups`    | Add, remove or replace a user's user groups     |
 | `delete`           | Delete a user                                   |
 | `change-password`  | Change a user password                          |
 | `reset-password`   | Reset a user password using the security answer |
@@ -160,27 +162,22 @@ iics user create --interactive
 
 ## user update
 
-> **NOTE: This command is currently not supported and will fail at runtime.**
->
-> The IICS REST API does not provide a working endpoint for updating user scalar
-> properties (name, email, title, timezone, etc.):
->
-> - The V3 API (`PUT /public/core/v3/users/{id}`) returns HTTP 405 - only `DELETE`
->   is allowed on that path.
-> - The V2 API (`POST /api/v2/user/{id}`) uses XML and returns HTTP 400 "Internal
->   error" in testing, with no public documentation confirming the request format.
->
-> Group and role assignment via the V3 `addGroups`/`removeGroups`/`addRoles`/`removeRoles`
-> endpoints may work, but scalar property update does not. This command will be
-> re-enabled once a working API endpoint is confirmed.
->
-> To update a user's group or role membership in the meantime, use the IICS
-> Administrator UI.
->
-> The `--interactive` wizard pre-fills the current values, shows user name,
-> authentication and state read-only, and ends with a review of the changes
-> (`field: old -> new`, `+ Group`, `- Role`). Applying the changes is subject
-> to the limitation above.
+Update a user's user group and role assignments interactively. For scripts,
+use [user update-roles](#user-update-roles) and
+[user update-groups](#user-update-groups).
+
+`--interactive` shows the user's name, email, authentication and state
+read-only, then the user groups and roles as filterable checklists with the
+current assignments pre-checked, and ends with a review (`+ Group: ...`,
+`- Role: ...`). Changes are applied through the V3 `addGroups` /
+`removeGroups` / `addRoles` / `removeRoles` endpoints, and the resulting user
+is printed. See [Interactive prompts](interactive.md) for keys.
+
+> **`--from-file` is not supported and fails at runtime.** The IICS REST API
+> has no working endpoint for updating user properties (name, email, title,
+> time zone): the V3 `PUT /public/core/v3/users/{id}` returns HTTP 405 and the
+> V2 `POST /api/v2/user/{id}` fails (HTTP 400 in earlier testing, HTTP 403
+> `REPO_10704` on 2026-09-30).
 
 ### Flags
 
@@ -188,19 +185,103 @@ iics user create --interactive
 | --------------- | ----- | ------ | -------- | ---------------------------------------- |
 | `--id`          |       | string |          | User ID                                  |
 | `--username`    |       | string |          | User name (exact match)                  |
-| `--from-file`   |       | string |          | JSON, YAML, or CSV file with user fields |
-| `--interactive` |       | bool   |          | Launch interactive update wizard         |
+| `--interactive` |       | bool   |          | Edit group and role assignments          |
+| `--from-file`   |       | string |          | Not supported (see note above)           |
+
+Without `--id` or `--username`, the interactive mode lets you search for the
+user.
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
 
 ```bash
-iics user update --username user@example.com --from-file updated-user.json
+iics user update --interactive --username user@example.com
 ```
 
 ```powershell
-iics user update --username user@example.com --from-file updated-user.json
+iics user update --interactive --username user@example.com
+```
+
+---
+
+## user update-roles
+
+Add, remove or replace the roles assigned to a user. Uses
+`PUT /public/core/v3/users/<id>/addRoles` and `.../removeRoles`.
+
+### Flags
+
+| Flag                   | Type     | Required | Description                                                |
+| ---------------------- | -------- | -------- | ---------------------------------------------------------- |
+| `--id` (`--uid`)       | string   | one of   | User ID                                                    |
+| `--username` (`--uname`) | string | one of   | User name (exact match)                                    |
+| `--add`                | string[] |          | Roles to assign; comma-separated or repeated               |
+| `--remove`             | string[] |          | Roles to unassign; comma-separated or repeated             |
+| `--replace`            | string[] |          | Exact list of roles; all other roles are removed           |
+| `--fields`             | string   |          | Fields for CSV output (same as `user get`)                 |
+
+Rules:
+
+- `--id` and `--username` are mutually exclusive; one is required.
+- `--add` and `--remove` can be combined. `--replace` cannot be combined with
+  either. `--replace=` (empty) removes all roles.
+- Names match case-insensitively, by role name or display name. Duplicates are
+  ignored. Unknown names, or a name in both `--add` and `--remove`, fail
+  before any change is made.
+- Roles already assigned (for `--add`) or not assigned (for `--remove`) are
+  skipped and reported on stderr.
+- Additions are applied before removals.
+- The role assignment endpoints match the role's **display name** (for
+  example `Data Integration Data Previewer` for the `Data Preview` role); the
+  command sends the display name, so either name can be typed.
+- The API rejects changes when the organization maps SAML groups and roles.
+
+After the change the resulting user is printed in the `--output` format
+(table sections, JSON, YAML, or CSV with `--fields`). Progress messages go to
+stderr, so JSON output can be piped.
+
+### Examples
+
+```bash
+iics user update-roles --username jdoe@example.com --add "Designer,Monitor"
+
+iics user update-roles --id <user-id> --add Designer --remove "Data Preview"
+
+# Set the exact role list and print the user as JSON
+iics user update-roles --username jdoe@example.com --replace Designer -o json
+```
+
+```powershell
+iics user update-roles --username jdoe@example.com --add "Designer,Monitor"
+
+iics user update-roles --id <user-id> --add Designer --remove "Data Preview"
+
+iics user update-roles --username jdoe@example.com --replace Designer -o json
+```
+
+---
+
+## user update-groups
+
+Add, remove or replace the user groups assigned to a user. Uses
+`PUT /public/core/v3/users/<id>/addGroups` and `.../removeGroups`. Flags and
+rules are the same as [user update-roles](#user-update-roles), with user group
+names instead of role names.
+
+### Examples
+
+```bash
+iics user update-groups --username jdoe@example.com --add "Data Engineering"
+
+# Remove the user from all groups
+iics user update-groups --uid <user-id> --replace=
+```
+
+```powershell
+iics user update-groups --username jdoe@example.com --add "Data Engineering"
+
+iics user update-groups --uid <user-id> --replace=
 ```
 
 ---

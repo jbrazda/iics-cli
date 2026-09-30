@@ -278,7 +278,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [state](docs/documentation/state.md)                 |        | `fetch`, `load`                                                        | Fetch/load object state snapshots                                  |
 | [tag](docs/documentation/tag.md)                     |        | `assign`, `remove`                                                     | Assign/remove tags on objects                                      |
 | [unpublish](docs/documentation/unpublish.md)         |        | `start`, `status`, `run`                                               | Unpublish CAI assets from the runtime                              |
-| [user](docs/documentation/user.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage users                                                       |
+| [user](docs/documentation/user.md)                   |        | `list`, `get`, `create`, `update`, `update-roles`, `update-groups`, `delete` | Manage users                                                       |
 | [group](docs/documentation/group.md)                 | `usergroup`, `ug` | `list`, `get`, `create`, `update`, `delete`                 | Manage user groups                                                 |
 
 > **Keeping completions up to date:** After adding or changing any command or flag, regenerate

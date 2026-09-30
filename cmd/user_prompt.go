@@ -124,32 +124,6 @@ func promptUserSearch(ctx context.Context, c *client.Client) (*client.User, erro
 	}
 }
 
-// iicsTimezones is the complete list of timezone IDs accepted by the IICS v3 API.
-// Source: https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/rest-api-codes/time-zone-codes.html
-var iicsTimezones = []string{
-	"ACT", "AET", "Africa/Cairo", "Africa/Casablanca", "Africa/Johannesburg",
-	"Africa/Nairobi", "America/Barbados", "America/Bogota", "America/Buenos_Aires",
-	"America/Caracas", "America/Chicago", "America/Costa_Rica", "America/Dawson_Creek",
-	"America/Denver", "America/Dominica", "America/El_Salvador", "America/Guadeloupe",
-	"America/Halifax", "America/Havana", "America/Jamaica", "America/La_Paz",
-	"America/Los_Angeles", "America/Mexico_City", "America/Montreal", "America/New_York",
-	"America/Panama", "America/Phoenix", "America/Puerto_Rico", "America/Santiago",
-	"America/Tijuana", "America/Vancouver", "Asia/Baghdad", "Asia/Bahrain", "Asia/Dubai",
-	"Asia/Hong_Kong", "Asia/Jerusalem", "Asia/Karachi", "Asia/Katmandu",
-	"Asia/Kuala_Lumpur", "Asia/Kuwait", "Asia/Magadan", "Asia/Muscat", "Asia/Qatar",
-	"Asia/Rangoon", "Asia/Riyadh", "Asia/Seoul", "Asia/Singapore", "AST",
-	"Atlantic/Cape_Verde", "Atlantic/South_Georgia", "Australia/Lord_Howe",
-	"Australia/Perth", "Brazil/Acre", "Brazil/DeNoronha", "Brazil/East", "Brazil/West",
-	"BST", "CNT", "CTT", "Europe/Amsterdam", "Europe/Athens", "Europe/Belgrade",
-	"Europe/Berlin", "Europe/Brussels", "Europe/Bucharest", "Europe/Budapest",
-	"Europe/Copenhagen", "Europe/Istanbul", "Europe/London", "Europe/Luxembourg",
-	"Europe/Madrid", "Europe/Moscow", "Europe/Paris", "Europe/Prague", "Europe/Rome",
-	"Europe/Stockholm", "Europe/Vienna", "Europe/Warsaw", "Europe/Zurich",
-	"GMT", "HST", "Indian/Mauritius", "IST", "JST", "Pacific/Apia", "Pacific/Auckland",
-	"Pacific/Chatham", "Pacific/Enderbury", "Pacific/Fiji", "Pacific/Gambier",
-	"Pacific/Kiritimati", "Pacific/Norfolk", "Pacific/Tahiti", "UTC", "VST",
-}
-
 // resolveUser returns the user identified by id or userName flags, falling back to
 // interactive search when both are empty and stdin is a terminal.
 func resolveUser(ctx context.Context, c *client.Client, id, userName string) (*client.User, error) {
