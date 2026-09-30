@@ -551,21 +551,22 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		return nil, fmt.Errorf("fetching roles: %w", err)
 	}
 
-	domain := ""
-	if _, p, _, _ := resolveProfile(); p != nil {
-		if i := strings.Index(p.Username, "@"); i >= 0 {
-			domain = p.Username[i+1:]
-		}
+	cfg, _ := loadConfig()
+	_, _, profileName, _ := resolveProfile()
+	var prof *config.Profile
+	if cfg != nil {
+		prof = cfg.Profiles[profileName]
 	}
 
 	ok, err := tui.RunUserWizard(tui.UserWizardInput{
-		User:           u,
-		Update:         existing != nil,
-		Groups:         groups,
-		Roles:          roles,
-		UserNameDomain: domain,
-		Out:            os.Stderr,
-		Accessible:     prompter.Accessible,
+		User:        u,
+		Update:      existing != nil,
+		Groups:      groups,
+		Roles:       roles,
+		ProfileName: profileName,
+		Patterns:    config.NewUserPatterns(prof),
+		Out:         os.Stderr,
+		Accessible:  prompter.Accessible,
 	})
 	if err != nil || !ok {
 		return nil, err

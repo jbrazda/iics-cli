@@ -69,6 +69,22 @@ profiles:
     production: true
 ```
 
+The optional `newUser` block sets the user name and email suggested by
+`iics user create --interactive` (see
+[user - New user patterns](user.md#new-user-patterns)):
+
+```yaml
+profiles:
+  dev:
+    newUser:
+      domain: company.com
+      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
+      emailPattern: "{firstName}.{lastName}@{domain}"
+```
+
+`profile show` lists `Production`, `New User Domain`, `User Name Pattern` and
+`Email Pattern` with defaults applied.
+
 The optional top-level `style` key controls table output appearance and is shared across
 all profiles:
 

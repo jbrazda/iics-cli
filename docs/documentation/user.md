@@ -109,9 +109,11 @@ Create a user from a definition file, or interactively with `--interactive`.
 
 `--interactive` opens a paged form (`Enter` next field, `Shift+Tab` back):
 
-1. **Identity** - authentication (Native or SSO), first name, last name, user
-   name (empty uses the suggestion `first.last@<your domain>`), email
-   (validated).
+1. **Identity** - authentication (Native or SSO), first name, last name,
+   user name and email (validated). User name and email show a generated
+   value in gray once first and last name are entered; `→` or `Ctrl+E`
+   fills it in for editing, and leaving the field empty uses it. The values
+   come from the active profile's [new user patterns](#new-user-patterns).
 2. **Single sign-on** - alias name in the identity provider; shown only for
    SSO, where the API requires it.
 3. **Details** - phone, title, description, force password change.
@@ -122,6 +124,36 @@ Create a user from a definition file, or interactively with `--interactive`.
 
 The create API does not accept a time zone, so the wizard does not ask for
 one. See [Interactive prompts](interactive.md) for keys.
+
+### New user patterns
+
+The suggested user name and email are built from patterns in the active
+profile (`~/.iics/config.yaml`):
+
+```yaml
+profiles:
+  dev:
+    username: admin@acme.com
+    newUser:
+      domain: acme.com                                                  # default: domain of the profile username
+      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"  # default
+      emailPattern: "{firstName}.{lastName}@{domain}"                   # default
+```
+
+| Placeholder      | Value                                                   |
+| ---------------- | ------------------------------------------------------- |
+| `{firstName}`    | First name, lowercase, spaces removed                   |
+| `{lastName}`     | Last name, lowercase, spaces removed                    |
+| `{firstInitial}` | First letter of the first name, lowercase               |
+| `{lastInitial}`  | First letter of the last name, lowercase                |
+| `{profileName}`  | Name of the active profile                              |
+| `{domain}`       | `newUser.domain`, or the domain of the profile username |
+
+With the defaults, Jane Doe in profile `dev` (login `admin@acme.com`) gets
+user name `jane.doe.dev@acme.com` and email `jane.doe@acme.com`. An unknown
+placeholder or a missing value (for example no `@` in the profile username
+and no `newUser.domain`) shows a note under the field instead of a
+suggestion. `iics profile show <name>` lists the effective patterns.
 
 All [global flags](../../README.md#global-flags) apply.
 

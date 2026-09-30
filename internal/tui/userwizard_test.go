@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 )
 
 func TestUserChanges(t *testing.T) {
@@ -55,15 +56,34 @@ func TestUserSummary(t *testing.T) {
 	}
 }
 
-func TestSuggestUserName(t *testing.T) {
-	if got := suggestUserName(" Ann ", "Lee", "x.com"); got != "ann.lee@x.com" {
-		t.Errorf("got %q", got)
+func TestWizardSuggestions(t *testing.T) {
+	in := UserWizardInput{ProfileName: "dev", Patterns: config.NewUserPatterns(&config.Profile{Username: "admin@acme.com"})}
+	u := &client.User{FirstName: " Ann ", LastName: "Lee"}
+	if got := in.suggestions(in.Patterns.UserNamePattern, u); len(got) != 1 || got[0] != "ann.lee.dev@acme.com" {
+		t.Errorf("user name suggestion = %v", got)
 	}
-	if got := suggestUserName("Ann", "", "x.com"); got != "" {
-		t.Errorf("missing last name should give no suggestion, got %q", got)
+	if got, _ := in.suggest(in.Patterns.EmailPattern, u); got != "ann.lee@acme.com" {
+		t.Errorf("email suggestion = %q", got)
 	}
-	if got := suggestUserName("Ann", "Lee", ""); got != "" {
-		t.Errorf("missing domain should give no suggestion, got %q", got)
+	if hint := in.suggestionHint(in.Patterns.EmailPattern, u); !strings.Contains(hint, "→") {
+		t.Errorf("hint should mention the complete key: %q", hint)
+	}
+
+	missing := &client.User{FirstName: "Ann"}
+	if got := in.suggestions(in.Patterns.EmailPattern, missing); got != nil {
+		t.Errorf("no suggestion expected without a last name, got %v", got)
+	}
+
+	bad := UserWizardInput{ProfileName: "dev", Patterns: config.NewUserConfig{UserNamePattern: "{nick}@{domain}", Domain: "acme.com"}}
+	if hint := bad.suggestionHint(bad.Patterns.UserNamePattern, u); !strings.Contains(hint, "unknown placeholder {nick}") {
+		t.Errorf("unknown placeholder should be reported, got %q", hint)
+	}
+}
+
+func TestSuggestionKeyMap(t *testing.T) {
+	keys := suggestionKeyMap().Input.AcceptSuggestion.Keys()
+	if len(keys) != 2 || keys[0] != "right" || keys[1] != "ctrl+e" {
+		t.Errorf("accept keys = %v", keys)
 	}
 }
 

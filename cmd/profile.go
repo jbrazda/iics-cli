@@ -466,6 +466,17 @@ func newProfileShowCmd() *cobra.Command {
 				{"field": "Username", "value": p.Username},
 				{"field": "Password", "value": maskedPassword},
 			}
+			production := "no"
+			if config.IsProductionProfile(name, p) {
+				production = "yes"
+			}
+			nu := config.NewUserPatterns(p)
+			rows = append(rows,
+				map[string]interface{}{"field": "Production", "value": production},
+				map[string]interface{}{"field": "New User Domain", "value": nu.Domain},
+				map[string]interface{}{"field": "User Name Pattern", "value": nu.UserNamePattern},
+				map[string]interface{}{"field": "Email Pattern", "value": nu.EmailPattern},
+			)
 
 			// Append session-derived fields from the cache.
 			const noSession = "(no active session)"
@@ -503,7 +514,7 @@ func newProfileShowCmd() *cobra.Command {
 				return err
 			}
 			columns := []output.Column{
-				{Header: "FIELD", Field: "field", Width: 15},
+				{Header: "FIELD", Field: "field", Width: 17},
 				{Header: "VALUE", Field: "value"},
 			}
 			return f.Format(rows, columns)

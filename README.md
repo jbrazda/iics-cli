@@ -132,6 +132,10 @@ profiles:
     loginUrl: "https://use4.dm-us.informaticacloud.com/saas/public/core/v3/login"
     baseApiUrl: "https://use4.dm-us.informaticacloud.com/saas"
     caiUrl: "https://use4-cai.dm-us.informaticacloud.com"
+    newUser:               # suggestions in "user create --interactive" (optional)
+      domain: "company.com"
+      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
+      emailPattern: "{firstName}.{lastName}@{domain}"
   prod:
     name: "Production Org"
     production: true       # menu marks it and asks before changes

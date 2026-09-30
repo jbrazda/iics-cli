@@ -8,8 +8,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 )
 
 // UserWizardInput configures RunUserWizard.
@@ -23,8 +26,10 @@ type UserWizardInput struct {
 	// Groups and Roles are all groups and roles in the organization.
 	Groups []client.UserGroup
 	Roles  []client.Role
-	// UserNameDomain suggests "first.last@<domain>" as the user name.
-	UserNameDomain string
+	// ProfileName and Patterns build the suggested user name and email
+	// (see config.ExpandUserPattern).
+	ProfileName string
+	Patterns    config.NewUserConfig
 
 	Out        io.Writer
 	Accessible bool
@@ -61,7 +66,7 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 			// Only role and user group assignments can be updated.
 			pages = []*huh.Group{membershipGroup(in, &groupIDs, &roleIDs)}
 		}
-		form := huh.NewForm(pages...).WithOutput(in.Out).WithAccessible(in.Accessible)
+		form := huh.NewForm(pages...).WithOutput(in.Out).WithAccessible(in.Accessible).WithKeyMap(suggestionKeyMap())
 		if err := form.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
 				return false, nil
@@ -75,7 +80,10 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 				u.AliasName = ""
 			}
 			if strings.TrimSpace(u.UserName) == "" {
-				u.UserName = suggestUserName(u.FirstName, u.LastName, in.UserNameDomain)
+				u.UserName, _ = in.suggest(in.Patterns.UserNamePattern, u)
+			}
+			if strings.TrimSpace(u.Email) == "" {
+				u.Email, _ = in.suggest(in.Patterns.EmailPattern, u)
 			}
 		}
 		trimUser(u)
@@ -96,6 +104,7 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 }
 
 func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group {
+	names := []any{&u.FirstName, &u.LastName}
 	return huh.NewGroup(
 		huh.NewSelect[string]().
 			Title("Authentication").
@@ -103,21 +112,108 @@ func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group 
 			Value(auth),
 		huh.NewInput().Title("First name").Value(&u.FirstName).Validate(required("first name")),
 		huh.NewInput().Title("Last name").Value(&u.LastName).Validate(required("last name")),
-		huh.NewInput().
+		in.suggestInput(in.Patterns.UserNamePattern, u, names).
 			Title("User name").
-			Description("Leave empty to use the suggestion").
-			PlaceholderFunc(func() string {
-				return suggestUserName(u.FirstName, u.LastName, in.UserNameDomain)
-			}, []any{&u.FirstName, &u.LastName}).
 			Value(&u.UserName).
 			Validate(func(v string) error {
-				if strings.TrimSpace(v) == "" && suggestUserName(u.FirstName, u.LastName, in.UserNameDomain) == "" {
-					return errors.New("user name is required")
+				if strings.TrimSpace(v) == "" {
+					if _, err := in.suggest(in.Patterns.UserNamePattern, u); err != nil {
+						return errors.New("user name is required")
+					}
 				}
 				return nil
 			}),
-		huh.NewInput().Title("Email").Value(&u.Email).Validate(validEmail),
+		in.suggestInput(in.Patterns.EmailPattern, u, names).
+			Title("Email").
+			Value(&u.Email).
+			Validate(func(v string) error {
+				if strings.TrimSpace(v) == "" {
+					if s, err := in.suggest(in.Patterns.EmailPattern, u); err == nil {
+						return validEmail(s)
+					}
+				}
+				return validEmail(v)
+			}),
 	).Title("Identity")
+}
+
+// suggest expands a pattern for the user's current first and last name.
+func (in UserWizardInput) suggest(pattern string, u *client.User) (string, error) {
+	return config.ExpandUserPattern(pattern, config.UserPatternValues{
+		FirstName:   u.FirstName,
+		LastName:    u.LastName,
+		ProfileName: in.ProfileName,
+		Domain:      in.Patterns.Domain,
+	})
+}
+
+func (in UserWizardInput) suggestions(pattern string, u *client.User) []string {
+	if s, err := in.suggest(pattern, u); err == nil {
+		return []string{s}
+	}
+	return nil
+}
+
+// suggestionHint describes the suggestion under a field.
+func (in UserWizardInput) suggestionHint(pattern string, u *client.User) string {
+	if _, err := in.suggest(pattern, u); err != nil {
+		if strings.TrimSpace(u.FirstName) == "" || strings.TrimSpace(u.LastName) == "" {
+			return "Pattern " + pattern
+		}
+		return "No suggestion: " + err.Error()
+	}
+	return "Pattern " + pattern + "  (→ or ctrl+e completes, empty uses it)"
+}
+
+// suggestField is a huh input that shows a generated value as placeholder
+// and fills it in when → or ctrl+e is pressed on an empty field. (The
+// built-in suggestion support only completes text that was already typed.)
+type suggestField struct {
+	*huh.Input
+	suggest func() string
+}
+
+// Update implements tea.Model.
+func (f *suggestField) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if k, ok := msg.(tea.KeyMsg); ok && (k.String() == "right" || k.String() == "ctrl+e") {
+		if v, _ := f.GetValue().(string); v == "" {
+			if s := f.suggest(); s != "" {
+				_, cmd := f.Input.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s)})
+				return f, cmd
+			}
+		}
+	}
+	_, cmd := f.Input.Update(msg)
+	return f, cmd
+}
+
+// Title sets the title and keeps the wrapper for chaining.
+func (f *suggestField) Title(t string) *suggestField { f.Input.Title(t); return f }
+
+// Value binds the value and keeps the wrapper for chaining.
+func (f *suggestField) Value(v *string) *suggestField { f.Input.Value(v); return f }
+
+// Validate sets the validator and keeps the wrapper for chaining.
+func (f *suggestField) Validate(fn func(string) error) *suggestField { f.Input.Validate(fn); return f }
+
+// suggestInput builds a suggestField for pattern.
+func (in UserWizardInput) suggestInput(pattern string, u *client.User, bindings []any) *suggestField {
+	sugg := func() string {
+		s, _ := in.suggest(pattern, u)
+		return s
+	}
+	input := huh.NewInput().
+		DescriptionFunc(func() string { return in.suggestionHint(pattern, u) }, bindings).
+		PlaceholderFunc(sugg, bindings).
+		SuggestionsFunc(func() []string { return in.suggestions(pattern, u) }, bindings)
+	return &suggestField{Input: input, suggest: sugg}
+}
+
+// suggestionKeyMap lets the right arrow (and ctrl+e) complete suggestions.
+func suggestionKeyMap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Input.AcceptSuggestion = key.NewBinding(key.WithKeys("right", "ctrl+e"), key.WithHelp("→", "complete"))
+	return km
 }
 
 // ssoGroup asks for the SSO alias name; the create API requires it when
@@ -267,14 +363,6 @@ func UserChanges(before, after *client.User) []string {
 	out = append(out, SetChanges("Group", groupNames(before.Groups), groupNames(after.Groups))...)
 	out = append(out, SetChanges("Role", roleNames(before.Roles), roleNames(after.Roles))...)
 	return out
-}
-
-func suggestUserName(first, last, domain string) string {
-	first, last = strings.TrimSpace(first), strings.TrimSpace(last)
-	if first == "" || last == "" || domain == "" {
-		return ""
-	}
-	return fmt.Sprintf("%s.%s@%s", strings.ToLower(first), strings.ToLower(last), domain)
 }
 
 func required(what string) func(string) error {

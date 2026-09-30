@@ -88,6 +88,8 @@ type Profile struct {
 	// Production marks a production org. When unset, the profile name is
 	// used as a hint (see IsProductionProfile).
 	Production *bool `yaml:"production,omitempty" mapstructure:"production"`
+	// NewUser configures suggested user names and emails for new users.
+	NewUser *NewUserConfig `yaml:"newUser,omitempty" mapstructure:"newUser"`
 }
 
 // IsProductionProfile reports whether a profile is a production org: the
