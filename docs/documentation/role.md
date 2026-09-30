@@ -10,14 +10,15 @@ iics role <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand          | Description                          |
-| ------------------- | ------------------------------------ |
-| `list`              | List roles                           |
-| `get`               | Get a single role by ID or name, or pick one interactively |
-| `create`            | Create a custom role                 |
-| `add-privileges`    | Add privileges to a custom role      |
-| `remove-privileges` | Remove privileges from a custom role |
-| `delete`            | Delete a custom role                 |
+| Subcommand          | Description                                                   |
+| ------------------- | ------------------------------------------------------------- |
+| `list`              | List roles                                                    |
+| `get`               | Get a single role by ID or name, or pick one interactively    |
+| `create`            | Create a custom role (interactive wizard on a terminal)       |
+| `edit`              | Add and remove privileges in the interactive editor           |
+| `add-privileges`    | Add privileges to a custom role                               |
+| `remove-privileges` | Remove privileges from a custom role                          |
+| `delete`            | Delete a custom role                                          |
 
 The IICS v3 Roles API has no general update endpoint. The only change you can
 make to an existing custom role is adding or removing privileges.
@@ -170,9 +171,117 @@ iics role get --name "Business Manager" --privileges
 
 ---
 
+## Interactive privilege editor
+
+`role edit`, `role create` (wizard), and `role add-privileges` /
+`role remove-privileges` without `--privilege` open an interactive editor on a
+terminal. Privileges are grouped in two levels:
+
+1. **Service** - a filterable list with the number of privileges, how many are
+   selected, and pending changes (`+added -removed`) per service.
+2. **Object and action grid** - privilege names of the form
+   `<action>.<object>` (for example `create.data.transfer.task`) become one row
+   per object with a column per action. Names that do not follow this pattern
+   (for example `feature.mcp.SuperAdmin`, `PROFILE.viewResults`) are listed
+   individually under **Other**. Privileges without a service are grouped as
+   `(no service)`.
+
+```text
+Role: CAI Viewer > ApplicationIntegration (14)
+
+  OBJECT                 VIEW    CREATE  UPDATE  DELETE  EXEC    PERM
+> ai.assets              [-]     [ ]     [ ]     [ ]     [ ]     [ ]
+  ai.console             [x]      .       .       .       .       .
+  ai.designer            [x]      .       .       .       .       .
+  -- Other --
+  ai.admin               [+]
+
+ai.admin - Administration (Enabled)
+arrows move  space toggle  a row  c column  / filter  ctrl+u clear filter  enter/esc back
+```
+
+| Mark  | Meaning                                  |
+| ----- | ---------------------------------------- |
+| `[x]` | Assigned, unchanged                      |
+| `[+]` | Will be added                            |
+| `[-]` | Will be removed                          |
+| `[ ]` | Not assigned                             |
+| `.`   | The action does not exist for the object |
+
+Grid keys:
+
+| Key                   | Action                                              |
+| --------------------- | --------------------------------------------------- |
+| Arrows or `h j k l`   | Move                                                |
+| `Space` or `x`        | Toggle the privilege under the cursor               |
+| `a`                   | Toggle every action in the row                      |
+| `c`                   | Toggle the column for all visible (filtered) rows   |
+| `/`                   | Filter by object, privilege name or description     |
+| `Ctrl+U`              | Clear the filter                                    |
+| `PgUp` / `PgDn`, `g` / `G` | Page, jump to top / bottom                     |
+| `Enter`, `Esc`, `q`   | Back to the service list                            |
+
+In the service list, choose **Review and apply** to see the pending changes
+grouped by service and confirm them, or **Cancel** to leave without changes.
+Additions are applied before removals. A change that would leave the role with
+no privileges is blocked at review.
+
+Modes:
+
+- `role edit` - add and remove.
+- `role add-privileges` - add only; assigned privileges are locked.
+- `role remove-privileges` - remove only; only assigned privileges are shown.
+
+System roles cannot be edited. Without a terminal, the commands require
+`--privilege` (or `--name` and privileges for `create`).
+
+---
+
+## role edit
+
+Open the interactive privilege editor for a custom role. Without `--id` or
+`--name`, a filterable role list is shown first. Requires a terminal.
+
+### Flags
+
+| Flag     | Type   | Required | Description |
+| -------- | ------ | -------- | ----------- |
+| `--id`   | string |          | Role ID     |
+| `--name` | string |          | Role name   |
+
+All [global flags](../../README.md#global-flags) apply.
+
+### Examples
+
+```bash
+# Pick a role, then edit its privileges
+iics role edit
+
+iics role edit --name "CAI Viewer"
+```
+
+```powershell
+iics role edit
+
+iics role edit --name "CAI Viewer"
+```
+
+---
+
 ## role create
 
 Create a custom role. The API requires a name and at least one privilege.
+
+On a terminal, when `--name` is missing or no privileges are given (no
+`--privilege`, `--from-role` or `--from-file`), a wizard asks for the role
+name (duplicate names are rejected), description, and an optional existing
+role to copy privileges from, then opens the
+[interactive privilege editor](#interactive-privilege-editor). `--from-role`
+and `--privilege` values pre-select privileges in the wizard.
+
+`--from-role` copies the privileges of an existing role, looked up by name
+first and then by ID. The source description is used unless `--description`
+is given. `--privilege` values are added on top.
 
 Privileges can be given as names (for example `view.ai.assets`) or IDs. The
 command looks them up with `iics privilege list` data and sends privilege IDs,
@@ -186,11 +295,13 @@ role is created.
 | `--name`        | string   | yes*     | Role name                                                    |
 | `--description` | string   |          | Role description                                             |
 | `--privilege`   | string[] | yes*     | Privilege name or ID; repeatable or comma-separated          |
+| `--from-role`   | string   |          | Copy privileges and description from a role (name or ID)     |
 | `--from-file`   | string   |          | JSON file with `name`, `description` and `privileges`        |
 
-\* Can be supplied through `--from-file` instead. Flags override `name` and
-`description` from the file; `--privilege` values are added to the file's
-`privileges`.
+\* Can be supplied through `--from-file` instead, and privileges through
+`--from-role`. On a terminal, missing values are collected by the wizard.
+Flags override `name` and `description` from the file; `--privilege` values
+are added to the file's `privileges`.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -210,15 +321,29 @@ privilege names or IDs.
 ### Examples
 
 ```bash
+# Interactive wizard
+iics role create
+
 iics role create --name "CAI Viewer" --description "View CAI assets" \
   --privilege view.ai.designer --privilege view.ai.assets
+
+# Clone an existing role and add one privilege
+iics role create --name "Designer Plus" --from-role Designer \
+  --privilege view.ai.console
 
 iics role create --from-file cai-viewer-role.json
 ```
 
 ```powershell
+# Interactive wizard
+iics role create
+
 iics role create --name "CAI Viewer" --description "View CAI assets" `
   --privilege view.ai.designer --privilege view.ai.assets
+
+# Clone an existing role and add one privilege
+iics role create --name "Designer Plus" --from-role Designer `
+  --privilege view.ai.console
 
 iics role create --from-file cai-viewer-role.json
 ```
@@ -231,14 +356,19 @@ Add privileges to a custom role. Sends
 `PUT /public/core/v3/roles/<id>/addPrivileges`, or
 `PUT /public/core/v3/roles/name/<name>/addPrivileges` when `--name` is used.
 
+Without `--privilege` on a terminal, the
+[interactive privilege editor](#interactive-privilege-editor) opens in
+add-only mode (with a role picker when `--id` and `--name` are omitted).
+
 ### Flags
 
 | Flag          | Type     | Required | Description                                         |
 | ------------- | -------- | -------- | --------------------------------------------------- |
-| `--id`        | string   | one of   | Role ID                                             |
-| `--name`      | string   | one of   | Role name                                           |
-| `--privilege` | string[] | yes      | Privilege name or ID; repeatable or comma-separated |
+| `--id`        | string   | one of*  | Role ID                                             |
+| `--name`      | string   | one of*  | Role name                                           |
+| `--privilege` | string[] | yes*     | Privilege name or ID; repeatable or comma-separated |
 
+\* Optional on a terminal, where the interactive editor is used instead.
 `--id` and `--name` are mutually exclusive. Privilege IDs are converted to
 names, which is what the endpoint expects.
 
@@ -247,6 +377,9 @@ All [global flags](../../README.md#global-flags) apply.
 ### Examples
 
 ```bash
+# Interactive editor (add-only)
+iics role add-privileges --name "CAI Viewer"
+
 iics role add-privileges --name "CAI Viewer" --privilege view.ai.console
 
 iics role add-privileges --id <role-id> \
@@ -269,19 +402,28 @@ Remove privileges from a custom role. Sends
 `PUT /public/core/v3/roles/name/<name>/removePrivileges` when `--name` is
 used. A role must keep at least one privilege.
 
+Without `--privilege` on a terminal, the
+[interactive privilege editor](#interactive-privilege-editor) opens in
+remove-only mode.
+
 ### Flags
 
 | Flag          | Type     | Required | Description                                         |
 | ------------- | -------- | -------- | --------------------------------------------------- |
-| `--id`        | string   | one of   | Role ID                                             |
-| `--name`      | string   | one of   | Role name                                           |
-| `--privilege` | string[] | yes      | Privilege name or ID; repeatable or comma-separated |
+| `--id`        | string   | one of*  | Role ID                                             |
+| `--name`      | string   | one of*  | Role name                                           |
+| `--privilege` | string[] | yes*     | Privilege name or ID; repeatable or comma-separated |
+
+\* Optional on a terminal, where the interactive editor is used instead.
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
 
 ```bash
+# Interactive editor (remove-only)
+iics role remove-privileges --name "CAI Viewer"
+
 iics role remove-privileges --name "CAI Viewer" --privilege view.ai.console
 ```
 

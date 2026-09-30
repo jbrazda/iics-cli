@@ -104,6 +104,9 @@ iics_cli/
 | `github.com/spf13/cobra`            | v1.10.2 | CLI framework                    |
 | `github.com/spf13/viper`            | v1.21.0 | Config file + env var management |
 | `github.com/charmbracelet/lipgloss` | v1.1.0  | Table output and terminal styles |
+| `github.com/charmbracelet/huh`      | v1.0.0  | Interactive forms and selects    |
+| `github.com/charmbracelet/bubbletea` | v1.3.10 | TUI models (`internal/tui/`)    |
+| `github.com/charmbracelet/bubbles`  | v1.0.0  | TUI components (text input)      |
 | `github.com/mattn/go-isatty`        | v0.0.20 | TTY detection for color fallback |
 | `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization      |
 

@@ -211,3 +211,27 @@ func TestDeleteRole(t *testing.T) {
 		t.Fatalf("DeleteRole() error: %v", err)
 	}
 }
+
+func TestFindRoleFallsBackToID(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Query().Get("q") {
+		case `roleId=="abc123"`:
+			_, _ = w.Write([]byte(`[{"id": "abc123", "roleName": "Designer"}]`))
+		default:
+			_, _ = w.Write([]byte(`[]`))
+		}
+	})
+	c := newTestClient(handler)
+
+	role, err := c.FindRole(context.Background(), "abc123", false)
+	if err != nil {
+		t.Fatalf("FindRole() error: %v", err)
+	}
+	if role.RoleName != "Designer" {
+		t.Errorf("expected Designer, got %s", role.RoleName)
+	}
+	if _, err := c.FindRole(context.Background(), "missing", false); err == nil || !strings.Contains(err.Error(), "not found") {
+		t.Errorf("expected not found error, got %v", err)
+	}
+}

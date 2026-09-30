@@ -99,6 +99,20 @@ func (c *Client) GetRole(ctx context.Context, opts RoleGetOptions) (*Role, error
 	return &resp[0], nil
 }
 
+// FindRole looks up a role by name, falling back to role ID when no role has
+// that name.
+func (c *Client) FindRole(ctx context.Context, nameOrID string, expandPrivileges bool) (*Role, error) {
+	role, err := c.GetRole(ctx, RoleGetOptions{Name: nameOrID, ExpandPrivileges: expandPrivileges})
+	if err == nil {
+		return role, nil
+	}
+	byID, idErr := c.GetRole(ctx, RoleGetOptions{ID: nameOrID, ExpandPrivileges: expandPrivileges})
+	if idErr == nil {
+		return byID, nil
+	}
+	return nil, err
+}
+
 // CreateRoleRequest is the POST body for creating a custom role. Privileges
 // holds privilege IDs; the API requires at least one.
 type CreateRoleRequest struct {

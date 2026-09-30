@@ -269,7 +269,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
 | [publish](docs/documentation/publish.md)             |        | `start`, `status`, `run`                                               | Publish CAI assets to the runtime                                  |
 | [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate multi-format release manifests and per-environment plans  |
-| [role](docs/documentation/role.md)                   |        | `list`, `get`, `create`, `add-privileges`, `remove-privileges`, `delete` | Manage roles                                                       |
+| [role](docs/documentation/role.md)                   |        | `list`, `get`, `create`, `edit`, `add-privileges`, `remove-privileges`, `delete` | Manage roles                                                       |
 | [environment](docs/documentation/environment.md)     | `runtime`, `rt`, `env` | `list`, `get`, `create`, `update`, `delete`, `configs`   | Manage runtime environments (Secure Agent groups)                  |
 | [schedule](docs/documentation/schedule.md)           |        | `list`, `get`, `create`, `update`, `delete`                            | Manage schedules                                                   |
 | [securitylog](docs/documentation/securitylog.md)     |        | `list`                                                                 | Query security audit log                                           |

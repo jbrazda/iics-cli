@@ -11,6 +11,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/tui/privmatrix"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,7 @@ func newRoleCmd() *cobra.Command {
 	cmd.AddCommand(newRoleListCmd())
 	cmd.AddCommand(newRoleGetCmd())
 	cmd.AddCommand(newRoleCreateCmd())
+	cmd.AddCommand(newRoleEditCmd())
 	cmd.AddCommand(newRolePrivilegesCmd("add-privileges", "Add privileges to a custom role", "Added"))
 	cmd.AddCommand(newRolePrivilegesCmd("remove-privileges", "Remove privileges from a custom role", "Removed"))
 	cmd.AddCommand(newRoleDeleteCmd())
@@ -189,16 +191,26 @@ var roleDetailColumns = []output.Column{
 func newRoleCreateCmd() *cobra.Command {
 	var (
 		fromFile   string
+		fromRole   string
 		req        client.CreateRoleRequest
 		privileges []string
 	)
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a custom role",
-		Example: `  iics role create --name "CAI Viewer" --description "View CAI assets" \
+		Long: `Create a custom role.
+
+On a terminal, when --name or privileges are missing (no --privilege,
+--from-role or --from-file), an interactive wizard asks for the name,
+description and an optional role to copy privileges from, then opens the
+privilege editor.`,
+		Example: `  iics role create                         # interactive wizard
+  iics role create --name "CAI Viewer" --description "View CAI assets" \
     --privilege view.ai.designer --privilege view.ai.assets
+  iics role create --name "Designer Copy" --from-role Designer
   iics role create --from-file cai-viewer-role.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
 			var body client.CreateRoleRequest
 			if fromFile != "" {
 				data, err := os.ReadFile(fromFile)
@@ -215,37 +227,91 @@ func newRoleCreateCmd() *cobra.Command {
 			if req.Description != "" {
 				body.Description = req.Description
 			}
-			refs := append(body.Privileges, privileges...)
-			if body.Name == "" {
-				return fmt.Errorf("--name is required")
-			}
-			if len(refs) == 0 {
-				return fmt.Errorf("at least one --privilege is required")
-			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
-			resolved, err := c.ResolvePrivileges(context.Background(), refs)
+
+			wizard := fromFile == "" && isInteractiveTTY() &&
+				(body.Name == "" || (len(privileges) == 0 && fromRole == ""))
+			if wizard {
+				ok, werr := runRoleCreateWizard(ctx, c, &body, fromRole, privileges)
+				if werr != nil {
+					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+					return nil
+				}
+			} else {
+				refs := append(body.Privileges, privileges...)
+				if fromRole != "" {
+					src, ferr := c.FindRole(ctx, fromRole, true)
+					if ferr != nil {
+						return ferr
+					}
+					for _, p := range src.Privileges {
+						refs = append(refs, p.ID)
+					}
+					if body.Description == "" {
+						body.Description = src.Description
+					}
+				}
+				if body.Name == "" {
+					return fmt.Errorf("--name is required")
+				}
+				if len(refs) == 0 {
+					return fmt.Errorf("at least one --privilege or --from-role is required")
+				}
+				resolved, rerr := c.ResolvePrivileges(ctx, refs)
+				if rerr != nil {
+					return rerr
+				}
+				body.Privileges = make([]string, len(resolved))
+				for i, p := range resolved {
+					body.Privileges[i] = p.ID
+				}
+			}
+
+			created, err := c.CreateRole(ctx, &body)
 			if err != nil {
 				return err
 			}
-			body.Privileges = make([]string, len(resolved))
-			for i, p := range resolved {
-				body.Privileges[i] = p.ID
-			}
-			created, err := c.CreateRole(context.Background(), &body)
-			if err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s)\n", created.RoleName, created.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Role created: %s (ID: %s, %d privileges)\n", created.RoleName, created.ID, len(body.Privileges))
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&req.Name, "name", "", "role name (required unless set in --from-file)")
+	cmd.Flags().StringVar(&req.Name, "name", "", "role name (prompted on a terminal when omitted)")
 	cmd.Flags().StringVar(&req.Description, "description", "", "role description")
 	cmd.Flags().StringSliceVar(&privileges, "privilege", nil, "privilege name or ID to assign (repeatable or comma-separated)")
+	cmd.Flags().StringVar(&fromRole, "from-role", "", "copy privileges (and description) from an existing role, by name or ID")
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with role definition (name, description, privileges)")
+	return cmd
+}
+
+// newRoleEditCmd opens the interactive privilege editor for a custom role.
+func newRoleEditCmd() *cobra.Command {
+	var ref client.RoleRef
+	cmd := &cobra.Command{
+		Use:   "edit",
+		Short: "Interactively add and remove privileges of a custom role",
+		Long: `Open the interactive privilege editor for a custom role. Privileges are
+grouped by service, then by object with one column per action (view, create,
+update, delete, execute, change permission). Changes are applied after a
+review step. Requires a terminal.`,
+		Example: `  iics role edit                      # pick a role from a list
+  iics role edit --name "CAI Viewer"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			return editRolePrivilegesInteractive(context.Background(), c, cmd.OutOrStdout(), ref, privmatrix.ModeEdit)
+		},
+	}
+	cmd.Flags().StringVar(&ref.ID, "id", "", "role ID")
+	cmd.Flags().StringVar(&ref.Name, "name", "", "role name")
+	cmd.MarkFlagsMutuallyExclusive("id", "name")
 	return cmd
 }
 
@@ -259,9 +325,25 @@ func newRolePrivilegesCmd(use, short, verb string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   use,
 		Short: short,
-		Example: fmt.Sprintf(`  iics role %[1]s --name "CAI Viewer" --privilege view.ai.console
+		Long: fmt.Sprintf(`%s.
+
+Without --privilege on a terminal, the interactive privilege editor opens
+(and a role picker when --id and --name are omitted).`, short),
+		Example: fmt.Sprintf(`  iics role %[1]s                     # interactive editor
+  iics role %[1]s --name "CAI Viewer" --privilege view.ai.console
   iics role %[1]s --id <role-id> --privilege create.data.transfer.task,delete.data.transfer.task`, use),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(privileges) == 0 && isInteractiveTTY() {
+				c, err := getClient(cmd)
+				if err != nil {
+					return err
+				}
+				mode := privmatrix.ModeAdd
+				if use == "remove-privileges" {
+					mode = privmatrix.ModeRemove
+				}
+				return editRolePrivilegesInteractive(context.Background(), c, cmd.OutOrStdout(), ref, mode)
+			}
 			if ref.ID == "" && ref.Name == "" {
 				return fmt.Errorf("--id or --name is required")
 			}
