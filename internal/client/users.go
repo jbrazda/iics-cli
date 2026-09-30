@@ -141,6 +141,19 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 // GetUserByName finds a user by exact userName (case-insensitive) with the
 // q=userName== filter.
 func (c *Client) GetUserByName(ctx context.Context, userName string) (*User, error) {
+	u, err := c.FindUserByName(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return nil, fmt.Errorf("user %q not found", userName)
+	}
+	return u, nil
+}
+
+// FindUserByName is GetUserByName but returns nil without an error when no
+// user has that name.
+func (c *Client) FindUserByName(ctx context.Context, userName string) (*User, error) {
 	users, err := c.ListUsers(ctx, UserListOptions{Query: "userName==" + userName, Limit: 1})
 	if err != nil {
 		return nil, err
@@ -150,7 +163,7 @@ func (c *Client) GetUserByName(ctx context.Context, userName string) (*User, err
 			return &users[i], nil
 		}
 	}
-	return nil, fmt.Errorf("user %q not found", userName)
+	return nil, nil
 }
 
 // SearchUsers returns users whose user name, first name, last name, full

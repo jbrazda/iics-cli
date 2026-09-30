@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -77,6 +78,38 @@ func TestWizardSuggestions(t *testing.T) {
 	bad := UserWizardInput{ProfileName: "dev", Patterns: config.NewUserConfig{UserNamePattern: "{nick}@{domain}", Domain: "acme.com"}}
 	if hint := bad.suggestionHint(bad.Patterns.UserNamePattern, u); !strings.Contains(hint, "unknown placeholder {nick}") {
 		t.Errorf("unknown placeholder should be reported, got %q", hint)
+	}
+}
+
+func TestCheckNewUserName(t *testing.T) {
+	calls := 0
+	in := UserWizardInput{existsCache: map[string]string{}, UserExists: func(n string) (string, error) {
+		calls++
+		switch n {
+		case "taken@acme.com", "Taken@acme.com":
+			return "u7", nil
+		case "broken@acme.com":
+			return "", errors.New("network down")
+		}
+		return "", nil
+	}}
+	if err := in.checkNewUserName("taken@acme.com"); err == nil || !strings.Contains(err.Error(), `user "taken@acme.com" already exists (ID u7)`) {
+		t.Errorf("expected exists error, got %v", err)
+	}
+	_ = in.checkNewUserName("Taken@acme.com") // cached (case-insensitive)
+	if calls != 1 {
+		t.Errorf("lookups should be cached per name, got %d calls", calls)
+	}
+	if err := in.checkNewUserName("free@acme.com"); err != nil {
+		t.Errorf("free name should pass, got %v", err)
+	}
+	if err := in.checkNewUserName("broken@acme.com"); err != nil {
+		t.Errorf("lookup errors must not block, got %v", err)
+	}
+	upd := in
+	upd.Update = true
+	if err := upd.checkNewUserName("taken@acme.com"); err != nil {
+		t.Errorf("no check on update, got %v", err)
 	}
 }
 

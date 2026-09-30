@@ -571,8 +571,15 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		Roles:       roles,
 		ProfileName: profileName,
 		Patterns:    config.NewUserPatterns(prof),
-		Out:         os.Stderr,
-		Accessible:  prompter.Accessible,
+		UserExists: func(name string) (string, error) {
+			existing, lerr := c.FindUserByName(ctx, name)
+			if lerr != nil || existing == nil {
+				return "", lerr
+			}
+			return existing.ID, nil
+		},
+		Out:        os.Stderr,
+		Accessible: prompter.Accessible,
 	})
 	if err != nil || !ok {
 		return nil, err

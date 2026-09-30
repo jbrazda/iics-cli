@@ -163,6 +163,9 @@ Create a user from a definition file, or interactively with `--interactive`.
    value in gray once first and last name are entered; `→` or `Ctrl+E`
    fills it in for editing, and leaving the field empty uses it. The values
    come from the active profile's [new user patterns](#new-user-patterns).
+   When you leave the User name field, the name (typed or suggested) is
+   looked up on the server; an existing name shows
+   `user "<name>" already exists (ID <id>)` and keeps you on the field.
 2. **Single sign-on** - alias name in the identity provider; shown only for
    SSO, where the API requires it.
 3. **Details** - phone, title, description, force password change.

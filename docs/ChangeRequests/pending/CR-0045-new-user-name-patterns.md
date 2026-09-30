@@ -81,3 +81,12 @@ wizard.
 - Verified in a pty on `dev`: placeholders after entering names, `→` fills
   user name and email, value editable afterwards; wizard canceled (no user
   created).
+
+## Follow-up: existing user check (2026-09-30)
+
+- The User name field of `user create --interactive` checks the effective
+  name (typed or suggested) with `client.FindUserByName` (server-side
+  `q=userName==`) when the field is left, and shows
+  `user "<name>" already exists (ID <id>)`. Results are cached per name;
+  lookup errors do not block (the create call reports conflicts).
+- Verified on `dev`: existing login rejected with its ID, free name accepted.

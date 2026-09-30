@@ -110,6 +110,26 @@ func TestGetUserByNameNotFound(t *testing.T) {
 	}
 }
 
+func TestFindUserByName(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("q") == "userName==taken@example.com" {
+			json.NewEncoder(w).Encode([]User{{ID: "u7", UserName: "taken@example.com"}})
+			return
+		}
+		json.NewEncoder(w).Encode([]User{})
+	})
+	c := newTestClient(handler)
+	u, err := c.FindUserByName(context.Background(), "taken@example.com")
+	if err != nil || u == nil || u.ID != "u7" {
+		t.Errorf("expected u7, got %+v, %v", u, err)
+	}
+	u, err = c.FindUserByName(context.Background(), "free@example.com")
+	if err != nil || u != nil {
+		t.Errorf("expected nil, nil for a free name, got %+v, %v", u, err)
+	}
+}
+
 func TestSearchUsers(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		users := []User{

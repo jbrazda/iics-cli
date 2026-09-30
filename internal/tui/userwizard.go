@@ -30,15 +30,21 @@ type UserWizardInput struct {
 	// (see config.ExpandUserPattern).
 	ProfileName string
 	Patterns    config.NewUserConfig
+	// UserExists returns the ID of an existing user with that user name, or
+	// "" when there is none (create only). Lookup errors do not block.
+	UserExists func(userName string) (string, error)
 
 	Out        io.Writer
 	Accessible bool
+
+	existsCache map[string]string
 }
 
 // RunUserWizard collects user fields in a paged form (Identity, Details,
 // Membership) followed by a review. On update only the Membership page is
 // shown. It returns false if the user canceled.
 func RunUserWizard(in UserWizardInput) (bool, error) {
+	in.existsCache = map[string]string{}
 	before := cloneUser(in.User)
 	u := in.User
 
@@ -116,12 +122,15 @@ func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group 
 			Title("User name").
 			Value(&u.UserName).
 			Validate(func(v string) error {
-				if strings.TrimSpace(v) == "" {
-					if _, err := in.suggest(in.Patterns.UserNamePattern, u); err != nil {
+				name := strings.TrimSpace(v)
+				if name == "" {
+					s, err := in.suggest(in.Patterns.UserNamePattern, u)
+					if err != nil {
 						return errors.New("user name is required")
 					}
+					name = s
 				}
-				return nil
+				return in.checkNewUserName(name)
 			}),
 		in.suggestInput(in.Patterns.EmailPattern, u, names).
 			Title("Email").
@@ -135,6 +144,28 @@ func identityGroup(in UserWizardInput, u *client.User, auth *string) *huh.Group 
 				return validEmail(v)
 			}),
 	).Title("Identity")
+}
+
+// checkNewUserName reports an error when a user with that name exists.
+// Results are cached per name; lookup errors are ignored (the create call
+// reports a real conflict).
+func (in UserWizardInput) checkNewUserName(name string) error {
+	if in.Update || in.UserExists == nil || name == "" {
+		return nil
+	}
+	key := strings.ToLower(name)
+	id, ok := in.existsCache[key]
+	if !ok {
+		found, err := in.UserExists(name)
+		if err == nil {
+			in.existsCache[key] = found
+			id = found
+		}
+	}
+	if id != "" {
+		return fmt.Errorf("user %q already exists (ID %s)", name, id)
+	}
+	return nil
 }
 
 // suggest expands a pattern for the user's current first and last name.
