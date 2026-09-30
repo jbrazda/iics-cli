@@ -37,6 +37,11 @@ make build
 
 ## Quick Start
 
+Run `iics` without arguments in a terminal to open the interactive
+[main menu](docs/documentation/menu.md): pick a task (edit a role, create a
+user, change permissions, ...), and the menu runs the matching command and
+returns. Scripts and pipes still get the plain CLI.
+
 ### 1. Set up a profile
 
 ```bash
@@ -111,6 +116,8 @@ iics logout
 ```yaml
 defaultProfile: dev
 httpTimeout: 120     # seconds; per-HTTP-request timeout (default 120)
+ui:
+  menu: true         # false = bare "iics" prints help instead of opening the menu
 style:
   theme: default     # default | minimal | compact | plain | markdown | gh
   noColor: false     # true = disable color permanently (same as --no-color)
@@ -127,6 +134,7 @@ profiles:
     caiUrl: "https://use4-cai.dm-us.informaticacloud.com"
   prod:
     name: "Production Org"
+    production: true       # menu marks it and asks before changes
     region: "EMEA"
     username: "admin@company.com"
     password: "@keyring"   # real password stored in OS keychain
@@ -194,6 +202,7 @@ env > `80`.
 | `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
 | `IICS_WIDTH`                 | Override auto-detected terminal width for responsive table output                        |
 | `IICS_ACCESSIBLE`           | Set to `1` for screen-reader friendly line-by-line prompts ([interactive prompts](docs/documentation/interactive.md)) |
+| `IICS_NO_MENU`              | Set to `1` so bare `iics` prints help instead of opening the [menu](docs/documentation/menu.md) |
 | `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set) |
 | `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
 | `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |
@@ -264,6 +273,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [metering](docs/documentation/metering.md)           |        | `get`, `download`                                                      | Query usage and metering data                                      |
 | [objects](docs/documentation/objects.md)             |        | `list`, `dependencies`                                                 | List/search assets, find dependencies                              |
 | [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
+| [menu](docs/documentation/menu.md)                   | `tui`  | -                                                                      | Interactive main menu (bare `iics` in a terminal)                  |
 | [permission](docs/documentation/permission.md)       | `perm` | `get`, `add`, `update`, `delete`, `set`, `check`, `edit` | Manage object-level permissions                                    |
 | [privilege](docs/documentation/privilege.md)         |        | `list`                                                                 | List available privileges                                          |
 | [profile](docs/documentation/profile.md)             |        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles                                         |

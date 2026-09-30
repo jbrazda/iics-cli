@@ -53,6 +53,22 @@ specifies a `username`, `password`, and either a `region` code (resolved to a lo
 the built-in POD registry) or an explicit `loginUrl`. The `baseApiUrl` and `caiUrl` fields
 are populated automatically after the first successful `iics login`.
 
+The optional `production` field marks a production org. The interactive
+[main menu](menu.md) then shows a red `PRODUCTION` marker and asks for
+confirmation before running entries that change data. `profile add` and
+`profile edit` ask "Production org?"; the default is the current setting, or
+yes for profile names `prd`, `prod`, `production` and names starting with
+`prd-` / `prod-`.
+
+```yaml
+profiles:
+  prd:
+    region: "USE4"
+    username: "admin@company.com"
+    password: "@keyring"
+    production: true
+```
+
 The optional top-level `style` key controls table output appearance and is shared across
 all profiles:
 

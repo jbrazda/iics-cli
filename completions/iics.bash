@@ -3405,6 +3405,45 @@ _iics_lookup()
     noun_aliases=()
 }
 
+_iics_menu()
+{
+    last_command="iics_menu"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_metering_download()
 {
     last_command="iics_metering_download"
@@ -7588,6 +7627,11 @@ _iics_root_command()
     commands+=("login")
     commands+=("logout")
     commands+=("lookup")
+    commands+=("menu")
+    if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
+        command_aliases+=("tui")
+        aliashash["tui"]="menu"
+    fi
     commands+=("metering")
     commands+=("objects")
     commands+=("package")

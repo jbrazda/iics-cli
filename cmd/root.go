@@ -219,6 +219,8 @@ func init() {
 	rootCmd.AddCommand(newAgentCmd())
 	rootCmd.AddCommand(newTagCmd())
 	rootCmd.AddCommand(newPermissionCmd())
+	rootCmd.AddCommand(newMenuCmd())
+	rootCmd.RunE = rootRun
 	rootCmd.AddCommand(newSecuritylogCmd())
 	rootCmd.AddCommand(newMeteringCmd())
 	rootCmd.AddCommand(newSourcecontrolCmd())

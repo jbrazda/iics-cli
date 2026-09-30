@@ -152,6 +152,24 @@ func promptProfileInternal(existing *Profile, profileName string) (*Profile, boo
 		p.CaiURL = caiDefault
 	}
 
+	// Production flag (default: the current setting, else the name hint).
+	prodDefault := IsProductionProfile(profileName, p)
+	prodHint := "[y/N]"
+	if prodDefault {
+		prodHint = "[Y/n]"
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "Production org (menu asks before changes)? %s: ", prodHint)
+	line, err = r.ReadString('\n')
+	if err != nil {
+		return nil, false, false, fmt.Errorf("reading production choice: %w", err)
+	}
+	line = strings.TrimSpace(strings.ToLower(line))
+	production := prodDefault
+	if line != "" {
+		production = line == "y" || line == "yes"
+	}
+	p.Production = &production
+
 	// Default profile prompt (default: yes)
 	_, _ = fmt.Fprint(os.Stderr, "Set as default profile? [Y/n]: ")
 	line, err = r.ReadString('\n')

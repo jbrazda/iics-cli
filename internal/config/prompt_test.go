@@ -73,8 +73,8 @@ func TestPromptProfile_KeepsExistingOnEmptyInput(t *testing.T) {
 		Region:   "USW3",
 	}
 	stubReadPassword(t, "") // empty — should keep existing password
-	// inputs: username(keep), region(keep), caiUrl(keep derived), default(y), keyring(y)
-	withFakeStdin(t, "\n\n\n\n\n", func() {
+	// inputs: username(keep), region(keep), caiUrl(keep derived), production(keep), default(y), keyring(y)
+	withFakeStdin(t, "\n\n\n\n\n\n", func() {
 		p, makeDefault, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -102,9 +102,9 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 	}
 	customURL := "https://custom.example.com/saas/public/core/v3/login"
 	stubReadPassword(t, "newpass")
-	// stdin needs: username(keep=\n), region line, caiUrl line, default line, keyring line.
+	// stdin needs: username(keep=\n), region line, caiUrl line, production line, default line, keyring line.
 	// password is handled by stubReadPassword (no stdin line needed).
-	withFakeStdin(t, "\n"+customURL+"\n\n\n\n", func() {
+	withFakeStdin(t, "\n"+customURL+"\n\n\n\n\n", func() {
 		p, _, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -121,9 +121,9 @@ func TestPromptProfile_URLTreatedAsLoginURL(t *testing.T) {
 func TestPromptProfile_RegionUppercased(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")
-	// stdin needs: username(keep=\n), region, caiUrl, default, keyring.
+	// stdin needs: username(keep=\n), region, caiUrl, production, default, keyring.
 	// password is handled by stubReadPassword (no stdin line needed).
-	withFakeStdin(t, "\nusw3\n\n\n\n", func() {
+	withFakeStdin(t, "\nusw3\n\n\n\n\n", func() {
 		p, _, _, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -143,9 +143,9 @@ func TestPromptProfile_KeepsExistingKeyringUnchanged(t *testing.T) {
 		Region:   "USW3",
 	}
 	stubReadPassword(t, "") // empty - keep existing (which is sentinel)
-	// inputs: username(keep), region(keep), caiUrl(keep), default(y)
+	// inputs: username(keep), region(keep), caiUrl(keep), production(keep), default(y)
 	// NO keyring line - the prompt is skipped when password kept as sentinel
-	withFakeStdin(t, "\n\n\n\n", func() {
+	withFakeStdin(t, "\n\n\n\n\n", func() {
 		p, _, storeInKeyring, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -163,7 +163,7 @@ func TestPromptProfile_KeyringDefaultYes(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")
 	// Empty answer to keyring prompt means yes (default).
-	withFakeStdin(t, "\nusw3\n\n\n\n", func() {
+	withFakeStdin(t, "\nusw3\n\n\n\n\n", func() {
 		_, _, storeInKeyring, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -178,13 +178,38 @@ func TestPromptProfile_KeyringExplicitNo(t *testing.T) {
 	existing := &Profile{Username: "u@example.com", Password: "pass"}
 	stubReadPassword(t, "pass")
 	// Explicit "n" answer to keyring prompt means no.
-	withFakeStdin(t, "\nusw3\n\n\nn\n", func() {
+	withFakeStdin(t, "\nusw3\n\n\n\nn\n", func() {
 		_, _, storeInKeyring, err := promptProfileInternal(existing, "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if storeInKeyring {
 			t.Errorf("storeInKeyring should be false when user answers 'n'")
+		}
+	})
+}
+
+func TestPromptProfile_Production(t *testing.T) {
+	existing := &Profile{Username: "u@example.com", Password: "secret", Region: "USW3"}
+	stubReadPassword(t, "")
+	// username, region, caiUrl, production (empty -> name hint "prd" = yes), default, keyring
+	withFakeStdin(t, "\n\n\n\n\n\n", func() {
+		p, _, _, err := promptProfileInternal(existing, "prd")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if p.Production == nil || !*p.Production {
+			t.Errorf("empty answer for profile prd should keep the production hint, got %v", p.Production)
+		}
+	})
+	stubReadPassword(t, "")
+	withFakeStdin(t, "\n\n\ny\n\n\n", func() {
+		p, _, _, err := promptProfileInternal(existing, "dev")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if p.Production == nil || !*p.Production {
+			t.Errorf("answer y should mark production, got %v", p.Production)
 		}
 	})
 }

@@ -35,6 +35,14 @@ type Config struct {
 	Profiles       map[string]*Profile `yaml:"profiles"       mapstructure:"profiles"`
 	Style          StyleConfig         `yaml:"style,omitempty" mapstructure:"style"`
 	HTTPTimeout    int                 `yaml:"httpTimeout,omitempty" mapstructure:"httpTimeout"`
+	UI             UIConfig            `yaml:"ui,omitempty" mapstructure:"ui"`
+}
+
+// UIConfig holds interactive UI preferences.
+type UIConfig struct {
+	// Menu enables the interactive main menu for bare "iics" on a terminal.
+	// Defaults to true when unset.
+	Menu *bool `yaml:"menu,omitempty" mapstructure:"menu"`
 }
 
 // DefaultHTTPTimeoutSeconds is the per-HTTP-request timeout used when no
@@ -77,6 +85,24 @@ type Profile struct {
 	LoginURL   string `yaml:"loginUrl,omitempty" mapstructure:"loginUrl"`
 	BaseAPIURL string `yaml:"baseApiUrl,omitempty" mapstructure:"baseApiUrl"`
 	CaiURL     string `yaml:"caiUrl,omitempty" mapstructure:"caiUrl"`
+	// Production marks a production org. When unset, the profile name is
+	// used as a hint (see IsProductionProfile).
+	Production *bool `yaml:"production,omitempty" mapstructure:"production"`
+}
+
+// IsProductionProfile reports whether a profile is a production org: the
+// profile's explicit production setting when present, otherwise a name of
+// "prd", "prod" or "production", or one starting with "prd-" / "prod-".
+func IsProductionProfile(name string, p *Profile) bool {
+	if p != nil && p.Production != nil {
+		return *p.Production
+	}
+	n := strings.ToLower(strings.TrimSpace(name))
+	switch n {
+	case "prd", "prod", "production":
+		return true
+	}
+	return strings.HasPrefix(n, "prd-") || strings.HasPrefix(n, "prod-")
 }
 
 // DeriveCaiURL derives the CAI base URL from an IICS product baseApiUrl.

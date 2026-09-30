@@ -1,5 +1,8 @@
 # Interactive prompts
 
+> Looking for a starting point? Run `iics` without arguments to open the
+> [main menu](menu.md), which lists the interactive commands.
+
 Commands that run interactively (wizards such as `user create --interactive`,
 `user edit`,
 `group create -i`, `environment create`, and pickers shown when `--id` or
