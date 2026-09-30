@@ -98,13 +98,13 @@ Without a terminal, behavior is unchanged: missing flags return an error.
 
 ## Acceptance Criteria
 
-- [ ] `role edit` adds and removes privileges across services and applies
+- [x] `role edit` adds and removes privileges across services and applies
       them in one confirmed step
-- [ ] `role add-privileges` / `role remove-privileges` without `--privilege`
+- [x] `role add-privileges` / `role remove-privileges` without `--privilege`
       open the editor in the matching mode
-- [ ] `role create --from-role` creates a role with the source role's
+- [x] `role create --from-role` creates a role with the source role's
       privileges
-- [ ] Interactive `role create` supports cloning and editing before create
-- [ ] Removing all privileges is blocked before any API call
-- [ ] Non-terminal usage is unchanged
-- [ ] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
+- [x] Interactive `role create` supports cloning and editing before create
+- [x] Removing all privileges is blocked before any API call
+- [x] Non-terminal usage is unchanged
+- [x] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
