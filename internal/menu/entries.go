@@ -98,7 +98,8 @@ func DefaultEntries() []Entry {
 		{Group: "Environments and agents", Label: "Start agent service", Description: "Pick an agent and start a service", Args: []string{"agent", "start", "-i"}, Writes: true},
 		{Group: "Environments and agents", Label: "Stop agent service", Description: "Pick an agent and stop a service", Args: []string{"agent", "stop", "-i"}, Writes: true},
 		{Group: "Environments and agents", Label: "Restart agent service", Description: "Pick an agent and restart a service", Args: []string{"agent", "restart", "-i"}, Writes: true},
-		{Group: "Environments and agents", Label: "Download agent installer", Description: "Download the Secure Agent installer", Args: []string{"agent", "installer-download"}},
+		{Group: "Environments and agents", Label: "Show agent installer info", Description: "Show the installer download URL, checksum URL and install token", Args: []string{"agent", "installer-info"}},
+		{Group: "Environments and agents", Label: "Download agent installer", Description: "Download the Secure Agent installer; choose the folder, reuse a matching file", Args: []string{"agent", "installer-download", "--interactive", "--progress"}},
 
 		{Group: "Help", Label: "Show CLI help", Description: "All commands and global flags", Args: []string{"--help"}, NoProfileFlag: true, SessionOnly: true},
 	}

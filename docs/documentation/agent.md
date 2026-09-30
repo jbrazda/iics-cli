@@ -366,8 +366,8 @@ Installer info can be supplied three ways:
 1. Piped as JSON on stdin (for example from `iics agent installer-info --output json`).
 2. From a file via `--installer-info <path>`.
 3. Omitted entirely, in which case the info is requested for the default or
-   `--profile` account using `--os` (shown as a selection menu when interactive;
-   `0`, Enter, or `q` cancels).
+   `--profile` account using `--os` (shown as a selection list when interactive;
+   `Ctrl+C` cancels).
 
 ### Flags
 
@@ -378,6 +378,8 @@ Installer info can be supplied three ways:
 | `--target`         | string | system temp directory | Destination file or directory                                     |
 | `--verify`         | bool   | false                | Download the checksum file and verify the installer               |
 | `--progress`       | bool   | false                | Print live download progress to stderr                            |
+| `--interactive`, `-i` | bool | false                | Prompt for the OS, the destination and whether to replace an existing file (terminal only) |
+| `--force`          | bool   | false                | Download even when the destination file already matches           |
 
 `--target` behavior:
 
@@ -386,6 +388,33 @@ Installer info can be supplied three ways:
 - An existing directory or a value ending with a path separator: the metadata file
   name is appended.
 - Any other value: treated as the full destination file path.
+
+### Existing destination file
+
+When the destination file already exists, the command compares its SHA-256
+with the installer checksum (`checksumDownloadUrl`) and reports the result:
+
+```text
+File already exists: /tmp/agent64_install_ng_ext.7617.bin (364.6MB, modified 2026-09-30 00:41)
+  It matches the checksum of the current installer.
+```
+
+| Mode                    | File matches                  | File differs or cannot be checked |
+| ----------------------- | ----------------------------- | --------------------------------- |
+| Default (scripts)       | Kept, download skipped        | Downloaded again (replaced)       |
+| `--interactive`         | Asks "Download again and overwrite it?" (default **No**) | Asks (default **Yes**) |
+| `--force`               | Downloaded again              | Downloaded again                  |
+
+When the download is skipped, the result describes the existing file
+(including `verified` when the checksum could be checked).
+
+### Interactive mode
+
+`--interactive` asks for the operating system (unless `--os` is given), then
+"Download to", pre-filled with the default destination (the system temp
+directory plus the installer file name, or `--target`). Enter a directory
+(existing, or ending with `/`) or a full file path; `~/` is expanded. The
+[main menu](menu.md) runs `iics agent installer-download --interactive --progress`.
 
 All [global flags](../../README.md#global-flags) apply.
 

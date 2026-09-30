@@ -117,7 +117,7 @@ On a production profile:
 | Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎               |
 | Privileges              | List privileges                                                         |
 | Permissions             | Edit object permissions ✎                                               |
-| Environments and agents | List runtime environments, Create runtime environment ✎, List agents, Start / Stop / Restart agent service ✎, Download agent installer |
+| Environments and agents | List runtime environments, Create runtime environment ✎, List agents, Start / Stop / Restart agent service ✎, Show agent installer info, Download agent installer (`--interactive --progress`) |
 | Help                    | Show CLI help                                                           |
 
 ## Accessible mode and small terminals

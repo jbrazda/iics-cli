@@ -71,7 +71,7 @@ flag), grouped by resource:
 | Roles | List, Show with privileges, Create ✎, Edit privileges ✎ |
 | Privileges | List |
 | Permissions | Edit object permissions ✎ |
-| Environments and agents | List environments, Create environment ✎, List agents, Start / Stop / Restart agent service ✎, Download agent installer |
+| Environments and agents | List environments, Create environment ✎, List agents, Start / Stop / Restart agent service ✎, Show agent installer info, Download agent installer |
 | Help | Show CLI help |
 
 ✎ = changes data (production confirmation).
@@ -136,3 +136,19 @@ flag), grouped by resource:
   header and declined confirmation on `prd`, profile picker, Ctrl+C in a
   running command returns to the menu, accessible line menu. Non-TTY `iics`
   still prints help; unknown commands still fail.
+
+## Follow-up: agent installer entries (2026-09-30)
+
+- New entry "Show agent installer info" (`agent installer-info`).
+- "Download agent installer" runs `agent installer-download --interactive
+  --progress`.
+- `agent installer-download` gains `--interactive` (OS, "Download to" with
+  the default temp path, existing-file prompt) and `--force`. An existing
+  destination file is compared with the installer checksum and reported;
+  scripts skip a matching file (download otherwise), interactive mode asks
+  (default No when it matches, Yes otherwise), `--force` always downloads.
+  Helpers `client.SHA256File`, `CompareChecksum`, `DownloadOverExisting` with
+  tests.
+- Verified on `dev`: fresh download with `--progress --verify` (365 MB,
+  checksum verified), script rerun skipped in 1s, interactive prompt with
+  matching file (kept), mismatching file (declined, kept).

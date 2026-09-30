@@ -245,6 +245,8 @@ func newAgentInstallerDownloadCmd() *cobra.Command {
 		target            string
 		verify            bool
 		progressFlag      bool
+		interactive       bool
+		force             bool
 	)
 	cmd := &cobra.Command{
 		Use:   "installer-download",
@@ -260,12 +262,23 @@ name from the installer metadata; otherwise --target is treated as the full file
 path. Without --target the file is written to the system temp directory.
 
 --progress prints a live progress line to stderr (bytes transferred, percentage
-when the server reports a content length, and transfer rate).`,
+when the server reports a content length, and transfer rate).
+
+When the destination file already exists, its SHA-256 is compared with the
+installer checksum and reported. Without --force, a file that already matches
+is not downloaded again; a different or unverifiable file is replaced. With
+--interactive (terminal only) you are asked for the destination ("Download
+to", default the system temp directory) and, when the file exists, whether to
+download again. --force always downloads.`,
 		Example: `  iics agent installer-download --os linux64 --target ./downloads/
   iics agent installer-info --os win64 --output json | iics agent installer-download --verify
   iics agent installer-download --installer-info info.json --target /tmp/agent.exe --verify
-  iics agent installer-download --os linux64 --target ./downloads/ --progress`,
+  iics agent installer-download --os linux64 --target ./downloads/ --progress
+  iics agent installer-download --interactive --progress`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if interactive && !isInteractiveTTY() {
+				return fmt.Errorf("--interactive requires a terminal")
+			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
@@ -292,7 +305,47 @@ when the server reports a content length, and transfer rate).`,
 			}
 
 			fileName := installerFileName(info.DownloadURL)
+			if interactive {
+				answer, perr := prompter.Text("Download to", resolveTargetPath(target, fileName))
+				if perr != nil {
+					return perr
+				}
+				target = expandHome(answer)
+			}
 			destPath := resolveTargetPath(target, fileName)
+
+			// Existing file: report its checksum state and decide whether to download.
+			expected := ""
+			expectedFetched := false
+			if st, serr := os.Stat(destPath); serr == nil && !st.IsDir() {
+				expected, expectedFetched = fetchExpectedChecksum(ctx, c, info, cmd.ErrOrStderr())
+				actual, size, herr := client.SHA256File(destPath)
+				if herr != nil {
+					return herr
+				}
+				state := client.CompareChecksum(actual, expected)
+				reportExistingInstaller(cmd.ErrOrStderr(), destPath, size, st.ModTime(), state)
+				download, derr := client.DownloadOverExisting(state, force, interactive, func(def bool) (bool, error) {
+					return prompter.Confirm("Download again and overwrite it?", def)
+				})
+				if derr != nil {
+					return derr
+				}
+				if !download {
+					res := &installerDownloadResult{
+						File: destPath, FileName: fileName, Size: size,
+						DownloadURL: info.DownloadURL, ChecksumDownloadURL: info.ChecksumDownloadURL,
+						InstallToken: info.InstallToken,
+					}
+					if state != client.ChecksumUnknown {
+						match := state == client.ChecksumMatch
+						res.ChecksumAlgorithm, res.ExpectedChecksum, res.ActualChecksum, res.Verified = "sha256", expected, actual, &match
+					}
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Kept the existing file; download skipped.")
+					return printInstallerDownloadResult(res)
+				}
+			}
+
 			if dir := filepath.Dir(destPath); dir != "" {
 				if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
 					return fmt.Errorf("creating target directory: %w", mkErr)
@@ -339,12 +392,14 @@ when the server reports a content length, and transfer rate).`,
 					_ = os.Remove(destPath)
 					return fmt.Errorf("--verify requested but installer info has no checksumDownloadUrl")
 				}
-				checksumText, cerr := c.FetchText(ctx, info.ChecksumDownloadURL)
-				if cerr != nil {
-					_ = os.Remove(destPath)
-					return cerr
+				if !expectedFetched {
+					checksumText, cerr := c.FetchText(ctx, info.ChecksumDownloadURL)
+					if cerr != nil {
+						_ = os.Remove(destPath)
+						return cerr
+					}
+					expected = parseChecksum(checksumText)
 				}
-				expected := parseChecksum(checksumText)
 				actual := hex.EncodeToString(hasher.Sum(nil))
 				match := expected != "" && expected == actual
 				res.ChecksumAlgorithm = "sha256"
@@ -368,7 +423,54 @@ when the server reports a content length, and transfer rate).`,
 	cmd.Flags().StringVar(&target, "target", "", "destination file or directory (default: system temp directory)")
 	cmd.Flags().BoolVar(&verify, "verify", false, "download the checksum and verify the installer")
 	cmd.Flags().BoolVar(&progressFlag, "progress", false, "print download progress to stderr")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "prompt for the OS, the destination and whether to replace an existing file")
+	cmd.Flags().BoolVar(&force, "force", false, "download even when the destination file already matches")
 	return cmd
+}
+
+// fetchExpectedChecksum downloads the installer checksum. Failures are
+// reported and treated as unknown. The bool reports whether the fetch
+// succeeded (so --verify can reuse the value).
+func fetchExpectedChecksum(ctx context.Context, c *client.Client, info *client.AgentInstallerInfo, w io.Writer) (string, bool) {
+	if info.ChecksumDownloadURL == "" {
+		return "", false
+	}
+	text, err := c.FetchText(ctx, info.ChecksumDownloadURL)
+	if err != nil {
+		_, _ = fmt.Fprintf(w, "Could not fetch the installer checksum: %v\n", err)
+		return "", false
+	}
+	return parseChecksum(text), true
+}
+
+// reportExistingInstaller describes an existing destination file.
+func reportExistingInstaller(w io.Writer, path string, size int64, mod time.Time, state client.ChecksumState) {
+	_, _ = fmt.Fprintf(w, "File already exists: %s (%s, modified %s)\n", path, formatBytes(size), mod.Format("2006-01-02 15:04"))
+	switch state {
+	case client.ChecksumMatch:
+		_, _ = fmt.Fprintln(w, "  It matches the checksum of the current installer.")
+	case client.ChecksumMismatch:
+		_, _ = fmt.Fprintln(w, "  It does NOT match the checksum of the current installer.")
+	default:
+		_, _ = fmt.Fprintln(w, "  Its checksum could not be verified (no installer checksum available).")
+	}
+}
+
+// expandHome replaces a leading "~" with the user's home directory, keeping
+// a trailing separator (which marks a directory for resolveTargetPath).
+func expandHome(p string) string {
+	if p != "~" && !strings.HasPrefix(p, "~/") && !strings.HasPrefix(p, `~\`) {
+		return p
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return p
+	}
+	out := filepath.Join(home, p[1:])
+	if strings.HasSuffix(p, "/") || strings.HasSuffix(p, `\`) {
+		out += string(os.PathSeparator)
+	}
+	return out
 }
 
 // newDownloadProgressPrinter returns a DownloadProgressFunc that prints a
