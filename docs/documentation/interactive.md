@@ -1,6 +1,7 @@
 # Interactive prompts
 
 Commands that run interactively (wizards such as `user create --interactive`,
+`user edit`,
 `group create -i`, `environment create`, and pickers shown when `--id` or
 `--name` is omitted) render terminal forms when stdin and stderr are both a
 terminal.
@@ -46,9 +47,10 @@ format:
 | Single list | Option number; `0`, `q` or empty cancels                        |
 | Yes / No    | `y`, `yes`, `n`, `no`; empty uses the default                   |
 
-Wizards with checklists (`user create`/`update --interactive`, `group
+Wizards with checklists (`user create --interactive`, `user edit`, `group
 create`/`update -i`, `environment create -i`, `role edit`) require a terminal
-and report an error instead of prompting; use `--from-file` in scripts.
+and report an error instead of prompting; use `--from-file` or the
+non-interactive commands (for example `user update-roles`) in scripts.
 
 ## Confirmations
 

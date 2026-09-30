@@ -15,7 +15,7 @@ iics user <subcommand> [flags]
 | `list`             | List users                                      |
 | `get`              | Get a single user                               |
 | `create`           | Create a user                                   |
-| `update`           | Update a user (`--interactive`: groups and roles) |
+| `edit`             | Edit group and role assignments (interactive)   |
 | `update-roles`     | Add, remove or replace a user's roles           |
 | `update-groups`    | Add, remove or replace a user's user groups     |
 | `delete`           | Delete a user                                   |
@@ -160,47 +160,54 @@ iics user create --interactive
 
 ---
 
-## user update
+## user edit
 
-Update a user's user group and role assignments interactively. For scripts,
-use [user update-roles](#user-update-roles) and
+Edit a user's user group and role assignments in an interactive form. Requires
+a terminal; for scripts use [user update-roles](#user-update-roles) and
 [user update-groups](#user-update-groups).
 
-`--interactive` shows the user's name, email, authentication and state
-read-only, then the user groups and roles as filterable checklists with the
-current assignments pre-checked, and ends with a review (`+ Group: ...`,
+The form shows the user's name, email, authentication and state read-only,
+then the user groups and roles as filterable checklists with the current
+assignments pre-checked, and ends with a review (`+ Group: ...`,
 `- Role: ...`). Changes are applied through the V3 `addGroups` /
-`removeGroups` / `addRoles` / `removeRoles` endpoints, and the resulting user
-is printed. See [Interactive prompts](interactive.md) for keys.
+`removeGroups` / `addRoles` / `removeRoles` endpoints (additions first), and
+the resulting user is printed. See [Interactive prompts](interactive.md) for
+keys.
 
-> **`--from-file` is not supported and fails at runtime.** The IICS REST API
-> has no working endpoint for updating user properties (name, email, title,
-> time zone): the V3 `PUT /public/core/v3/users/{id}` returns HTTP 405 and the
-> V2 `POST /api/v2/user/{id}` fails (HTTP 400 in earlier testing, HTTP 403
-> `REPO_10704` on 2026-09-30).
+User properties (name, email, phone, title, description, time zone) cannot be
+changed: the IICS REST API has no working update endpoint for them. The V3
+`PUT /public/core/v3/users/{id}` returns HTTP 405, and the V2
+`POST /api/v2/user/{id}` never succeeded in testing (HTTP 400, later HTTP 403
+`REPO_10704`).
+
+> `user update` is a deprecated, hidden alias of `user edit`. Its former
+> `--from-file` option was removed because it never worked against the API.
+> `--interactive` is accepted and ignored.
 
 ### Flags
 
-| Flag            | Short | Type   | Required | Description                              |
-| --------------- | ----- | ------ | -------- | ---------------------------------------- |
-| `--id`          |       | string |          | User ID                                  |
-| `--username`    |       | string |          | User name (exact match)                  |
-| `--interactive` |       | bool   |          | Edit group and role assignments          |
-| `--from-file`   |       | string |          | Not supported (see note above)           |
+| Flag         | Type   | Required | Description             |
+| ------------ | ------ | -------- | ----------------------- |
+| `--id`       | string |          | User ID                 |
+| `--username` | string |          | User name (exact match) |
 
-Without `--id` or `--username`, the interactive mode lets you search for the
-user.
+Without `--id` or `--username`, you are asked to search for the user.
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Examples
 
 ```bash
-iics user update --interactive --username user@example.com
+iics user edit --username user@example.com
+
+# Search for the user first
+iics user edit
 ```
 
 ```powershell
-iics user update --interactive --username user@example.com
+iics user edit --username user@example.com
+
+iics user edit
 ```
 
 ---

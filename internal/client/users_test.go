@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"testing"
 )
 
@@ -153,36 +152,6 @@ func TestCreateUser(t *testing.T) {
 	}
 	if user.ID != "new123" {
 		t.Errorf("expected ID new123, got %s", user.ID)
-	}
-}
-
-func TestUpdateUser(t *testing.T) {
-	// UpdateUser makes multiple requests: GET (current state), POST v2 (scalar update),
-	// optional PUT (group/role diff), GET (final state). The handler tracks call order.
-	callCount := 0
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		callCount++
-		switch {
-		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/v3/users"):
-			// GET list for GetUser (called twice: fetch current + fetch final)
-			json.NewEncoder(w).Encode([]User{{ID: "u123", OrgID: "org1", UserName: "test@example.com", Email: "old@example.com"}})
-		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/v2/user"):
-			// V2 scalar update
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]string{"id": "u123"})
-		default:
-			w.WriteHeader(http.StatusNoContent)
-		}
-	})
-
-	c := newTestClient(handler)
-	user, err := c.UpdateUser(context.Background(), "u123", &User{Email: "updated@example.com"})
-	if err != nil {
-		t.Fatalf("UpdateUser() error: %v", err)
-	}
-	if user.ID != "u123" {
-		t.Errorf("expected ID u123, got %s", user.ID)
 	}
 }
 

@@ -30,6 +30,11 @@ References:
   - Resulting user printed in the `--output` format.
 - `user update --interactive` edits only group and role assignments and
   applies them through the same endpoints.
+- Follow-up: `user update` is renamed to `user edit` (terminal only, no
+  `--interactive` switch needed). `user update` stays as a hidden,
+  deprecated alias. `--from-file` is removed together with the V2 scalar
+  update (`Client.UpdateUser`, `updateUserV2Request`, `doXML`), which never
+  worked against the API.
 
 ## Implementation
 
@@ -51,4 +56,6 @@ References:
       replace exclusivity, missing user flag
 - [x] Output honors `-o table|json|yaml|csv`
 - [x] Interactive update applies group and role changes only
+- [x] `user edit` replaces `user update`; `update` kept as deprecated alias;
+      `--from-file` update and V2 client code removed
 - [x] `go build`, `go vet`, `golangci-lint`, `go test ./...` pass
