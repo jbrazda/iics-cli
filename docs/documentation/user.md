@@ -170,7 +170,9 @@ Create a user from a definition file, or interactively with `--interactive`.
    SSO, where the API requires it.
 3. **Details** - phone, title, description, force password change.
 4. **Membership** - user groups and roles as filterable checklists
-   (`/` filter, `Space` toggle).
+   (`/` filter, `Space` toggle). Roles granted by the selected user groups
+   are left out of the role list and named in its description; the list
+   follows the group selection.
 5. **Review** - summary with **Create user**, **Back to editing** or
    **Cancel**. At least one user group or role is required.
 
@@ -253,7 +255,11 @@ a terminal; for scripts use [user update-roles](#user-update-roles) and
 The form shows the user's name, email, authentication and state read-only,
 then the user groups and roles as filterable checklists with the current
 assignments pre-checked, and ends with a review (`+ Group: ...`,
-`- Role: ...`). Changes are applied through the V3 `addGroups` /
+`- Role: ...`). Roles granted by the selected user groups are left out of the
+role list and named in its description, except roles the user already has
+directly, which stay listed so they can be removed. The review cannot be
+applied when it would remove the user's last directly assigned role (see
+[user update-roles](#user-update-roles)). Changes are applied through the V3 `addGroups` /
 `removeGroups` / `addRoles` / `removeRoles` endpoints (additions first), and
 the resulting user is printed. See [Interactive prompts](interactive.md) for
 keys.
@@ -316,12 +322,21 @@ Rules:
 
 - `--id` and `--username` are mutually exclusive; one is required.
 - `--add` and `--remove` can be combined. `--replace` cannot be combined with
-  either. `--replace=` (empty) removes all roles.
+  either. `--replace=` (empty) would remove all roles, which IICS does not
+  allow (see below).
 - Names match case-insensitively, by role name or display name. Duplicates are
   ignored. Unknown names, or a name in both `--add` and `--remove`, fail
   before any change is made.
 - Roles already assigned (for `--add`) or not assigned (for `--remove`) are
   skipped and reported on stderr.
+- Roles the user already has through a user group are not assigned directly;
+  they are skipped and reported on stderr as
+  `Inherited from user group (skipped)`.
+- IICS requires a user to keep at least one directly assigned role, even
+  when user groups grant other roles. Removing the last one fails in the API
+  with `V3API_IDSError_044` ("The group must have at least one role"), so the
+  command rejects such a change before calling the API. Add a replacement
+  role in the same command (`--add New --remove Old`, or `--replace New`).
 - Additions are applied before removals.
 - The role assignment endpoints match the role's **display name** (for
   example `Data Integration Data Previewer` for the `Data Preview` role); the
@@ -358,7 +373,8 @@ iics user update-roles --username jdoe@example.com --replace Designer -o json
 Add, remove or replace the user groups assigned to a user. Uses
 `PUT /public/core/v3/users/<id>/addGroups` and `.../removeGroups`. Flags and
 rules are the same as [user update-roles](#user-update-roles), with user group
-names instead of role names.
+names instead of role names; the inherited-role and last-direct-role rules
+apply to roles only.
 
 ### Examples
 

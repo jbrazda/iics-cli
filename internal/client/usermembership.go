@@ -42,6 +42,9 @@ type MembershipPlan struct {
 	// AlreadyAssigned and NotAssigned are requested changes that are no-ops.
 	AlreadyAssigned []string
 	NotAssigned     []string
+	// Inherited are requested additions skipped because a user group of the
+	// user already grants them.
+	Inherited []string
 }
 
 // MembershipRequest describes requested role or user group changes.
@@ -51,6 +54,9 @@ type MembershipRequest struct {
 	Replace []string
 	// ReplaceSet is true when Replace was given (an empty Replace removes all).
 	ReplaceSet bool
+	// Inherited lists names (MemberName.Name form) the user already has
+	// through user groups; they are not added.
+	Inherited []string
 }
 
 // MemberName is an assignable role or user group. Name is the value the
@@ -139,12 +145,20 @@ func PlanMembership(kind string, available []MemberName, current []string, req M
 	for _, n := range current {
 		cur[n] = true
 	}
+	inherited := make(map[string]bool, len(req.Inherited))
+	for _, n := range req.Inherited {
+		inherited[n] = true
+	}
 
 	if req.ReplaceSet {
 		want := make(map[string]bool, len(replace))
 		for _, n := range replace {
 			want[n] = true
-			if !cur[n] {
+			switch {
+			case cur[n]:
+			case inherited[n]:
+				plan.Inherited = append(plan.Inherited, n)
+			default:
 				plan.Add = append(plan.Add, n)
 			}
 		}
@@ -168,9 +182,12 @@ func PlanMembership(kind string, available []MemberName, current []string, req M
 			return plan, fmt.Errorf("%s(s) in both --add and --remove: %s", kind, strings.Join(conflict, ", "))
 		}
 		for _, n := range add {
-			if cur[n] {
+			switch {
+			case cur[n]:
 				plan.AlreadyAssigned = append(plan.AlreadyAssigned, n)
-			} else {
+			case inherited[n]:
+				plan.Inherited = append(plan.Inherited, n)
+			default:
 				plan.Add = append(plan.Add, n)
 			}
 		}
@@ -183,8 +200,42 @@ func PlanMembership(kind string, available []MemberName, current []string, req M
 		}
 	}
 
-	for _, s := range [][]string{plan.Add, plan.Remove, plan.AlreadyAssigned, plan.NotAssigned} {
+	for _, s := range [][]string{plan.Add, plan.Remove, plan.AlreadyAssigned, plan.NotAssigned, plan.Inherited} {
 		sort.Strings(s)
 	}
 	return plan, nil
+}
+
+// InheritedRoles returns the roles granted by the user groups with the given
+// IDs, keyed by role ID.
+func InheritedRoles(groups []UserGroup, groupIDs []string) map[string]UserRole {
+	want := make(map[string]bool, len(groupIDs))
+	for _, id := range groupIDs {
+		want[id] = true
+	}
+	out := make(map[string]UserRole)
+	for _, g := range groups {
+		if !want[g.ID] {
+			continue
+		}
+		for _, r := range g.Roles {
+			if _, ok := out[r.ID]; !ok {
+				out[r.ID] = r
+			}
+		}
+	}
+	return out
+}
+
+// CheckKeepsDirectRole returns an error when removing roles (after adding
+// roles) would leave a user with no directly assigned role. IICS rejects that
+// with V3API_IDSError_044 ("The group must have at least one role") even when
+// the user's groups grant roles. current, add and remove are role names as
+// planned by PlanMembership (add not assigned, remove assigned).
+func CheckKeepsDirectRole(userName string, current, add, remove []string) error {
+	if len(remove) == 0 || len(current)+len(add)-len(remove) > 0 {
+		return nil
+	}
+	return fmt.Errorf("cannot remove every role assigned directly to %s: IICS requires a user to keep at least one direct role (roles from user groups do not count); add a replacement role in the same change or keep one of: %s",
+		userName, strings.Join(remove, ", "))
 }

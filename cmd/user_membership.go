@@ -16,16 +16,29 @@ import (
 // membershipKind describes one of the two user membership types.
 type membershipKind struct {
 	use, noun, plural string
+	// longNote is appended to the command's long help.
+	longNote string
 	// available returns every entry that can be assigned.
 	available func(ctx context.Context, c *client.Client) ([]client.MemberName, error)
 	// current returns the assignment names (MemberName.Name form) of the user.
 	current func(u *client.User) []string
-	add     func(c *client.Client, ctx context.Context, userID string, names []string) error
-	remove  func(c *client.Client, ctx context.Context, userID string, names []string) error
+	// inherited, when set, returns the names the user already has through
+	// user groups; requested additions of these are skipped.
+	inherited func(ctx context.Context, c *client.Client, u *client.User) ([]string, error)
+	// check, when set, validates a planned change before it is applied.
+	check  func(u *client.User, current, add, remove []string) error
+	add    func(c *client.Client, ctx context.Context, userID string, names []string) error
+	remove func(c *client.Client, ctx context.Context, userID string, names []string) error
 }
 
 var userRoleMembership = membershipKind{
 	use: "update-roles", noun: "role", plural: "roles",
+	longNote: `
+
+Roles the user already has through a user group are not assigned directly
+(reported as skipped). IICS requires a user to keep at least one directly
+assigned role, so a change that would remove the last one fails before any
+change is made; add a replacement role in the same command.`,
 	// The role assignment endpoints match the role's display name.
 	available: func(ctx context.Context, c *client.Client) ([]client.MemberName, error) {
 		roles, err := c.ListRoles(ctx, client.RoleListOptions{})
@@ -44,6 +57,28 @@ var userRoleMembership = membershipKind{
 			names[i] = client.RoleMemberName(r.RoleName, r.DisplayName)
 		}
 		return names
+	},
+	inherited: func(ctx context.Context, c *client.Client, u *client.User) ([]string, error) {
+		if len(u.Groups) == 0 {
+			return nil, nil
+		}
+		groups, err := listAllUserGroups(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		ids := make([]string, len(u.Groups))
+		for i, g := range u.Groups {
+			ids[i] = g.ID
+		}
+		var names []string
+		for _, r := range client.InheritedRoles(groups, ids) {
+			names = append(names, client.RoleMemberName(r.RoleName, r.DisplayName))
+		}
+		return names, nil
+	},
+	// IICS rejects removing a user's last direct role.
+	check: func(u *client.User, current, add, remove []string) error {
+		return client.CheckKeepsDirectRole(u.UserName, current, add, remove)
 	},
 	add:    (*client.Client).AddUserRoles,
 	remove: (*client.Client).RemoveUserRoles,
@@ -88,7 +123,7 @@ func newUserMembershipCmd(k membershipKind) *cobra.Command {
 value removes all %[1]s) and cannot be combined with them. Names match
 case-insensitively and duplicates are ignored. Unknown names, or a name in
 both --add and --remove, fail before any change is made. Additions are
-applied before removals. The resulting user is printed in the --output format.`, k.plural),
+applied before removals. The resulting user is printed in the --output format.%[2]s`, k.plural, k.longNote),
 		Example: fmt.Sprintf(`  iics user %[1]s --username jdoe@example.com --add "Designer,Monitor"
   iics user %[1]s --id <user-id> --add Designer --remove Monitor
   iics user %[1]s --username jdoe@example.com --replace "Designer" -o json`, k.use),
@@ -108,14 +143,26 @@ applied before removals. The resulting user is printed in the --output format.`,
 			if err != nil {
 				return err
 			}
-			plan, err := client.PlanMembership(k.noun, available, k.current(user), req)
+			if k.inherited != nil {
+				if req.Inherited, err = k.inherited(ctx, c, user); err != nil {
+					return err
+				}
+			}
+			current := k.current(user)
+			plan, err := client.PlanMembership(k.noun, available, current, req)
 			if err != nil {
 				return err
+			}
+			if k.check != nil {
+				if err = k.check(user, current, plan.Add, plan.Remove); err != nil {
+					return err
+				}
 			}
 
 			w := cmd.ErrOrStderr()
 			reportSkipped(w, "Already assigned", plan.AlreadyAssigned)
 			reportSkipped(w, "Not assigned", plan.NotAssigned)
+			reportSkipped(w, "Inherited from user group", plan.Inherited)
 			if len(plan.Add) == 0 && len(plan.Remove) == 0 {
 				_, _ = fmt.Fprintf(w, "No %s changes for %s.\n", k.noun, user.UserName)
 			}
@@ -168,6 +215,11 @@ applied before removals. The resulting user is printed in the --output format.`,
 func applyUserMembership(ctx context.Context, c *client.Client, w io.Writer, before, after *client.User) error {
 	for _, k := range []membershipKind{userGroupMembership, userRoleMembership} {
 		add, remove := client.DiffPrivileges(k.current(before), k.current(after))
+		if k.check != nil {
+			if err := k.check(before, k.current(before), add, remove); err != nil {
+				return err
+			}
+		}
 		if len(add) > 0 {
 			if err := k.add(c, ctx, before.ID, add); err != nil {
 				return err

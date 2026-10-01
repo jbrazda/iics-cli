@@ -60,17 +60,20 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 	for _, r := range u.Roles {
 		roleIDs = append(roleIDs, r.ID)
 	}
+	// Roles assigned directly now stay selectable even when a group grants
+	// them, so they can still be removed.
+	direct := toSet(roleIDs)
 
 	for {
 		pages := []*huh.Group{
 			identityGroup(in, u, &auth),
 			ssoGroup(in, u, &auth),
 			detailsGroup(u),
-			membershipGroup(in, &groupIDs, &roleIDs),
+			membershipGroup(in, direct, &groupIDs, &roleIDs),
 		}
 		if in.Update {
 			// Only role and user group assignments can be updated.
-			pages = []*huh.Group{membershipGroup(in, &groupIDs, &roleIDs)}
+			pages = []*huh.Group{membershipGroup(in, direct, &groupIDs, &roleIDs)}
 		}
 		form := huh.NewForm(pages...).WithOutput(in.Out).WithAccessible(in.Accessible).WithKeyMap(suggestionKeyMap())
 		if err := form.Run(); err != nil {
@@ -93,6 +96,7 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 			}
 		}
 		trimUser(u)
+		roleIDs = dropInherited(roleIDs, client.InheritedRoles(in.Groups, groupIDs), direct)
 		u.Groups = groupsByID(in.Groups, groupIDs)
 		u.Roles = rolesByID(in.Roles, roleIDs)
 
@@ -270,7 +274,7 @@ func detailsGroup(u *client.User) *huh.Group {
 	).Title("Details")
 }
 
-func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group {
+func membershipGroup(in UserWizardInput, direct map[string]bool, groupIDs, roleIDs *[]string) *huh.Group {
 	groups := append([]client.UserGroup(nil), in.Groups...)
 	sort.SliceStable(groups, func(i, j int) bool {
 		return strings.ToLower(groups[i].UserGroupName) < strings.ToLower(groups[j].UserGroupName)
@@ -283,9 +287,14 @@ func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group
 	sort.SliceStable(roles, func(i, j int) bool {
 		return strings.ToLower(roles[i].RoleName) < strings.ToLower(roles[j].RoleName)
 	})
-	rOpts := make([]huh.Option[string], len(roles))
-	for i, r := range roles {
-		rOpts[i] = huh.NewOption(optionLabel(r.RoleName, r.Description), r.ID)
+	// Roles granted by the selected groups are hidden (unless assigned
+	// directly now) and listed in the description; both follow the group
+	// selection.
+	rOpts := func() []huh.Option[string] {
+		return roleOptions(roles, client.InheritedRoles(in.Groups, *groupIDs), direct)
+	}
+	rDesc := func() string {
+		return inheritedDescription(client.InheritedRoles(in.Groups, *groupIDs))
 	}
 
 	var fields []huh.Field
@@ -305,13 +314,13 @@ func membershipGroup(in UserWizardInput, groupIDs, roleIDs *[]string) *huh.Group
 			Height(min(len(gOpts)+3, 12)).
 			Value(groupIDs))
 	}
-	if len(rOpts) > 0 {
+	if len(roles) > 0 {
 		fields = append(fields, huh.NewMultiSelect[string]().
 			Title("Roles").
-			Description("space toggle, / filter, ctrl+a all").
-			Options(rOpts...).
+			DescriptionFunc(rDesc, groupIDs).
+			OptionsFunc(rOpts, groupIDs).
 			Filterable(true).
-			Height(min(len(rOpts)+3, 12)).
+			Height(min(len(roles)+3, 12)).
 			Value(roleIDs))
 	}
 	if len(fields) == 0 {
@@ -328,6 +337,12 @@ func reviewUser(in UserWizardInput, before, after *client.User) (string, error) 
 		canApply := len(lines) > 0
 		if !canApply {
 			lines = []string{"No changes."}
+		}
+		// IICS rejects removing a user's last direct role.
+		if len(before.Roles) > 0 && len(after.Roles) == 0 {
+			canApply = false
+			lines = append(lines, "", "Keep at least one directly assigned role: IICS does not allow",
+				"removing the last one (roles from user groups do not count).")
 		}
 		return confirmReview(in.Out, in.Accessible, "Update user "+after.UserName, lines, "Apply changes", canApply)
 	}
@@ -426,6 +441,45 @@ func optionLabel(name, desc string) string {
 		desc = string(r[:maxDesc-1]) + "…"
 	}
 	return name + " - " + desc
+}
+
+// roleOptions builds the role options, leaving out roles in inherited that
+// are not in direct.
+func roleOptions(roles []client.Role, inherited map[string]client.UserRole, direct map[string]bool) []huh.Option[string] {
+	opts := make([]huh.Option[string], 0, len(roles))
+	for _, r := range roles {
+		if _, ok := inherited[r.ID]; ok && !direct[r.ID] {
+			continue
+		}
+		opts = append(opts, huh.NewOption(optionLabel(r.RoleName, r.Description), r.ID))
+	}
+	return opts
+}
+
+func inheritedDescription(inherited map[string]client.UserRole) string {
+	const help = "space toggle, / filter, ctrl+a all"
+	if len(inherited) == 0 {
+		return help
+	}
+	names := make([]string, 0, len(inherited))
+	for _, r := range inherited {
+		names = append(names, r.RoleName)
+	}
+	sort.Strings(names)
+	return help + "\nInherited from selected groups (not listed): " + strings.Join(names, ", ")
+}
+
+// dropInherited removes from ids the roles in inherited that are not in
+// direct (a role selected before a group granting it was selected).
+func dropInherited(ids []string, inherited map[string]client.UserRole, direct map[string]bool) []string {
+	out := ids[:0:0]
+	for _, id := range ids {
+		if _, ok := inherited[id]; ok && !direct[id] {
+			continue
+		}
+		out = append(out, id)
+	}
+	return out
 }
 
 func trimUser(u *client.User) {

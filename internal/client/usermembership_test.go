@@ -113,3 +113,59 @@ func TestRoleMemberName(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+func TestPlanMembershipInherited(t *testing.T) {
+	avail := []MemberName{{Name: "Designer"}, {Name: "Monitor"}, {Name: "Admin"}}
+	req := MembershipRequest{Add: []string{"designer", "Monitor"}, Inherited: []string{"Designer", "Admin"}}
+	plan, err := PlanMembership("role", avail, nil, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(plan.Add, []string{"Monitor"}) || !reflect.DeepEqual(plan.Inherited, []string{"Designer"}) {
+		t.Errorf("add=%v inherited=%v", plan.Add, plan.Inherited)
+	}
+
+	// A direct role that is also inherited stays assigned under --replace.
+	req = MembershipRequest{Replace: []string{"Admin", "Designer"}, ReplaceSet: true, Inherited: []string{"Admin", "Designer"}}
+	plan, err = PlanMembership("role", avail, []string{"Admin", "Monitor"}, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Add) != 0 || !reflect.DeepEqual(plan.Remove, []string{"Monitor"}) || !reflect.DeepEqual(plan.Inherited, []string{"Designer"}) {
+		t.Errorf("add=%v remove=%v inherited=%v", plan.Add, plan.Remove, plan.Inherited)
+	}
+}
+
+func TestInheritedRoles(t *testing.T) {
+	groups := []UserGroup{
+		{ID: "g1", Roles: []UserRole{{ID: "r1", RoleName: "Designer"}, {ID: "r2", RoleName: "Monitor"}}},
+		{ID: "g2", Roles: []UserRole{{ID: "r2", RoleName: "Monitor"}, {ID: "r3", RoleName: "Admin"}}},
+	}
+	got := InheritedRoles(groups, []string{"g1"})
+	if len(got) != 2 || got["r1"].RoleName != "Designer" || got["r2"].RoleName != "Monitor" {
+		t.Errorf("InheritedRoles(g1) = %v", got)
+	}
+	if got := InheritedRoles(groups, nil); len(got) != 0 {
+		t.Errorf("InheritedRoles(nil) = %v", got)
+	}
+}
+
+func TestCheckKeepsDirectRole(t *testing.T) {
+	tests := []struct {
+		name                 string
+		current, add, remove []string
+		wantErr              bool
+	}{
+		{"remove last", []string{"A"}, nil, []string{"A"}, true},
+		{"remove all", []string{"A", "B"}, nil, []string{"A", "B"}, true},
+		{"swap", []string{"A"}, []string{"B"}, []string{"A"}, false},
+		{"keep one", []string{"A", "B"}, nil, []string{"A"}, false},
+		{"no removal", nil, nil, nil, false},
+	}
+	for _, tt := range tests {
+		err := CheckKeepsDirectRole("u@x.com", tt.current, tt.add, tt.remove)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("%s: err = %v, wantErr %v", tt.name, err, tt.wantErr)
+		}
+	}
+}

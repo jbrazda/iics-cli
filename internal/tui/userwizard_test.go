@@ -157,3 +157,23 @@ func TestMembershipByID(t *testing.T) {
 		t.Errorf("rolesByID(nil) = %+v", r)
 	}
 }
+
+func TestRoleOptionsHideInherited(t *testing.T) {
+	roles := []client.Role{{ID: "r1", RoleName: "Designer"}, {ID: "r2", RoleName: "Monitor"}, {ID: "r3", RoleName: "Admin"}}
+	inherited := map[string]client.UserRole{"r1": {ID: "r1", RoleName: "Designer"}, "r2": {ID: "r2", RoleName: "Monitor"}}
+	direct := map[string]bool{"r2": true}
+
+	var got []string
+	for _, o := range roleOptions(roles, inherited, direct) {
+		got = append(got, o.Value)
+	}
+	if !reflect.DeepEqual(got, []string{"r2", "r3"}) {
+		t.Errorf("roleOptions = %v, want [r2 r3]", got)
+	}
+	if ids := dropInherited([]string{"r1", "r2", "r3"}, inherited, direct); !reflect.DeepEqual(ids, []string{"r2", "r3"}) {
+		t.Errorf("dropInherited = %v, want [r2 r3]", ids)
+	}
+	if d := inheritedDescription(inherited); !strings.Contains(d, "not listed): Designer, Monitor") {
+		t.Errorf("description = %q", d)
+	}
+}
