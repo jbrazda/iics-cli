@@ -1376,6 +1376,85 @@ _iics_completion()
     noun_aliases=()
 }
 
+_iics_config_edit()
+{
+    last_command="iics_config_edit"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_iics_config()
+{
+    last_command="iics_config"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("edit")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_connection_create()
 {
     last_command="iics_connection_create"
@@ -7601,6 +7680,7 @@ _iics_root_command()
     commands+=("agent")
     commands+=("auditlog")
     commands+=("completion")
+    commands+=("config")
     commands+=("connection")
     if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
         command_aliases+=("conn")

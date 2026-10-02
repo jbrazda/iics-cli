@@ -36,6 +36,16 @@ type Config struct {
 	Style          StyleConfig         `yaml:"style,omitempty" mapstructure:"style"`
 	HTTPTimeout    int                 `yaml:"httpTimeout,omitempty" mapstructure:"httpTimeout"`
 	UI             UIConfig            `yaml:"ui,omitempty" mapstructure:"ui"`
+	// NewUser holds the global new-user defaults; profiles override them.
+	NewUser *NewUserConfig `yaml:"newUser,omitempty" mapstructure:"newUser"`
+}
+
+// GlobalNewUser returns the global new-user defaults; nil-safe.
+func (c *Config) GlobalNewUser() *NewUserConfig {
+	if c == nil {
+		return nil
+	}
+	return c.NewUser
 }
 
 // UIConfig holds interactive UI preferences.
@@ -315,6 +325,15 @@ func (c *Config) Save(configPath string) error {
 	v.Set("profiles", c.Profiles)
 	if c.Style.Theme != "" || c.Style.NoColor || c.Style.HeaderColor != "" || c.Style.ResponsiveTables != nil {
 		v.Set("style", c.Style)
+	}
+	if c.HTTPTimeout > 0 {
+		v.Set("httpTimeout", c.HTTPTimeout)
+	}
+	if c.UI.Menu != nil {
+		v.Set("ui", c.UI)
+	}
+	if c.NewUser != nil && !c.NewUser.IsZero() {
+		v.Set("newUser", c.NewUser)
 	}
 
 	v.SetConfigFile(configPath)

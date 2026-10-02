@@ -260,3 +260,32 @@ func TestResolveHTTPTimeoutSeconds(t *testing.T) {
 		}
 	})
 }
+
+func TestSaveLoadRoundTripGlobalSettings(t *testing.T) {
+	path := t.TempDir() + "/config.yaml"
+	menu := false
+	in := &Config{
+		DefaultProfile: "dev",
+		Profiles: map[string]*Profile{"dev": {Name: "dev", Username: "a@b.c", Password: "x",
+			NewUser: &NewUserConfig{EmailPattern: "{lastName}@{domain}"}}},
+		HTTPTimeout: 45,
+		UI:          UIConfig{Menu: &menu},
+		NewUser:     &NewUserConfig{Domain: "acme.com"},
+	}
+	if err := in.Save(path); err != nil {
+		t.Fatal(err)
+	}
+	out, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.DefaultProfile != "dev" || out.HTTPTimeout != 45 || out.UI.Menu == nil || *out.UI.Menu {
+		t.Errorf("global settings lost: %+v", out)
+	}
+	if out.NewUser == nil || out.NewUser.Domain != "acme.com" {
+		t.Errorf("global newUser = %+v", out.NewUser)
+	}
+	if nu := out.Profiles["dev"].NewUser; nu == nil || nu.EmailPattern != "{lastName}@{domain}" {
+		t.Errorf("profile newUser = %+v", nu)
+	}
+}

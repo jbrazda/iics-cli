@@ -181,18 +181,25 @@ one. See [Interactive prompts](interactive.md) for keys.
 
 ### New user patterns
 
-The suggested user name and email are built from patterns in the active
-profile (`~/.iics/config.yaml`):
+The suggested user name and email are built from patterns in
+`~/.iics/config.yaml`. The top-level `newUser` block holds the defaults for
+all profiles ([config edit](config.md)); a profile's `newUser` block
+overrides them field by field ([profile edit](profile.md#profile-form)):
 
 ```yaml
+newUser:                                                            # all profiles
+  domain: acme.com                                                  # default: domain of the profile username
+  userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"  # default
+  emailPattern: "{firstName}.{lastName}@{domain}"                   # default
 profiles:
   dev:
     username: admin@acme.com
-    newUser:
-      domain: acme.com                                                  # default: domain of the profile username
-      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"  # default
-      emailPattern: "{firstName}.{lastName}@{domain}"                   # default
+    newUser:                                                        # dev only
+      emailPattern: "{firstInitial}{lastName}@{domain}"
 ```
+
+Each value resolves as: profile `newUser`, global `newUser`, built-in
+default.
 
 | Placeholder      | Value                                                   |
 | ---------------- | ------------------------------------------------------- |
@@ -201,13 +208,14 @@ profiles:
 | `{firstInitial}` | First letter of the first name, lowercase               |
 | `{lastInitial}`  | First letter of the last name, lowercase                |
 | `{profileName}`  | Name of the active profile                              |
-| `{domain}`       | `newUser.domain`, or the domain of the profile username |
+| `{domain}`       | `newUser.domain` (profile, then global), or the domain of the profile username |
 
 With the defaults, Jane Doe in profile `dev` (login `admin@acme.com`) gets
 user name `jane.doe.dev@acme.com` and email `jane.doe@acme.com`. An unknown
 placeholder or a missing value (for example no `@` in the profile username
 and no `newUser.domain`) shows a note under the field instead of a
-suggestion. `iics profile show <name>` lists the effective patterns.
+suggestion. `iics profile show <name>` lists the effective patterns and
+where each comes from.
 
 All [global flags](../../README.md#global-flags) apply.
 

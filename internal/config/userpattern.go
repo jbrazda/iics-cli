@@ -15,7 +15,8 @@ const (
 // UserPatternPlaceholders lists the supported placeholders.
 var UserPatternPlaceholders = []string{"firstName", "lastName", "firstInitial", "lastInitial", "profileName", "domain"}
 
-// NewUserConfig holds the per-profile settings for new users.
+// NewUserConfig holds the settings for new users. The top-level config
+// block holds global defaults; a profile block overrides them per field.
 type NewUserConfig struct {
 	// Domain replaces {domain}; defaults to the domain of the profile username.
 	Domain          string `yaml:"domain,omitempty" mapstructure:"domain"`
@@ -23,28 +24,68 @@ type NewUserConfig struct {
 	EmailPattern    string `yaml:"emailPattern,omitempty" mapstructure:"emailPattern"`
 }
 
-// NewUserPatterns returns the effective new-user settings of a profile,
-// applying defaults for unset values.
-func NewUserPatterns(p *Profile) NewUserConfig {
+// IsZero reports whether no field is set.
+func (n NewUserConfig) IsZero() bool {
+	return n == NewUserConfig{}
+}
+
+// Sources of an effective new-user value (see ResolveNewUser).
+const (
+	SourceProfile  = "profile"
+	SourceGlobal   = "global"
+	SourceUsername = "profile username"
+	SourceDefault  = "built-in default"
+)
+
+// NewUserSources names where each effective new-user value comes from.
+type NewUserSources struct {
+	Domain, UserNamePattern, EmailPattern string
+}
+
+// ResolveNewUser returns the effective new-user settings of a profile and
+// their sources. Each field resolves as: profile newUser, global newUser,
+// built-in default. The domain falls back to the domain of the profile
+// username. global and p may be nil.
+func ResolveNewUser(global *NewUserConfig, p *Profile) (NewUserConfig, NewUserSources) {
 	out := NewUserConfig{UserNamePattern: DefaultUserNamePattern, EmailPattern: DefaultEmailPattern}
-	if p == nil {
-		return out
-	}
-	if i := strings.LastIndex(p.Username, "@"); i >= 0 {
-		out.Domain = p.Username[i+1:]
-	}
-	if p.NewUser != nil {
-		if p.NewUser.Domain != "" {
-			out.Domain = p.NewUser.Domain
-		}
-		if p.NewUser.UserNamePattern != "" {
-			out.UserNamePattern = p.NewUser.UserNamePattern
-		}
-		if p.NewUser.EmailPattern != "" {
-			out.EmailPattern = p.NewUser.EmailPattern
+	src := NewUserSources{UserNamePattern: SourceDefault, EmailPattern: SourceDefault}
+	if p != nil {
+		if i := strings.LastIndex(p.Username, "@"); i >= 0 {
+			out.Domain, src.Domain = p.Username[i+1:], SourceUsername
 		}
 	}
+	apply := func(n *NewUserConfig, source string) {
+		if n == nil {
+			return
+		}
+		if n.Domain != "" {
+			out.Domain, src.Domain = n.Domain, source
+		}
+		if n.UserNamePattern != "" {
+			out.UserNamePattern, src.UserNamePattern = n.UserNamePattern, source
+		}
+		if n.EmailPattern != "" {
+			out.EmailPattern, src.EmailPattern = n.EmailPattern, source
+		}
+	}
+	apply(global, SourceGlobal)
+	if p != nil {
+		apply(p.NewUser, SourceProfile)
+	}
+	return out, src
+}
+
+// NewUserPatterns returns the effective new-user settings of a profile
+// (see ResolveNewUser).
+func NewUserPatterns(global *NewUserConfig, p *Profile) NewUserConfig {
+	out, _ := ResolveNewUser(global, p)
 	return out
+}
+
+// ValidateUserPattern reports unknown placeholders in pattern.
+func ValidateUserPattern(pattern string) error {
+	_, err := ExpandUserPattern(pattern, UserPatternValues{FirstName: "a", LastName: "b", ProfileName: "c", Domain: "d"})
+	return err
 }
 
 // UserPatternValues are the inputs for ExpandUserPattern.

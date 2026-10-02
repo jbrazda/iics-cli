@@ -570,7 +570,7 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		Groups:      groups,
 		Roles:       roles,
 		ProfileName: profileName,
-		Patterns:    config.NewUserPatterns(prof),
+		Patterns:    config.NewUserPatterns(cfg.GlobalNewUser(), prof),
 		UserExists: func(name string) (string, error) {
 			existing, lerr := c.FindUserByName(ctx, name)
 			if lerr != nil || existing == nil {

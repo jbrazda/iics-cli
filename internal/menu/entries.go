@@ -69,7 +69,8 @@ func DefaultEntries() []Entry {
 		{Group: "Session", Label: "Login", Description: "Sign in and refresh the session for the active profile", Args: []string{"login"}},
 		{Group: "Session", Label: "List profiles", Description: "Show configured profiles", Args: []string{"profile", "list"}, NoProfileFlag: true, SessionOnly: true},
 		{Group: "Session", Label: "Add profile", Description: "Set up a new org profile", Args: []string{"profile", "add"}, AskArg: "Profile name", NoProfileFlag: true, Writes: true, SessionOnly: true},
-		{Group: "Session", Label: "Edit active profile", Description: "Update credentials, region and production flag of the active profile", Args: []string{"profile", "edit"}, ActiveProfileArg: true, NoProfileFlag: true, Writes: true},
+		{Group: "Session", Label: "Edit active profile", Description: "Update credentials, region, production flag and new user defaults of the active profile", Args: []string{"profile", "edit"}, ActiveProfileArg: true, NoProfileFlag: true, Writes: true},
+		{Group: "Session", Label: "Edit global settings", Description: "New user defaults for all profiles, table theme, HTTP timeout, main menu", Args: []string{"config", "edit"}, NoProfileFlag: true, SessionOnly: true},
 
 		{Group: "Users", Label: "List users", Description: "Show all users", Args: []string{"user", "list"}},
 		{Group: "Users", Label: "Show user", Description: "Find a user by user name, ID, or part of a name or email and show the details", Args: []string{"user", "get"}},

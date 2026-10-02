@@ -116,6 +116,10 @@ iics logout
 ```yaml
 defaultProfile: dev
 httpTimeout: 120     # seconds; per-HTTP-request timeout (default 120)
+newUser:             # global defaults for "user create --interactive" (optional; iics config edit)
+  domain: "company.com"
+  userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
+  emailPattern: "{firstName}.{lastName}@{domain}"
 ui:
   menu: true         # false = bare "iics" prints help instead of opening the menu
 style:
@@ -132,10 +136,8 @@ profiles:
     loginUrl: "https://use4.dm-us.informaticacloud.com/saas/public/core/v3/login"
     baseApiUrl: "https://use4.dm-us.informaticacloud.com/saas"
     caiUrl: "https://use4-cai.dm-us.informaticacloud.com"
-    newUser:               # suggestions in "user create --interactive" (optional)
-      domain: "company.com"
-      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
-      emailPattern: "{firstName}.{lastName}@{domain}"
+    newUser:               # overrides the global newUser for this profile (optional)
+      emailPattern: "{firstInitial}{lastName}@{domain}"
   prod:
     name: "Production Org"
     production: true       # menu marks it and asks before changes
@@ -148,7 +150,9 @@ profiles:
 ```
 
 The `loginUrl`, `baseApiUrl`, and `caiUrl` fields are populated automatically after the first
-`iics login` - you do not need to set them manually.
+`iics login` - you do not need to set them manually. Profiles are edited with
+`iics profile add` / `iics profile edit`, global settings with `iics config edit`
+(see [config](docs/documentation/config.md)).
 
 The `style` section controls table output appearance. Available themes:
 
@@ -267,6 +271,7 @@ it easy to override credentials in CI pipelines without touching the config file
 | [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `delete`, `start`, `stop`, `restart`, `installer-info`, `installer-download` | Manage Secure Agents              |
 | [auditlog](docs/documentation/auditlog.md)           |        | `list`                                                                 | Query organization audit log (V2 API)                              |
 | [completion](docs/documentation/completion.md)       |        | `bash`, `zsh`, `fish`, `powershell`                                    | Generate shell completion scripts                                  |
+| [config](docs/documentation/config.md)               |        | `edit`                                                                 | Edit global settings (new user defaults, theme, timeout, menu)     |
 | [connection](docs/documentation/connection.md)       | `conn` | `list`, `get`, `create`, `update`, `delete`                            | Manage connections                                                 |
 | [export](docs/documentation/export.md)               |        | `run`, `start`, `status`, `download`, `create`                         | Export asset packages                                              |
 | [folder](docs/documentation/folder.md)               |        | `create`, `update`, `delete`                                           | Manage folders                                                     |

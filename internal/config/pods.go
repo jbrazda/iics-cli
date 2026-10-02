@@ -45,12 +45,17 @@ func LoginURL(region string) (string, error) {
 	return fmt.Sprintf("https://%s/saas/public/core/v3/login", host), nil
 }
 
-// ValidRegions returns a sorted comma-separated list of valid region identifiers.
-func ValidRegions() string {
+// Regions returns the valid region identifiers, sorted.
+func Regions() []string {
 	regions := make([]string, 0, len(podURLs))
 	for r := range podURLs {
 		regions = append(regions, r)
 	}
 	sort.Strings(regions)
-	return strings.Join(regions, ", ")
+	return regions
+}
+
+// ValidRegions returns a sorted comma-separated list of valid region identifiers.
+func ValidRegions() string {
+	return strings.Join(Regions(), ", ")
 }

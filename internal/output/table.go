@@ -129,7 +129,7 @@ func effectiveTheme(w io.Writer, style TableStyle) string {
 	if style.NoColor {
 		return "plain"
 	}
-	if !isTerminal(w) {
+	if !style.ForceTerminal && !isTerminal(w) {
 		if style.Theme == "" {
 			return "markdown"
 		}

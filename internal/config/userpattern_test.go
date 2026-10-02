@@ -6,16 +6,42 @@ import (
 )
 
 func TestNewUserPatterns(t *testing.T) {
-	d := NewUserPatterns(&Profile{Username: "admin@Acme.com"})
+	d := NewUserPatterns(nil, &Profile{Username: "admin@Acme.com"})
 	if d.Domain != "Acme.com" || d.UserNamePattern != DefaultUserNamePattern || d.EmailPattern != DefaultEmailPattern {
 		t.Errorf("defaults = %+v", d)
 	}
-	c := NewUserPatterns(&Profile{Username: "admin@acme.com", NewUser: &NewUserConfig{Domain: "corp.example", EmailPattern: "{firstInitial}{lastName}@{domain}"}})
+	c := NewUserPatterns(nil, &Profile{Username: "admin@acme.com", NewUser: &NewUserConfig{Domain: "corp.example", EmailPattern: "{firstInitial}{lastName}@{domain}"}})
 	if c.Domain != "corp.example" || c.UserNamePattern != DefaultUserNamePattern || c.EmailPattern != "{firstInitial}{lastName}@{domain}" {
 		t.Errorf("custom = %+v", c)
 	}
-	if n := NewUserPatterns(&Profile{Username: "admin"}); n.Domain != "" {
+	if n := NewUserPatterns(nil, &Profile{Username: "admin"}); n.Domain != "" {
 		t.Errorf("no @ in username should give no domain, got %q", n.Domain)
+	}
+}
+
+func TestResolveNewUserGlobalAndOverride(t *testing.T) {
+	global := &NewUserConfig{Domain: "global.example", UserNamePattern: "{firstName}@{domain}"}
+	p := &Profile{Username: "admin@acme.com", NewUser: &NewUserConfig{UserNamePattern: "{lastName}@{domain}"}}
+	got, src := ResolveNewUser(global, p)
+	want := NewUserConfig{Domain: "global.example", UserNamePattern: "{lastName}@{domain}", EmailPattern: DefaultEmailPattern}
+	if got != want {
+		t.Errorf("ResolveNewUser = %+v, want %+v", got, want)
+	}
+	wantSrc := NewUserSources{Domain: SourceGlobal, UserNamePattern: SourceProfile, EmailPattern: SourceDefault}
+	if src != wantSrc {
+		t.Errorf("sources = %+v, want %+v", src, wantSrc)
+	}
+	if _, src = ResolveNewUser(nil, &Profile{Username: "a@b.c"}); src.Domain != SourceUsername {
+		t.Errorf("domain source = %q, want %q", src.Domain, SourceUsername)
+	}
+}
+
+func TestValidateUserPattern(t *testing.T) {
+	if err := ValidateUserPattern(DefaultUserNamePattern); err != nil {
+		t.Errorf("default pattern: %v", err)
+	}
+	if err := ValidateUserPattern("{first}.{lastName}"); err == nil || !strings.Contains(err.Error(), "{first}") {
+		t.Errorf("err = %v, want unknown placeholder {first}", err)
 	}
 }
 

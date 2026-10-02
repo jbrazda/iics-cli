@@ -69,6 +69,9 @@ type TableStyle struct {
 	// false. Detected/overridden width, if any, is still used for layout
 	// info but never causes a column to be dropped, truncated, or wrapped.
 	SkipAdapt bool
+	// ForceTerminal renders the theme as on a terminal even when the writer
+	// is not one (theme previews rendered into a buffer).
+	ForceTerminal bool
 }
 
 // Formatter is the interface for rendering API results.

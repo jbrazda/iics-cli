@@ -3,8 +3,9 @@
 Manage IICS connection profiles stored in `~/.iics/config.yaml`.
 
 Profiles hold the credentials and region needed to connect to an IICS org. The interactive
-`add` subcommand prompts for all required values and saves them, eliminating the need to edit
-the config file manually.
+`add` and `edit` subcommands collect all values in a form and save them, eliminating the need
+to edit the config file manually. Global settings shared by all profiles are edited with
+[config edit](config.md).
 
 ## Synopsis
 
@@ -69,63 +70,66 @@ profiles:
     production: true
 ```
 
-The optional `newUser` block sets the user name and email suggested by
-`iics user create --interactive` (see
-[user - New user patterns](user.md#new-user-patterns)):
+The optional `newUser` block overrides, for this profile, the user name and
+email suggested by `iics user create --interactive`. Each field overrides the
+global `newUser` default of the same name (set with [config edit](config.md));
+see [user - New user patterns](user.md#new-user-patterns):
 
 ```yaml
+newUser:                       # global defaults (all profiles)
+  domain: company.com
 profiles:
   dev:
-    newUser:
-      domain: company.com
-      userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
-      emailPattern: "{firstName}.{lastName}@{domain}"
+    newUser:                   # overrides for dev only
+      emailPattern: "{firstInitial}{lastName}@{domain}"
 ```
 
 `profile show` lists `Production`, `New User Domain`, `User Name Pattern` and
-`Email Pattern` with defaults applied.
+`Email Pattern` with the effective value and its source (`profile`, `global`,
+`profile username` or `built-in default`).
 
-The optional top-level `style` key controls table output appearance and is shared across
-all profiles:
+Table appearance (`style`), the HTTP timeout and the main menu setting are
+global; see [config edit](config.md).
 
-```yaml
-style:
-  theme: default     # default | minimal | compact | plain | markdown | gh
-  noColor: false     # true = disable color permanently (same as --no-color flag)
-  headerColor: ""    # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex
-```
+### Profile form
 
-The `add` subcommand:
+`add`, `edit`, `login` (when the profile does not exist) and the automatic
+setup on missing credentials use the same paged form (`Enter` next field,
+`Shift+Tab` back). Stored values are filled in.
 
-- Prompts for `username`, `password` (input is masked), and `region` or custom login URL.
-- Derives `loginUrl` from the region automatically (if a known region code is entered).
-- Derives `caiUrl` from the login URL and shows it as the default for the CAI URL prompt;
-  the user can accept the derived value or type a custom URL.
-- When invoked on an existing profile name, shows the current value in brackets so you can
-  press Enter to keep it.
-- Asks whether to set the profile as the default.
-- **Offers to store the password in the OS keychain** (default: yes). When accepted, writes
-  `password: "@keyring"` to the config file instead of the plaintext password, and stores
-  the real password in the native OS keychain (macOS Keychain, Windows Credential Manager,
-  or Linux D-Bus Secret Service).
-- Presents a live preview of all available table themes and prompts you to select one.
-  The selected theme is saved to the global `style.theme` in `~/.iics/config.yaml`.
-  Press Enter to keep the current theme.
-- Saves the result to `~/.iics/config.yaml`.
-- Does not validate credentials. Run `iics login --profile <name>` afterwards to verify and
-  populate `baseApiUrl` and `caiUrl`.
+1. **Connection** - user name, password (masked; leave empty to keep the
+   current password) and region. The region list filters as you type;
+   **Custom login URL** asks for a login URL on the next page instead.
+   `loginUrl` is derived from the region.
+2. **Options** - CAI URL (optional; derived from the org URL when known),
+   production org, and whether to set the profile as the default.
+3. **Keychain** - **store the password in the OS keychain** (default: yes).
+   When accepted, `password: "@keyring"` is written to the config file and the
+   real password goes to the native OS keychain (macOS Keychain, Windows
+   Credential Manager, or Linux D-Bus Secret Service). Skipped when an
+   existing keychain password is kept.
+4. **New user** - domain, user name pattern and email pattern overrides for
+   this profile. Leave a field empty to inherit; each field shows the
+   inherited value and its source. Unknown placeholders are rejected.
+5. **Review** - the new profile, or the changes to an existing one, with
+   **Save**, **Back to editing** or **Cancel**.
+
+In accessible mode (`IICS_ACCESSIBLE=1`) the form runs as numbered line
+prompts.
+
+The `add` subcommand saves the profile without validating the credentials.
+Run `iics login --profile <name>` afterwards to verify them and populate
+`baseApiUrl` and `caiUrl`. When the name already exists, the stored values
+are filled in and the profile is updated.
 
 The `edit` subcommand:
 
 - Requires the profile to already exist (use `profile add` to create new profiles).
-- Behaves identically to `add` for prompting - shows current values as defaults.
-- After the prompts, **validates credentials by logging in** immediately. If the login fails
+- After the review, **validates credentials by logging in**. If the login fails
   the profile is not saved and the error is shown.
 - On success: saves the updated profile with org-specific `baseApiUrl` and `caiUrl` derived
   from the login response, and refreshes the session cache. You do not need to run
   `iics login` separately.
-- Presents the same live theme preview and selection menu as `add`.
-- Also offers keyring storage as the last prompt.
 
 On first `iics login` after creating a profile with `add`, the `baseApiUrl` (org-specific,
 not known before a real login) and any remaining derived URLs are written back to the profile

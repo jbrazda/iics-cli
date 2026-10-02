@@ -58,7 +58,7 @@ func TestUserSummary(t *testing.T) {
 }
 
 func TestWizardSuggestions(t *testing.T) {
-	in := UserWizardInput{ProfileName: "dev", Patterns: config.NewUserPatterns(&config.Profile{Username: "admin@acme.com"})}
+	in := UserWizardInput{ProfileName: "dev", Patterns: config.NewUserPatterns(nil, &config.Profile{Username: "admin@acme.com"})}
 	u := &client.User{FirstName: " Ann ", LastName: "Lee"}
 	if got := in.suggestions(in.Patterns.UserNamePattern, u); len(got) != 1 || got[0] != "ann.lee.dev@acme.com" {
 		t.Errorf("user name suggestion = %v", got)
