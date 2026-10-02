@@ -77,7 +77,8 @@ enter run · / filter · p profile · ? help · q quit
 
 ## Running a command
 
-1. The command line is printed, for example `$ iics role edit --profile dev`.
+1. The screen is cleared and the command line is printed, for example
+   `$ iics role edit --profile dev`.
 2. The command runs as its own process in the terminal, exactly as if you had
    typed it. Global flags the menu was started with (for example `--config`,
    `--theme`, `--no-color`) are passed on.

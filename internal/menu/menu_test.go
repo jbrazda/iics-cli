@@ -326,3 +326,28 @@ func TestLineMenu(t *testing.T) {
 		t.Error("after adding a profile all entries should be listed")
 	}
 }
+
+func TestLoopClearsBeforeEachEntry(t *testing.T) {
+	prod := State{HasProfile: true, Profiles: twoProfiles, Header: Header{Production: true}}
+	// A declined write returns straight to the menu; the next entry must
+	// still start on a clean screen.
+	h := newHarness("n\n", []Result{
+		{Kind: ResultRun, Entry: testEntries[3]},
+		{Kind: ResultRun, Entry: testEntries[2]},
+	}, map[string]State{"prd": prod})
+	h.deps.ClearScreen = func() { h.out.WriteString("<clear>") }
+	if err := Run(h.deps, "prd"); err != nil {
+		t.Fatal(err)
+	}
+	out := h.out.String()
+	cmd := strings.Index(out, "$ iics role list")
+	if cmd < 0 {
+		t.Fatalf("unexpected output:\n%s", out)
+	}
+	if !strings.HasPrefix(out, "<clear>Run \"Edit role privileges\" against PRODUCTION") {
+		t.Errorf("screen not cleared before the confirmation:\n%s", out)
+	}
+	if !strings.HasSuffix(out[:cmd], "<clear>") {
+		t.Errorf("screen not cleared before the command:\n%s", out)
+	}
+}

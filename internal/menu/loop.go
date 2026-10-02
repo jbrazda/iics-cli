@@ -162,9 +162,16 @@ func Run(d Deps, startProfile string) error {
 		if err != nil {
 			return err
 		}
-		switch res.Kind {
-		case ResultQuit:
+		if res.Kind == ResultQuit {
 			return nil
+		}
+		// Start every entry on a clean screen: the menu runs in the alternate
+		// screen, so the normal screen still shows the shell before iics or
+		// prompts from entries that returned to the menu without a pause.
+		if d.ClearScreen != nil {
+			d.ClearScreen()
+		}
+		switch res.Kind {
 		case ResultSwitchProfile:
 			if picked, perr := d.pickProfile(st.Profiles, profile); perr != nil {
 				return perr
