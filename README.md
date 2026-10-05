@@ -20,7 +20,7 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 Requires Go 1.25 or later.
 
 ```bash
-go install github.com/jbrazda/iics-cli@latest
+go install github.com/jbrazda/iics-cli/cmd/iics@latest
 ```
 
 ### From releases

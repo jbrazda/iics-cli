@@ -65,7 +65,7 @@ jobs:
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
           go build -ldflags="-s -w -X main.version=${{ github.sha }}" \
-            -o iics-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} .
+            -o iics-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} ./cmd/iics
 
       - name: Upload binary
         uses: actions/upload-artifact@v7

@@ -8,7 +8,7 @@ before:
     - go vet ./...
 
 builds:
-  - main: .
+  - main: ./cmd/iics
     binary: iics
     env:
       - CGO_ENABLED=0

@@ -5,10 +5,10 @@ LDFLAGS := -ldflags "-s -w -X main.version=$(VERSION)"
 .PHONY: build clean test vet lint fmt install completions
 
 build:
-	go build $(LDFLAGS) -o $(BINARY_NAME) .
+	go build $(LDFLAGS) -o $(BINARY_NAME) ./cmd/iics
 
 install:
-	go install $(LDFLAGS) .
+	go install $(LDFLAGS) ./cmd/iics
 
 clean:
 	rm -f $(BINARY_NAME)
@@ -27,9 +27,9 @@ lint: vet
 	@which golangci-lint > /dev/null 2>&1 && golangci-lint run ./... || true
 
 completions:
-	go run . completion bash        > completions/iics.bash
-	go run . completion zsh         > completions/iics.zsh
-	go run . completion fish        > completions/iics.fish
-	go run . completion powershell  > completions/iics.ps1
+	go run ./cmd/iics completion bash        > completions/iics.bash
+	go run ./cmd/iics completion zsh         > completions/iics.zsh
+	go run ./cmd/iics completion fish        > completions/iics.fish
+	go run ./cmd/iics completion powershell  > completions/iics.ps1
 
 all: fmt vet test clean build completions

@@ -21,10 +21,10 @@ imports, users, roles, schedules, agents, runtime environments, and more.
 
 ```text
 iics_cli/
-├── main.go                        # Entry point; injects version via ldflags
 ├── go.mod / go.sum
 ├── Makefile
 ├── cmd/                           # Cobra command definitions (thin orchestration layer)
+│   ├── iics/main.go               # Entry point; injects version via ldflags
 │   ├── root.go                    # Root command, global flags, init(), helpers
 │   ├── login.go / logout.go
 │   ├── agent.go                   # Secure agents (v2 API)
