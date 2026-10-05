@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   previous `go install github.com/jbrazda/iics-cli@latest` path no longer
   works. Release archives are unaffected.
 
+### Fixed
+
+- Main menu: global flags given when starting the menu (such as `--config`,
+  `--theme` or `--http-timeout`) are now passed on to the commands the menu
+  runs; previously they were dropped, so commands read the default config
+
 ## [0.5.6] - 2026-09-22
 
 ### Fixed

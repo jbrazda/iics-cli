@@ -95,7 +95,12 @@ func (r passthroughRunner) Run(args []string) int {
 // which the menu manages, and --output) as "--name=value" arguments.
 func globalFlagArgs(root *cobra.Command) []string {
 	var out []string
-	root.PersistentFlags().Visit(func(f *pflag.Flag) {
+	// Not Visit: cobra parses on the invoked command's own flag set, so the
+	// root set never records which of its flags were set.
+	root.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		if !f.Changed {
+			return
+		}
 		switch f.Name {
 		case "profile", "output", "help":
 			return
