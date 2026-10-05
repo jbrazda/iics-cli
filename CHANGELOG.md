@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The main package moved to `cmd/iics`, so `go install` and `make install`
+  now produce a binary named `iics` instead of `iics-cli`. Install from
+  source with `go install github.com/jbrazda/iics-cli/cmd/iics@latest`; the
+  previous `go install github.com/jbrazda/iics-cli@latest` path no longer
+  works. Release archives are unaffected.
+
 ## [0.5.6] - 2026-09-22
 
 ### Fixed
