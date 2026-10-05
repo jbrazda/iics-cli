@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Main menu: **Delete profile** entry in the Session group picks a profile
+  from the list and runs `profile delete` for it
+
 ### Changed
 
 - The main package moved to `cmd/iics`, so `go install` and `make install`

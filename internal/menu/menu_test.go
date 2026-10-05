@@ -174,6 +174,11 @@ func (f *fakeRunner) Run(args []string) int {
 	return c
 }
 
+// runnerFunc adapts a function to Runner.
+type runnerFunc func(args []string) int
+
+func (f runnerFunc) Run(args []string) int { return f(args) }
+
 type loopHarness struct {
 	deps    Deps
 	runner  *fakeRunner
@@ -278,6 +283,62 @@ func TestLoopSwitchProfileAndSetDefault(t *testing.T) {
 	}
 	if h.def != "prd" {
 		t.Errorf("default profile = %q, want prd", h.def)
+	}
+}
+
+func TestLoopDeleteProfile(t *testing.T) {
+	del := Entry{Group: "Session", Label: "Delete profile", Description: "d", Args: []string{"profile", "delete"}, PickProfile: "Delete profile", NoProfileFlag: true, SessionOnly: true}
+	if got := del.CommandArgs("dev", "qa"); !reflect.DeepEqual(got, []string{"profile", "delete", "qa"}) {
+		t.Errorf("CommandArgs = %v", got)
+	}
+
+	three := []ProfileInfo{{Name: "dev"}, {Name: "prd", Production: true}, {Name: "qa", Default: true}}
+	states := map[string]State{
+		"dev": {HasProfile: true, Profiles: three},
+		"qa":  {HasProfile: true, Profiles: three},
+	}
+	// Cancel the picker, delete another profile (2 = prd), delete the active
+	// profile (1 = dev), then run a read on the profile the menu fell back to.
+	h := newHarness("0\n2\n1\n", []Result{
+		{Kind: ResultRun, Entry: del},
+		{Kind: ResultRun, Entry: del},
+		{Kind: ResultRun, Entry: del},
+		{Kind: ResultRun, Entry: testEntries[2]},
+	}, states)
+	h.deps.Runner = runnerFunc(func(args []string) int {
+		if args[1] == "delete" && args[2] == "dev" {
+			gone := []ProfileInfo{{Name: "prd", Production: true}, {Name: "qa", Default: true}}
+			h.states["dev"] = State{Profiles: gone}
+			h.states["qa"] = State{HasProfile: true, Profiles: gone}
+		}
+		return h.runner.Run(args)
+	})
+	if err := Run(h.deps, "dev"); err != nil {
+		t.Fatal(err)
+	}
+	want := [][]string{
+		{"profile", "delete", "prd"},
+		{"profile", "delete", "dev"},
+		{"role", "list", "--profile", "qa"},
+	}
+	if !reflect.DeepEqual(h.runner.calls, want) {
+		t.Errorf("calls = %v, want %v", h.runner.calls, want)
+	}
+}
+
+func TestRemainingProfile(t *testing.T) {
+	ps := []ProfileInfo{{Name: "a"}, {Name: "b", Default: true}}
+	if got := remainingProfile(ps, "a"); got != "a" {
+		t.Errorf("kept profile = %q, want a", got)
+	}
+	if got := remainingProfile(ps, "gone"); got != "b" {
+		t.Errorf("fallback = %q, want default b", got)
+	}
+	if got := remainingProfile([]ProfileInfo{{Name: "a"}, {Name: "c"}}, "gone"); got != "a" {
+		t.Errorf("fallback = %q, want first a", got)
+	}
+	if got := remainingProfile(nil, "gone"); got != "" {
+		t.Errorf("fallback = %q, want empty", got)
 	}
 }
 

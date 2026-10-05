@@ -28,18 +28,21 @@ type Entry struct {
 	ActiveProfileArg bool
 	// AskArg prompts for a text argument appended to Args (label shown).
 	AskArg string
+	// PickProfile prompts for a configured profile whose name is appended to
+	// Args (picker title shown).
+	PickProfile string
 	// SessionOnly entries stay usable when no profile is configured.
 	SessionOnly bool
 }
 
 // CommandArgs returns the arguments to run for the entry with the active
-// profile, and the text argument from AskArg when given.
+// profile, and the argument from AskArg or PickProfile when given.
 func (e Entry) CommandArgs(profile, asked string) []string {
 	args := append([]string(nil), e.Args...)
 	if e.ActiveProfileArg && profile != "" {
 		args = append(args, profile)
 	}
-	if e.AskArg != "" && asked != "" {
+	if (e.AskArg != "" || e.PickProfile != "") && asked != "" {
 		args = append(args, asked)
 	}
 	if !e.NoProfileFlag && profile != "" {
@@ -70,6 +73,7 @@ func DefaultEntries() []Entry {
 		{Group: "Session", Label: "List profiles", Description: "Show configured profiles", Args: []string{"profile", "list"}, NoProfileFlag: true, SessionOnly: true},
 		{Group: "Session", Label: "Add profile", Description: "Set up a new org profile", Args: []string{"profile", "add"}, AskArg: "Profile name", NoProfileFlag: true, Writes: true, SessionOnly: true},
 		{Group: "Session", Label: "Edit active profile", Description: "Update credentials, region, production flag and new user defaults of the active profile", Args: []string{"profile", "edit"}, ActiveProfileArg: true, NoProfileFlag: true, Writes: true},
+		{Group: "Session", Label: "Delete profile", Description: "Pick a profile and delete it with its cached session and keychain entry", Args: []string{"profile", "delete"}, PickProfile: "Delete profile", NoProfileFlag: true, Writes: true, SessionOnly: true},
 		{Group: "Session", Label: "Edit global settings", Description: "New user defaults for all profiles, table theme, HTTP timeout, main menu", Args: []string{"config", "edit"}, NoProfileFlag: true, SessionOnly: true},
 
 		{Group: "Users", Label: "List users", Description: "Show all users", Args: []string{"user", "list"}},

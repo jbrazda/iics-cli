@@ -173,7 +173,7 @@ func Run(d Deps, startProfile string) error {
 		}
 		switch res.Kind {
 		case ResultSwitchProfile:
-			if picked, perr := d.pickProfile(st.Profiles, profile); perr != nil {
+			if picked, perr := d.pickProfile("Switch profile", st.Profiles, profile); perr != nil {
 				return perr
 			} else if picked != "" {
 				profile = picked
@@ -214,9 +214,26 @@ func Run(d Deps, startProfile string) error {
 					continue
 				}
 			}
+			if e.PickProfile != "" {
+				asked, err = d.pickProfile(e.PickProfile, st.Profiles, profile)
+				if err != nil {
+					return err
+				}
+				if asked == "" {
+					continue
+				}
+			}
 			code = d.run(dim, e.CommandArgs(profile, asked))
 			if code == 0 && e.AskArg != "" && !st.HasProfile {
 				profile = asked // first profile just added
+			}
+			if e.PickProfile != "" && asked == profile {
+				// The active profile may be gone: fall back to another one.
+				after, lerr := d.LoadState(profile)
+				if lerr != nil {
+					return lerr
+				}
+				profile = remainingProfile(after.Profiles, profile)
 			}
 		}
 
@@ -294,12 +311,12 @@ func lineMenu(d Deps, entries []Entry, st State) (Result, error) {
 	return Result{Kind: ResultRun, Entry: e}, nil
 }
 
-func (d Deps) pickProfile(profiles []ProfileInfo, current string) (string, error) {
+func (d Deps) pickProfile(title string, profiles []ProfileInfo, current string) (string, error) {
 	if len(profiles) == 0 {
 		_, _ = fmt.Fprintln(d.Out, "No profiles configured.")
 		return "", nil
 	}
-	idx, err := tui.PickOne(d.Prompter, "Switch profile", profiles, func(p ProfileInfo) string {
+	idx, err := tui.PickOne(d.Prompter, title, profiles, func(p ProfileInfo) string {
 		label := p.Name
 		if p.Region != "" {
 			label += "  " + p.Region
@@ -319,4 +336,19 @@ func (d Deps) pickProfile(profiles []ProfileInfo, current string) (string, error
 		return "", err
 	}
 	return profiles[idx].Name, nil
+}
+
+// remainingProfile returns current while it is still configured, otherwise
+// the default profile, the first profile, or "" when none is left.
+func remainingProfile(profiles []ProfileInfo, current string) string {
+	next := ""
+	for i, p := range profiles {
+		if p.Name == current {
+			return current
+		}
+		if p.Default || i == 0 {
+			next = p.Name
+		}
+	}
+	return next
 }

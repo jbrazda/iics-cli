@@ -93,6 +93,10 @@ enter run · / filter · p profile · ? help · q quit
   then `defaultProfile` from the config.
 - **Switch profile** (`p`) changes the profile for this menu session only.
 - **Set as default profile** writes `defaultProfile` to the config file.
+- **Delete profile** lists the configured profiles, then runs
+  `profile delete <name>` for the one you pick, which asks for confirmation.
+  If the active profile is deleted, the menu continues on the default
+  profile, or on the first remaining profile when there is no default.
 - With no profiles configured, the menu starts `profile add` first. If that is
   canceled, only the Session entries are available.
 
@@ -112,7 +116,7 @@ On a production profile:
 
 | Group                   | Entries                                                                 |
 | ----------------------- | ----------------------------------------------------------------------- |
-| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Edit global settings |
+| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Delete profile ✎, Edit global settings |
 | Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎ |
 | User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                             |
 | Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎               |

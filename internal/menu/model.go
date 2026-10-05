@@ -382,7 +382,7 @@ func (m *Model) View() string {
 			if binary == "" {
 				binary = "iics"
 			}
-			b.WriteString(m.styles.cmd.Render(truncate("$ "+CommandLine(binary, e.CommandArgs(h.Profile, "<"+strings.ToLower(e.AskArg)+">")), w)))
+			b.WriteString(m.styles.cmd.Render(truncate("$ "+CommandLine(binary, e.CommandArgs(h.Profile, argPlaceholder(e))), w)))
 		}
 		b.WriteString("\n")
 	}
@@ -411,4 +411,12 @@ func orDash(s string) string {
 		return "-"
 	}
 	return s
+}
+
+// argPlaceholder is the stand-in shown for an argument the entry asks for.
+func argPlaceholder(e Entry) string {
+	if e.PickProfile != "" {
+		return "<profile>"
+	}
+	return "<" + strings.ToLower(e.AskArg) + ">"
 }
