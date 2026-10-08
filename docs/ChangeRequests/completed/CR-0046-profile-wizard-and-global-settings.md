@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented, pending confirmation.
+Completed.
 
 ## Summary
 
