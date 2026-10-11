@@ -2,7 +2,7 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-> For the full authoritative reference (patterns, struct rules, API versioning, examples), read **`docs/AGENTS.md`** first.
+> For the full authoritative reference (patterns, struct rules, API versioning, examples), read **`docs/CLAUDE.md`** first.
 
 ---
 
@@ -149,4 +149,4 @@ Commit the updated files in `completions/` together with the code change.
 - Generate Markdown that follows the [Markdown Lint Rules](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md)
 - Do **not** use em dashes (`-`) in generated Markdown; use a regular hyphen (`-`) instead
 
-See [docs/AGENTS.md](docs/AGENTS.md) for complete code templates for all four files.
+See [docs/CLAUDE.md](docs/CLAUDE.md) for complete code templates for all four files.
