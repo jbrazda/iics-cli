@@ -22,25 +22,25 @@ iics securitylog <subcommand> [flags]
 
 ### Flags
 
-| Flag      | Type   | Default | Description                                       |
-| --------- | ------ | ------- | ------------------------------------------------- |
+| Flag      | Type   | Default | Description                                                |
+| --------- | ------ | ------- | ---------------------------------------------------------- |
 | `--start` | string |         | Start time in ISO 8601 format, e.g. `2026-01-01T00:00:00Z` |
-| `--end`   | string |         | End time in ISO 8601 format                       |
-| `--limit` | int    | 200     | Max results                                       |
-| `--skip`  | int    | 0       | Results to skip                                   |
+| `--end`   | string |         | End time in ISO 8601 format                                |
+| `--limit` | int    | 200     | Max results                                                |
+| `--skip`  | int    | 0       | Results to skip                                            |
 
 All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column       | Description                              |
-| ------------ | ---------------------------------------- |
-| `entryTime`  | Timestamp of the audit event             |
-| `userName`   | User who performed the action            |
+| Column       | Description                                        |
+| ------------ | -------------------------------------------------- |
+| `entryTime`  | Timestamp of the audit event                       |
+| `userName`   | User who performed the action                      |
 | `action`     | Action taken (LOGIN, CREATE, UPDATE, DELETE, etc.) |
-| `objectType` | Type of object affected                  |
-| `status`     | Outcome: SUCCESS or FAILED               |
-| `sourceIp`   | IP address of the client                 |
+| `objectType` | Type of object affected                            |
+| `status`     | Outcome: SUCCESS or FAILED                         |
+| `sourceIp`   | IP address of the client                           |
 
 ### Examples
 

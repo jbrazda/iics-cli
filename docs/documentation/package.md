@@ -402,7 +402,7 @@ Use `--order-by` to override the default sort in either mode.
 | `--order-by`           |       | string      |          |                                                | Sort output by field: `path`, `type`, `status`, `warning`, `location`, `dependency`                  |
 | `--exclude`            | `-e`  | string      |          |                                                | Regex matched against `path.type` - excludes from BFS resolution                                     |
 | `--exclude-file`       |       | string      |          |                                                | Regex policy file; each matching `path.type` is excluded from BFS resolution                         |
-| `--filter`             |       | string      |          |                                                | Regex matched against `location` (`(Explore|SYS)/path.type`) - filters final output only             |
+| `--filter`             |       | string      |          |                                                | Regex matched against `location` (`(Explore\|SYS)/path.type`) - filters final output only             |
 | `--output-file`        |       | string      |          |                                                | Write output to a file                                                                               |
 | `--output-file-format` |       | string      |          | `yaml`                                         | Output file format: `table`, `json`, `csv`, `yaml`                                                   |
 | `--output-file-fields` |       | string      |          | `location,dependency,type,path,status,warning` | Comma-separated fields for output file rows                                                          |
@@ -425,7 +425,7 @@ API-resolved during traversal.
 
 | Column       | JSON field   | Description                                                                                          |
 |--------------|--------------|------------------------------------------------------------------------------------------------------|
-| `LOCATION`   | `location`   | Asset identifier as `(Explore|SYS)/path.type`                                                        |
+| `LOCATION`   | `location`   | Asset identifier as `(Explore\|SYS)/path.type`                                                        |
 | `DEPENDENCY` | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
 | `TYPE`       | `type`       | Asset type                                                                                           |
 | `PATH`       | `path`       | Asset path without `Explore/` prefix                                                                 |
@@ -434,7 +434,7 @@ API-resolved during traversal.
 
 | Column          | JSON field   | Description                                                                                          |
 |-----------------|--------------|------------------------------------------------------------------------------------------------------|
-| `LOCATION`      | `location`   | Asset identifier as `(Explore|SYS)/path.type`                                                        |
+| `LOCATION`      | `location`   | Asset identifier as `(Explore\|SYS)/path.type`                                                        |
 | `DEPENDENCY`    | `dependency` | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
 | `TYPE`          | `type`       | Asset type                                                                                           |
 | `PATH`          | `path`       | Asset path without `Explore/` prefix                                                                 |
@@ -445,7 +445,7 @@ API-resolved during traversal.
 
 | Column          | JSON field    | Description                                                                                          |
 |-----------------|---------------|------------------------------------------------------------------------------------------------------|
-| `LOCATION`      | `location`    | Asset identifier as `(Explore|SYS)/path.type`                                                        |
+| `LOCATION`      | `location`    | Asset identifier as `(Explore\|SYS)/path.type`                                                        |
 | `DEPENDENCY`    | `dependency`  | `explicit` for checksum-backed package assets, `transitive` for metadata-only or API-resolved assets |
 | `STATUS (dev)`  | `status_dev`  | Per-profile status; color-coded                                                                      |
 | `STATUS (qa)`   | `status_qa`   | Per-profile status; color-coded                                                                      |

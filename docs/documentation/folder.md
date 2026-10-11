@@ -22,12 +22,12 @@ iics folder <subcommand> [flags]
 
 ### Flags
 
-| Flag              | Type   | Required | Description                                              |
-| ----------------- | ------ | -------- | -------------------------------------------------------- |
-| `--name`          | string | yes      | Folder name                                              |
-| `--description`   | string |          | Folder description                                       |
-| `--project-id`    | string |          | Parent project ID (mutually exclusive with `--project-name`) |
-| `--project-name`  | string |          | Parent project name (mutually exclusive with `--project-id`) |
+| Flag             | Type   | Required | Description                                                  |
+| ---------------- | ------ | -------- | ------------------------------------------------------------ |
+| `--name`         | string | yes      | Folder name                                                  |
+| `--description`  | string |          | Folder description                                           |
+| `--project-id`   | string |          | Parent project ID (mutually exclusive with `--project-name`) |
+| `--project-name` | string |          | Parent project name (mutually exclusive with `--project-id`) |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -63,14 +63,14 @@ iics folder create --name "Staging" --project-name "Finance ETL" `
 
 ### Flags
 
-| Flag              | Type   | Required | Description                                                |
-| ----------------- | ------ | -------- | ---------------------------------------------------------- |
-| `--id`            | string |          | Folder ID                                                  |
-| `--name`          | string |          | New folder name                                            |
-| `--description`   | string |          | New description                                            |
-| `--project-id`    | string |          | Parent project ID                                          |
-| `--project-name`  | string |          | Parent project name                                        |
-| `--folder-name`   | string |          | Current folder name (use with `--project-name` to identify) |
+| Flag             | Type   | Required | Description                                                 |
+| ---------------- | ------ | -------- | ----------------------------------------------------------- |
+| `--id`           | string |          | Folder ID                                                   |
+| `--name`         | string |          | New folder name                                             |
+| `--description`  | string |          | New description                                             |
+| `--project-id`   | string |          | Parent project ID                                           |
+| `--project-name` | string |          | Parent project name                                         |
+| `--folder-name`  | string |          | Current folder name (use with `--project-name` to identify) |
 
 All [global flags](../../README.md#global-flags) apply.
 

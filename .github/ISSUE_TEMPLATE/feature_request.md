@@ -12,7 +12,7 @@ A clear description of the problem. E.g., "I'm always frustrated when..."
 **Describe the solution you'd like**
 What you want to happen. Include example CLI usage if applicable:
 
-```
+```bash
 iics <proposed-command> <proposed-flags>
 ```
 

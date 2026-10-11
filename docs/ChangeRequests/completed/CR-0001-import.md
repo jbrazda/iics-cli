@@ -26,7 +26,7 @@
     - print polling results including the timestamp and job status
     - print total job duration
   - add --detailedPolling Print list of imported objects object details on each poll and overall progress of imported objects otherwise print just timestamp status and duration
-  - add --printImportLog  which the import job via /public/core/v3/import/<id>/log log and print to console
+  - add --printImportLog  which the import job via `/public/core/v3/import/<id>/log` log and print to console
     - for table print job summary table and table with objects
   - Always download and print importLog in case of import errors
   - Always print final status of the job formatted according to --output and --expand flags Print job summary and object list table

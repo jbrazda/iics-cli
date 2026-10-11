@@ -13,12 +13,12 @@ iics sc <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                                              |
-| ---------- | -------------------------------------------------------- |
-| `checkout` | Check out an object for editing                         |
-| `checkin`  | Check in an object with a commit comment                |
-| `pull`     | Pull latest changes from the source control repository  |
-| `commit`   | Commit pending changes to the repository                |
+| Subcommand | Description                                            |
+| ---------- | ------------------------------------------------------ |
+| `checkout` | Check out an object for editing                        |
+| `checkin`  | Check in an object with a commit comment               |
+| `pull`     | Pull latest changes from the source control repository |
+| `commit`   | Commit pending changes to the repository               |
 
 ---
 
@@ -72,9 +72,9 @@ Check in an object after editing, adding a commit comment.
 
 ### Flags
 
-| Flag          | Type   | Required | Description                     |
-| ------------- | ------ | -------- | ------------------------------- |
-| `--object-id` | string | yes      | Object ID to check in           |
+| Flag          | Type   | Required | Description                       |
+| ------------- | ------ | -------- | --------------------------------- |
+| `--object-id` | string | yes      | Object ID to check in             |
 | `--comment`   | string |          | Commit comment for source control |
 
 All [global flags](../../README.md#global-flags) apply.

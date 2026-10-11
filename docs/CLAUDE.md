@@ -99,16 +99,16 @@ iics_cli/
 
 ## Key Dependencies
 
-| Package                             | Version | Purpose                          |
-| ----------------------------------- | ------- | -------------------------------- |
-| `github.com/spf13/cobra`            | v1.10.2 | CLI framework                    |
-| `github.com/spf13/viper`            | v1.21.0 | Config file + env var management |
-| `github.com/charmbracelet/lipgloss` | v1.1.0  | Table output and terminal styles |
-| `github.com/charmbracelet/huh`      | v1.0.0  | Interactive forms and selects    |
-| `github.com/charmbracelet/bubbletea` | v1.3.10 | TUI models (`internal/tui/`)    |
-| `github.com/charmbracelet/bubbles`  | v1.0.0  | TUI components (text input)      |
-| `github.com/mattn/go-isatty`        | v0.0.20 | TTY detection for color fallback |
-| `gopkg.in/yaml.v3`                  | v3.0.1  | Session cache serialization      |
+| Package                              | Version | Purpose                          |
+| ------------------------------------ | ------- | -------------------------------- |
+| `github.com/spf13/cobra`             | v1.10.2 | CLI framework                    |
+| `github.com/spf13/viper`             | v1.21.0 | Config file + env var management |
+| `github.com/charmbracelet/lipgloss`  | v1.1.0  | Table output and terminal styles |
+| `github.com/charmbracelet/huh`       | v1.0.0  | Interactive forms and selects    |
+| `github.com/charmbracelet/bubbletea` | v1.3.10 | TUI models (`internal/tui/`)     |
+| `github.com/charmbracelet/bubbles`   | v1.0.0  | TUI components (text input)      |
+| `github.com/mattn/go-isatty`         | v0.0.20 | TTY detection for color fallback |
+| `gopkg.in/yaml.v3`                   | v3.0.1  | Session cache serialization      |
 
 No external HTTP library - uses standard `net/http` only.
 
@@ -491,13 +491,13 @@ Supports dot notation for nested fields:
 
 ## Global Flags (from `cmd/root.go`)
 
-| Flag               | Variable    | Default               | Description            |       |      |
-| ------------------ | ----------- | --------------------- | ---------------------- | ----- | ---- |
-| `--config`         | `cfgFile`   | `~/.iics/config.yaml` | Config file path       |       |      |
-| `--profile` / `-p` | `profile`   | from config           | Profile name           |       |      |
-| `--output` / `-o`  | `outputFmt` | `"table"`             | Output format: `table\ | json\ | csv` |
-| `--verbose` / `-v` | `verbose`   | `false`               | Verbose output         |       |      |
-| `--no-color`       | `noColor`   | `false`               | Disable color          |       |      |
+| Flag               | Variable          | Default                 | Description                                                                                                                                     |
+| ------------------ | ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--config`         | `cfgFile`         | `~/.iics/config.yaml`   | Config file path                                                                                                                                |
+| `--profile` / `-p` | `profile`         | from config             | Profile name                                                                                                                                    |
+| `--output` / `-o`  | `outputFmt`       | `"table"`               | Output format: `table\|json\|csv`                                                                                                               |
+| `--verbose` / `-v` | `verbose`         | `false`                 | Verbose output                                                                                                                                  |
+| `--no-color`       | `noColor`         | `false`                 | Disable color                                                                                                                                   |
 | `--http-timeout`   | `httpTimeoutFlag` | `0` (resolves to `120`) | Per-HTTP-request timeout in seconds; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT`. Independent of `--max-wait-time` (job polling only). |
 
 `verbose` is a package-level `bool` in the `cmd` package - access it directly in `RunE` closures.
@@ -522,13 +522,13 @@ profiles:
 
 **Environment variable overrides (highest precedence):**
 
-| Env var          | Overrides        |
-| ---------------- | ---------------- |
-| `IICS_PROFILE`   | `--profile` flag |
-| `IICS_USERNAME`  | profile username |
-| `IICS_PASSWORD`  | profile password |
-| `IICS_REGION`    | profile region   |
-| `IICS_LOGIN_URL` | profile loginUrl |
+| Env var             | Overrides                                                                                                 |
+| ------------------- | --------------------------------------------------------------------------------------------------------- |
+| `IICS_PROFILE`      | `--profile` flag                                                                                          |
+| `IICS_USERNAME`     | profile username                                                                                          |
+| `IICS_PASSWORD`     | profile password                                                                                          |
+| `IICS_REGION`       | profile region                                                                                            |
+| `IICS_LOGIN_URL`    | profile loginUrl                                                                                          |
 | `IICS_HTTP_TIMEOUT` | `httpTimeout` config value (per-request timeout in seconds; `--http-timeout` flag wins if explicitly set) |
 
 **Session cache:** `~/.iics/sessions.yaml`

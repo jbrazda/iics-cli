@@ -119,8 +119,8 @@ Create a new connection from a JSON definition file.
 
 ### Flags
 
-| Flag          | Type   | Required | Description                          |
-| ------------- | ------ | -------- | ------------------------------------ |
+| Flag          | Type   | Required | Description                                        |
+| ------------- | ------ | -------- | -------------------------------------------------- |
 | `--from-file` | string | yes      | Path to a JSON file with the connection definition |
 
 All [global flags](../../README.md#global-flags) apply.
@@ -161,9 +161,9 @@ Update an existing connection from a JSON file. Only fields present in the file 
 
 ### Flags
 
-| Flag          | Type   | Required | Description                          |
-| ------------- | ------ | -------- | ------------------------------------ |
-| `--id`        | string | yes      | Connection ID to update              |
+| Flag          | Type   | Required | Description                                 |
+| ------------- | ------ | -------- | ------------------------------------------- |
+| `--id`        | string | yes      | Connection ID to update                     |
 | `--from-file` | string | yes      | Path to a JSON file with the updated fields |
 
 All [global flags](../../README.md#global-flags) apply.

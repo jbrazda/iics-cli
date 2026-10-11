@@ -11,13 +11,13 @@ iics imp <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand       | Description                                                |
-| ---------------- | ---------------------------------------------------------- |
-| `run`            | Full pipeline: upload, start, poll, download log          |
-| `upload`         | Upload a ZIP package and get a job ID                     |
-| `start`          | Start an import job from an uploaded package              |
-| `status`         | Check import job status                                    |
-| `download-log`   | Download the import log to a file                         |
+| Subcommand     | Description                                      |
+| -------------- | ------------------------------------------------ |
+| `run`          | Full pipeline: upload, start, poll, download log |
+| `upload`       | Upload a ZIP package and get a job ID            |
+| `start`        | Start an import job from an uploaded package     |
+| `status`       | Check import job status                          |
+| `download-log` | Download the import log to a file                |
 
 ---
 
@@ -27,19 +27,19 @@ The recommended command for most use cases. Uploads the ZIP, starts the import, 
 
 ### Flags
 
-| Flag                    | Short | Type   | Required | Default         | Description                                                  |
-| ----------------------- | ----- | ------ | -------- | --------------- | ------------------------------------------------------------ |
-| `--zip-file`            | `-z`  | string | yes      |                 | ZIP package to import                                        |
-| `--name`                |       | string |          | zip filename    | Import job name                                              |
-| `--conflict-resolution` |       | string |          | `REUSE`         | How to handle conflicts: `REUSE` or `OVERWRITE`             |
-| `--from-file`           |       | string |          |                 | JSON file with full import specification (overrides other flags) |
-| `--polling-interval`    |       | int    |          | 10              | Seconds between status polls                                 |
-| `--max-wait-time`       |       | int    |          | 300             | Maximum seconds to wait                                      |
-| `--detailed-polling`    |       | bool   |          | false           | Print per-object status on every poll                        |
-| `--print-import-log`    |       | bool   |          | false           | Print the import log after completion                        |
-| `--expand`              |       | bool   |          | false           | Expand object list in final output                           |
-| `--object-status-fields`|       | string |          | see below       | Comma-separated list of object fields to display             |
-| `--log-file`            |       | string |          |                 | Append a Markdown release report section; use `--log-file=PATH` to override default path |
+| Flag                     | Short | Type   | Required | Default      | Description                                                                              |
+| ------------------------ | ----- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `--zip-file`             | `-z`  | string | yes      |              | ZIP package to import                                                                    |
+| `--name`                 |       | string |          | zip filename | Import job name                                                                          |
+| `--conflict-resolution`  |       | string |          | `REUSE`      | How to handle conflicts: `REUSE` or `OVERWRITE`                                          |
+| `--from-file`            |       | string |          |              | JSON file with full import specification (overrides other flags)                         |
+| `--polling-interval`     |       | int    |          | 10           | Seconds between status polls                                                             |
+| `--max-wait-time`        |       | int    |          | 300          | Maximum seconds to wait                                                                  |
+| `--detailed-polling`     |       | bool   |          | false        | Print per-object status on every poll                                                    |
+| `--print-import-log`     |       | bool   |          | false        | Print the import log after completion                                                    |
+| `--expand`               |       | bool   |          | false        | Expand object list in final output                                                       |
+| `--object-status-fields` |       | string |          | see below    | Comma-separated list of object fields to display                                         |
+| `--log-file`             |       | string |          |              | Append a Markdown release report section; use `--log-file=PATH` to override default path |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -272,11 +272,11 @@ Download the import log file for a completed job.
 
 ### Flags
 
-| Flag          | Type   | Required | Default                        | Description                              |
-| ------------- | ------ | -------- | ------------------------------ | ---------------------------------------- |
-| `--id`        | string | yes      |                                | Import job ID                            |
-| `--log-path`  | string | yes      |                                | Directory to save the log file           |
-| `--log-name`  | string |          | `<name>_<id>_<status>.log`    | Log filename                             |
+| Flag         | Type   | Required | Default                    | Description                    |
+| ------------ | ------ | -------- | -------------------------- | ------------------------------ |
+| `--id`       | string | yes      |                            | Import job ID                  |
+| `--log-path` | string | yes      |                            | Directory to save the log file |
+| `--log-name` | string |          | `<name>_<id>_<status>.log` | Log filename                   |
 
 All [global flags](../../README.md#global-flags) apply.
 

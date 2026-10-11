@@ -11,13 +11,13 @@ terminal.
 
 ## Keys
 
-| Prompt       | Keys                                                                 |
-| ------------ | -------------------------------------------------------------------- |
-| Text input   | Type, `Enter` to accept (an empty value keeps the shown default)     |
-| Single list  | Arrows or `j` / `k` to move, `/` to filter (`Esc` clears the filter), `Enter` to choose, `Ctrl+C` to cancel |
-| Checklist    | `Space` or `x` to toggle, `/` to filter, `Ctrl+A` to select all, `Enter` to confirm |
-| Yes / No     | Left / right or `y` / `n`, `Enter` to confirm                        |
-| Any prompt   | `Ctrl+C` cancels the command                                         |
+| Prompt      | Keys                                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------- |
+| Text input  | Type, `Enter` to accept (an empty value keeps the shown default)                                            |
+| Single list | Arrows or `j` / `k` to move, `/` to filter (`Esc` clears the filter), `Enter` to choose, `Ctrl+C` to cancel |
+| Checklist   | `Space` or `x` to toggle, `/` to filter, `Ctrl+A` to select all, `Enter` to confirm                         |
+| Yes / No    | Left / right or `y` / `n`, `Enter` to confirm                                                               |
+| Any prompt  | `Ctrl+C` cancels the command                                                                                |
 
 Checklists open with the current values already checked (for example a user's
 current groups and roles), so confirming without changes keeps them.

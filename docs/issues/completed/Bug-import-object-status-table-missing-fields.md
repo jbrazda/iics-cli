@@ -5,7 +5,7 @@
 When running `iics import run` with `--expand` or `--detailed-polling`, the "Imported Objects"
 table prints rows with blank ID, NAME, and TYPE columns. Only STATUS and MESSAGE are populated:
 
-```
+```text
 Imported Objects:
 ┌────┬──────┬──────┬────────────┬───────────────────────────┐
 │ ID │ NAME │ TYPE │   STATUS   │          MESSAGE          │
@@ -17,7 +17,7 @@ Imported Objects:
 
 Expected output (illustrative):
 
-```
+```text
 Imported Objects:
 ┌────────────────────────┬──────────────────────────────┬───────────────────────────────┬──────────────────────┬────────────┬───────────────────────────┐
 │       SOURCE ID        │        SOURCE PATH           │         SOURCE NAME           │    TARGET NAME       │   STATE    │          MESSAGE          │
@@ -171,7 +171,7 @@ type ImportJob struct {
 
 Default columns (field names match `FlatImportObject` JSON tags):
 
-```
+```text
 sourceId, sourcePath, sourceName, targetName, state, message
 ```
 

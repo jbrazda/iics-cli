@@ -35,26 +35,26 @@ For `--output table` (default), render three sections instead of a single flat r
 
 **Section 1 - User Details** (property/value pairs):
 
-| Property        | Value                        |
-|-----------------|------------------------------|
-| id              | 9IB4JZitmQDhj2cLTgWS64       |
-| orgId           | iGefnn2sAmxbnCx8WdS5mb       |
-| userName        | jaroslav.brazda.dev@natl.com |
-| firstName       | Jaroslav                     |
-| lastName        | Brazda                       |
-| email           | jaroslav.brazda@natl.com     |
-| phone           | 1234567890                   |
-| state           | Enabled                      |
-| timeZoneId      | America/New_York             |
-| title           | App Analyst Dev Consultant   |
-| authentication  | Native                       |
-| lastLoginMode   | API                          |
-| lastLoginTime   | 2026-04-08T20:37:55Z         |
-| maxLoginAttempts| 10                           |
-| createTime      | 2021-05-03T18:11:59.000Z     |
-| createdBy       | paul.luc@natl.com.dev        |
-| updateTime      | 2026-04-08T11:45:51.000Z     |
-| updatedBy       | System built-in user         |
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| id               | 9IB4JZitmQDhj2cLTgWS64         |
+| orgId            | iGefnn2sAmxbnCx8WdS5mb         |
+| userName         | <jaroslav.brazda.dev@natl.com> |
+| firstName        | Jaroslav                       |
+| lastName         | Brazda                         |
+| email            | <jaroslav.brazda@natl.com>     |
+| phone            | 1234567890                     |
+| state            | Enabled                        |
+| timeZoneId       | America/New_York               |
+| title            | App Analyst Dev Consultant     |
+| authentication   | Native                         |
+| lastLoginMode    | API                            |
+| lastLoginTime    | 2026-04-08T20:37:55Z           |
+| maxLoginAttempts | 10                             |
+| createTime       | 2021-05-03T18:11:59.000Z       |
+| createdBy        | <paul.luc@natl.com.dev>        |
+| updateTime       | 2026-04-08T11:45:51.000Z       |
+| updatedBy        | System built-in user           |
 
 **Section 2 - Groups:**
 
@@ -186,6 +186,7 @@ Bulk errors are printed to stderr. Stdout receives only the summary table.
 ### 5 - `user update`: interactive role/group management
 
 API docs:
+
 - Update user: <https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/platform-rest-api-version-3-resources/users/updating-a-user.html>
 - Update role assignments: <https://docs.informatica.com/cloud-common-services/administrator/current-version/rest-api-reference/platform-rest-api-version-3-resources/users/updating-role-assignments.html>
 
@@ -193,6 +194,7 @@ Apply the same lookup pattern from reset-password (sections --id / --username / 
 search) to identify the user to update.
 
 **`--interactive` flag:**
+
 1. Resolve the target user (via `--id`, `--username`, or interactive search).
 2. Display current field values; prompt to update each field (press Enter to keep current).
 3. Show current groups; prompt to add or remove groups (multi-select diff).
@@ -215,7 +217,7 @@ to IDs.
 Create sample input files in `testdata/user/create/`:
 
 | File | Description |
-|------|-------------|
+| ------ | ------------- |
 | `single_native.json` | Single Native user, JSON format |
 | `single_native.yaml` | Single Native user, YAML format |
 | `bulk_native.json` | Array of 3 Native users, JSON |
@@ -262,7 +264,7 @@ Docs: <https://docs.informatica.com/cloud-common-services/administrator/current-
 ## Files Affected
 
 | File | Change |
-|------|--------|
+| ------ | -------- |
 | `cmd/user.go` | Update all subcommands per sections 1-7 |
 | `internal/client/users.go` | Add role-assignment add/remove methods; extend `UserListOptions` if API supports name filter |
 | `internal/client/users_test.go` | Tests for new client methods |

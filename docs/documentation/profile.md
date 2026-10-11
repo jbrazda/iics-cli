@@ -15,15 +15,15 @@ iics profile <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand      | Description                                    |
-| --------------- | ---------------------------------------------- |
-| `add`           | Add or update a profile interactively          |
-| `edit`          | Edit an existing profile interactively         |
-| `list`          | List all configured profiles                   |
-| `delete`        | Delete a profile                               |
-| `set-default`   | Set the default profile used when no `--profile` flag is given |
-| `set-password`  | Store a profile's password in the OS keychain  |
-| `show`          | Show the details of a single profile           |
+| Subcommand     | Description                                                    |
+| -------------- | -------------------------------------------------------------- |
+| `add`          | Add or update a profile interactively                          |
+| `edit`         | Edit an existing profile interactively                         |
+| `list`         | List all configured profiles                                   |
+| `delete`       | Delete a profile                                               |
+| `set-default`  | Set the default profile used when no `--profile` flag is given |
+| `set-password` | Store a profile's password in the OS keychain                  |
+| `show`         | Show the details of a single profile                           |
 
 ## Flags
 

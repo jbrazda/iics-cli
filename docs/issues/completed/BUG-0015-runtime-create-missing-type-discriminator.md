@@ -7,7 +7,7 @@
 
 ## Symptom
 
-```
+```text
 $ iics runtime create --from-file TEST_ENV.json
 Error: IICS API error APP_20149 (HTTP 400):
   "description": "Missing required request body:Malformed or missing request body."

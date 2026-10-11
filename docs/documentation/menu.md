@@ -64,16 +64,16 @@ enter run · / filter · p profile · ? help · q quit
 
 ## Keys
 
-| Key                 | Action                                        |
-| ------------------- | --------------------------------------------- |
-| `↑` / `↓`, `k` / `j` | Move                                         |
-| `PgUp` / `PgDn`, `g` / `G` | Page, first / last entry               |
-| `Enter`             | Run the focused entry                         |
-| `/`                 | Filter by group, label, description or command |
-| `Esc`               | Clear the filter                              |
-| `p`                 | Switch profile                                |
-| `?`                 | Show or hide key help                         |
-| `q`, `Ctrl+C`       | Quit the menu                                 |
+| Key                        | Action                                         |
+| -------------------------- | ---------------------------------------------- |
+| `↑` / `↓`, `k` / `j`       | Move                                           |
+| `PgUp` / `PgDn`, `g` / `G` | Page, first / last entry                       |
+| `Enter`                    | Run the focused entry                          |
+| `/`                        | Filter by group, label, description or command |
+| `Esc`                      | Clear the filter                               |
+| `p`                        | Switch profile                                 |
+| `?`                        | Show or hide key help                          |
+| `q`, `Ctrl+C`              | Quit the menu                                  |
 
 ## Running a command
 
@@ -114,16 +114,16 @@ On a production profile:
 
 ## Entries
 
-| Group                   | Entries                                                                 |
-| ----------------------- | ----------------------------------------------------------------------- |
-| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Delete profile ✎, Edit global settings |
-| Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎ |
-| User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                             |
-| Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎               |
-| Privileges              | List privileges                                                         |
-| Permissions             | Edit object permissions ✎                                               |
+| Group                   | Entries                                                                                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Delete profile ✎, Edit global settings                                                   |
+| Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎                                        |
+| User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                                                                                                                                                   |
+| Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎                                                                                                                                      |
+| Privileges              | List privileges                                                                                                                                                                                |
+| Permissions             | Edit object permissions ✎                                                                                                                                                                      |
 | Environments and agents | List runtime environments, Create runtime environment ✎, List agents, Start / Stop / Restart agent service ✎, Show agent installer info, Download agent installer (`--interactive --progress`) |
-| Help                    | Show CLI help                                                           |
+| Help                    | Show CLI help                                                                                                                                                                                  |
 
 ## Accessible mode and small terminals
 

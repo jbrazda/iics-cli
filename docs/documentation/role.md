@@ -91,10 +91,10 @@ stdout is not a terminal.
 
 ### Flags
 
-| Flag           | Type   | Required | Description                               |
-| -------------- | ------ | -------- | ----------------------------------------- |
-| `--id`         | string |          | Role ID                                    |
-| `--name`       | string |          | Role name (for example `Business Manager`) |
+| Flag           | Type   | Required | Description                                                                                |
+| -------------- | ------ | -------- | ------------------------------------------------------------------------------------------ |
+| `--id`         | string |          | Role ID                                                                                    |
+| `--name`       | string |          | Role name (for example `Business Manager`)                                                 |
 | `--privileges` | bool   |          | Include privileges assigned to the role; prompts when omitted (table output on a terminal) |
 
 `--id` and `--name` are mutually exclusive. If both are omitted, you are
@@ -210,16 +210,16 @@ arrows move  space toggle  a row  c column  / filter  ctrl+u clear filter  enter
 
 Grid keys:
 
-| Key                   | Action                                              |
-| --------------------- | --------------------------------------------------- |
-| Arrows or `h j k l`   | Move                                                |
-| `Space` or `x`        | Toggle the privilege under the cursor               |
-| `a`                   | Toggle every action in the row                      |
-| `c`                   | Toggle the column for all visible (filtered) rows   |
-| `/`                   | Filter by object, privilege name or description     |
-| `Ctrl+U`              | Clear the filter                                    |
-| `PgUp` / `PgDn`, `g` / `G` | Page, jump to top / bottom                     |
-| `Enter`, `Esc`, `q`   | Back to the service list                            |
+| Key                        | Action                                            |
+| -------------------------- | ------------------------------------------------- |
+| Arrows or `h j k l`        | Move                                              |
+| `Space` or `x`             | Toggle the privilege under the cursor             |
+| `a`                        | Toggle every action in the row                    |
+| `c`                        | Toggle the column for all visible (filtered) rows |
+| `/`                        | Filter by object, privilege name or description   |
+| `Ctrl+U`                   | Clear the filter                                  |
+| `PgUp` / `PgDn`, `g` / `G` | Page, jump to top / bottom                        |
+| `Enter`, `Esc`, `q`        | Back to the service list                          |
 
 In the service list, choose **Review and apply** to see the pending changes
 grouped by service and confirm them, or **Cancel** to leave without changes.

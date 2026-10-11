@@ -10,7 +10,7 @@ One session per logical task works best - one bug fix, one feature, one refactor
 
 ## 3. Use subagents for research**
 
-Delegate research with "use subagents to investigate X." They explore in a separate context, keeping your main conversation clean for implementation. When Claude researches a codebase it reads lots of files, all of which consume your context. Subagents run in separate context windows and report back summaries. 
+Delegate research with "use subagents to investigate X." They explore in a separate context, keeping your main conversation clean for implementation. When Claude researches a codebase it reads lots of files, all of which consume your context. Subagents run in separate context windows and report back summaries.
 
 ## 4. Use `/compact` and plan mode**
 

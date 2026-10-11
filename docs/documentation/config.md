@@ -22,17 +22,17 @@ changes (**Save**, **Back to editing** or **Cancel**). Requires a terminal;
 in scripts, edit the config file directly. In accessible mode
 (`IICS_ACCESSIBLE=1`) the form runs as numbered line prompts.
 
-| Page       | Setting                 | Config key               | Empty value                                  |
-| ---------- | ----------------------- | ------------------------ | -------------------------------------------- |
-| New user   | Domain                  | `newUser.domain`         | Domain of each profile's user name           |
-| New user   | User name pattern       | `newUser.userNamePattern` | `{firstName}.{lastName}.{profileName}@{domain}` |
-| New user   | Email pattern           | `newUser.emailPattern`   | `{firstName}.{lastName}@{domain}`            |
-| Appearance | Table theme             | `style.theme`            | `default` on a terminal, `markdown` when piped |
-| Appearance | Header color            | `style.headerColor`      | Theme default                                |
-| Appearance | Disable colors          | `style.noColor`          | Colors on                                    |
-| Appearance | Responsive tables       | `style.responsiveTables` | On                                           |
-| Other      | HTTP timeout (seconds)  | `httpTimeout`            | 120                                          |
-| Other      | Main menu for bare `iics` | `ui.menu`              | On                                           |
+| Page       | Setting                   | Config key                | Empty value                                     |
+| ---------- | ------------------------- | ------------------------- | ----------------------------------------------- |
+| New user   | Domain                    | `newUser.domain`          | Domain of each profile's user name              |
+| New user   | User name pattern         | `newUser.userNamePattern` | `{firstName}.{lastName}.{profileName}@{domain}` |
+| New user   | Email pattern             | `newUser.emailPattern`    | `{firstName}.{lastName}@{domain}`               |
+| Appearance | Table theme               | `style.theme`             | `default` on a terminal, `markdown` when piped  |
+| Appearance | Header color              | `style.headerColor`       | Theme default                                   |
+| Appearance | Disable colors            | `style.noColor`           | Colors on                                       |
+| Appearance | Responsive tables         | `style.responsiveTables`  | On                                              |
+| Other      | HTTP timeout (seconds)    | `httpTimeout`             | 120                                             |
+| Other      | Main menu for bare `iics` | `ui.menu`                 | On                                              |
 
 The table theme list shows a sample table in the highlighted theme. Pattern
 fields reject unknown placeholders; see

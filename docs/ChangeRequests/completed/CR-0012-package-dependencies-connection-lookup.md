@@ -36,13 +36,13 @@ Three targeted improvements to `iics package dependencies --target-profile`:
 Running `iics package dependencies -f pkg.zip --target-profile prod` with a package that
 contains a `Connection` type dependency (e.g., `/SYS/Telematics`) produces:
 
-```
+```text
 SYS/Telematics   Connection   package   unknown   lookup error: ...
 ```
 
 or
 
-```
+```text
 SYS/Telematics   Connection   package   missing   asset not found in target org
 ```
 
@@ -96,7 +96,7 @@ imported. No new imports required.
 
 The dependencies table always renders with very wide columns regardless of actual content:
 
-```
+```text
 PATH                                                                   TYPE                   SOURCE
 Explore/ZZ_TEST_CLI/Connections/TestServiceConn1                       AI_CONNECTION          package
 ```
@@ -147,7 +147,7 @@ if targetProfile != "" {
 
 ### Observed behaviour
 
-```
+```text
 level=DEBUG msg="looking up dependency in target org" path=Connections/LexisNexis/GW-Update-Police-Order-Api-v1 type=AI_CONNECTION
 level=DEBUG msg="dependency found in target org"      path=Connections/LexisNexis/GW-Update-Police-Order-Api-v1 type=AI_CONNECTION
 ```
@@ -185,7 +185,7 @@ in the loop body. For the very first "looking up" log line the org name will be 
 
 Expected output after the fix:
 
-```
+```text
 level=INFO  msg="validating dependencies against target org"      profile=prod count=12
 level=DEBUG msg="looking up dependency in target org"             profile=prod org=""                  path=Connections/LexisNexis/GW-Update... type=AI_CONNECTION
 level=DEBUG msg="dependency found in target org"                  profile=prod org="National Interstate - PROD" path=Connections/LexisNexis/GW-Update... type=AI_CONNECTION

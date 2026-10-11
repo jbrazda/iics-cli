@@ -52,7 +52,8 @@ sends `"@keyring"` as the IICS password.
 ### Impact
 
 All commands that require authentication fail for the affected profile with:
-```
+
+```text
 [WARN] dependency lookup failed profile=dev error=auto-login failed: IICS API error (HTTP 400):
 ```
 
@@ -152,7 +153,7 @@ stored in the config file or the OS keychain.
 
 ### Observed behavior
 
-```
+```text
 ./iics package dependencies -f file.zip --report --target-profile 'dev' --verbose
 [INFO] report: starting validation profile=--target-profile total=10
 Error: profile "--target-profile": username not configured for target profile "--target-profile"

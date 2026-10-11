@@ -36,6 +36,7 @@ Currently, all shell examples in the documentation use only bash syntax. Windows
 Add PowerShell code samples as variants to all bash examples in the documentation files under `docs/documentation/*.md`. Each bash example should be followed by an equivalent PowerShell example shown in a separate code block with `powershell` language tag.
 
 Examples of PowerShell equivalents:
+
 - `iics user list` → `iics user list` (same, no translation needed)
 - `iics user list --output json | jq '...'` → `iics user list --output json | ConvertFrom-Json | <PowerShell equivalent>`
 - Other shell-specific features should be translated to PowerShell equivalents
@@ -102,6 +103,7 @@ Not applicable - documentation update only, no API calls involved.
 ## Examples
 
 ### Current Format (bash only)
+
 ```bash
 iics user list
 
@@ -112,6 +114,7 @@ iics user list --output json | jq '.[] | select(.userName | test("john"))'
 ```
 
 ### Desired Format (bash + PowerShell)
+
 ```bash
 iics user list
 

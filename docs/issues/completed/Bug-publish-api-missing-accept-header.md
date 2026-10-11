@@ -29,13 +29,13 @@ HTTP 500 Internal Server Error
 
 `internal/client/client.go` - `doCAIJSON` method (line 338) only sets:
 
-```
+```text
 Content-Type: application/vnd.api+json
 ```
 
 The CAI REST API requires both:
 
-```
+```text
 Content-Type: application/vnd.api+json
 Accept: application/vnd.api+json
 ```

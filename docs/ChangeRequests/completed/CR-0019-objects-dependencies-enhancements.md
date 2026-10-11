@@ -74,7 +74,7 @@ iics objects list -q "tag==Project_sprint_9" --output json \
 
 Sample table output:
 
-```
+```text
 PATH                              TYPE       STATUS:dev   STATUS:qa
 Sales/ETL/LoadOrders              MTT        found        missing
 Shared/Connections/SalesDB        DTEMPLATE  found        found

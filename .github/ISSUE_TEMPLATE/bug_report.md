@@ -6,24 +6,30 @@ labels: bug
 assignees: ''
 ---
 
-**Describe the bug**
+## Describe the bug
+
 A clear and concise description of what the bug is.
 
-**Command run**
-```
+## Command run
+
+```bash
 iics <command> <flags>
 ```
 
-**Expected behavior**
+## Expected behavior
+
 What you expected to happen.
 
-**Actual behavior**
+## Actual behavior
+
 What actually happened. Include error messages and output.
 
-**Environment**
+## Environment
+
 - OS: [e.g., macOS 15, Ubuntu 24.04]
 - iics version: [output of `iics --version`]
 - IICS region: [e.g., US, EMEA]
 
-**Additional context**
+## Additional context
+
 Any other relevant information (verbose output with `--verbose`, config details, etc.).

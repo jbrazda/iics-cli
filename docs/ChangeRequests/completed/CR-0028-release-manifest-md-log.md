@@ -53,8 +53,8 @@ print a warning to stderr and keep the original command result.
 
 Add the following flag to each command in scope:
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
+| Flag         | Type            | Default                                                                                         | Description                                                |
+| ------------ | --------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `--log-file` | optional string | disabled when omitted, `target/iics/import/logs/release_manifest.md` when present without value | Append a Markdown release report section to the given file |
 
 Recommended Cobra setup:
@@ -83,7 +83,7 @@ the sample file in `testdata/release/release-manifest.md`.
 
 `iics release plan --log-file` initializes or appends the planning sections:
 
-```markdown
+````markdown
 # Release Manifest
 
 - Schema Version: `v1`
@@ -129,7 +129,8 @@ target
 | TYPE | COUNT (PROD) | COUNT (QA) | COUNT (TST) |
 |------|-------------:|-----------:|------------:|
 | ... | ... | ... | ... |
-```
+
+````
 
 ### Package create
 

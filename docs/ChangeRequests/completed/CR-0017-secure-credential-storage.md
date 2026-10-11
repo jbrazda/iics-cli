@@ -313,7 +313,7 @@ if err := config.DeleteKeychainPassword(name); err != nil {
 Lets users migrate an existing plaintext password to the keychain, or update a stored
 keychain password, without re-running the full profile setup.
 
-```
+```text
 iics profile set-password [name]
 ```
 
@@ -411,7 +411,7 @@ profiles:
 
 ## `go.mod` Change
 
-```
+```text
 require (
     ...
     github.com/zalando/go-keyring v0.2.x

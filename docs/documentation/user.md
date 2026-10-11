@@ -37,13 +37,13 @@ All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column      | Description            |
-| ----------- | ---------------------- |
-| `id`        | User ID                |
-| `userName`  | Username / login name  |
-| `email`     | Email address          |
-| `state`     | Account state (Active/Inactive) |
-| `updateTime`| Last modification time |
+| Column       | Description                     |
+| ------------ | ------------------------------- |
+| `id`         | User ID                         |
+| `userName`   | Username / login name           |
+| `email`      | Email address                   |
+| `state`      | Account state (Active/Inactive) |
+| `updateTime` | Last modification time          |
 
 ### Examples
 
@@ -122,25 +122,6 @@ iics user get --username jdoe@example.com --output json
 iics user get
 ```
 
------- | ------ | -------- | ----------- |
-| `--id` | string | yes      | User ID     |
-
-All [global flags](../../README.md#global-flags) apply.
-
-### Examples
-
-```bash
-iics user get --id <user-id>
-
-iics user get --id <user-id> --output json
-```
-
-```powershell
-iics user get --id <user-id>
-
-iics user get --id <user-id> --output json
-```
-
 ---
 
 ## user create
@@ -201,13 +182,13 @@ profiles:
 Each value resolves as: profile `newUser`, global `newUser`, built-in
 default.
 
-| Placeholder      | Value                                                   |
-| ---------------- | ------------------------------------------------------- |
-| `{firstName}`    | First name, lowercase, spaces removed                   |
-| `{lastName}`     | Last name, lowercase, spaces removed                    |
-| `{firstInitial}` | First letter of the first name, lowercase               |
-| `{lastInitial}`  | First letter of the last name, lowercase                |
-| `{profileName}`  | Name of the active profile                              |
+| Placeholder      | Value                                                                          |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `{firstName}`    | First name, lowercase, spaces removed                                          |
+| `{lastName}`     | Last name, lowercase, spaces removed                                           |
+| `{firstInitial}` | First letter of the first name, lowercase                                      |
+| `{lastInitial}`  | First letter of the last name, lowercase                                       |
+| `{profileName}`  | Name of the active profile                                                     |
 | `{domain}`       | `newUser.domain` (profile, then global), or the domain of the profile username |
 
 With the defaults, Jane Doe in profile `dev` (login `admin@acme.com`) gets
@@ -317,14 +298,14 @@ Add, remove or replace the roles assigned to a user. Uses
 
 ### Flags
 
-| Flag                   | Type     | Required | Description                                                |
-| ---------------------- | -------- | -------- | ---------------------------------------------------------- |
-| `--id` (`--uid`)       | string   | one of   | User ID                                                    |
-| `--username` (`--uname`) | string | one of   | User name (exact match)                                    |
-| `--add`                | string[] |          | Roles to assign; comma-separated or repeated               |
-| `--remove`             | string[] |          | Roles to unassign; comma-separated or repeated             |
-| `--replace`            | string[] |          | Exact list of roles; all other roles are removed           |
-| `--fields`             | string   |          | Fields for CSV output (same as `user get`)                 |
+| Flag                     | Type     | Required | Description                                      |
+| ------------------------ | -------- | -------- | ------------------------------------------------ |
+| `--id` (`--uid`)         | string   | one of   | User ID                                          |
+| `--username` (`--uname`) | string   | one of   | User name (exact match)                          |
+| `--add`                  | string[] |          | Roles to assign; comma-separated or repeated     |
+| `--remove`               | string[] |          | Roles to unassign; comma-separated or repeated   |
+| `--replace`              | string[] |          | Exact list of roles; all other roles are removed |
+| `--fields`               | string   |          | Fields for CSV output (same as `user get`)       |
 
 Rules:
 

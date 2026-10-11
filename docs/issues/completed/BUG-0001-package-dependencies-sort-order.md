@@ -67,8 +67,8 @@ any other `dependencyItem` field.
 When `--publish` is set, assets must sort in the following order (primary), with
 `Path` as the secondary (tiebreaker) sort key:
 
-| Priority | Type                  |
-|----------|-----------------------|
+| Priority | Type                   |
+| -------- | ---------------------- |
 | 1        | `AI_SERVICE_CONNECTOR` |
 | 2        | `AI_CONNECTION`        |
 | 3        | `PROCESS`              |
@@ -87,10 +87,10 @@ Add an `--order-by <field>` flag to `package dependencies` that accepts any
 field name present in the dependency output:
 
 | Field          | Notes                               |
-|----------------|-------------------------------------|
+| -------------- | ----------------------------------- |
 | `path`         | Default when `--publish` is not set |
 | `type`         | Sort by asset type string           |
-| `source`       | `package` vs `external`            |
+| `source`       | `package` vs `external`             |
 | `targetStatus` | `found`, `missing`, `unknown`       |
 | `warning`      | Warning message text                |
 

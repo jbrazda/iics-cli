@@ -4,7 +4,7 @@
 
 Running any `publish` or `state` command that requires the CAI endpoint fails with:
 
-```
+```text
 Error: batch 1: submitting: CAI URL not configured; set caiUrl in profile config,
 IICS_CAI_URL env var, or --cai-url flag
 ```
@@ -30,7 +30,7 @@ c.caiURL = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 
 The correct CAI URL inserts `-cai` into the first DNS label of the hostname:
 
-```
+```text
 baseApiUrl:  https://use4.dm-us.informaticacloud.com/saas
 caiUrl:      https://use4-cai.dm-us.informaticacloud.com
 ```
@@ -206,7 +206,7 @@ In `PromptProfile` (`internal/config/prompt.go`), after the user provides a regi
 URL, derive `baseApiUrl` and `caiUrl` and show them for confirmation:
 
 - If a known region is entered, look up the pod hostname and construct both URLs.
-- Show the computed values and prompt: `CAI URL [<derived>]: ` so the user can override.
+- Show the computed values and prompt: `CAI URL [<derived>]:` so the user can override.
 - Store all three fields (`loginUrl`, `baseApiUrl` if deterministic, `caiUrl`) in the
   returned `Profile`.
 

@@ -44,7 +44,7 @@ iics package create \
 ```
 
 | Flag | Short | Default | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--diff-report` | - | - | Path to write the diff report; if omitted, no report is generated |
 | `--diff-report-format` | - | `markdown` | Report format: `markdown`, `json`, `csv` |
 
@@ -83,7 +83,7 @@ Objects in the final `selectedObjects` slice whose inclusion was triggered by lo
 the literal manifest rows:
 
 | Reason | Source |
-|---|---|
+| --- | --- |
 | `parent-container` | Added by `IncludeParentContainers` |
 | `transitive-closure` | Added by `IncludeReferencedClosure` |
 | `sys-implied` | SYS-rooted objects added when the manifest references only containers |
@@ -94,7 +94,7 @@ Columns: `objectName`, `objectType`, `path`, `objectGuid`, `reason`.
 ### 4. Summary counters
 
 | Counter | Description |
-|---|---|
+| --- | --- |
 | `manifestEntries` | Number of rows in the input manifest after parsing |
 | `excludedTransitiveFound` | Rows dropped by `--exclude-found-transitive` (from `BuildManifestStats`) |
 | `directMatches` | Objects matched directly from manifest rows |

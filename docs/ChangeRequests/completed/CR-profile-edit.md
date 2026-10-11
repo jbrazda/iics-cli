@@ -25,7 +25,7 @@ derive `baseApiUrl`/`caiUrl` from the login response - those URLs are only updat
 
 ## Desired Behaviour
 
-```
+```text
 $ iics profile edit qa
 Setting up profile "qa"
 

@@ -10,15 +10,15 @@ iics agent <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                          |
-| ---------- | ------------------------------------ |
-| `list`     | List Secure Agents                   |
-| `get`      | Get a single agent                   |
-| `details`  | Get agent service engine details     |
-| `delete`   | Delete a Secure Agent                |
-| `start`    | Start an agent service               |
-| `stop`     | Stop an agent service                |
-| `installer-info`     | Get Secure Agent installer download information |
+| Subcommand           | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `list`               | List Secure Agents                                             |
+| `get`                | Get a single agent                                             |
+| `details`            | Get agent service engine details                               |
+| `delete`             | Delete a Secure Agent                                          |
+| `start`              | Start an agent service                                         |
+| `stop`               | Stop an agent service                                          |
+| `installer-info`     | Get Secure Agent installer download information                |
 | `installer-download` | Download the Secure Agent installer (optional checksum verify) |
 
 ---
@@ -27,14 +27,14 @@ iics agent <subcommand> [flags]
 
 ### Flags
 
-| Flag           | Type         | Default | Description                                                              |
-| -------------- | ------------ | ------- | ---------------------------------------------------------------------- |
-| `--unassigned` | bool         | false   | Include only agents not in a group                                      |
-| `--basic-info` | bool         | false   | Include package and configuration details in the response              |
-| `--fields`     | string       |         | Comma-separated columns to display, by technical field name             |
+| Flag           | Type         | Default | Description                                                                                       |
+| -------------- | ------------ | ------- | ------------------------------------------------------------------------------------------------- |
+| `--unassigned` | bool         | false   | Include only agents not in a group                                                                |
+| `--basic-info` | bool         | false   | Include package and configuration details in the response                                         |
+| `--fields`     | string       |         | Comma-separated columns to display, by technical field name                                       |
 | `--filter`     | string array |         | Client-side filter, e.g. `agentHost==host01` or `active!=true`. Repeatable; conditions are AND-ed |
-| `--limit`      | int          | 200     | Accepted for compatibility; the API currently ignores it               |
-| `--skip`       | int          | 0       | Accepted for compatibility; the API currently ignores it               |
+| `--limit`      | int          | 200     | Accepted for compatibility; the API currently ignores it                                          |
+| `--skip`       | int          | 0       | Accepted for compatibility; the API currently ignores it                                          |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -95,9 +95,9 @@ Get a single Secure Agent by ID or name.
 
 ### Flags
 
-| Flag     | Type   | Description |
-| -------- | ------ | ----------- |
-| `--id`   | string | Agent ID    |
+| Flag     | Type   | Description                                       |
+| -------- | ------ | ------------------------------------------------- |
+| `--id`   | string | Agent ID                                          |
 | `--name` | string | Agent name (uses `GET /api/v2/agent/name/<name>`) |
 
 Exactly one of `--id` / `--name` is required; they are mutually exclusive.
@@ -136,13 +136,13 @@ service (engine) with its status and, optionally, its configuration properties.
 
 ### Flags
 
-| Flag         | Type   | Description |
-| ------------ | ------ | ----------- |
-| `--id`       | string | Agent ID    |
-| `--fid`      | string | Agent federated ID |
-| `--name`     | string | Agent name  |
-| `--hostname` | string | Agent host name |
-| `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`) |
+| Flag         | Type   | Description                                                                                         |
+| ------------ | ------ | --------------------------------------------------------------------------------------------------- |
+| `--id`       | string | Agent ID                                                                                            |
+| `--fid`      | string | Agent federated ID                                                                                  |
+| `--name`     | string | Agent name                                                                                          |
+| `--hostname` | string | Agent host name                                                                                     |
+| `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`)              |
 | `--services` | bool   | Show only the agent summary and one horizontal table of services (mutually exclusive with `--full`) |
 
 Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required; they are
@@ -199,12 +199,12 @@ Delete a Secure Agent.
 
 ### Flags
 
-| Flag         | Type   | Description |
-| ------------ | ------ | ----------- |
-| `--id`       | string | Agent ID    |
-| `--name`     | string | Agent name  |
-| `--hostname` | string | Agent host name |
-| `--yes` / `-y` | bool | Skip the confirmation prompt |
+| Flag           | Type   | Description                  |
+| -------------- | ------ | ---------------------------- |
+| `--id`         | string | Agent ID                     |
+| `--name`       | string | Agent name                   |
+| `--hostname`   | string | Agent host name              |
+| `--yes` / `-y` | bool   | Skip the confirmation prompt |
 
 Exactly one of `--id` / `--name` / `--hostname` is required; they are mutually
 exclusive.
@@ -234,16 +234,16 @@ Start or stop a service on a Secure Agent. Uses
 
 ### Flags
 
-| Flag                  | Type   | Default | Description |
-| --------------------- | ------ | ------- | ----------- |
-| `--id`                | string |         | Agent ID    |
-| `--name`              | string |         | Agent name  |
-| `--hostname`          | string |         | Agent host name |
+| Flag                  | Type   | Default | Description                                                                              |
+| --------------------- | ------ | ------- | ---------------------------------------------------------------------------------------- |
+| `--id`                | string |         | Agent ID                                                                                 |
+| `--name`              | string |         | Agent name                                                                               |
+| `--hostname`          | string |         | Agent host name                                                                          |
 | `--service`           | string |         | Service display name, e.g. `"Data Integration Server"` (required unless `--interactive`) |
-| `--interactive`, `-i` | bool   | false   | Select the agent and service interactively |
-| `--blocking`          | bool   | false   | Poll the service status until it has started/stopped, printing each poll |
-| `--poll-interval`     | int    | 10      | Seconds between status polls (with `--blocking`) |
-| `--max-wait-time`     | int    | 300     | Maximum seconds to wait (with `--blocking`) |
+| `--interactive`, `-i` | bool   | false   | Select the agent and service interactively                                               |
+| `--blocking`          | bool   | false   | Poll the service status until it has started/stopped, printing each poll                 |
+| `--poll-interval`     | int    | 10      | Seconds between status polls (with `--blocking`)                                         |
+| `--max-wait-time`     | int    | 300     | Maximum seconds to wait (with `--blocking`)                                              |
 
 Exactly one of `--id` / `--name` / `--hostname` is required, unless
 `--interactive` is used. `--interactive` lists the Secure Agents to choose from,
@@ -318,8 +318,8 @@ for a platform.
 
 ### Flags
 
-| Flag   | Type   | Required | Description                          |
-| ------ | ------ | -------- | ------------------------------------ |
+| Flag   | Type   | Required | Description                            |
+| ------ | ------ | -------- | -------------------------------------- |
 | `--os` | string | yes      | Operating system: `win64` or `linux64` |
 
 When `--os` is omitted and the session is interactive, the command shows a
@@ -371,15 +371,15 @@ Installer info can be supplied three ways:
 
 ### Flags
 
-| Flag               | Type   | Default              | Description                                                        |
-| ------------------ | ------ | -------------------- | ------------------------------------------------------------------ |
-| `--os`             | string |                      | Operating system: `win64` or `linux64` (used when no info supplied) |
-| `--installer-info` | string |                      | Path to installer info JSON (omit to read piped stdin)             |
-| `--target`         | string | system temp directory | Destination file or directory                                     |
-| `--verify`         | bool   | false                | Download the checksum file and verify the installer               |
-| `--progress`       | bool   | false                | Print live download progress to stderr                            |
-| `--interactive`, `-i` | bool | false                | Prompt for the OS, the destination and whether to replace an existing file (terminal only) |
-| `--force`          | bool   | false                | Download even when the destination file already matches           |
+| Flag                  | Type   | Default               | Description                                                                                |
+| --------------------- | ------ | --------------------- | ------------------------------------------------------------------------------------------ |
+| `--os`                | string |                       | Operating system: `win64` or `linux64` (used when no info supplied)                        |
+| `--installer-info`    | string |                       | Path to installer info JSON (omit to read piped stdin)                                     |
+| `--target`            | string | system temp directory | Destination file or directory                                                              |
+| `--verify`            | bool   | false                 | Download the checksum file and verify the installer                                        |
+| `--progress`          | bool   | false                 | Print live download progress to stderr                                                     |
+| `--interactive`, `-i` | bool   | false                 | Prompt for the OS, the destination and whether to replace an existing file (terminal only) |
+| `--force`             | bool   | false                 | Download even when the destination file already matches                                    |
 
 `--target` behavior:
 
@@ -399,11 +399,11 @@ File already exists: /tmp/agent64_install_ng_ext.7617.bin (364.6MB, modified 202
   It matches the checksum of the current installer.
 ```
 
-| Mode                    | File matches                  | File differs or cannot be checked |
-| ----------------------- | ----------------------------- | --------------------------------- |
-| Default (scripts)       | Kept, download skipped        | Downloaded again (replaced)       |
-| `--interactive`         | Asks "Download again and overwrite it?" (default **No**) | Asks (default **Yes**) |
-| `--force`               | Downloaded again              | Downloaded again                  |
+| Mode              | File matches                                             | File differs or cannot be checked |
+| ----------------- | -------------------------------------------------------- | --------------------------------- |
+| Default (scripts) | Kept, download skipped                                   | Downloaded again (replaced)       |
+| `--interactive`   | Asks "Download again and overwrite it?" (default **No**) | Asks (default **Yes**)            |
+| `--force`         | Downloaded again                                         | Downloaded again                  |
 
 When the download is skipped, the result describes the existing file
 (including `verified` when the checksum could be checked).
@@ -427,17 +427,17 @@ for a live, updating transfer line (bytes transferred, percentage when the serve
 reports a content length, and transfer rate) written to stderr. `--output json`,
 `yaml`, and `csv` render the structured result.
 
-| Field                 | Description                                       |
-| --------------------- | ------------------------------------------------- |
-| `file`                | Full path of the downloaded file                  |
-| `fileName`            | Installer file name                               |
-| `size`                | Downloaded size in bytes                          |
-| `downloadUrl`         | Source URL                                        |
-| `checksumDownloadUrl` | Checksum file URL (when known)                    |
+| Field                 | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `file`                | Full path of the downloaded file                            |
+| `fileName`            | Installer file name                                         |
+| `size`                | Downloaded size in bytes                                    |
+| `downloadUrl`         | Source URL                                                  |
+| `checksumDownloadUrl` | Checksum file URL (when known)                              |
 | `installToken`        | Token used to register the agent after install (when known) |
-| `expectedChecksum`    | SHA-256 digest from the checksum file (`--verify`) |
-| `actualChecksum`      | SHA-256 digest of the downloaded file (`--verify`) |
-| `verified`            | Whether the checksums matched (`--verify`)        |
+| `expectedChecksum`    | SHA-256 digest from the checksum file (`--verify`)          |
+| `actualChecksum`      | SHA-256 digest of the downloaded file (`--verify`)          |
+| `verified`            | Whether the checksums matched (`--verify`)                  |
 
 If the checksums do not match, the partial download is removed and the command
 exits with an error.

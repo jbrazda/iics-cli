@@ -1,0 +1,11 @@
+# Project rules for markdownlint-cli2 (https://github.com/DavidAnson/markdownlint-cli2).
+config:
+  # Prose is not hard-wrapped.
+  MD013: false
+  # Command pages repeat "Flags" and "Examples" under each subcommand, and the
+  # changelog repeats "Added" and "Fixed" under each release.
+  MD024:
+    siblings_only: true
+  # CR and bug files carry a "title" in their front matter and an H1 as well.
+  MD025:
+    front_matter_title: ""

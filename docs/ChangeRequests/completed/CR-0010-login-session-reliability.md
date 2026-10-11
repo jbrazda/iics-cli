@@ -1,7 +1,7 @@
 # CR-0010 - Login, Session, and Profile Reliability
 
 | Field | Value |
-|-------|-------|
+| ------- | ------- |
 | ID | CR-0010 |
 | Status | New |
 | Priority | High |
@@ -26,7 +26,7 @@ Several related issues make the login/session lifecycle unreliable:
 
 ### Observed behaviour
 
-```
+```text
 ./iics login --profile ttt
 Error: username not configured for profile "ttt"
 ```
@@ -41,13 +41,13 @@ The interactive profile-creation wizard in `getClient()` (`cmd/root.go`) activat
 
 In `cmd/login.go`, before calling `resolveProfile`, check whether the named profile key exists in the loaded config. If it does not exist and the command is running on a TTY, prompt the user:
 
-```
+```text
 Profile "ttt" does not exist. Create it now? [Y/n]:
 ```
 
 If confirmed, invoke `config.PromptProfile(nil, name)`, save the new profile to config, then continue with login. If declined or not a TTY, return a clear error:
 
-```
+```text
 profile "ttt" not found; run 'iics profile add ttt' to create it
 ```
 
@@ -99,7 +99,7 @@ The error message does not tell the user what to do next and does not distinguis
 
 When the 401-renewal `Login()` call fails, return a wrapped error with a clear message:
 
-```
+```text
 session renewal failed: <original error>; run 'iics login --profile <name>' to re-authenticate
 ```
 
@@ -125,10 +125,10 @@ Note: full benefit of logout cleanup requires Issue 2 to be fixed so that sessio
 
 Add a dedicated `REGION` column to `profile list`:
 
-| NAME | DEFAULT | REGION | ENDPOINT | USERNAME |
-|------|---------|--------|----------|----------|
-| prod | yes | us1 | https://dm-us.informaticacloud.com/saas/api | user@example.com |
-| dev | | eu1 | https://dm-em.informaticacloud.com/saas/api | dev@example.com |
+| NAME | DEFAULT | REGION | ENDPOINT                                      | USERNAME           |
+| ---- | ------- | ------ | --------------------------------------------- | ------------------ |
+| prod | yes     | us1    | <https://dm-us.informaticacloud.com/saas/api> | <user@example.com> |
+| dev  |         | eu1    | <https://dm-em.informaticacloud.com/saas/api> | <dev@example.com>  |
 
 Both fields are shown independently. ENDPOINT continues to prefer `LoginURL` over `Region` as a resolved value.
 
@@ -145,18 +145,18 @@ Both fields are shown independently. ENDPOINT continues to prefer `LoginURL` ove
 `profile show` should additionally load the session cache and append session-derived rows:
 
 | FIELD | VALUE |
-|-------|-------|
+| ------- | ------- |
 | Name | prod |
 | Default | yes |
 | Region | us1 |
 | Login URL | https://... |
 | Base API URL | https://... |
 | CAI URL | https://... |
-| Username | user@example.com |
+| Username | <user@example.com> |
 | Password | *** |
 | Org Name | My Org |
 | Org ID | abc123 |
-| Session User | user@example.com |
+| Session User | <user@example.com> |
 | Last Login | 2026-03-23 14:05:00 UTC |
 | Session Expires | 2026-03-23 14:35:00 UTC |
 
@@ -209,7 +209,7 @@ Set `LastLoginTime = time.Now()` in `saveSession()` whenever a new session is wr
 ## Files to Modify
 
 | File | Change |
-|------|--------|
+| ------ | -------- |
 | `internal/config/session.go` | Add `LastLoginTime time.Time` field to `SessionEntry` |
 | `internal/client/client.go` | Add `OnLoginSuccess func(*LoginResponse)` callback field; call it in `Login()` after successful auth |
 | `cmd/root.go` | Wire `OnLoginSuccess` to `saveSession()` in `getClient()` |

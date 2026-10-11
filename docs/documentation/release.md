@@ -24,19 +24,19 @@ Generates release manifest files from either a PR description markdown file (Dep
 
 ### Flags
 
-| Flag                   | Type        | Default              | Description                                                                         |
-|------------------------|-------------|----------------------|-------------------------------------------------------------------------------------|
-| `--from-file`          | string      |                      | PR description markdown file to parse                                               |
-| `--output-root`        | string      | `target/iics/import` | Root output directory                                                               |
-| `--output`             | string      | `yaml`               | Manifest output format: `yaml`, `json`, `properties`                               |
-| `--mode`               | string      |                      | Override mode: `full` or `tag-based`                                                |
-| `--tag`                | string      |                      | Deployment tag when mode is `tag-based`                                             |
-| `--targets`            | string list |                      | Target environments (e.g. `tst,qa`)                                                 |
-| `--valid-targets`      | string      |                      | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
-| `--include-connectors` | bool        | `false`              | Include connector assets                                                            |
-| `--include-connections` | bool       | `false`              | Include connection assets                                                           |
-| `--exclude-file`       | string      |                      | Regex policy file path                                                              |
-| `--source`             | string      |                      | Optional source identifier stored in manifest                                       |
+| Flag                    | Type        | Default              | Description                                                                         |
+| ----------------------- | ----------- | -------------------- | ----------------------------------------------------------------------------------- |
+| `--from-file`           | string      |                      | PR description markdown file to parse                                               |
+| `--output-root`         | string      | `target/iics/import` | Root output directory                                                               |
+| `--output`              | string      | `yaml`               | Manifest output format: `yaml`, `json`, `properties`                                |
+| `--mode`                | string      |                      | Override mode: `full` or `tag-based`                                                |
+| `--tag`                 | string      |                      | Deployment tag when mode is `tag-based`                                             |
+| `--targets`             | string list |                      | Target environments (e.g. `tst,qa`)                                                 |
+| `--valid-targets`       | string      |                      | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
+| `--include-connectors`  | bool        | `false`              | Include connector assets                                                            |
+| `--include-connections` | bool        | `false`              | Include connection assets                                                           |
+| `--exclude-file`        | string      |                      | Regex policy file path                                                              |
+| `--source`              | string      |                      | Optional source identifier stored in manifest                                       |
 
 ### Example
 
@@ -65,8 +65,8 @@ Validates manifest schema version and normalized options.
 ### Flags
 
 | Flag              | Type   | Default                                         | Description                                                                         |
-|-------------------|--------|-------------------------------------------------|-------------------------------------------------------------------------------------|
-| `--manifest`      | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path (`.yaml`, `.json`, `.properties`), or `-` for stdin                 |
+| ----------------- | ------ | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `--manifest`      | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path (`.yaml`, `.json`, `.properties`), or `-` for stdin                   |
 | `--valid-targets` | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`) |
 
 ### Example
@@ -204,21 +204,21 @@ Excludes always apply to the publish file regardless of whether
 
 ### Flags
 
-| Flag                            | Type   | Default                                         | Description                                                                                                              |
-|---------------------------------|--------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `--manifest`                    | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path                                                                                                            |
-| `--output-root`                 | string | `target/iics/import`                            | Root output directory                                                                                                    |
-| `--full-package-config`         | string | `./conf/full_build.package.csv`                 | Full mode seed config (`id`, `location`, or `path+type`) used to resolve package assets                                |
-| `--valid-targets`               | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                      |
-| `--target-profile-map`          | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`) |
-| `--include-found-transitive`    | bool   | `false`                                         | Keep all resolved transitive dependencies, even when they already exist in the target environment                        |
-| `--publish-include-found-transitive` | bool | `false`                                    | Include transitive dependencies already found in the target in the generated publish file only (package file unaffected; independent of `--include-found-transitive`) |
-| `--publish-exclude-regex`       | string |                                                 | Regex matched against an asset's `location` to exclude it from the generated publish file only                          |
-| `--publish-exclude-file`        | string |                                                 | Path to regex patterns file (same format as `excludeFile`) to exclude assets from the generated publish file only        |
-| `--output`                      | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                           |
-| `--package-fields`              | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                            |
-| `--publish-fields`              | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                 |
-| `--log-file`                    | string | disabled; default path when flag has no value   | Append a Markdown release report section; use `--log-file=PATH` to override `target/iics/import/logs/release_manifest.md` |
+| Flag                                 | Type   | Default                                         | Description                                                                                                                                                           |
+| ------------------------------------ | ------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--manifest`                         | string | `target/iics/import/conf/release_manifest.yaml` | Manifest path                                                                                                                                                         |
+| `--output-root`                      | string | `target/iics/import`                            | Root output directory                                                                                                                                                 |
+| `--full-package-config`              | string | `./conf/full_build.package.csv`                 | Full mode seed config (`id`, `location`, or `path+type`) used to resolve package assets                                                                               |
+| `--valid-targets`                    | string |                                                 | Comma-separated allowlist for valid targets (overrides `IICS_VALID_DEPLOY_TARGETS`)                                                                                   |
+| `--target-profile-map`               | string |                                                 | Comma-separated mapping `TARGET=profile` used for target org credential resolution (overrides `IICS_TARGET_PROFILE_MAP`)                                              |
+| `--include-found-transitive`         | bool   | `false`                                         | Keep all resolved transitive dependencies, even when they already exist in the target environment                                                                     |
+| `--publish-include-found-transitive` | bool   | `false`                                         | Include transitive dependencies already found in the target in the generated publish file only (package file unaffected; independent of `--include-found-transitive`) |
+| `--publish-exclude-regex`            | string |                                                 | Regex matched against an asset's `location` to exclude it from the generated publish file only                                                                        |
+| `--publish-exclude-file`             | string |                                                 | Path to regex patterns file (same format as `excludeFile`) to exclude assets from the generated publish file only                                                     |
+| `--output`                           | string | `csv`                                           | Plan file output format: `csv`, `json`, `yaml`                                                                                                                        |
+| `--package-fields`                   | string | `location,type,path,dependency`                 | Fields for package files; `STATUS (<env>)` is auto-added per environment file                                                                                         |
+| `--publish-fields`                   | string | `location,type,path,dependency`                 | Fields for publish files                                                                                                                                              |
+| `--log-file`                         | string | disabled; default path when flag has no value   | Append a Markdown release report section; use `--log-file=PATH` to override `target/iics/import/logs/release_manifest.md`                                             |
 
 ### Example
 

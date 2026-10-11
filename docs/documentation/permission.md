@@ -34,9 +34,9 @@ iics perm <subcommand> [flags]
 
 Every subcommand takes the object as either:
 
-| Flag               | Description                                                        |
-| ------------------ | ------------------------------------------------------------------ |
-| `--object-id`      | Object ID                                                          |
+| Flag               | Description                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `--object-id`      | Object ID                                                                                            |
 | `--path`, `--type` | Object path and type, resolved with [lookup](lookup.md), e.g. `--path "Default/Sales" --type Folder` |
 
 Common types: `Project`, `Folder`, `DTEMPLATE` (mapping), `MTT` (mapping task),
@@ -54,12 +54,12 @@ Common types: `Project`, `Folder`, `DTEMPLATE` (mapping), `MTT` (mapping task),
 
 ### Output columns
 
-| Column        | Description                               |
-| ------------- | ----------------------------------------- |
-| `TYPE`        | `USER` or `GROUP`                         |
-| `NAME`        | User name or user group name              |
-| `READ` ... `CHANGE PERM` | Granted permissions (`true`/`false`) |
-| `ACL ID`      | ACL ID, used by `update` / `delete --acl-id` |
+| Column                   | Description                                  |
+| ------------------------ | -------------------------------------------- |
+| `TYPE`                   | `USER` or `GROUP`                            |
+| `NAME`                   | User name or user group name                 |
+| `READ` ... `CHANGE PERM` | Granted permissions (`true`/`false`)         |
+| `ACL ID`                 | ACL ID, used by `update` / `delete --acl-id` |
 
 `-o json` returns the API shape (see [permission set](#permission-set)).
 
@@ -184,12 +184,12 @@ were applied.
 
 ### Flags
 
-| Flag          | Short | Type   | Required | Description                                   |
-| ------------- | ----- | ------ | -------- | --------------------------------------------- |
+| Flag          | Short | Type   | Required | Description                                    |
+| ------------- | ----- | ------ | -------- | ---------------------------------------------- |
 | `--from-file` |       | string | yes      | JSON file with the desired ACLs; `-` for stdin |
-| `--prune`     |       | bool   |          | Delete ACLs of principals not in the file     |
-| `--dry-run`   |       | bool   |          | Show changes without applying them            |
-| `--yes`       | `-y`  | bool   |          | Skip the confirmation for `--prune`           |
+| `--prune`     |       | bool   |          | Delete ACLs of principals not in the file      |
+| `--dry-run`   |       | bool   |          | Show changes without applying them             |
+| `--yes`       | `-y`  | bool   |          | Skip the confirmation for `--prune`            |
 
 ### JSON file
 

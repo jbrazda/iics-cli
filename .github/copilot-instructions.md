@@ -100,7 +100,6 @@ f.Format(rows, []output.Column{
 - Before every commit: `gofmt -s -w .`, `go vet ./...`, `golangci-lint run ./...`.
 - Do **not** include `Co-Authored-By: ...` trailers in commit messages.
 
-
 ### Change Requests and Bug Fixes
 
 Change Requests live in `docs/ChangeRequests/` as markdown files:
