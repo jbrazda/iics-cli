@@ -13,7 +13,7 @@ imports, users, roles, schedules, agents, runtime environments, and more.
 
 **Module:** `github.com/jbrazda/iics-cli`
 **Go version:** 1.25.0
-**Go binary on this machine:** `/opt/local/bin/go`
+**Go binary on this machine:** `go`
 
 ---
 
@@ -643,8 +643,8 @@ func TestGetWidget(t *testing.T) {
 }
 ```
 
-Run tests with: `/opt/local/bin/go test ./...`
-Build with: `/opt/local/bin/go build ./...`
+Run tests with: `go test ./...`
+Build with: `go build ./...`
 
 ---
 

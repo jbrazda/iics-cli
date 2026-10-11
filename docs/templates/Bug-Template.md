@@ -137,15 +137,15 @@ internal/client/<resource>.go:<line>
    - In `internal/client/users.go`, the `Email` field has JSON tag `"email"` but the API returns `"emails"` - change the tag.
    - Do **not** touch the `cmd/` layer unless a flag name or output column must change.
 3. Add or update the test in `internal/client/<resource>_test.go` to cover the fixed case.
-4. Run `/opt/local/bin/go test ./internal/client/...` and verify it passes.
-5. Run `/opt/local/bin/go build ./...` to confirm no compilation errors.
+4. Run `go test ./internal/client/...` and verify it passes.
+5. Run `go build ./...` to confirm no compilation errors.
 
 ---
 
 ## Acceptance Criteria
 
 - [ ] The reproduction command now produces the expected output
-- [ ] All existing tests still pass (`/opt/local/bin/go test ./...`)
+- [ ] All existing tests still pass (`go test ./...`)
 - [ ] No unrelated code is refactored
 - [ ] No new dependencies are introduced
 - [ ] `go vet ./...` and `golangci-lint run ./...` report no new issues
