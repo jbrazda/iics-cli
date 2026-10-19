@@ -206,6 +206,7 @@ func init() {
 	rootCmd.AddCommand(newObjectsCmd())
 	rootCmd.AddCommand(newLookupCmd())
 	rootCmd.AddCommand(newConnectionCmd())
+	rootCmd.AddCommand(newConnectorCmd())
 	rootCmd.AddCommand(newExportCmd())
 	rootCmd.AddCommand(newImportCmd())
 	rootCmd.AddCommand(newScheduleCmd())

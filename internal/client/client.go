@@ -272,6 +272,11 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 
 // doJSON is a convenience method that sends a JSON request and decodes the response.
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	return c.doJSONWithHeaders(ctx, method, path, nil, reqBody, respBody)
+}
+
+// doJSONWithHeaders is like doJSON but sets extra request headers.
+func (c *Client) doJSONWithHeaders(ctx context.Context, method, path string, headers map[string]string, reqBody, respBody interface{}) error {
 	if err := c.ensureSession(ctx); err != nil {
 		return err
 	}
@@ -291,6 +296,9 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := c.do(ctx, req)

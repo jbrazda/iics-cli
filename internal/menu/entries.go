@@ -96,6 +96,9 @@ func DefaultEntries() []Entry {
 
 		{Group: "Privileges", Label: "List privileges", Description: "Show all privileges", Args: []string{"privilege", "list"}},
 
+		{Group: "Projects and folders", Label: "Edit project", Description: "Pick a project, filtered by name, and change its name or description", Args: []string{"project", "update", "-i"}, Writes: true},
+		{Group: "Projects and folders", Label: "Edit folder", Description: "Pick a project, then a folder, and change its name or description", Args: []string{"folder", "update", "-i"}, Writes: true},
+
 		{Group: "Permissions", Label: "Edit object permissions", Description: "Pick a project, folder or asset and edit its ACLs", Args: []string{"permission", "edit"}, Writes: true},
 
 		{Group: "Environments and agents", Label: "List runtime environments", Description: "Show runtime environments (Secure Agent groups)", Args: []string{"environment", "list"}},

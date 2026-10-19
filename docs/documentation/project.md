@@ -47,13 +47,27 @@ iics project create --name "Finance ETL" --description "Finance team data pipeli
 
 ## project update
 
+Change the name and/or description of a project (`PATCH /public/core/v3/projects/<id>`
+or `/projects/name/<name>`). Identify the project by `--id` or by its current
+name with `--project-name`. A description cannot be cleared.
+
+With `--interactive` (or with no identifier when run in a terminal), pick the
+project from a list. When there are more than 10 projects you are first asked
+for a name filter (substring, ignores case; empty lists all). Then edit the
+name and description, pre-filled with the current values, and confirm.
+The [menu](menu.md) entry "Edit project" runs this flow.
+
 ### Flags
 
-| Flag            | Type   | Required | Description        |
-| --------------- | ------ | -------- | ------------------ |
-| `--id`          | string | yes      | Project ID         |
-| `--name`        | string |          | New project name   |
-| `--description` | string |          | New description    |
+| Flag             | Short | Type   | Required | Description                                |
+| ---------------- | ----- | ------ | -------- | ------------------------------------------ |
+| `--id`           |       | string | one of   | Project ID                                 |
+| `--project-name` |       | string | one of   | Current project name                       |
+| `--name`         |       | string |          | New project name                           |
+| `--description`  |       | string |          | New description                            |
+| `--interactive`  | `-i`  | bool   |          | Pick the project and edit it interactively |
+
+Without `--interactive`, at least one of `--name` and `--description` is required.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -62,13 +76,19 @@ All [global flags](../../README.md#global-flags) apply.
 ```bash
 iics project update --id <project-id> --name "Finance Data Engineering"
 
-iics project update --id <project-id> --description "Updated description"
+iics project update --project-name "Finance ETL" --description "Finance team data pipelines"
+
+# Pick the project and edit it
+iics project update -i
 ```
 
 ```powershell
 iics project update --id <project-id> --name "Finance Data Engineering"
 
-iics project update --id <project-id> --description "Updated description"
+iics project update --project-name "Finance ETL" --description "Finance team data pipelines"
+
+# Pick the project and edit it
+iics project update -i
 ```
 
 ---
