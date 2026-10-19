@@ -7,6 +7,7 @@ import (
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -42,10 +43,8 @@ The session is cached locally so subsequent commands don't require re-authentica
 				if !config.IsTerminal() {
 					return fmt.Errorf("profile %q not found; run 'iics profile add %s' to create it", profileName, profileName)
 				}
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Profile %q does not exist. Create it now? [Y/n]: ", profileName)
-				var answer string
-				_, _ = fmt.Scanln(&answer)
-				if answer != "" && answer != "y" && answer != "Y" {
+				create, _ := tui.KeyConfirm(os.Stdin, cmd.OutOrStdout(), fmt.Sprintf("Profile %q does not exist. Create it now?", profileName), true)
+				if !create {
 					return fmt.Errorf("profile %q not found; run 'iics profile add %s' to create it", profileName, profileName)
 				}
 				res, promptErr := promptProfile(cfg, profileName)

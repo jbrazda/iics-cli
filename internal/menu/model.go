@@ -395,7 +395,7 @@ func (m *Model) View() string {
 			"↑/↓ k/j  move          pgup/pgdn  page       g/G  first/last",
 			"enter    run entry     /          filter     esc  clear filter",
 			"p        switch profile                      ?    hide help",
-			"q        quit          ctrl+c (in a command) cancels only that command",
+			"q        quit          esc/q/ctrl+c (in a command) cancel only that command",
 			"✎ marks entries that change data; on a PRODUCTION profile they ask first.",
 		} {
 			b.WriteString(m.styles.dim.Render(truncate(l, w)))

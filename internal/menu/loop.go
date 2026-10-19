@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jbrazda/iics-cli/internal/tui"
+	"golang.org/x/term"
 )
 
 // Runner runs a command line and returns its exit code.
@@ -94,10 +95,27 @@ func DefaultShowMenu(m *Model) (Result, error) {
 	return m.Result(), nil
 }
 
-// DefaultPause asks the user to press Enter (menu) or q (quit).
+// DefaultPause asks the user to press Enter or Esc (menu) or q (quit). On a
+// terminal it reads single keys, ignoring arrow keys; otherwise one line.
 func DefaultPause(out io.Writer) func() (bool, error) {
 	return func() (bool, error) {
-		_, _ = fmt.Fprint(out, "Press Enter to return to the menu, q to quit: ")
+		_, _ = fmt.Fprint(out, "Press Enter or Esc to return to the menu, q to quit: ")
+		if term.IsTerminal(int(os.Stdin.Fd())) {
+			for {
+				k, r, err := tui.ReadKey(os.Stdin)
+				if err != nil {
+					return true, err
+				}
+				switch {
+				case k == tui.KeyEnter || k == tui.KeyEsc:
+					_, _ = fmt.Fprintln(out)
+					return false, nil
+				case k == tui.KeyCancel || r == 'q' || r == 'Q':
+					_, _ = fmt.Fprintln(out)
+					return true, nil
+				}
+			}
+		}
 		line, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil && line == "" {
 			return true, nil

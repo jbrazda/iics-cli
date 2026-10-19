@@ -235,12 +235,12 @@ func pickPrincipal(in ACLEditorInput, rows []aclRow) (client.ACLPrincipal, bool,
 	var choice string
 	sel := huh.NewSelect[string]().
 		Title("Add a user group or user").
-		Description("/ to filter, ctrl+c to go back").
+		Description("/ to filter, esc or q to go back").
 		Options(opts...).
 		Height(min(len(opts)+3, 18)).
 		Value(&choice)
-	err := huh.NewForm(huh.NewGroup(sel)).WithOutput(in.Out).WithAccessible(in.Accessible).Run()
-	if errors.Is(err, huh.ErrUserAborted) {
+	err := RunForm(huh.NewForm(huh.NewGroup(sel)), in.Out, in.Accessible)
+	if errors.Is(err, ErrCanceled) {
 		return client.ACLPrincipal{}, false, nil
 	}
 	if err != nil {

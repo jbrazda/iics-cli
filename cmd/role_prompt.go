@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -25,14 +24,12 @@ func isInteractiveTTY() bool {
 	return config.IsTerminal() && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
-// promptShowPrivileges asks whether to display the role's privileges. Only
-// "y" or "yes" answers yes; anything else (including q or Enter) quits.
+// promptShowPrivileges asks whether to display the role's privileges. Only y
+// answers yes; anything else (n, Enter, Esc, q or ctrl+c) quits.
 func promptShowPrivileges() bool {
-	_, _ = fmt.Fprint(os.Stderr, "\nDisplay role privileges? [y/Q]: ")
-	// A read error (e.g. Ctrl-D) leaves line empty, which is treated as quit.
-	line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-	line = strings.ToLower(strings.TrimSpace(line))
-	return line == "y" || line == "yes"
+	_, _ = fmt.Fprintln(os.Stderr)
+	yes, _ := tui.KeyConfirm(os.Stdin, os.Stderr, "Display role privileges?", false)
+	return yes
 }
 
 // pickRole lists the roles in a filterable menu and lets the operator choose

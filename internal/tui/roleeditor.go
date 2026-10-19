@@ -259,11 +259,7 @@ func filterServices(services []client.PrivilegeService, assigned map[string]bool
 }
 
 func runForm(f *huh.Form) error {
-	err := f.WithOutput(os.Stderr).Run()
-	if errors.Is(err, huh.ErrUserAborted) {
-		return ErrCanceled
-	}
-	return err
+	return RunForm(f, os.Stderr, false)
 }
 
 func toSet(names []string) map[string]bool {

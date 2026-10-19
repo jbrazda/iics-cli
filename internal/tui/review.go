@@ -35,8 +35,8 @@ func confirmReview(out io.Writer, accessible bool, title string, lines []string,
 		Description(strings.Join(lines, "\n")).
 		Options(options...).
 		Value(&choice)
-	err := huh.NewForm(huh.NewGroup(sel)).WithOutput(out).WithAccessible(accessible).Run()
-	if errors.Is(err, huh.ErrUserAborted) {
+	err := RunForm(huh.NewForm(huh.NewGroup(sel)), out, accessible)
+	if errors.Is(err, ErrCanceled) {
 		return reviewCancel, nil
 	}
 	if err != nil {

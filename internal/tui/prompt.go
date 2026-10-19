@@ -57,14 +57,7 @@ func (p *Prompter) line() (string, error) {
 }
 
 func (p *Prompter) run(fields ...huh.Field) error {
-	err := huh.NewForm(huh.NewGroup(fields...)).
-		WithOutput(p.Out).
-		WithAccessible(p.Accessible).
-		Run()
-	if errors.Is(err, huh.ErrUserAborted) {
-		return ErrCanceled
-	}
-	return err
+	return RunForm(huh.NewForm(huh.NewGroup(fields...)), p.Out, p.Accessible)
 }
 
 func listHeight(n int) int {
@@ -136,7 +129,7 @@ func (p *Prompter) Select(label string, options []string) (int, error) {
 		}
 		sel := huh.NewSelect[int]().
 			Title(label).
-			Description("/ to filter, ctrl+c to cancel").
+			Description("/ to filter, esc or q to cancel").
 			Options(opts...).
 			Height(listHeight(len(options)) + 1).
 			Value(&idx)

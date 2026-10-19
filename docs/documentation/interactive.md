@@ -11,13 +11,24 @@ terminal.
 
 ## Keys
 
-| Prompt      | Keys                                                                                                        |
-| ----------- | ----------------------------------------------------------------------------------------------------------- |
-| Text input  | Type, `Enter` to accept (an empty value keeps the shown default)                                            |
-| Single list | Arrows or `j` / `k` to move, `/` to filter (`Esc` clears the filter), `Enter` to choose, `Ctrl+C` to cancel |
-| Checklist   | `Space` or `x` to toggle, `/` to filter, `Ctrl+A` to select all, `Enter` to confirm                         |
-| Yes / No    | Left / right or `y` / `n`, `Enter` to confirm                                                               |
-| Any prompt  | `Ctrl+C` cancels the command                                                                                |
+| Prompt      | Keys                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------- |
+| Text input  | Type, `Enter` to accept (an empty value keeps the shown default), `Esc` to cancel     |
+| Single list | Arrows or `j` / `k` to move, `/` to filter, `Enter` to choose, `Esc` or `q` to cancel |
+| Checklist   | `Space` or `x` to toggle, `/` to filter, `Ctrl+A` to select all, `Enter` to confirm   |
+| Yes / No    | Left / right or `y` / `n`, `Enter` to confirm, `Esc` or `q` to cancel                 |
+| Any prompt  | `Ctrl+C` cancels the command                                                          |
+
+### Cancel keys
+
+- `Esc` cancels the prompt, like `Ctrl+C`. While a list filter is open or
+  applied, the first `Esc` closes or clears the filter instead.
+- `q` cancels lists and yes/no prompts. In text inputs and while typing a
+  filter, `q` is typed as a letter.
+- Multi-page wizards (`user create --interactive`, `user edit`, `profile add`,
+  `group create -i`, `environment create -i`, `config edit`) and the
+  `role create` form cancel only with `Ctrl+C`, so a stray `Esc` does not
+  discard what you have entered.
 
 Checklists open with the current values already checked (for example a user's
 current groups and roles), so confirming without changes keeps them.
@@ -58,6 +69,9 @@ non-interactive commands (for example `user update-roles`) in scripts.
 ## Confirmations
 
 Destructive commands (`delete`, `package expand --clean`,
-`environment configs set`) ask a plain `[y/N]` question even on a terminal,
-so an answer can always be piped (`echo y | iics ...`). Only `y` or `Y`
-proceeds. Use `--yes` / `-y` to skip the question.
+`environment configs set`) ask a `[y/N]` question. On a terminal it takes a
+single key: `y` proceeds; `n`, `Enter`, `Esc`, `q` or `Ctrl+C` cancels; arrow
+and other special keys are ignored (they are no longer echoed as `^[[A`).
+When stdin is not a terminal one line is read, so an answer can be piped
+(`echo y | iics ...`); only `y` or `Y` proceeds. Use `--yes` / `-y` to skip
+the question.

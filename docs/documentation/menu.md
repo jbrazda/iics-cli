@@ -83,9 +83,13 @@ enter run · / filter · p profile · ? help · q quit
    typed it. Global flags the menu was started with (for example `--config`,
    `--theme`, `--no-color`) are passed on.
 3. When it finishes, `✓ done` or `✗ failed (exit N)` is shown. Press `Enter`
-   to return to the menu (on the last used entry) or `q` to quit.
+   or `Esc` to return to the menu (on the last used entry), or `q` to quit.
+   Other keys, such as arrows, are ignored.
 
 `Ctrl+C` while a command runs cancels only that command; the menu stays open.
+In a command's pickers and yes/no prompts, `Esc` or `q` also cancel the
+command and return to the menu; see
+[Interactive prompts](interactive.md#cancel-keys).
 
 ## Profiles
 

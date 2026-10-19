@@ -838,13 +838,7 @@ func newUserDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				_, _ = fmt.Fprintf(os.Stderr,
-					"Are you sure you want to delete user %s (%s)? [y/N]: ",
-					target.UserName, target.ID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+				if !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete user %s (%s)?", target.UserName, target.ID)) {
 					return nil
 				}
 			}
