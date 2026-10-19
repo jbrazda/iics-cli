@@ -56,8 +56,8 @@ type profileForm struct {
 func RunProfileWizard(in ProfileWizardInput) (*ProfileWizardResult, error) {
 	f := newProfileForm(in)
 	for {
-		form := huh.NewForm(profilePages(in, f)...).WithOutput(in.Out).WithAccessible(in.Accessible)
-		if err := form.Run(); err != nil {
+		form := huh.NewForm(profilePages(in, f)...)
+		if err := RunWizard(form, in.Out, in.Accessible); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
 				return nil, nil
 			}

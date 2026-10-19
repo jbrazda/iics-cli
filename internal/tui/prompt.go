@@ -129,7 +129,7 @@ func (p *Prompter) Select(label string, options []string) (int, error) {
 		}
 		sel := huh.NewSelect[int]().
 			Title(label).
-			Description("/ to filter, esc or q to cancel").
+			Description("/ to filter").
 			Options(opts...).
 			Height(listHeight(len(options)) + 1).
 			Value(&idx)

@@ -25,10 +25,13 @@ terminal.
   applied, the first `Esc` closes or clears the filter instead.
 - `q` cancels lists and yes/no prompts. In text inputs and while typing a
   filter, `q` is typed as a letter.
-- Multi-page wizards (`user create --interactive`, `user edit`, `profile add`,
-  `group create -i`, `environment create -i`, `config edit`) and the
-  `role create` form cancel only with `Ctrl+C`, so a stray `Esc` does not
-  discard what you have entered.
+- Wizards and forms with text fields (`user create --interactive`,
+  `user edit`, `profile add`/`edit`, `group create -i`, `environment create -i`,
+  `config edit`, `role create`) cancel with `Esc` or `Ctrl+C`. `q` is always
+  typed there, also on their list pages.
+- A hint under each prompt shows the cancel keys: `esc, q (in lists) or
+  ctrl+c to cancel` for pickers and questions, `esc or ctrl+c to cancel` for
+  wizards.
 
 Checklists open with the current values already checked (for example a user's
 current groups and roles), so confirming without changes keeps them.

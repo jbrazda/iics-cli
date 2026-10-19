@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
@@ -128,23 +129,19 @@ func KeyConfirm(in *os.File, out io.Writer, label string, defaultYes bool) (bool
 	}
 }
 
-// cancelKeysFilter makes Esc and q cancel a huh form the same way ctrl+c
-// does, unless the focused field uses the key itself:
+// cancelKey turns Esc (and q when allowQ) into ctrl+c, which makes a huh
+// form cancel, unless the focused field uses the key itself:
 //   - Esc is left to the field while it has an enabled binding for it, such
 //     as closing or clearing a list filter.
 //   - q cancels only list and confirm fields, and not while a filter is
 //     active; in text inputs it is typed.
-func cancelKeysFilter(m tea.Model, msg tea.Msg) tea.Msg {
+func cancelKey(form *huh.Form, msg tea.Msg, allowQ bool) tea.Msg {
 	k, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return msg
 	}
 	s := k.String()
-	if s != "esc" && s != "q" {
-		return msg
-	}
-	form, ok := m.(*huh.Form)
-	if !ok {
+	if s != "esc" && (s != "q" || !allowQ) {
 		return msg
 	}
 	field := form.GetFocusedField()
@@ -167,16 +164,70 @@ func cancelKeysFilter(m tea.Model, msg tea.Msg) tea.Msg {
 	return tea.KeyMsg{Type: tea.KeyCtrlC}
 }
 
-// RunForm runs a single-step form with Esc and q as cancel keys (see
-// cancelKeysFilter). Canceling returns ErrCanceled.
+var hintStyle = lipgloss.NewStyle().Faint(true)
+
+// cancelModel runs a huh form, applies the cancel keys and shows a hint
+// below the form's own key help.
+type cancelModel struct {
+	form   *huh.Form
+	allowQ bool
+	hint   string
+}
+
+func (m cancelModel) Init() tea.Cmd { return m.form.Init() }
+
+func (m cancelModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := m.form.Update(cancelKey(m.form, msg, m.allowQ))
+	if m.form.State != huh.StateNormal {
+		return m, tea.Quit
+	}
+	return m, cmd
+}
+
+func (m cancelModel) View() string {
+	if m.form.State != huh.StateNormal {
+		return ""
+	}
+	return m.form.View() + "\n" + hintStyle.Render(m.hint)
+}
+
+// runCancelable runs form with Esc (and q when allowQ) as cancel keys and
+// returns huh.ErrUserAborted when canceled. Accessible mode uses huh's line
+// prompts unchanged.
+func runCancelable(form *huh.Form, out io.Writer, accessible, allowQ bool) error {
+	if accessible {
+		return form.WithOutput(out).WithAccessible(true).Run()
+	}
+	hint := "esc or ctrl+c to cancel"
+	if allowQ {
+		hint = "esc, q (in lists) or ctrl+c to cancel"
+	}
+	// Leave quitting to cancelModel, which watches the form state.
+	form.SubmitCmd = nil
+	form.CancelCmd = nil
+	m := cancelModel{form: form, allowQ: allowQ, hint: hint}
+	if _, err := tea.NewProgram(m, tea.WithOutput(out), tea.WithReportFocus()).Run(); err != nil {
+		return fmt.Errorf("running form: %w", err)
+	}
+	if form.State == huh.StateAborted {
+		return huh.ErrUserAborted
+	}
+	return nil
+}
+
+// RunForm runs a single-step form (picker, question): Esc cancels, and q
+// cancels lists and yes/no prompts. Canceling returns ErrCanceled.
 func RunForm(form *huh.Form, out io.Writer, accessible bool) error {
-	err := form.
-		WithProgramOptions(tea.WithReportFocus(), tea.WithFilter(cancelKeysFilter)).
-		WithOutput(out).
-		WithAccessible(accessible).
-		Run()
+	err := runCancelable(form, out, accessible, true)
 	if errors.Is(err, huh.ErrUserAborted) {
 		return ErrCanceled
 	}
 	return err
+}
+
+// RunWizard runs a multi-field wizard: Esc or ctrl+c cancels; q is always
+// typed because wizards contain text inputs. Canceling returns
+// huh.ErrUserAborted.
+func RunWizard(form *huh.Form, out io.Writer, accessible bool) error {
+	return runCancelable(form, out, accessible, false)
 }

@@ -62,45 +62,55 @@ func newSelectForm() *huh.Form {
 	return f
 }
 
-func TestCancelKeysFilterSelect(t *testing.T) {
+func TestCancelKeySelect(t *testing.T) {
 	f := newSelectForm()
-	if !isCancel(cancelKeysFilter(f, keyMsg("esc"))) {
+	if !isCancel(cancelKey(f, keyMsg("esc"), true)) {
 		t.Error("esc on a select should cancel")
 	}
-	if !isCancel(cancelKeysFilter(f, keyMsg("q"))) {
+	if !isCancel(cancelKey(f, keyMsg("q"), true)) {
 		t.Error("q on a select should cancel")
 	}
-	if isCancel(cancelKeysFilter(f, keyMsg("j"))) {
+	if isCancel(cancelKey(f, keyMsg("j"), true)) {
 		t.Error("other keys must pass through")
 	}
 
 	// Start filtering: esc and q belong to the filter now.
 	_, _ = f.Update(keyMsg("/"))
-	if isCancel(cancelKeysFilter(f, keyMsg("esc"))) {
+	if isCancel(cancelKey(f, keyMsg("esc"), true)) {
 		t.Error("esc while filtering should close the filter, not cancel")
 	}
-	if isCancel(cancelKeysFilter(f, keyMsg("q"))) {
+	if isCancel(cancelKey(f, keyMsg("q"), true)) {
 		t.Error("q while filtering should be typed into the filter")
 	}
 }
 
-func TestCancelKeysFilterInput(t *testing.T) {
+func TestCancelKeyInput(t *testing.T) {
 	v := ""
 	f := huh.NewForm(huh.NewGroup(huh.NewInput().Value(&v)))
 	f.Init()
-	if !isCancel(cancelKeysFilter(f, keyMsg("esc"))) {
+	if !isCancel(cancelKey(f, keyMsg("esc"), true)) {
 		t.Error("esc on an input should cancel")
 	}
-	if isCancel(cancelKeysFilter(f, keyMsg("q"))) {
+	if isCancel(cancelKey(f, keyMsg("q"), true)) {
 		t.Error("q on an input must be typed")
 	}
 }
 
-func TestCancelKeysFilterConfirm(t *testing.T) {
+func TestCancelKeyConfirm(t *testing.T) {
 	v := false
 	f := huh.NewForm(huh.NewGroup(huh.NewConfirm().Value(&v)))
 	f.Init()
-	if !isCancel(cancelKeysFilter(f, keyMsg("q"))) {
+	if !isCancel(cancelKey(f, keyMsg("q"), true)) {
 		t.Error("q on a confirm should cancel")
+	}
+}
+
+func TestCancelKeyWizardIgnoresQ(t *testing.T) {
+	f := newSelectForm()
+	if isCancel(cancelKey(f, keyMsg("q"), false)) {
+		t.Error("q must not cancel a wizard")
+	}
+	if !isCancel(cancelKey(f, keyMsg("esc"), false)) {
+		t.Error("esc should cancel a wizard")
 	}
 }

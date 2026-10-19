@@ -67,7 +67,7 @@ func RunRuntimeWizard(in RuntimeWizardInput) (bool, error) {
 				huh.NewNote().Title("Agents").Description("No unassigned Secure Agents are available. Agents can be added later."),
 			))
 		}
-		err := huh.NewForm(fields...).WithOutput(in.Out).WithAccessible(in.Accessible).Run()
+		err := RunWizard(huh.NewForm(fields...), in.Out, in.Accessible)
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil
 		}

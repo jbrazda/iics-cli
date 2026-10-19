@@ -58,7 +58,7 @@ func RunGroupWizard(in GroupWizardInput) (bool, error) {
 				huh.NewGroup(rolesField(in.Roles, &roleIDs)).Title("Roles"),
 			)
 		}
-		err := huh.NewForm(groups...).WithOutput(in.Out).WithAccessible(in.Accessible).Run()
+		err := RunWizard(huh.NewForm(groups...), in.Out, in.Accessible)
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil
 		}

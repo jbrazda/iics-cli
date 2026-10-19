@@ -75,8 +75,8 @@ func RunUserWizard(in UserWizardInput) (bool, error) {
 			// Only role and user group assignments can be updated.
 			pages = []*huh.Group{membershipGroup(in, direct, &groupIDs, &roleIDs)}
 		}
-		form := huh.NewForm(pages...).WithOutput(in.Out).WithAccessible(in.Accessible).WithKeyMap(suggestionKeyMap())
-		if err := form.Run(); err != nil {
+		form := huh.NewForm(pages...).WithKeyMap(suggestionKeyMap())
+		if err := RunWizard(form, in.Out, in.Accessible); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
 				return false, nil
 			}

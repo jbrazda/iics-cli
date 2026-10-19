@@ -204,8 +204,8 @@ func runRoleCreateWizard(ctx context.Context, c *client.Client, body *client.Cre
 				Height(12).
 				Value(&cloneIdx),
 		),
-	).WithOutput(os.Stderr)
-	if err = form.Run(); err != nil {
+	)
+	if err = tui.RunWizard(form, os.Stderr, prompter.Accessible); err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil
 		}

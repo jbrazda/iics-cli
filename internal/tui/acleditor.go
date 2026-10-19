@@ -235,7 +235,7 @@ func pickPrincipal(in ACLEditorInput, rows []aclRow) (client.ACLPrincipal, bool,
 	var choice string
 	sel := huh.NewSelect[string]().
 		Title("Add a user group or user").
-		Description("/ to filter, esc or q to go back").
+		Description("/ to filter").
 		Options(opts...).
 		Height(min(len(opts)+3, 18)).
 		Value(&choice)
