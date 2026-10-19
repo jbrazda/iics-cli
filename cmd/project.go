@@ -15,6 +15,7 @@ func newProjectCmd() *cobra.Command {
 		Short: "Manage projects",
 	}
 
+	cmd.AddCommand(newProjectListCmd())
 	cmd.AddCommand(newProjectCreateCmd())
 	cmd.AddCommand(newProjectUpdateCmd())
 	cmd.AddCommand(newProjectDeleteCmd())

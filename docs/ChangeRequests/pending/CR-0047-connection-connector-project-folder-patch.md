@@ -97,6 +97,20 @@ Verified against the DEV org on 2026-10-19:
   objects API with a name filter, edit name and description, confirm.
 - Menu group "Projects and folders" with "Edit project" and "Edit folder".
 
+### project and folder list (added after review)
+
+- `project list [--name REGEX] [-i]` and
+  `folder list [--name REGEX] [--project-name | --project-id | --pick-project] [-i]`.
+- Columns: path, description, created, created by, updated, updated by, ID.
+- The regex matches the full path (`project/folder`), case-insensitive.
+- Created time and created by are only available from the internal FRS API
+  (`/frs/api/v1/Projects`, `/Folders`, `/Projects('<id>')/Folders`, header
+  `IDS-SESSION-ID`), which the IICS web UI uses and Informatica does not
+  document. FRS returns user IDs; they are resolved through the users API.
+  When FRS fails, the commands fall back to the objects API without the
+  created columns and print a note. The developer approved this dependency.
+- Menu: "List projects", "List folders", "List folders in a project".
+
 ## Verification
 
 - `go test ./...` covers each new client method.

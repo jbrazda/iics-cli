@@ -10,11 +10,73 @@ iics project <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description            |
-| ---------- | ---------------------- |
-| `create`   | Create a new project   |
-| `update`   | Update a project       |
-| `delete`   | Delete a project       |
+| Subcommand | Description                                    |
+| ---------- | ---------------------------------------------- |
+| `list`     | List projects with created and updated details |
+| `create`   | Create a new project                           |
+| `update`   | Update a project                               |
+| `delete`   | Delete a project                               |
+
+---
+
+## project list
+
+List projects with description, created and updated time and user, sorted by
+name. `--name` filters by a regular expression matched against the project
+name (case-insensitive); `--interactive` asks for it. The [menu](menu.md)
+entry "List projects" runs `project list -i`.
+
+Created time and created by come from the internal FRS API that the IICS web
+UI uses (`/frs/api/v1`). It is not part of the published REST API, so the CLI
+falls back to the documented objects API when it fails: a note is printed to
+stderr and the `createTime` and `createdBy` columns are left out. User IDs are
+resolved to user names; users that are not in the org user list (such as
+Informatica system users) are shown by ID.
+
+### Flags
+
+| Flag            | Short | Type   | Description                                                   |
+| --------------- | ----- | ------ | ------------------------------------------------------------- |
+| `--name`        |       | string | Regular expression matched against the name (ignores case)    |
+| `--interactive` | `-i`  | bool   | Ask for the name pattern                                      |
+
+All [global flags](../../README.md#global-flags) apply.
+
+### Output columns
+
+| Column        | Description                                 |
+| ------------- | ------------------------------------------- |
+| `path`        | Project name                                |
+| `description` | Description                                 |
+| `createTime`  | Created time (FRS only)                     |
+| `createdBy`   | User who created the project (FRS only)     |
+| `updateTime`  | Last update time                            |
+| `updatedBy`   | User who last updated the project           |
+| `id`          | Project ID                                  |
+
+`--output json` also returns `name` and `type`.
+
+### Examples
+
+```bash
+iics project list
+
+# Projects whose name starts with "fin"
+iics project list --name '^fin'
+
+# Ask for the pattern
+iics project list -i
+```
+
+```powershell
+iics project list
+
+# Projects whose name starts with "fin"
+iics project list --name '^fin'
+
+# Ask for the pattern
+iics project list -i
+```
 
 ---
 

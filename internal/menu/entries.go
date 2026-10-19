@@ -96,6 +96,9 @@ func DefaultEntries() []Entry {
 
 		{Group: "Privileges", Label: "List privileges", Description: "Show all privileges", Args: []string{"privilege", "list"}},
 
+		{Group: "Projects and folders", Label: "List projects", Description: "Show projects with created and updated details; search by name (regex)", Args: []string{"project", "list", "-i"}},
+		{Group: "Projects and folders", Label: "List folders", Description: "Show all folders with full paths; search by path (regex)", Args: []string{"folder", "list", "-i"}},
+		{Group: "Projects and folders", Label: "List folders in a project", Description: "Pick a project, filtered by name, and show its folders", Args: []string{"folder", "list", "--pick-project"}},
 		{Group: "Projects and folders", Label: "Edit project", Description: "Pick a project, filtered by name, and change its name or description", Args: []string{"project", "update", "-i"}, Writes: true},
 		{Group: "Projects and folders", Label: "Edit folder", Description: "Pick a project, then a folder, and change its name or description", Args: []string{"folder", "update", "-i"}, Writes: true},
 

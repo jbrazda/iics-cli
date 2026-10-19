@@ -10,11 +10,102 @@ iics folder <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description           |
-| ---------- | --------------------- |
-| `create`   | Create a new folder   |
-| `update`   | Update a folder       |
-| `delete`   | Delete a folder       |
+| Subcommand | Description                                   |
+| ---------- | --------------------------------------------- |
+| `list`     | List folders with created and updated details |
+| `create`   | Create a new folder                           |
+| `update`   | Update a folder                               |
+| `delete`   | Delete a folder                               |
+
+---
+
+## folder list
+
+List folders with their full path (`project/folder`), description, created and
+updated time and user, sorted by path.
+
+- Without a project, all folders in the org are listed.
+- `--project-name` or `--project-id` lists the folders of one project.
+- `--pick-project` picks the project from a list, the same picker as
+  `folder update -i` (more than 10 projects first ask for a name filter).
+
+`--name` filters by a regular expression matched against the full path
+(case-insensitive), so it can match the project name, the folder name or both;
+`--interactive` asks for it.
+
+The [menu](menu.md) entries "List folders" (`folder list -i`) and "List folders
+in a project" (`folder list --pick-project`) run these flows.
+
+Created time and created by come from the internal FRS API that the IICS web
+UI uses (`/frs/api/v1`). It is not part of the published REST API, so the CLI
+falls back to the documented objects API when it fails: a note is printed to
+stderr and the `createTime` and `createdBy` columns are left out. User IDs are
+resolved to user names; users that are not in the org user list (such as
+Informatica system users) are shown by ID.
+
+### Flags
+
+| Flag             | Short | Type   | Description                                                     |
+| ---------------- | ----- | ------ | --------------------------------------------------------------- |
+| `--name`         |       | string | Regular expression matched against the full path (ignores case) |
+| `--project-name` |       | string | List only the folders of this project                           |
+| `--project-id`   |       | string | List only the folders of this project ID                        |
+| `--pick-project` |       | bool   | Pick the project from a list                                    |
+| `--interactive`  | `-i`  | bool   | Ask for the name pattern                                        |
+
+`--project-name`, `--project-id` and `--pick-project` are mutually exclusive.
+
+All [global flags](../../README.md#global-flags) apply.
+
+### Output columns
+
+| Column        | Description                                |
+| ------------- | ------------------------------------------ |
+| `path`        | Full path: `project/folder`                |
+| `description` | Description                                |
+| `createTime`  | Created time (FRS only)                    |
+| `createdBy`   | User who created the folder (FRS only)     |
+| `updateTime`  | Last update time                           |
+| `updatedBy`   | User who last updated the folder           |
+| `id`          | Folder ID                                  |
+
+`--output json` also returns `name` and `type`.
+
+### Examples
+
+```bash
+# All folders
+iics folder list
+
+# Folders in the Salesforce project whose name starts with "Acc"
+iics folder list --name '^salesforce/acc'
+
+# Any folder ending in _v1
+iics folder list --name '_v1$'
+
+# Folders of one project
+iics folder list --project-name "Finance ETL"
+
+# Pick the project, then show its folders
+iics folder list --pick-project
+```
+
+```powershell
+# All folders
+iics folder list
+
+# Folders in the Salesforce project whose name starts with "Acc"
+iics folder list --name '^salesforce/acc'
+
+# Any folder ending in _v1
+iics folder list --name '_v1$'
+
+# Folders of one project
+iics folder list --project-name "Finance ETL"
+
+# Pick the project, then show its folders
+iics folder list --pick-project
+```
 
 ---
 

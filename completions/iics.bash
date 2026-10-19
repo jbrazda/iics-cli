@@ -2927,6 +2927,63 @@ _iics_folder_delete()
     noun_aliases=()
 }
 
+_iics_folder_list()
+{
+    last_command="iics_folder_list"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--interactive")
+    flags+=("-i")
+    local_nonpersistent_flags+=("--interactive")
+    local_nonpersistent_flags+=("-i")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--pick-project")
+    local_nonpersistent_flags+=("--pick-project")
+    flags+=("--project-id=")
+    two_word_flags+=("--project-id")
+    local_nonpersistent_flags+=("--project-id")
+    local_nonpersistent_flags+=("--project-id=")
+    flags+=("--project-name=")
+    two_word_flags+=("--project-name")
+    local_nonpersistent_flags+=("--project-name")
+    local_nonpersistent_flags+=("--project-name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_folder_update()
 {
     last_command="iics_folder_update"
@@ -2999,6 +3056,7 @@ _iics_folder()
     commands=()
     commands+=("create")
     commands+=("delete")
+    commands+=("list")
     commands+=("update")
 
     flags=()
@@ -5451,6 +5509,53 @@ _iics_project_delete()
     noun_aliases=()
 }
 
+_iics_project_list()
+{
+    last_command="iics_project_list"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--interactive")
+    flags+=("-i")
+    local_nonpersistent_flags+=("--interactive")
+    local_nonpersistent_flags+=("-i")
+    flags+=("--name=")
+    two_word_flags+=("--name")
+    local_nonpersistent_flags+=("--name")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    flags+=("--debug")
+    flags+=("--http-timeout=")
+    two_word_flags+=("--http-timeout")
+    flags+=("--no-color")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    two_word_flags+=("-o")
+    flags+=("--profile=")
+    two_word_flags+=("--profile")
+    two_word_flags+=("-p")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags+=("--verbose")
+    flags+=("-v")
+    flags+=("--wide")
+    flags+=("--width=")
+    two_word_flags+=("--width")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _iics_project_update()
 {
     last_command="iics_project_update"
@@ -5519,6 +5624,7 @@ _iics_project()
     commands=()
     commands+=("create")
     commands+=("delete")
+    commands+=("list")
     commands+=("update")
 
     flags=()

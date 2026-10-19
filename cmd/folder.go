@@ -15,6 +15,7 @@ func newFolderCmd() *cobra.Command {
 		Short: "Manage folders",
 	}
 
+	cmd.AddCommand(newFolderListCmd())
 	cmd.AddCommand(newFolderCreateCmd())
 	cmd.AddCommand(newFolderUpdateCmd())
 	cmd.AddCommand(newFolderDeleteCmd())

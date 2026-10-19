@@ -19,6 +19,8 @@ const (
 	// Note: IICS v3 uses "INFA-SESSION-ID" while v2 used "icSessionId".
 	sessionHeaderV3 = "INFA-SESSION-ID"
 	sessionHeaderV2 = "icSessionId"
+	// sessionHeaderFRS is the session header of the internal FRS repository API.
+	sessionHeaderFRS = "IDS-SESSION-ID"
 	// baseAPIPathV2 is the base path for v2 API endpoints.
 	BaseAPIPathV2 = "api/v2"
 	// baseAPIPathV3 is the base path for v3 API endpoints.
@@ -150,6 +152,9 @@ func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Re
 	} else {
 		req.Header.Set(sessionHeaderV3, sessionID)
 	}
+	if strings.HasPrefix(req.URL.Path, "/"+frsAPIPath+"/") {
+		req.Header.Set(sessionHeaderFRS, sessionID)
+	}
 	if req.Header.Get("Accept") == "" {
 		req.Header.Set("Accept", "application/json")
 	}
@@ -245,7 +250,7 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	_, _ = fmt.Fprintf(w, "%s[DEBUG] Request Headers:\n", now)
 	for k, vs := range req.Header {
 		for _, v := range vs {
-			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
+			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) || strings.EqualFold(k, sessionHeaderFRS) {
 				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
 			} else {
 				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
