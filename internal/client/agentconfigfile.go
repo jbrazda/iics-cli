@@ -11,7 +11,7 @@ import (
 // in one of two shapes:
 //
 // A nested map, as written by AgentConfigDocument. A null value resets the
-// property to its default:
+// property to its default, or removes a custom property:
 //
 //	process-engine:
 //	  cluster:
@@ -23,7 +23,9 @@ import (
 // A list of changes:
 //
 //	[{"property": "process-engine:cluster:primary-node", "value": "true"},
-//	 {"property": "process-engine:jvm:min-heap", "reset": true}]
+//	 {"property": "process-engine:jvm:min-heap", "reset": true},
+//	 {"property": "Data_Integration_Server:TOMCAT_CFG:maxDTMProcesses", "value": "5", "add": true},
+//	 {"property": "Data_Integration_Server:PMRDTM_CFG:MatchQuotesPastEndOfLine", "remove": true}]
 //
 // Scalars are used as written, so true or 512 become "true" and "512".
 func ParseAgentConfigChanges(data []byte) ([]AgentConfigChange, error) {
@@ -93,6 +95,12 @@ func parseChangeList(root *yaml.Node) ([]AgentConfigChange, error) {
 				ch.Value = val.Value
 			case "reset":
 				ch.Reset = val.Value == "true"
+			case "add":
+				ch.Add = val.Value == "true"
+			case "remove":
+				ch.Remove = val.Value == "true"
+			case "sensitive":
+				ch.Sensitive = val.Value == "true"
 			default:
 				return nil, fmt.Errorf("change file line %d: unknown key %q", item.Content[k].Line, key)
 			}

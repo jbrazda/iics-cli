@@ -149,3 +149,31 @@ func TestEntryDiff(t *testing.T) {
 		t.Error("scalars are not lists")
 	}
 }
+
+func TestAgentConfigEditorCustom(t *testing.T) {
+	e := &agentConfigEditor{
+		props: []client.AgentConfigProperty{
+			{Service: "Data_Integration_Server", Type: "TOMCAT_CFG", Name: "maxDTMProcesses", Value: "5", Custom: true},
+		},
+		pending: map[string]client.AgentConfigChange{},
+	}
+	e.record(0, client.AgentConfigChange{Value: "6"})
+	if ch := e.pending["Data_Integration_Server:TOMCAT_CFG:maxDTMProcesses"]; ch.Value != "6" || ch.Add || ch.Remove {
+		t.Errorf("custom value change = %+v", ch)
+	}
+	e.record(0, client.AgentConfigChange{Reset: true}) // reset on a custom property removes it
+	if !e.removing(0) {
+		t.Error("reset of a custom property should remove it")
+	}
+
+	// A property added in the editor stays an addition when its value changes.
+	e.props = append(e.props, client.AgentConfigProperty{Service: "Data_Integration_Server", Type: "PMRDTM_CFG", Name: "New", Custom: true})
+	e.pending["Data_Integration_Server:PMRDTM_CFG:New"] = client.AgentConfigChange{Property: "Data_Integration_Server:PMRDTM_CFG:New", Value: "a", Add: true}
+	e.record(1, client.AgentConfigChange{Value: "b"})
+	if ch := e.pending["Data_Integration_Server:PMRDTM_CFG:New"]; !ch.Add || ch.Value != "b" {
+		t.Errorf("added property change = %+v", ch)
+	}
+	if got := e.changes(); len(got) != 2 || !got[0].Remove || !got[1].Add {
+		t.Errorf("changes() = %+v", got)
+	}
+}

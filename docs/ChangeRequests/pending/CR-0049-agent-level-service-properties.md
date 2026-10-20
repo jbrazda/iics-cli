@@ -61,6 +61,13 @@ changed from the CLI.
   logging) open in an entry editor with edit, add, remove, edit-as-text
   (`$EDITOR` via ctrl+e), reset and undo. The review lists entry-level
   changes. Menu entry "Edit agent properties".
+- Custom properties (Custom Configuration Details), for example
+  `maxDTMProcesses` for the Data Integration Server Tomcat on CDI agents:
+  `get` lists them (marked `custom`), `set --add service:type:name=value` adds
+  one with a type the service offers, `--set` changes it, `--remove` (or
+  `--reset`) removes it, `--add-missing` adds missing properties from a change
+  file, and `agent configs edit` has **+ Add custom property** and remove.
+  Type labels from the UI (`Tomcat`, `DTM`) are accepted in property names.
 - `iics agent rename --id|--fid|--name|--hostname --new-name <name>` renames an
   agent, for example from the host name the installer registers to a logical
   name such as `CAI-A03`. The name is trimmed, at most 100 characters, and must
@@ -82,6 +89,8 @@ changed from the CLI.
 internal/client/agentform.go        # form read/parse/apply/save/verify
 internal/client/agentform_test.go   # parser, apply, filter, GET/POST, re-login tests
 internal/client/agentconfigfile.go  # change files (JSON/YAML map or list) and export
+internal/client/agentcustom.go      # custom property rows: parse, add, remove, submit
+internal/client/agentcustom_test.go
 internal/client/agentconfigfile_test.go
 cmd/agent_configs.go                # agent configs get / set
 cmd/agent_rename.go                 # agent rename
@@ -218,3 +227,24 @@ Form layout (`<form id="agentForm">`, about 1,000 fields, all submitted on save)
   `101` stored `'101'` (quotes added), verified, and was reset afterwards.
 - Table columns `NAME` (get) and `PROPERTY` (set diff) no longer use
   `ShrinkWrap`, which the table renderer moves to the last position.
+- Custom property rows (`#customConfigTable`) submit, in order:
+  `customConfigEngine` (service key), `customConfigType` (`-1`),
+  `customConfigTypeEngine` (type), `customConfigSubType` (`-1`),
+  `customConfigName` (maxlength 255), `customConfigValue` (maxlength 512),
+  `customConfigSensitive` (checkbox, only when checked),
+  `engineCustomConfigIdInput` (row ID) and `isSensitiveConfig`. The types per
+  service are the `data-engine` options of `customConfigTypeEngine`. From
+  `pnAgent.js`: a new row gets `Date.now()` as its ID; removing the last row
+  leaves an empty template row with `-1` values, which the form always
+  submits when there are no custom properties. The client keeps the parsed
+  fields as they are and applies additions and removals when it builds the
+  request, so field positions stay valid.
+- Read-only on tst CDI-G01-A01: the 5 custom properties from the UI
+  (`maxDTMProcesses`, `csv-reader-disable-safety-switch`, `maxUrlLength`,
+  `INFA_CODEPAGENAME`, `MatchQuotesPastEndOfLine`) are listed, exported, and
+  a dry run of add, set and remove shows the expected changes.
+- Live on tst CAI-A03 (OI Data Collector custom property, which replaces
+  the empty template row): `set --add`, `--set`, a refused duplicate `--add`,
+  and `--remove`, each verified by reading back; then add and remove through
+  `agent configs edit` in a pseudo-terminal. The agent has no custom
+  properties afterwards, as before.

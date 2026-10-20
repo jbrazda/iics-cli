@@ -235,7 +235,7 @@ Properties are named `service:type:name`:
 | Part      | Values                                                                                                                           |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `service` | Service name without its version (`process-engine`, `OpsInsightsDataCollector`), the display name (`Process Server`), or `agent` |
-| `type`    | Property type, for example `server`, `cluster`, `jvm`, `db`, `logging`, or `AGENTCORE_CFG` for `agent` properties                |
+| `type`    | Property type, for example `server`, `cluster`, `jvm`, `db`, `logging`, `TOMCAT_CFG`, or the UI label (`Tomcat`, `DTM`)          |
 | `name`    | Property name, for example `primary-node`                                                                                        |
 
 Matching is case-insensitive. Use `type/subType` (for example
@@ -249,6 +249,33 @@ the server ignores changes to them, so `set` refuses them. `get` hides them
 unless `--include-hidden` or `--service agent` is given. On CDI agents the
 editable Tomcat and JVM settings are under the Data Integration Server
 service, for example `Data_Integration_Server:TOMCAT_JRE:INFA_MEMORY`.
+
+### Custom properties
+
+Services also take **custom properties** (Custom Configuration Details in the
+Administrator UI): properties that are not in the service's standard list,
+for example `maxDTMProcesses` or `maxUrlLength` for the Data Integration
+Server Tomcat, or `INFA_CODEPAGENAME` for its JRE. Each service offers its own
+types, for example:
+
+| Service                 | Custom property types                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Data Integration Server | `TOMCAT_CFG` (Tomcat), `TOMCAT_JRE` (Tomcat JRE), `TOMCAT_LOG4J`, `PMRDTM_CFG` (DTM), `PLATFORM_CFG`, `SYSTEM_CFG`, `IDQ`, ... |
+| Mass Ingestion          | `AGENT_RUNTIME_SETTINGS`, `PGP_SETTINGS`, `JVM_SETTINGS`                                                                       |
+| Process Server          | `server`, `cluster`, `jvm`, `connectors`, `db`, `logging`                                                                      |
+
+The types come from the agent's own form, so they always match the services
+the agent runs. A wrong type is rejected with the list of valid types.
+
+- `get` lists custom properties with the standard ones, marked `custom` in the
+  `OVERRIDDEN` column (`"custom": true` in JSON). `--overridden` includes them.
+- `set --add service:type:name=value` adds one; `set --set` changes its value;
+  `set --remove service:type:name` (or `--reset`) removes it.
+- Names can have up to 255 characters, values up to 512, on one line.
+- `agent configs edit` lists them with a `+` mark and offers
+  **+ Add custom property** for each service.
+- `get --export` includes them. When applying such a file to another agent,
+  `--add-missing` adds the custom properties that agent does not have yet.
 
 ### agent configs get
 
@@ -282,8 +309,8 @@ properties), `NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. Long values are wrapped.
 
 `--output csv` prints one flat table with an extra `SERVICE` column.
 `--output json` / `yaml` list the properties with `service`, `serviceName`,
-`type`, `subType`, `name`, `value`, `defaultValue`, `overridden` and
-`sensitive`.
+`type`, `subType`, `name`, `value`, `defaultValue`, `overridden`,
+`sensitive` and `custom`.
 
 ```text
 Agent: CAI-A03 (01D23X0800000000008G)
@@ -313,18 +340,21 @@ Change or reset properties of one agent. The changes are shown as a
 marked `(default)`, sensitive values are shown as `***`) and applied after
 confirmation.
 
-| Flag          | Type   | Description                                                                                 |
-| ------------- | ------ | ------------------------------------------------------------------------------------------- |
-| `--id`        | string | Agent ID                                                                                    |
-| `--fid`       | string | Agent federated ID                                                                          |
-| `--name`      | string | Agent name                                                                                  |
-| `--hostname`  | string | Agent host name                                                                             |
-| `--set`       | string | `service:type:name=value`; a value `@file` reads the value from a file. Repeatable          |
-| `--reset`     | string | `service:type:name` to reset to the default. Repeatable                                     |
-| `--from-file` | string | JSON or YAML change file (see below); only the properties in the file change                |
-| `--dry-run`   | bool   | Show the changes without applying them                                                      |
-| `--yes`, `-y` | bool   | Apply without asking for confirmation                                                       |
-| `--force`     | bool   | Change the agent even if its Secure Agent group has group-level properties                  |
+| Flag            | Type   | Description                                                                              |
+| --------------- | ------ | ---------------------------------------------------------------------------------------- |
+| `--id`          | string | Agent ID                                                                                 |
+| `--fid`         | string | Agent federated ID                                                                       |
+| `--name`        | string | Agent name                                                                               |
+| `--hostname`    | string | Agent host name                                                                          |
+| `--set`         | string | `service:type:name=value`; a value `@file` reads the value from a file. Repeatable       |
+| `--reset`       | string | `service:type:name` to reset to the default; removes a custom property. Repeatable       |
+| `--add`         | string | `service:type:name=value` to add a custom property (`@file` reads the value). Repeatable |
+| `--remove`      | string | `service:type:name` of a custom property to remove. Repeatable                           |
+| `--add-missing` | bool   | Add properties from `--set` or `--from-file` that do not exist, as custom properties     |
+| `--from-file`   | string | JSON or YAML change file (see below); only the properties in the file change             |
+| `--dry-run`     | bool   | Show the changes without applying them                                                   |
+| `--yes`, `-y`   | bool   | Apply without asking for confirmation                                                    |
+| `--force`       | bool   | Change the agent even if its Secure Agent group has group-level properties               |
 
 Rules:
 
@@ -380,9 +410,16 @@ A list of changes:
 [
   { "property": "process-engine:cluster:primary-node", "value": "false" },
   { "property": "process-engine:jvm:max-heap", "value": "'4G'" },
-  { "property": "process-engine:jvm:min-heap", "reset": true }
+  { "property": "process-engine:jvm:min-heap", "reset": true },
+  { "property": "Data_Integration_Server:TOMCAT_CFG:maxDTMProcesses", "value": "5", "add": true },
+  { "property": "Data_Integration_Server:PMRDTM_CFG:MatchQuotesPastEndOfLine", "remove": true }
 ]
 ```
+
+List items take `property` and one of `value`, `reset: true`, `add: true`
+(with `value`, optionally `sensitive: true`) or `remove: true`. In the nested
+map, `null` resets a standard property or removes a custom one; properties
+that do not exist are rejected unless `--add-missing` is given.
 
 Notes on values:
 
@@ -432,6 +469,17 @@ iics agent configs get --name CAI-A01 --service process-engine --overridden --ex
 # edit agent-specific values such as host-name, key-alias and primary-node
 iics agent configs set --name CAI-A02 --from-file pe.yaml --dry-run
 
+# Custom properties on a CDI agent (type value or UI label)
+iics agent configs set --name CDI-G01-A01 \
+  --add "Data Integration Server:Tomcat:maxDTMProcesses=5" \
+  --add "Data_Integration_Server:TOMCAT_JRE:INFA_CODEPAGENAME=UTF-8"
+iics agent configs set --name CDI-G01-A01 --set "Data_Integration_Server:TOMCAT_CFG:maxDTMProcesses=8"
+iics agent configs set --name CDI-G01-A01 --remove "Data_Integration_Server:PMRDTM_CFG:MatchQuotesPastEndOfLine"
+
+# Copy a CDI agent's Data Integration Server overrides and custom properties to a new agent
+iics agent configs get --name CDI-G01-A01 --service Data_Integration_Server --overridden --export > dis.yaml
+iics agent configs set --name CDI-G01-A02 --from-file dis.yaml --add-missing --dry-run
+
 # Restart Process Server to use the new values
 iics agent restart --name CAI-A03 --service "Process Server" --blocking
 ```
@@ -458,10 +506,13 @@ menu entry **Edit agent properties** runs this command.
 
 Screens:
 
-1. **Services** - each service with its number of properties, overridden
-   properties and pending changes, then **Review and apply** and **Cancel**.
+1. **Services** - each service with its number of properties, overridden and
+   custom properties and pending changes, then **Review and apply** and
+   **Cancel**.
 2. **Properties** of a service - type, name and a value preview. `*` marks an
-   overridden property, `✎` a pending change. `/` filters.
+   overridden property, `+` a custom property, `✎` a pending change, `✗` a
+   custom property to remove. `/` filters. **+ Add custom property** asks for
+   the type (from the service's types), name and value.
 3. **Property editor**:
    - One-line values open in an input field. Values stored in YAML single
      quotes (`'10G'`) are edited without the quotes, which are added back.
@@ -476,6 +527,8 @@ Screens:
    - **Edit as text** edits the whole value as YAML; `ctrl+e` opens it in
      `$EDITOR`.
    - **Reset to default** and **Undo changes to this property**.
+   - Custom properties: **Edit value**, **Remove custom property** (or
+     **Keep this property** to undo a removal).
 4. **Review** - all pending changes; list properties show entry changes
    (`~` changed, `+` added, `-` removed). **Apply** saves.
 

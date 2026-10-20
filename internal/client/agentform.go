@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -48,9 +49,16 @@ type AgentConfigProperty struct {
 	DefaultValue string `json:"defaultValue"`
 	Overridden   bool   `json:"overridden"`
 	Sensitive    bool   `json:"sensitive,omitempty"`
+	// Custom marks a custom property (Custom Configuration Details), added
+	// to a service on top of its standard properties. It has no default.
+	Custom bool `json:"custom,omitempty"`
 
 	// Indexes into AgentConfigForm.fields for the value and overridden flag.
-	valueIdx, overIdx int
+	// For custom properties overIdx is unused, rowStart is the index of the
+	// row's first field, or -1 for a property added by Apply.
+	valueIdx, overIdx, rowStart int
+	// removed marks a custom property deleted by Apply.
+	removed bool
 	// serviceKey is the versioned service key used in the form, for example
 	// process-engine15124581.
 	serviceKey string
@@ -80,6 +88,13 @@ type AgentConfigForm struct {
 	fields  []formField
 	cookies []*http.Cookie
 	csrf    string
+
+	// Custom configuration rows (including the empty template row the form
+	// keeps when there are none), custom types per service key, and service
+	// display names by service key.
+	customRows   []customRow
+	customTypes  map[string][]CustomConfigType
+	serviceNames map[string]string
 }
 
 var (
@@ -256,6 +271,12 @@ func parseAgentConfigForm(page string) (*AgentConfigForm, error) {
 				overIdx:      i + 5,
 			})
 			i += 5
+		case "customConfigEngine":
+			end, err := form.parseCustomRow(i)
+			if err != nil {
+				return nil, err
+			}
+			i = end
 		case "engineConfigKey":
 			if i+3 >= len(f) || f[i+1].name != "engineConfigValue" || f[i+2].name != "engineConfigDefault" || f[i+3].name != "engineConfigOverriden" {
 				return nil, fmt.Errorf("unexpected agent form layout at field %d (%s)", i, f[i].name)
@@ -283,6 +304,14 @@ func parseAgentConfigForm(page string) (*AgentConfigForm, error) {
 	}
 	if form.AgentID == "" || form.Version == "" {
 		return nil, fmt.Errorf("agent form is missing the agent id or version")
+	}
+	form.serviceNames = serviceNames
+	form.parseCustomTypes(section)
+	for i := range form.Properties {
+		p := &form.Properties[i]
+		if p.Custom && p.ServiceName == "" {
+			p.ServiceName = form.serviceNames[p.serviceKey]
+		}
 	}
 	return form, nil
 }
@@ -326,15 +355,27 @@ func (s PropertySelector) String() string {
 func (f *AgentConfigForm) Find(sel PropertySelector) (int, error) {
 	var hits []int
 	for i, p := range f.Properties {
+		if p.removed {
+			continue
+		}
 		if sel.matches(p) {
 			hits = append(hits, i)
+			continue
+		}
+		// The type may be given by its UI label, e.g. Tomcat for TOMCAT_CFG.
+		if v := f.typeValue(p.serviceKey, sel.Type); v != "" {
+			alias := sel
+			alias.Type = v
+			if alias.matches(p) {
+				hits = append(hits, i)
+			}
 		}
 	}
 	switch len(hits) {
 	case 1:
 		return hits[0], nil
 	case 0:
-		return -1, fmt.Errorf("property %s not found on agent %s", sel, f.AgentName)
+		return -1, &propertyNotFoundError{sel: sel, agent: f.AgentName}
 	}
 	keys := make([]string, len(hits))
 	for i, h := range hits {
@@ -375,7 +416,7 @@ func (f *AgentConfigForm) Reset(i int) {
 // encode builds the form body for actionMethod=update, keeping field order.
 func (f *AgentConfigForm) encode() string {
 	var b strings.Builder
-	for i, fld := range f.fields {
+	for i, fld := range f.submitFields() {
 		v := fld.value
 		switch fld.name {
 		case "actionMethod":
@@ -547,7 +588,7 @@ func (f *AgentConfigForm) Filter(flt AgentConfigFilter) ([]AgentConfigProperty, 
 		if typ != "" && !strings.EqualFold(typ, p.Type) || sub != "" && !strings.EqualFold(sub, p.SubType) {
 			continue
 		}
-		if nameRe != nil && !nameRe.MatchString(p.Name) || flt.Overridden && !p.Overridden {
+		if p.removed || nameRe != nil && !nameRe.MatchString(p.Name) || flt.Overridden && !p.Overridden && !p.Custom {
 			continue
 		}
 		out = append(out, p)
@@ -555,15 +596,20 @@ func (f *AgentConfigForm) Filter(flt AgentConfigFilter) ([]AgentConfigProperty, 
 	return out, nil
 }
 
-// AgentConfigChange is one requested property change: a new value, or a
-// reset to the default when Reset is true.
+// AgentConfigChange is one requested property change: a new value, a reset
+// to the default, or adding or removing a custom property. Reset on a custom
+// property removes it.
 type AgentConfigChange struct {
-	Property string `json:"property"` // service:type[/subType]:name
-	Value    string `json:"value,omitempty"`
-	Reset    bool   `json:"reset,omitempty"`
+	Property  string `json:"property"` // service:type[/subType]:name
+	Value     string `json:"value,omitempty"`
+	Reset     bool   `json:"reset,omitempty"`
+	Add       bool   `json:"add,omitempty"`       // create a custom property
+	Remove    bool   `json:"remove,omitempty"`    // delete a custom property
+	Sensitive bool   `json:"sensitive,omitempty"` // mark a new custom property sensitive
 }
 
-// AgentConfigDiff describes a change applied to the form.
+// AgentConfigDiff describes a change applied to the form. Change is "add" or
+// "remove" for custom properties that are created or deleted.
 type AgentConfigDiff struct {
 	Property      string `json:"property"`
 	ServiceName   string `json:"serviceName,omitempty"`
@@ -572,38 +618,100 @@ type AgentConfigDiff struct {
 	OldOverridden bool   `json:"oldOverridden"`
 	NewOverridden bool   `json:"newOverridden"`
 	Sensitive     bool   `json:"sensitive,omitempty"`
+	Custom        bool   `json:"custom,omitempty"`
+	Change        string `json:"change,omitempty"`
+}
+
+// ApplyOptions changes how Apply treats properties.
+type ApplyOptions struct {
+	// AddMissing adds a custom property for a value change whose property
+	// does not exist, for example when copying settings to another agent.
+	AddMissing bool
 }
 
 // Apply applies changes to the form and returns the properties that change.
 // Setting a property to its current value leaves it untouched, so a default
 // value does not become an override.
 func (f *AgentConfigForm) Apply(changes []AgentConfigChange) ([]AgentConfigDiff, error) {
+	return f.ApplyWith(changes, ApplyOptions{})
+}
+
+// ApplyWith is Apply with options.
+func (f *AgentConfigForm) ApplyWith(changes []AgentConfigChange, opts ApplyOptions) ([]AgentConfigDiff, error) {
 	var diffs []AgentConfigDiff
-	seen := map[int]bool{}
+	seen := map[string]bool{}
 	for _, ch := range changes {
 		sel, err := ParsePropertySelector(ch.Property)
 		if err != nil {
 			return nil, err
 		}
+		if ch.Add && (ch.Remove || ch.Reset) {
+			return nil, fmt.Errorf("property %s: add cannot be combined with remove or reset", sel)
+		}
 		i, err := f.Find(sel)
+		var notFound *propertyNotFoundError
+		missing := errors.As(err, &notFound)
+		if ch.Add || missing && opts.AddMissing && !ch.Reset && !ch.Remove {
+			if err == nil {
+				if f.Properties[i].Custom {
+					return nil, fmt.Errorf("custom property %s already exists; use set to change its value", f.Properties[i].Key())
+				}
+				return nil, fmt.Errorf("%s is a standard property; use set to change its value", f.Properties[i].Key())
+			}
+			if !missing {
+				return nil, err
+			}
+			d, addErr := f.addCustom(sel, normalizeNewlines(ch.Value), ch.Sensitive)
+			if addErr != nil {
+				return nil, addErr
+			}
+			if seen[d.Property] {
+				return nil, fmt.Errorf("property %s is changed more than once", d.Property)
+			}
+			seen[d.Property] = true
+			diffs = append(diffs, d)
+			continue
+		}
 		if err != nil {
+			if missing {
+				return nil, fmt.Errorf("%w; use add to create a custom property", err)
+			}
 			return nil, err
 		}
-		if f.Properties[i].Service == SystemService {
-			return nil, fmt.Errorf("property %s is not editable: the Administrator UI hides the agent's own (%s) properties and the server ignores changes to them", f.Properties[i].Key(), SystemService)
+		p := &f.Properties[i]
+		if p.Service == SystemService {
+			return nil, fmt.Errorf("property %s is not editable: the Administrator UI hides the agent's own (%s) properties and the server ignores changes to them", p.Key(), SystemService)
 		}
-		if seen[i] {
-			return nil, fmt.Errorf("property %s is changed more than once", f.Properties[i].Key())
+		if seen[p.Key()] {
+			return nil, fmt.Errorf("property %s is changed more than once", p.Key())
 		}
-		seen[i] = true
-		old := f.Properties[i]
+		seen[p.Key()] = true
+		old := *p
+		if p.Custom {
+			switch value := normalizeNewlines(ch.Value); {
+			case ch.Remove || ch.Reset:
+				p.removed = true
+				diffs = append(diffs, AgentConfigDiff{Property: p.Key(), ServiceName: p.ServiceName, OldValue: old.Value,
+					Sensitive: p.Sensitive, Custom: true, Change: "remove"})
+			case value != old.Value:
+				p.Value = value
+				if p.rowStart >= 0 {
+					f.fields[p.valueIdx].value = value
+				}
+				diffs = append(diffs, AgentConfigDiff{Property: p.Key(), ServiceName: p.ServiceName, OldValue: old.Value,
+					NewValue: value, Sensitive: p.Sensitive, Custom: true})
+			}
+			continue
+		}
+		if ch.Remove {
+			return nil, fmt.Errorf("%s is a standard property and cannot be removed; use reset", p.Key())
+		}
 		switch value := normalizeNewlines(ch.Value); {
 		case ch.Reset:
 			f.Reset(i)
 		case value != old.Value:
 			f.Set(i, value)
 		}
-		p := f.Properties[i]
 		if p.Value == old.Value && p.Overridden == old.Overridden {
 			continue
 		}
@@ -630,6 +738,12 @@ func (c *Client) VerifyAgentConfigDiffs(ctx context.Context, agentID string, dif
 			return err
 		}
 		i, err := form.Find(sel)
+		if d.Change == "remove" {
+			if err == nil {
+				failed = append(failed, d.Property+" (still present)")
+			}
+			continue
+		}
 		if err != nil {
 			failed = append(failed, d.Property+" (not found)")
 			continue

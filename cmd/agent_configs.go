@@ -51,6 +51,9 @@ var agentPropertyCols = []output.Column{
 	{Header: "DEFAULT", Field: "defaultValue", Width: 30, Priority: 3, Func: wrapConfigField("defaultValue")},
 	{Header: "OVERRIDDEN", Field: "overridden", Width: 10, Priority: 2, Shrink: output.ShrinkNever, Func: func(v interface{}) string {
 		row, _ := v.(map[string]interface{})
+		if b, _ := row["custom"].(bool); b {
+			return "custom"
+		}
 		if b, _ := row["overridden"].(bool); b {
 			return "yes"
 		}
@@ -72,10 +75,20 @@ func diffValueFunc(valueField, overField string) func(v interface{}) string {
 	return func(v interface{}) string {
 		row, _ := v.(map[string]interface{})
 		s, _ := row[valueField].(string)
+		change, _ := row["change"].(string)
+		switch {
+		case change == "add" && valueField == "oldValue":
+			return "(new custom property)"
+		case change == "remove" && valueField == "newValue":
+			return "(removed)"
+		}
 		if sens, _ := row["sensitive"].(bool); sens {
 			s = "***"
 		}
 		s = output.WrapCell(s, 44)
+		if custom, _ := row["custom"].(bool); custom {
+			return s
+		}
 		if over, _ := row[overField].(bool); !over {
 			s += " (default)"
 		}
@@ -195,7 +208,7 @@ func writeAgentConfigExport(cmd *cobra.Command, props []client.AgentConfigProper
 
 // parseAgentConfigChanges builds the change list from --set, --reset and
 // --from-file. A --set value starting with @ is read from that file.
-func parseAgentConfigChanges(sets, resets []string, fromFile string) ([]client.AgentConfigChange, error) {
+func parseAgentConfigChanges(sets, adds, resets, removes []string, fromFile string) ([]client.AgentConfigChange, error) {
 	var changes []client.AgentConfigChange
 	if fromFile != "" {
 		data, err := os.ReadFile(fromFile)
@@ -206,22 +219,36 @@ func parseAgentConfigChanges(sets, resets []string, fromFile string) ([]client.A
 			return nil, fmt.Errorf("%s: %w", fromFile, err)
 		}
 	}
-	for _, s := range sets {
+	parseValue := func(flag, s string, add bool) error {
 		prop, value, ok := strings.Cut(s, "=")
 		if !ok {
-			return nil, fmt.Errorf("invalid --set %q: expected service:type:name=value", s)
+			return fmt.Errorf("invalid --%s %q: expected service:type:name=value", flag, s)
 		}
 		if file, isFile := strings.CutPrefix(value, "@"); isFile {
 			data, err := os.ReadFile(file)
 			if err != nil {
-				return nil, fmt.Errorf("reading value for %s: %w", prop, err)
+				return fmt.Errorf("reading value for %s: %w", prop, err)
 			}
 			value = string(data)
 		}
-		changes = append(changes, client.AgentConfigChange{Property: prop, Value: value})
+		changes = append(changes, client.AgentConfigChange{Property: prop, Value: value, Add: add})
+		return nil
+	}
+	for _, s := range sets {
+		if err := parseValue("set", s, false); err != nil {
+			return nil, err
+		}
+	}
+	for _, s := range adds {
+		if err := parseValue("add", s, true); err != nil {
+			return nil, err
+		}
 	}
 	for _, r := range resets {
 		changes = append(changes, client.AgentConfigChange{Property: r, Reset: true})
+	}
+	for _, r := range removes {
+		changes = append(changes, client.AgentConfigChange{Property: r, Remove: true})
 	}
 	return changes, nil
 }
@@ -282,7 +309,9 @@ func printRestartHint(cmd *cobra.Command, agent *client.Agent, diffs []client.Ag
 func newAgentConfigsSetCmd() *cobra.Command {
 	var (
 		id, fid, name, hostname string
-		sets, resets            []string
+		sets, adds              []string
+		resets, removes         []string
+		addMissing              bool
 		fromFile                string
 		dryRun, yes, force      bool
 	)
@@ -331,12 +360,12 @@ from the group; the command refuses to change them unless --force is given.
 			if id == "" && fid == "" && name == "" && hostname == "" {
 				return fmt.Errorf("one of --id, --fid, --name, or --hostname is required")
 			}
-			changes, err := parseAgentConfigChanges(sets, resets, fromFile)
+			changes, err := parseAgentConfigChanges(sets, adds, resets, removes, fromFile)
 			if err != nil {
 				return err
 			}
 			if len(changes) == 0 {
-				return fmt.Errorf("nothing to change: use --set, --reset or --from-file")
+				return fmt.Errorf("nothing to change: use --set, --add, --reset, --remove or --from-file")
 			}
 			c, err := getClient(cmd)
 			if err != nil {
@@ -356,7 +385,7 @@ from the group; the command refuses to change them unless --force is given.
 			if err != nil {
 				return err
 			}
-			diffs, err := form.Apply(changes)
+			diffs, err := form.ApplyWith(changes, client.ApplyOptions{AddMissing: addMissing})
 			if err != nil {
 				return err
 			}
@@ -386,7 +415,10 @@ from the group; the command refuses to change them unless --force is given.
 	}
 	addAgentSelectorFlags(cmd, &id, &fid, &name, &hostname)
 	cmd.Flags().StringArrayVar(&sets, "set", nil, "set a property: service:type:name=value (value @file reads a file); repeatable")
-	cmd.Flags().StringArrayVar(&resets, "reset", nil, "reset a property to its default: service:type:name; repeatable")
+	cmd.Flags().StringArrayVar(&resets, "reset", nil, "reset a property to its default (removes a custom property): service:type:name; repeatable")
+	cmd.Flags().StringArrayVar(&adds, "add", nil, "add a custom property: service:type:name=value; repeatable")
+	cmd.Flags().StringArrayVar(&removes, "remove", nil, "remove a custom property: service:type:name; repeatable")
+	cmd.Flags().BoolVar(&addMissing, "add-missing", false, "add properties from --set or --from-file that do not exist as custom properties")
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON or YAML change file: service/type/name map (null resets) or list of {property, value, reset}")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "show the changes without applying them")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "apply without asking for confirmation")
@@ -451,7 +483,10 @@ picked from a list.
 			if err != nil {
 				return err
 			}
-			changes, err := tui.EditAgentConfigs(props, tui.AgentConfigEditorOptions{Title: "Agent: " + agent.Name})
+			changes, err := tui.EditAgentConfigs(props, tui.AgentConfigEditorOptions{
+				Title:       "Agent: " + agent.Name,
+				CustomTypes: form.CustomTypes(),
+			})
 			if errors.Is(err, tui.ErrCanceled) {
 				_, _ = fmt.Fprintln(w, "Canceled.")
 				return nil

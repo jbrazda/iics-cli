@@ -14,13 +14,18 @@ import (
 type AgentConfigEditorOptions struct {
 	// Title is shown above each screen, e.g. "Agent: CAI-A03".
 	Title string
+	// CustomTypes lists the custom property types by service name; services
+	// with types offer "Add custom property".
+	CustomTypes map[string][]client.CustomConfigType
 }
 
 // agentConfigEditor holds the properties and the pending edits by key.
+// Custom properties added in the editor are appended to props.
 type agentConfigEditor struct {
-	props   []client.AgentConfigProperty
-	pending map[string]client.AgentConfigChange
-	title   string
+	props       []client.AgentConfigProperty
+	pending     map[string]client.AgentConfigChange
+	title       string
+	customTypes map[string][]client.CustomConfigType
 }
 
 const (
@@ -32,6 +37,7 @@ const (
 	choiceEdit    = "\x00edit"
 	choiceRemove  = "\x00remove"
 	choiceApply   = "\x00apply"
+	choiceCustom  = "\x00custom"
 	previewWidth  = 44
 	maxListHeight = 22
 )
@@ -40,7 +46,7 @@ const (
 // the changes to apply, in property order. Esc goes back one screen; on the
 // service screen it cancels with ErrCanceled.
 func EditAgentConfigs(props []client.AgentConfigProperty, opts AgentConfigEditorOptions) ([]client.AgentConfigChange, error) {
-	e := &agentConfigEditor{props: props, pending: map[string]client.AgentConfigChange{}, title: opts.Title}
+	e := &agentConfigEditor{props: props, pending: map[string]client.AgentConfigChange{}, title: opts.Title, customTypes: opts.CustomTypes}
 	lastService := ""
 	for {
 		choice := lastService
@@ -89,7 +95,7 @@ func (e *agentConfigEditor) value(i int) (string, bool) {
 	p := e.props[i]
 	ch, ok := e.pending[p.Key()]
 	switch {
-	case !ok:
+	case !ok || ch.Remove:
 		return p.Value, p.Overridden
 	case ch.Reset:
 		return p.DefaultValue, false
@@ -97,11 +103,25 @@ func (e *agentConfigEditor) value(i int) (string, bool) {
 	return ch.Value, true
 }
 
+// removing reports whether custom property i is marked for removal.
+func (e *agentConfigEditor) removing(i int) bool {
+	return e.pending[e.props[i].Key()].Remove
+}
+
 // record stores the pending edit for property i, or drops it when the
-// property ends up as it is now.
+// property ends up as it is now. A custom property added in the editor stays
+// an addition with the new value.
 func (e *agentConfigEditor) record(i int, ch client.AgentConfigChange) {
 	p := e.props[i]
 	ch.Property = p.Key()
+	if prev := e.pending[p.Key()]; prev.Add {
+		e.pending[p.Key()] = client.AgentConfigChange{Property: p.Key(), Value: ch.Value, Add: true}
+		return
+	}
+	if ch.Remove || ch.Reset && p.Custom {
+		e.pending[p.Key()] = client.AgentConfigChange{Property: p.Key(), Remove: true}
+		return
+	}
 	if ch.Reset && !p.Overridden && p.Value == p.DefaultValue || !ch.Reset && ch.Value == p.Value {
 		delete(e.pending, p.Key())
 		return
@@ -121,8 +141,8 @@ func (e *agentConfigEditor) changes() []client.AgentConfigChange {
 
 func (e *agentConfigEditor) serviceOptions() []huh.Option[string] {
 	type stats struct {
-		name                 string
-		total, over, changed int
+		name                         string
+		total, over, custom, changed int
 	}
 	var order []string
 	byService := map[string]*stats{}
@@ -139,7 +159,10 @@ func (e *agentConfigEditor) serviceOptions() []huh.Option[string] {
 			width = max(width, len(s.name))
 		}
 		s.total++
-		if _, over := e.value(i); over {
+		switch _, over := e.value(i); {
+		case p.Custom:
+			s.custom++
+		case over:
 			s.over++
 		}
 		if _, ok := e.pending[p.Key()]; ok {
@@ -150,6 +173,9 @@ func (e *agentConfigEditor) serviceOptions() []huh.Option[string] {
 	for _, svc := range order {
 		s := byService[svc]
 		label := fmt.Sprintf("%-*s  %4d properties  %3d overridden", width, s.name, s.total, s.over)
+		if s.custom > 0 {
+			label += fmt.Sprintf("  %d custom", s.custom)
+		}
 		if s.changed > 0 {
 			label += fmt.Sprintf("  %d changed", s.changed)
 		}
@@ -177,15 +203,24 @@ func (e *agentConfigEditor) editService(service string) error {
 		}
 		nameW = min(nameW, 32)
 		opts := []huh.Option[string]{huh.NewOption("< Back to services", choiceBack)}
+		if len(e.customTypes[service]) > 0 {
+			opts = append(opts, huh.NewOption("+ Add custom property", choiceCustom))
+		}
 		for _, i := range idx {
 			p := e.props[i]
 			v, over := e.value(i)
 			mark := " "
-			if over {
+			switch {
+			case p.Custom:
+				mark = "+"
+			case over:
 				mark = "*"
 			}
 			if _, ok := e.pending[p.Key()]; ok {
 				mark = "✎"
+			}
+			if e.removing(i) {
+				mark, v = "✗", "(removed)"
 			}
 			label := fmt.Sprintf("%s %-*s  %-*s  %s", mark, typeW, p.Type, nameW, truncate(p.Name, nameW), previewValue(v, p.Sensitive, previewWidth))
 			opts = append(opts, huh.NewOption(label, strconv.Itoa(i)))
@@ -194,7 +229,7 @@ func (e *agentConfigEditor) editService(service string) error {
 		name := e.props[idx[0]].ServiceName
 		sel := huh.NewSelect[string]().
 			Title(e.title + " - " + name).
-			Description("Select a property to edit (/ to filter). * overridden, ✎ changed.").
+			Description("Select a property to edit (/ to filter). * overridden, + custom, ✎ changed, ✗ removed.").
 			Options(opts...).
 			Height(min(len(opts)+2, maxListHeight)).
 			Value(&choice)
@@ -203,7 +238,19 @@ func (e *agentConfigEditor) editService(service string) error {
 			return err
 		}
 		last = choice
+		if choice == choiceCustom {
+			if err := e.addCustom(service, e.props[idx[0]].ServiceName); err != nil {
+				return err
+			}
+			continue
+		}
 		i, _ := strconv.Atoi(choice)
+		if e.props[i].Custom {
+			if err := e.editCustom(i); err != nil {
+				return err
+			}
+			continue
+		}
 		if err := e.editProperty(i); err != nil {
 			return err
 		}
@@ -428,6 +475,14 @@ func (e *agentConfigEditor) review() (bool, error) {
 			}
 		}
 		nv, _ := e.value(i)
+		switch {
+		case ch.Add:
+			fmt.Fprintf(&b, "+ %s › %s › %s = %s (new custom property)\n", p.ServiceName, p.Type, p.Name, previewValue(nv, p.Sensitive, 40))
+			continue
+		case ch.Remove:
+			fmt.Fprintf(&b, "- %s › %s › %s (remove custom property)\n", p.ServiceName, p.Type, p.Name)
+			continue
+		}
 		suffix := ""
 		if ch.Reset {
 			suffix = " (reset to default)"
@@ -463,4 +518,112 @@ func (e *agentConfigEditor) review() (bool, error) {
 		return false, ErrCanceled
 	}
 	return false, nil
+}
+
+// editCustom edits a custom property: change its value or remove it.
+func (e *agentConfigEditor) editCustom(i int) error {
+	for {
+		p := e.props[i]
+		v, _ := e.value(i)
+		_, changed := e.pending[p.Key()]
+		added := e.pending[p.Key()].Add
+		desc := fmt.Sprintf("Custom property, type %s\nValue: %s", p.Type, previewValue(v, p.Sensitive, 60))
+		var opts []huh.Option[string]
+		if e.removing(i) {
+			desc += "\nMarked for removal."
+			opts = append(opts, huh.NewOption("Keep this property", choiceUndo))
+		} else {
+			opts = append(opts, huh.NewOption("Edit value", choiceEdit), huh.NewOption("Remove custom property", choiceRemove))
+			if changed && !added {
+				opts = append(opts, huh.NewOption("Undo changes to this property", choiceUndo))
+			}
+		}
+		opts = append(opts, huh.NewOption("< Back", choiceBack))
+		choice := opts[0].Value
+		sel := huh.NewSelect[string]().
+			Title(fmt.Sprintf("%s › %s › %s", p.ServiceName, p.Type, p.Name)).
+			Description(desc).
+			Options(opts...).
+			Value(&choice)
+		ok, err := back(huh.NewForm(huh.NewGroup(sel)))
+		if err != nil || !ok || choice == choiceBack {
+			return err
+		}
+		switch choice {
+		case choiceUndo:
+			delete(e.pending, p.Key())
+		case choiceRemove:
+			if added {
+				// Never saved: drop it.
+				delete(e.pending, p.Key())
+				e.props = append(e.props[:i], e.props[i+1:]...)
+				return nil
+			}
+			e.record(i, client.AgentConfigChange{Remove: true})
+		case choiceEdit:
+			nv := v
+			in := huh.NewInput().
+				Title(fmt.Sprintf("%s › %s › %s", p.ServiceName, p.Type, p.Name)).
+				Description("Custom property value (one line, up to 512 characters).").
+				CharLimit(512).
+				Value(&nv)
+			if p.Sensitive {
+				in = in.EchoMode(huh.EchoModePassword)
+			}
+			ok, err := back(huh.NewForm(huh.NewGroup(in)))
+			if err != nil {
+				return err
+			}
+			if ok && nv != v {
+				e.record(i, client.AgentConfigChange{Value: nv})
+			}
+		}
+	}
+}
+
+// addCustom asks for the type, name and value of a new custom property of
+// service and adds it as a pending change.
+func (e *agentConfigEditor) addCustom(service, serviceName string) error {
+	types := e.customTypes[service]
+	typ := types[0].Value
+	typeOpts := make([]huh.Option[string], len(types))
+	for n, t := range types {
+		label := t.Label
+		if t.Label != t.Value {
+			label = fmt.Sprintf("%s (%s)", t.Label, t.Value)
+		}
+		typeOpts[n] = huh.NewOption(label, t.Value)
+	}
+	var name, value string
+	exists := func(n string) bool {
+		key := (client.AgentConfigProperty{Service: service, Type: typ, Name: strings.TrimSpace(n)}).Key()
+		for _, p := range e.props {
+			if strings.EqualFold(p.Key(), key) {
+				return true
+			}
+		}
+		return false
+	}
+	form := huh.NewForm(huh.NewGroup(
+		huh.NewSelect[string]().Title("Type").Options(typeOpts...).Height(min(len(typeOpts)+2, 12)).Value(&typ),
+		huh.NewInput().Title("Name").CharLimit(255).Value(&name).Validate(func(s string) error {
+			switch {
+			case strings.TrimSpace(s) == "":
+				return errors.New("enter a name")
+			case exists(s):
+				return errors.New("this service already has a property with this type and name")
+			}
+			return nil
+		}),
+		huh.NewInput().Title("Value").CharLimit(512).Value(&value),
+	).Title(fmt.Sprintf("%s › new custom property", serviceName)).
+		Description("Custom properties are added to the service in addition to its standard properties."))
+	ok, err := back(form)
+	if err != nil || !ok {
+		return err
+	}
+	p := client.AgentConfigProperty{Service: service, ServiceName: serviceName, Type: typ, Name: strings.TrimSpace(name), Custom: true}
+	e.props = append(e.props, p)
+	e.pending[p.Key()] = client.AgentConfigChange{Property: p.Key(), Value: value, Add: true}
+	return nil
 }
