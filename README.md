@@ -2,6 +2,15 @@
 
 A comprehensive command-line interface for the [Informatica Intelligent Cloud Services (IICS)](https://www.informatica.com/products/cloud-integration.html) platform REST API v3. Manage assets, users, connections, export/import packages, and more - from your terminal or CI/CD pipelines.
 
+## Demo
+
+![iics demo: profiles, assets, agents, agent service properties, JSON output, the property editor and the main menu](docs/demo/iics-demo.gif)
+
+The demo shows profiles, asset listing, Secure Agents and their services, per-agent service
+properties with a dry-run change, JSON output for scripts, the interactive property editor and the
+main menu. Host names, user names and the organization name are masked. To replay it in a terminal,
+run `asciinema play docs/demo/iics-demo.cast`.
+
 ## Features
 
 - **Full API v3 coverage** - objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
