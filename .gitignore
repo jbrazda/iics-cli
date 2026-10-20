@@ -48,3 +48,6 @@ __debug_bin*
 .claude/
 
 target/
+# Demo recording masking rules (they name the values they hide)
+scripts/demo/masks.local.json
+__pycache__/

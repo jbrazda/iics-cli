@@ -9,7 +9,8 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 The demo shows profiles, asset listing, Secure Agents and their services, per-agent service
 properties with a dry-run change, JSON output for scripts, the interactive property editor and the
 main menu. Host names, user names and the organization name are masked. To replay it in a terminal,
-run `asciinema play docs/demo/iics-demo.cast`.
+run `asciinema play docs/demo/iics-demo.cast`; to record it again, see
+[scripts/demo](scripts/demo/README.md).
 
 ## Features
 

@@ -1,0 +1,219 @@
+{
+ "title": "iics - Informatica Cloud CLI",
+ "width": 140,
+ "height": 34,
+ "env": {
+  "IICS_PROFILE": "tst"
+ },
+ "scenes": [
+  {
+   "comment": "one profile per org; passwords stay in the OS keychain"
+  },
+  {
+   "cmd": "iics profile list"
+  },
+  {
+   "comment": "browse assets"
+  },
+  {
+   "cmd": "iics objects list --type Project --limit 8"
+  },
+  {
+   "comment": "secure agents and the services they run"
+  },
+  {
+   "cmd": "iics agent list"
+  },
+  {
+   "cmd": "iics agent details --name CAI-A03 --services",
+   "pause": 3.5
+  },
+  {
+   "comment": "service properties of a single agent, not only group defaults"
+  },
+  {
+   "cmd": "iics agent configs get --name CAI-A03 --service 'Process Server' --type jvm",
+   "pause": 3
+  },
+  {
+   "cmd": "iics agent configs set --name CAI-A03 --set \"process-engine:jvm:max-heap='12G'\" --dry-run",
+   "pause": 3
+  },
+  {
+   "comment": "JSON output for scripts and pipelines"
+  },
+  {
+   "cmd": "iics agent list -o json | jq -r '.[] | [.name, .agentHost, .agentVersion] | @tsv' | column -t"
+  },
+  {
+   "comment": "interactive property editor (changes are reviewed before saving)"
+  },
+  {
+   "cmd": "iics agent configs edit --name CAI-A03",
+   "keys": [
+    {
+     "k": "/",
+     "before": 2.5
+    },
+    {
+     "k": "P",
+     "before": 0.15
+    },
+    {
+     "k": "r",
+     "before": 0.15
+    },
+    {
+     "k": "o",
+     "before": 0.15
+    },
+    {
+     "k": "c",
+     "before": 0.15
+    },
+    {
+     "k": "\r",
+     "before": 0.8
+    },
+    {
+     "k": "/",
+     "before": 1.8
+    },
+    {
+     "k": "m",
+     "before": 0.15
+    },
+    {
+     "k": "a",
+     "before": 0.15
+    },
+    {
+     "k": "x",
+     "before": 0.15
+    },
+    {
+     "k": "-",
+     "before": 0.15
+    },
+    {
+     "k": "h",
+     "before": 0.15
+    },
+    {
+     "k": "\r",
+     "before": 0.8
+    },
+    {
+     "k": "\r",
+     "before": 1.8
+    },
+    {
+     "k": "\u0015",
+     "before": 1.0
+    },
+    {
+     "k": "1",
+     "before": 0.25
+    },
+    {
+     "k": "2",
+     "before": 0.25
+    },
+    {
+     "k": "G",
+     "before": 0.25
+    },
+    {
+     "k": "\r",
+     "before": 0.8
+    },
+    {
+     "k": "\u001b",
+     "before": 1.8
+    },
+    {
+     "k": "\u001b",
+     "before": 1.8
+    },
+    {
+     "k": "/",
+     "before": 1.5
+    },
+    {
+     "k": "R",
+     "before": 0.15
+    },
+    {
+     "k": "e",
+     "before": 0.15
+    },
+    {
+     "k": "v",
+     "before": 0.15
+    },
+    {
+     "k": "\r",
+     "before": 0.6
+    },
+    {
+     "k": "\u001b",
+     "before": 3.5
+    }
+   ],
+   "pause": 2.5
+  },
+  {
+   "comment": "or run iics with no arguments for the main menu"
+  },
+  {
+   "cmd": "iics",
+   "keys": [
+    {
+     "k": "\u001b[B",
+     "before": 2.5
+    },
+    {
+     "k": "\u001b[B",
+     "before": 0.5
+    },
+    {
+     "k": "\u001b[B",
+     "before": 0.5
+    },
+    {
+     "k": "/",
+     "before": 1.0
+    },
+    {
+     "k": "a",
+     "before": 0.15
+    },
+    {
+     "k": "g",
+     "before": 0.15
+    },
+    {
+     "k": "e",
+     "before": 0.15
+    },
+    {
+     "k": "n",
+     "before": 0.15
+    },
+    {
+     "k": "t",
+     "before": 0.15
+    },
+    {
+     "k": "\u001b",
+     "before": 2.5
+    },
+    {
+     "k": "q",
+     "before": 1.5
+    }
+   ],
+   "pause": 1.5
+  }
+ ]
+}
