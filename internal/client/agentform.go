@@ -549,6 +549,7 @@ type AgentConfigChange struct {
 // AgentConfigDiff describes a change applied to the form.
 type AgentConfigDiff struct {
 	Property      string `json:"property"`
+	ServiceName   string `json:"serviceName,omitempty"`
 	OldValue      string `json:"oldValue"`
 	NewValue      string `json:"newValue"`
 	OldOverridden bool   `json:"oldOverridden"`
@@ -590,7 +591,7 @@ func (f *AgentConfigForm) Apply(changes []AgentConfigChange) ([]AgentConfigDiff,
 			continue
 		}
 		diffs = append(diffs, AgentConfigDiff{
-			Property: p.Key(), OldValue: old.Value, NewValue: p.Value,
+			Property: p.Key(), ServiceName: p.ServiceName, OldValue: old.Value, NewValue: p.Value,
 			OldOverridden: old.Overridden, NewOverridden: p.Overridden, Sensitive: p.Sensitive,
 		})
 	}

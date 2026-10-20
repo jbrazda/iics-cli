@@ -517,6 +517,8 @@ _iics_agent_configs_get()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--export")
+    local_nonpersistent_flags+=("--export")
     flags+=("--fid=")
     two_word_flags+=("--fid")
     local_nonpersistent_flags+=("--fid")

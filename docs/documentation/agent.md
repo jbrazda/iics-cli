@@ -202,6 +202,11 @@ Process Server cluster settings (`primary-node`, `load-balance-url`), its
 database URLs and connection properties, or JVM heap sizes. The Secure Agent
 group equivalent is [environment configs](environment.md#environment-configs).
 
+The commands work on whatever services the agent runs: Process Server and
+OI Data Collector on a CAI agent, or Data Integration Server, Mass Ingestion,
+Database Ingestion, CMI Streaming Agent, IDMC Data Gateway, Metadata services
+and others on a CDI agent. Each agent's own form lists its properties.
+
 > **Experimental.** The public REST API only configures properties for a whole
 > Secure Agent group. Agent-level properties are read and saved through the
 > Administrator UI form `/runtime/app/agent.do`, which is undocumented and may
@@ -215,10 +220,11 @@ How it works:
 - `set` reads the whole form, changes only the requested properties and submits
   every field back, as the UI's Save button does. It then reads the form again
   and fails if a change was not stored.
-- The agent applies the new properties by redeploying the affected service.
-  Process Server (`REPLACE_VERSION`) starts a new version next to the running
-  one and switches over when it is ready. Check progress with
-  `iics agent details --services`.
+- How a service picks up new values depends on the service. Process Server
+  does **not** restart by itself: it keeps running with the old values and the
+  Administrator UI shows that it needs a restart. Restart it with
+  [agent restart](#agent-restart). `set` lists the changed services and the
+  restart commands after saving.
 
 ### Property names
 
@@ -252,8 +258,15 @@ Show an agent's properties with their defaults and whether they are overridden.
 | `--type`       | string | Only this property type, optionally `type/subType`                                   |
 | `--search`     | string | Regular expression on the property name (case-insensitive)                           |
 | `--overridden` | bool   | Only properties whose value is overridden (differs from the default)                 |
+| `--export`     | bool   | Write the properties as a `--from-file` change file: YAML, or JSON with `-o json`    |
 
 Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required.
+
+`--export` writes the filtered properties as a nested service / type / name
+map, the format `agent configs set --from-file` reads. Values that contain
+quotes are written as `"'4G'"` and multi-line values as YAML block scalars, so
+the file reads back unchanged. `agent` properties are left out because they
+cannot be set.
 
 Table columns: `SERVICE`, `TYPE` (with `/subType` for `agent` properties),
 `NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. `--output json` / `yaml` / `csv`
@@ -265,6 +278,10 @@ iics agent configs get --name CAI-A03 --overridden
 iics agent configs get --name CAI-A03 --service "Process Server" --type cluster
 iics agent configs get --hostname myhost --service process-engine --search '^db|url' -o json
 iics agent configs get --name CAI-A03 --service agent --type TOMCAT_JRE
+iics agent configs get --name CDI-G01-A01 --service "Data Integration Server" --type TOMCAT_JRE
+
+# Save the Process Server overrides of one agent as a change file
+iics agent configs get --name CAI-A01 --service process-engine --overridden --export > pe.yaml
 ```
 
 ### agent configs set
@@ -282,7 +299,7 @@ confirmation.
 | `--hostname`  | string | Agent host name                                                                             |
 | `--set`       | string | `service:type:name=value`; a value `@file` reads the value from a file. Repeatable          |
 | `--reset`     | string | `service:type:name` to reset to the default. Repeatable                                     |
-| `--from-file` | string | JSON list of changes (see below)                                                            |
+| `--from-file` | string | JSON or YAML change file (see below); only the properties in the file change                |
 | `--dry-run`   | bool   | Show the changes without applying them                                                      |
 | `--yes`, `-y` | bool   | Apply without asking for confirmation                                                       |
 | `--force`     | bool   | Change the agent even if its Secure Agent group has group-level properties                  |
@@ -303,7 +320,39 @@ Rules:
 - Errors reported by the form, such as an invalid value, are returned as the
   command error and nothing is changed.
 
-`--from-file` format:
+### Change files
+
+`--from-file` reads JSON or YAML in one of two shapes. Only the properties in
+the file change; all others keep their values. `--set` and `--reset` can be
+combined with a file.
+
+A nested service / type / name map, as written by `get --export`. A `null`
+value resets the property to its default:
+
+```yaml
+process-engine:
+  cluster:
+    primary-node: "true"
+  jvm:
+    max-heap: "'4G'"
+    min-heap: null
+  db:
+    connection-properties: |
+      - key: timeBetweenEvictionRunsMillis
+        value: 300000
+      - key: testOnBorrow
+        value: true
+```
+
+```json
+{
+  "Data_Integration_Server": {
+    "TOMCAT_JRE": { "INFA_MEMORY": "'-Xms512m -Xmx4096m'" }
+  }
+}
+```
+
+A list of changes:
 
 ```json
 [
@@ -312,6 +361,31 @@ Rules:
   { "property": "process-engine:jvm:min-heap", "reset": true }
 ]
 ```
+
+Notes on values:
+
+- Values are used as written. YAML removes one level of quotes, so a
+  Process Server value `'4G'` must be written as `"'4G'"` in YAML, the same
+  as in JSON. Unquoted `true` or `512` become the strings `true` and
+  `512`.
+- In YAML and JSON double-quoted strings a backslash must be doubled
+  (`C:\\Windows`).
+- Service, type and name are matched like `--set` names, so the display name
+  (`"Process Server"`) also works as the service key.
+
+### After saving
+
+`set` prints the services whose properties changed, with the command to
+restart each one, for example:
+
+```text
+Changed services: Process Server. Services such as Process Server use the new values only after a restart:
+  iics agent restart --id 01D23X0800000000008G --service "Process Server" --blocking
+```
+
+Process Server keeps running with the old values until it is restarted.
+
+### Examples for set
 
 ```bash
 # Preview a change
@@ -329,7 +403,15 @@ iics agent configs set --name CAI-A03 \
 iics agent configs set --name CAI-A03 --reset process-engine:jvm:max-heap --yes
 
 # Several changes from a file
-iics agent configs set --hostname myhost --from-file changes.json
+iics agent configs set --hostname myhost --from-file changes.yaml
+
+# Copy Process Server overrides from one agent to another, then review
+iics agent configs get --name CAI-A01 --service process-engine --overridden --export > pe.yaml
+# edit agent-specific values such as host-name, key-alias and primary-node
+iics agent configs set --name CAI-A02 --from-file pe.yaml --dry-run
+
+# Restart Process Server to use the new values
+iics agent restart --name CAI-A03 --service "Process Server" --blocking
 ```
 
 ```powershell

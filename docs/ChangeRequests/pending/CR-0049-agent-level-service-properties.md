@@ -29,14 +29,25 @@ changed from the CLI.
 
 ## Desired Change
 
+- The commands work for any agent regardless of which services it runs, for
+  example Process Server and OI Data Collector on CAI agents, or Data
+  Integration Server, Mass Ingestion, Database Ingestion, CMI Streaming Agent,
+  IDMC Data Gateway and Metadata services on CDI agents.
 - `iics agent configs get --id|--fid|--name|--hostname` lists the agent's
   properties with value, default and overridden flag. Filters: `--service`,
   `--type` (`type/subType`), `--search` (regex on the name), `--overridden`.
+  `--export` writes the filtered properties as a change file (YAML, or JSON
+  with `-o json`).
 - `iics agent configs set` changes properties with `--set
   service:type:name=value` (value `@file` reads a file), `--reset
-  service:type:name` and `--from-file` (JSON list of `{property, value, reset}`).
+  service:type:name` and `--from-file`. The file is JSON or YAML, either a
+  nested `service -> type -> name: value` map (`null` resets), as written by
+  `get --export`, or a list of `{property, value, reset}`. Only the listed
+  properties change.
   It prints a CURRENT / NEW table, asks for confirmation (`--yes` skips,
-  `--dry-run` only shows), saves, and reads back to verify.
+  `--dry-run` only shows), saves, and reads back to verify. It then lists the
+  changed services with the `iics agent restart` command for each, because
+  services such as Process Server only mark themselves as needing a restart.
 - `set` refuses agents whose group has group-level properties unless `--force`,
   because the docs say group settings replace agent settings.
 - `set` refuses the agent's own properties (`agent:` Agent Core, Agent Manager,
@@ -57,6 +68,8 @@ changed from the CLI.
 ```text
 internal/client/agentform.go        # form read/parse/apply/save/verify
 internal/client/agentform_test.go   # parser, apply, filter, GET/POST, re-login tests
+internal/client/agentconfigfile.go  # change files (JSON/YAML map or list) and export
+internal/client/agentconfigfile_test.go
 cmd/agent_configs.go                # agent configs get / set
 ```
 
@@ -143,9 +156,23 @@ Form layout (`<form id="agentForm">`, about 1,000 fields, all submitted on save)
     not store the change, also after waiting 80 seconds. `set` therefore
     refuses `agent:` properties. Supporting them needs a HAR capture of a system
     property save in the UI.
-  - After a save, the agent redeploys the affected service. OI Data Collector
-    went NEED_RUNNING, then DEPLOYING, then RUNNING. Process Server
-    (`REPLACE_VERSION`) started a new version next to the running one.
+  - After a save, OI Data Collector went NEED_RUNNING, then DEPLOYING, then
+    RUNNING by itself. Process Server does not restart by itself after a
+    configuration change: it keeps the old values and the Administrator UI
+    shows that it needs a restart, which is done manually (developer
+    confirmation). `set` therefore prints restart commands for the changed
+    services.
+- Read-only checks on CDI-G01-A01 in dev and tst (12 services, 426 and 435
+  properties) found every property with a unique `service:type:name` address,
+  including Data Integration Server types such as `TOMCAT_JRE`, `PMRDTM_CFG`
+  and `SYSTEM_CFG`. A dry-run of a Data Integration Server change from a JSON
+  file showed only that property.
+- Change files are parsed as YAML nodes, so scalars keep their written text
+  (`true`, `512`, `1.0`) and `null` means reset. YAML removes one level of
+  quotes, so Process Server values need `"'4G'"`. `--export` writes values
+  with quotes double-quoted and multi-line values as block scalars; an
+  unchanged export of CAI-A03's Process Server overrides and of a CDI agent's
+  `TOMCAT_JRE` properties applied as "Nothing to change".
 - Setting a property to its current value is a no-op, so defaults do not turn
   into overrides.
 - `--debug` now masks the `Cookie` and `Set-Cookie` headers, which carry the
