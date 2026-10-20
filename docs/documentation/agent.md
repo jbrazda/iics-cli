@@ -22,6 +22,7 @@ iics agent <subcommand> [flags]
 | `installer-download` | Download the Secure Agent installer (optional checksum verify) |
 | `configs get`        | Show an agent's service properties (experimental)              |
 | `configs set`        | Change or reset an agent's service properties (experimental)   |
+| `rename`             | Rename an agent, for example from host name to `CAI-A03`       |
 
 ---
 
@@ -241,24 +242,29 @@ Matching is case-insensitive. Use `type/subType` (for example
 subtypes. `agent configs get` shows the names to use.
 
 `agent` stands for the agent's own Agent Core, Agent Manager and Tomcat
-properties. They are shown by `get` but cannot be changed by `set`: the server
-accepts the form but ignores changes to them.
+properties (a legacy section of the form). The Administrator UI never shows
+them: its Service list holds only the agent's services. They are not editable;
+the server ignores changes to them, so `set` refuses them. `get` hides them
+unless `--include-hidden` or `--service agent` is given. On CDI agents the
+editable Tomcat and JVM settings are under the Data Integration Server
+service, for example `Data_Integration_Server:TOMCAT_JRE:INFA_MEMORY`.
 
 ### agent configs get
 
 Show an agent's properties with their defaults and whether they are overridden.
 
-| Flag           | Type   | Description                                                                          |
-| -------------- | ------ | ------------------------------------------------------------------------------------ |
-| `--id`         | string | Agent ID                                                                             |
-| `--fid`        | string | Agent federated ID                                                                   |
-| `--name`       | string | Agent name                                                                           |
-| `--hostname`   | string | Agent host name                                                                      |
-| `--service`    | string | Only this service: name, display name, or `agent`                                    |
-| `--type`       | string | Only this property type, optionally `type/subType`                                   |
-| `--search`     | string | Regular expression on the property name (case-insensitive)                           |
-| `--overridden` | bool   | Only properties whose value is overridden (differs from the default)                 |
-| `--export`     | bool   | Write the properties as a `--from-file` change file: YAML, or JSON with `-o json`    |
+| Flag               | Type   | Description                                                                       |
+| ------------------ | ------ | --------------------------------------------------------------------------------- |
+| `--id`             | string | Agent ID                                                                          |
+| `--fid`            | string | Agent federated ID                                                                |
+| `--name`           | string | Agent name                                                                        |
+| `--hostname`       | string | Agent host name                                                                   |
+| `--service`        | string | Only this service: name, display name, or `agent`                                 |
+| `--type`           | string | Only this property type, optionally `type/subType`                                |
+| `--search`         | string | Regular expression on the property name (case-insensitive)                        |
+| `--overridden`     | bool   | Only properties whose value is overridden (differs from the default)              |
+| `--export`         | bool   | Write the properties as a `--from-file` change file: YAML, or JSON with `-o json` |
+| `--include-hidden` | bool   | Also show the agent's own (`agent`) properties, which the UI hides                |
 
 Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required.
 
@@ -277,7 +283,6 @@ list the properties with `service`, `serviceName`, `type`, `subType`, `name`,
 iics agent configs get --name CAI-A03 --overridden
 iics agent configs get --name CAI-A03 --service "Process Server" --type cluster
 iics agent configs get --hostname myhost --service process-engine --search '^db|url' -o json
-iics agent configs get --name CAI-A03 --service agent --type TOMCAT_JRE
 iics agent configs get --name CDI-G01-A01 --service "Data Integration Server" --type TOMCAT_JRE
 
 # Save the Process Server overrides of one agent as a change file
@@ -418,6 +423,53 @@ iics agent restart --name CAI-A03 --service "Process Server" --blocking
 iics agent configs set --name CAI-A03 --set "process-engine:cluster:primary-node=false" --dry-run
 
 iics agent configs set --name CAI-A03 --set "process-engine:jvm:max-heap='4G'" --yes
+```
+
+---
+
+## agent rename
+
+Rename a Secure Agent. The installer registers a new agent under its host
+name; use `rename` to give it the logical name used across all orgs, for
+example `CAI-A03`.
+
+> **Experimental.** The name is saved through the same Administrator form as
+> [agent configs](#agent-configs), together with the agent's unchanged service
+> properties. Renaming does not restart any service.
+
+| Flag          | Type   | Description                               |
+| ------------- | ------ | ----------------------------------------- |
+| `--id`        | string | Agent ID                                  |
+| `--fid`       | string | Agent federated ID                        |
+| `--name`      | string | Current agent name                        |
+| `--hostname`  | string | Agent host name                           |
+| `--new-name`  | string | New agent name (required)                 |
+| `--yes`, `-y` | bool   | Rename without asking for confirmation    |
+
+Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required.
+`--hostname` is handy right after installation, when the name is still the
+host name.
+
+Rules:
+
+- The new name is trimmed, must not be empty and can have at most 100
+  characters (the form's limit). Spaces are allowed; quote the name.
+- The name must be unique in the organization (compared case-insensitively);
+  otherwise the command stops before changing anything.
+- The new name is read back with the agent API; the command fails if it was
+  not stored.
+- Renaming to the current name does nothing.
+
+```bash
+# Right after installation: name the agent registered as its host name
+iics agent rename --hostname cletinfacld07 --new-name CAI-A03
+
+iics agent rename --name "cletinfacld07.corp.example.com" --new-name CAI-A03 --yes
+iics agent rename --id <agent-id> --new-name CDI-G01-A02 -p prd
+```
+
+```powershell
+iics agent rename --hostname cletinfacld07 --new-name CAI-A03
 ```
 
 ---

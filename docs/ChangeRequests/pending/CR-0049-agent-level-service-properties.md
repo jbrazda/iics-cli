@@ -5,7 +5,7 @@
 ## CR Type
 
 - [ ] **New resource**
-- [x] **New subcommand** - `iics agent configs get` and `iics agent configs set`
+- [x] **New subcommand** - `iics agent configs get`, `iics agent configs set`, `iics agent rename`
 - [ ] **Enhancement**
 - [ ] **Output change**
 - [ ] **Flag / config change**
@@ -51,7 +51,12 @@ changed from the CLI.
 - `set` refuses agents whose group has group-level properties unless `--force`,
   because the docs say group settings replace agent settings.
 - `set` refuses the agent's own properties (`agent:` Agent Core, Agent Manager,
-  Tomcat), because the server ignores changes to them (see notes).
+  Tomcat), because the server ignores changes to them (see notes). `get` hides
+  them unless `--include-hidden` or `--service agent` is given.
+- `iics agent rename --id|--fid|--name|--hostname --new-name <name>` renames an
+  agent, for example from the host name the installer registers to a logical
+  name such as `CAI-A03`. The name is trimmed, at most 100 characters, and must
+  be unique in the org (case-insensitive). It is read back with the agent API.
 - Both commands are marked experimental.
 
 **Informatica docs:**
@@ -71,6 +76,7 @@ internal/client/agentform_test.go   # parser, apply, filter, GET/POST, re-login 
 internal/client/agentconfigfile.go  # change files (JSON/YAML map or list) and export
 internal/client/agentconfigfile_test.go
 cmd/agent_configs.go                # agent configs get / set
+cmd/agent_rename.go                 # agent rename
 ```
 
 ### Files to MODIFY
@@ -177,3 +183,14 @@ Form layout (`<form id="agentForm">`, about 1,000 fields, all submitted on save)
   into overrides.
 - `--debug` now masks the `Cookie` and `Set-Cookie` headers, which carry the
   session.
+- The agent's own (`sysConfig*`) rows sit in a form section (`#agentSysConfig`)
+  that `pnAgent.js` shows only when the Service list has an `agentCoreSelOpt`
+  option. No checked page has one (CAI-A03 and CDI-G01-A01 in tst, CAI-A01 in
+  dev), and the UI screenshot shows only the agent's services. So these rows
+  are hidden, not editable, which matches the server ignoring them.
+- The agent name is the form's `name` text field (`maxlength="100"`). Live test
+  on CAI-A03: renaming to an existing name (`cai-a01`) stopped before saving;
+  renaming to `CAI A03 Rename Test` (spaces) worked, and `agent get --name`
+  and `agent list` found it; renaming back via `--hostname cletinfacld07`
+  worked; renaming to the current name did nothing. The 14 overrides were
+  unchanged and no service restarted (service update times unchanged).

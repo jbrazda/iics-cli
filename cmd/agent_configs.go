@@ -20,8 +20,8 @@ func newAgentConfigsCmd() *cobra.Command {
 		Use:   "configs",
 		Short: "Show and change agent-level Secure Agent service properties (experimental)",
 		Long: `Show and change Secure Agent service properties of a single agent, such as
-the Process Server cluster or database settings, and the agent's own
-Agent Core, Agent Manager and Tomcat settings.
+the Process Server cluster or database settings, for any services the agent
+runs.
 
 ` + agentConfigsExperimental + ` The public REST API only
 configures properties for a whole Secure Agent group (see "iics environment
@@ -101,7 +101,7 @@ func newAgentConfigsGetCmd() *cobra.Command {
 		Example: `  iics agent configs get --name CAI-A03
   iics agent configs get --name CAI-A03 --service process-engine --overridden
   iics agent configs get --hostname myhost --service "Process Server" --type db
-  iics agent configs get --id <agent-id> --service agent --type TOMCAT_JRE -o json
+  iics agent configs get --name CDI-G01-A01 --service "Data Integration Server" --type TOMCAT_JRE -o json
   iics agent configs get --name CAI-A03 --service process-engine --overridden --export > pe.yaml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if id == "" && fid == "" && name == "" && hostname == "" {
@@ -139,6 +139,7 @@ func newAgentConfigsGetCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flt.Type, "type", "", "property type, for example cluster, db or AGENTCORE_LOG4J/DEBUG")
 	cmd.Flags().StringVar(&flt.Name, "search", "", "regular expression on the property name (case-insensitive)")
 	cmd.Flags().BoolVar(&flt.Overridden, "overridden", false, "show only properties that differ from the defaults")
+	cmd.Flags().BoolVar(&flt.IncludeHidden, "include-hidden", false, "also show the agent's own Agent Core, Agent Manager and Tomcat properties, which the UI hides and which cannot be changed")
 	cmd.Flags().BoolVar(&export, "export", false, "write the properties as a change file for 'agent configs set --from-file' (YAML, or JSON with -o json)")
 	return cmd
 }

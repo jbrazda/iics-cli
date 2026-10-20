@@ -344,6 +344,17 @@ func (f *AgentConfigForm) Find(sel PropertySelector) (int, error) {
 	return -1, fmt.Errorf("property %s is ambiguous, use one of: %s", sel, strings.Join(keys, ", "))
 }
 
+// SetName changes the agent name submitted with the form.
+func (f *AgentConfigForm) SetName(name string) {
+	f.AgentName = name
+	for i := range f.fields {
+		if f.fields[i].name == "name" {
+			f.fields[i].value = name
+			return
+		}
+	}
+}
+
 // Set changes property i to value and marks it overridden, as the UI's edit
 // action does.
 func (f *AgentConfigForm) Set(i int, value string) {
@@ -503,11 +514,14 @@ func (c *Client) SaveAgentConfigForm(ctx context.Context, form *AgentConfigForm)
 }
 
 // AgentConfigFilter selects properties for display. Empty fields match all.
+// The agent's own (SystemService) properties are only included with
+// IncludeHidden or when Service selects them.
 type AgentConfigFilter struct {
-	Service    string // service name, versioned key or display name
-	Type       string // property type, optionally type/subType
-	Name       string // regular expression on the property name, case-insensitive
-	Overridden bool   // only overridden properties
+	IncludeHidden bool
+	Service       string // service name, versioned key or display name
+	Type          string // property type, optionally type/subType
+	Name          string // regular expression on the property name, case-insensitive
+	Overridden    bool   // only overridden properties
 }
 
 // Filter returns the properties matching flt.
@@ -523,6 +537,9 @@ func (f *AgentConfigForm) Filter(flt AgentConfigFilter) ([]AgentConfigProperty, 
 	typ, sub, _ := strings.Cut(flt.Type, "/")
 	var out []AgentConfigProperty
 	for _, p := range f.Properties {
+		if p.Service == SystemService && !flt.IncludeHidden && !strings.EqualFold(flt.Service, SystemService) {
+			continue
+		}
 		if flt.Service != "" && !strings.EqualFold(flt.Service, p.Service) && !strings.EqualFold(flt.Service, p.serviceKey) &&
 			!strings.EqualFold(flt.Service, p.ServiceName) {
 			continue
@@ -573,7 +590,7 @@ func (f *AgentConfigForm) Apply(changes []AgentConfigChange) ([]AgentConfigDiff,
 			return nil, err
 		}
 		if f.Properties[i].Service == SystemService {
-			return nil, fmt.Errorf("property %s: changing the agent's own (%s) properties is not supported; the server ignores them on save", f.Properties[i].Key(), SystemService)
+			return nil, fmt.Errorf("property %s is not editable: the Administrator UI hides the agent's own (%s) properties and the server ignores changes to them", f.Properties[i].Key(), SystemService)
 		}
 		if seen[i] {
 			return nil, fmt.Errorf("property %s is changed more than once", f.Properties[i].Key())
@@ -626,4 +643,45 @@ func (c *Client) VerifyAgentConfigDiffs(ctx context.Context, agentID string, dif
 		return fmt.Errorf("the agent did not store these changes: %s", strings.Join(failed, "; "))
 	}
 	return nil
+}
+
+// maxAgentNameLength is the agent name field's maxlength on the form.
+const maxAgentNameLength = 100
+
+// RenameAgent changes the name of agent agentID through the agent form and
+// checks the new name with the agent API. The name must be unique in the
+// organization.
+func (c *Client) RenameAgent(ctx context.Context, agentID, newName string) (*Agent, error) {
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return nil, fmt.Errorf("the new agent name is empty")
+	}
+	if len([]rune(newName)) > maxAgentNameLength {
+		return nil, fmt.Errorf("the new agent name is longer than %d characters", maxAgentNameLength)
+	}
+	agents, err := c.ListAgents(ctx, AgentListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range agents {
+		if a.ID != agentID && strings.EqualFold(a.Name, newName) {
+			return nil, fmt.Errorf("agent %s (%s) already has the name %q", a.ID, a.AgentHost, a.Name)
+		}
+	}
+	form, err := c.GetAgentConfigForm(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+	form.SetName(newName)
+	if err = c.SaveAgentConfigForm(ctx, form); err != nil {
+		return nil, err
+	}
+	agent, err := c.GetAgent(ctx, agentID)
+	if err != nil {
+		return nil, fmt.Errorf("verifying the new name: %w", err)
+	}
+	if agent.Name != newName {
+		return nil, fmt.Errorf("the agent did not store the new name: it is still %q", agent.Name)
+	}
+	return agent, nil
 }

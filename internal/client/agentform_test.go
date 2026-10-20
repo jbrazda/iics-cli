@@ -192,9 +192,17 @@ func TestAgentConfigFormFilter(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].Name != "primary-node" {
 		t.Errorf("Filter by service and name = %+v, %v", got, err)
 	}
-	got, _ = form.Filter(AgentConfigFilter{Type: "AGENTCORE_LOG4J/DEBUG"})
+	got, _ = form.Filter(AgentConfigFilter{})
+	if len(got) != 3 {
+		t.Errorf("default Filter should hide the agent's own properties, got %d", len(got))
+	}
+	got, _ = form.Filter(AgentConfigFilter{Type: "AGENTCORE_LOG4J/DEBUG", IncludeHidden: true})
 	if len(got) != 1 || got[0].SubType != "DEBUG" {
 		t.Errorf("Filter by type/subType = %+v", got)
+	}
+	got, _ = form.Filter(AgentConfigFilter{Service: "agent"})
+	if len(got) != 2 {
+		t.Errorf("Filter with --service agent = %d properties, want 2", len(got))
 	}
 	got, _ = form.Filter(AgentConfigFilter{Overridden: true})
 	if len(got) != 1 || got[0].Name != "secretKey" {
@@ -301,6 +309,46 @@ func TestParsePropertySelector(t *testing.T) {
 	for _, bad := range []string{"", "a:b", "a::c", ":b:c"} {
 		if _, err := ParsePropertySelector(bad); err == nil {
 			t.Errorf("ParsePropertySelector(%q): expected an error", bad)
+		}
+	}
+}
+
+func TestRenameAgent(t *testing.T) {
+	var postedName string
+	name := "cletinfacld07"
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/agent", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `[{"id":"01D23X0800000000008G","name":"`+name+`"},{"id":"other","name":"CAI-A01","agentHost":"h1"}]`)
+	})
+	mux.HandleFunc("/api/v2/agent/01D23X0800000000008G", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{"id":"01D23X0800000000008G","name":"`+name+`"}`)
+	})
+	mux.HandleFunc(agentFormPath, func(w http.ResponseWriter, r *http.Request) {
+		ck, _ := r.Cookie("XSRF_TOKEN")
+		if r.Method == http.MethodPost {
+			data, _ := io.ReadAll(r.Body)
+			v, _ := url.ParseQuery(string(data))
+			postedName = v.Get("name")
+			name = postedName
+		}
+		_, _ = io.WriteString(w, strings.Replace(agentPage(ck.Value, "false", ""), `value="CAI-A03"`, `value="`+name+`"`, 1))
+	})
+	c := newTestClient(mux)
+	ctx := t.Context()
+
+	agent, err := c.RenameAgent(ctx, "01D23X0800000000008G", " CAI-A03 ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if postedName != "CAI-A03" || agent.Name != "CAI-A03" {
+		t.Errorf("posted %q, agent name %q", postedName, agent.Name)
+	}
+	if _, err := c.RenameAgent(ctx, "01D23X0800000000008G", "cai-a01"); err == nil || !strings.Contains(err.Error(), "already has the name") {
+		t.Errorf("expected a duplicate name error, got %v", err)
+	}
+	for _, bad := range []string{"  ", strings.Repeat("x", 101)} {
+		if _, err := c.RenameAgent(ctx, "01D23X0800000000008G", bad); err == nil {
+			t.Errorf("RenameAgent(%q): expected an error", bad)
 		}
 	}
 }

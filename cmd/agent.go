@@ -27,6 +27,7 @@ func newAgentCmd() *cobra.Command {
 	cmd.AddCommand(newAgentInstallerInfoCmd())
 	cmd.AddCommand(newAgentInstallerDownloadCmd())
 	cmd.AddCommand(newAgentConfigsCmd())
+	cmd.AddCommand(newAgentRenameCmd())
 	return cmd
 }
 
