@@ -10,19 +10,20 @@ iics agent <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand           | Description                                                    |
-| -------------------- | -------------------------------------------------------------- |
-| `list`               | List Secure Agents                                             |
-| `get`                | Get a single agent                                             |
-| `details`            | Get agent service engine details                               |
-| `delete`             | Delete a Secure Agent                                          |
-| `start`              | Start an agent service                                         |
-| `stop`               | Stop an agent service                                          |
-| `installer-info`     | Get Secure Agent installer download information                |
-| `installer-download` | Download the Secure Agent installer (optional checksum verify) |
-| `configs get`        | Show an agent's service properties (experimental)              |
-| `configs set`        | Change or reset an agent's service properties (experimental)   |
-| `rename`             | Rename an agent, for example from host name to `CAI-A03`       |
+| Subcommand           | Description                                                     |
+| -------------------- | --------------------------------------------------------------- |
+| `list`               | List Secure Agents                                              |
+| `get`                | Get a single agent                                              |
+| `details`            | Get agent service engine details                                |
+| `delete`             | Delete a Secure Agent                                           |
+| `start`              | Start an agent service                                          |
+| `stop`               | Stop an agent service                                           |
+| `installer-info`     | Get Secure Agent installer download information                 |
+| `installer-download` | Download the Secure Agent installer (optional checksum verify)  |
+| `configs get`        | Show an agent's service properties (experimental)               |
+| `configs set`        | Change or reset an agent's service properties (experimental)    |
+| `configs edit`       | Edit an agent's service properties interactively (experimental) |
+| `rename`             | Rename an agent, for example from host name to `CAI-A03`        |
 
 ---
 
@@ -439,6 +440,55 @@ iics agent restart --name CAI-A03 --service "Process Server" --blocking
 iics agent configs set --name CAI-A03 --set "process-engine:cluster:primary-node=false" --dry-run
 
 iics agent configs set --name CAI-A03 --set "process-engine:jvm:max-heap='4G'" --yes
+```
+
+### agent configs edit
+
+Edit an agent's service properties in an interactive editor, in the style of
+`iics role edit`. Without an agent flag, the agent is picked from a list. The
+menu entry **Edit agent properties** runs this command.
+
+| Flag         | Type   | Description                                                                 |
+| ------------ | ------ | --------------------------------------------------------------------------- |
+| `--id`       | string | Agent ID                                                                    |
+| `--fid`      | string | Agent federated ID                                                          |
+| `--name`     | string | Agent name                                                                  |
+| `--hostname` | string | Agent host name                                                             |
+| `--force`    | bool   | Edit the agent even if its Secure Agent group has group-level properties    |
+
+Screens:
+
+1. **Services** - each service with its number of properties, overridden
+   properties and pending changes, then **Review and apply** and **Cancel**.
+2. **Properties** of a service - type, name and a value preview. `*` marks an
+   overridden property, `✎` a pending change. `/` filters.
+3. **Property editor**:
+   - One-line values open in an input field. Values stored in YAML single
+     quotes (`'10G'`) are edited without the quotes, which are added back.
+     Sensitive values are masked.
+   - Multi-value properties - lists of small maps such as LDAP properties
+     (`ldap-properties`), database connection properties
+     (`connection-properties`, `logConnection-properties`) or
+     `additional-logging` - open as a list of entries, for example
+     `key=testOnBorrow  value=true`. Pick an entry to edit or remove it, or
+     use **+ Add entry** (new entries get the same fields, such as `key` and
+     `value`). Unchanged entries keep their exact text.
+   - **Edit as text** edits the whole value as YAML; `ctrl+e` opens it in
+     `$EDITOR`.
+   - **Reset to default** and **Undo changes to this property**.
+4. **Review** - all pending changes; list properties show entry changes
+   (`~` changed, `+` added, `-` removed). **Apply** saves.
+
+After applying, the command prints the change table, saves and verifies like
+`agent configs set`, and lists the restart commands for the changed services.
+
+Keys: `↑`/`↓` move, `enter` selects, `/` filters (enter while filtering selects
+the highlighted item), `esc` goes back one screen and cancels on the service
+list. In entry forms `enter` moves to the next field and saves on the last one.
+
+```bash
+iics agent configs edit
+iics agent configs edit --name CAI-A03 -p tst
 ```
 
 ---

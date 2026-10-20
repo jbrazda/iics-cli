@@ -3,12 +3,14 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -29,6 +31,7 @@ configs").`,
 	}
 	cmd.AddCommand(newAgentConfigsGetCmd())
 	cmd.AddCommand(newAgentConfigsSetCmd())
+	cmd.AddCommand(newAgentConfigsEditCmd())
 	return cmd
 }
 
@@ -43,7 +46,7 @@ var agentPropertyCols = []output.Column{
 		}
 		return t
 	}},
-	{Header: "NAME", Field: "name", Width: 24, Priority: 1, Shrink: output.ShrinkWrap},
+	{Header: "NAME", Field: "name", Width: 24, Priority: 1, Shrink: output.ShrinkNever},
 	{Header: "VALUE", Field: "value", Width: 30, Priority: 1, Func: wrapConfigField("value")},
 	{Header: "DEFAULT", Field: "defaultValue", Width: 30, Priority: 3, Func: wrapConfigField("defaultValue")},
 	{Header: "OVERRIDDEN", Field: "overridden", Width: 10, Priority: 2, Shrink: output.ShrinkNever, Func: func(v interface{}) string {
@@ -58,7 +61,7 @@ var agentPropertyCols = []output.Column{
 // agentConfigDiffCols is the table layout for the changes `agent configs set`
 // makes.
 var agentConfigDiffCols = []output.Column{
-	{Header: "PROPERTY", Field: "property", Width: 30, Priority: 1, Shrink: output.ShrinkWrap},
+	{Header: "PROPERTY", Field: "property", Width: 30, Priority: 1, Shrink: output.ShrinkNever},
 	{Header: "CURRENT", Field: "oldValue", Width: 30, Priority: 1, Func: diffValueFunc("oldValue", "oldOverridden")},
 	{Header: "NEW", Field: "newValue", Width: 30, Priority: 1, Func: diffValueFunc("newValue", "newOverridden")},
 }
@@ -223,6 +226,37 @@ func parseAgentConfigChanges(sets, resets []string, fromFile string) ([]client.A
 	return changes, nil
 }
 
+// checkGroupConfigs returns an error when the agent's group has group-level
+// service properties, which replace the agent's own settings.
+func checkGroupConfigs(ctx context.Context, c *client.Client, agent *client.Agent) error {
+	if agent.GroupID == "" {
+		return nil
+	}
+	groupCfg, err := c.GetAgentGroupConfigs(ctx, agent.GroupID)
+	if err != nil {
+		return fmt.Errorf("checking group-level properties: %w", err)
+	}
+	if len(groupCfg) > 0 {
+		return fmt.Errorf("agent %s is in group %s, which has group-level properties for %v; "+
+			"remove them first (iics environment configs) or use --force", agent.Name, agent.GroupID, sortedKeys(groupCfg))
+	}
+	return nil
+}
+
+// saveAgentConfigDiffs saves the form, verifies the changes and prints the
+// restart hint.
+func saveAgentConfigDiffs(ctx context.Context, cmd *cobra.Command, c *client.Client, agent *client.Agent, form *client.AgentConfigForm, diffs []client.AgentConfigDiff) error {
+	if err := c.SaveAgentConfigForm(ctx, form); err != nil {
+		return err
+	}
+	if err := c.VerifyAgentConfigDiffs(ctx, agent.ID, diffs); err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated %d propert%s on agent %s.\n", len(diffs), map[bool]string{true: "y", false: "ies"}[len(diffs) == 1], agent.Name)
+	printRestartHint(cmd, agent, diffs)
+	return nil
+}
+
 // printRestartHint lists the services whose properties changed. Some, such as
 // Process Server, only mark themselves as needing a restart and keep running
 // with the old values until restarted.
@@ -313,14 +347,9 @@ from the group; the command refuses to change them unless --force is given.
 			if err != nil {
 				return err
 			}
-			if agent.GroupID != "" && !force {
-				groupCfg, gErr := c.GetAgentGroupConfigs(ctx, agent.GroupID)
-				if gErr != nil {
-					return fmt.Errorf("checking group-level properties: %w", gErr)
-				}
-				if len(groupCfg) > 0 {
-					return fmt.Errorf("agent %s is in group %s, which has group-level properties for %v; "+
-						"remove them first (iics environment configs) or use --force", agent.Name, agent.GroupID, sortedKeys(groupCfg))
+			if !force {
+				if err = checkGroupConfigs(ctx, c, agent); err != nil {
+					return err
 				}
 			}
 			form, err := c.GetAgentConfigForm(ctx, agent.ID)
@@ -352,15 +381,7 @@ from the group; the command refuses to change them unless --force is given.
 			if !yes && !confirmAction(cmd, fmt.Sprintf("Apply %d change(s) to agent %s?", len(diffs), agent.Name)) {
 				return nil
 			}
-			if err := c.SaveAgentConfigForm(ctx, form); err != nil {
-				return err
-			}
-			if err := c.VerifyAgentConfigDiffs(ctx, agent.ID, diffs); err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintf(w, "Updated %d propert%s on agent %s.\n", len(diffs), map[bool]string{true: "y", false: "ies"}[len(diffs) == 1], agent.Name)
-			printRestartHint(cmd, agent, diffs)
-			return nil
+			return saveAgentConfigDiffs(ctx, cmd, c, agent, form, diffs)
 		},
 	}
 	addAgentSelectorFlags(cmd, &id, &fid, &name, &hostname)
@@ -370,5 +391,91 @@ from the group; the command refuses to change them unless --force is given.
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "show the changes without applying them")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "apply without asking for confirmation")
 	cmd.Flags().BoolVar(&force, "force", false, "change the agent even if its group has group-level properties")
+	return cmd
+}
+
+func newAgentConfigsEditCmd() *cobra.Command {
+	var (
+		id, fid, name, hostname string
+		force                   bool
+	)
+	cmd := &cobra.Command{
+		Use:   "edit",
+		Short: "Edit an agent's service properties interactively",
+		Long: `Edit an agent's service properties in an interactive editor.
+
+Pick a service, then a property. One-line values open in an input field;
+Process Server values in single quotes ('10G') are edited without the quotes,
+which are added back. Multi-value properties such as LDAP properties, database
+connection properties or additional logging open in an entry editor: edit,
+add or remove entries, edit the whole value as text, or open it in $EDITOR
+(ctrl+e). Any property can be reset to its default.
+
+Review shows all pending changes before they are applied. Esc goes back one
+screen; on the service list it cancels. Without an agent flag the agent is
+picked from a list.
+
+` + agentConfigsExperimental,
+		Example: `  iics agent configs edit
+  iics agent configs edit --name CAI-A03
+  iics agent configs edit --hostname cletinfacld07 -p tst`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !isInteractiveTTY() {
+				return fmt.Errorf("agent configs edit requires a terminal; use agent configs set")
+			}
+			c, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			w := cmd.OutOrStdout()
+			var agent *client.Agent
+			if id == "" && fid == "" && name == "" && hostname == "" {
+				agent, err = pickAgent(ctx, c)
+			} else {
+				agent, err = resolveAgent(ctx, c, id, name, hostname, fid)
+			}
+			if err != nil || agent == nil {
+				return err
+			}
+			if !force {
+				if err = checkGroupConfigs(ctx, c, agent); err != nil {
+					return err
+				}
+			}
+			form, err := c.GetAgentConfigForm(ctx, agent.ID)
+			if err != nil {
+				return err
+			}
+			props, err := form.Filter(client.AgentConfigFilter{})
+			if err != nil {
+				return err
+			}
+			changes, err := tui.EditAgentConfigs(props, tui.AgentConfigEditorOptions{Title: "Agent: " + agent.Name})
+			if errors.Is(err, tui.ErrCanceled) {
+				_, _ = fmt.Fprintln(w, "Canceled.")
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			diffs, err := form.Apply(changes)
+			if err != nil {
+				return err
+			}
+			if len(diffs) == 0 {
+				_, _ = fmt.Fprintln(w, "No changes.")
+				return nil
+			}
+			_, _ = fmt.Fprintf(w, "Changes for agent %s (%s):\n\n", agent.Name, agent.ID)
+			cfg, _ := loadConfig()
+			if err := output.New(output.FormatTable, w, resolveTableStyle(cfg)).Format(diffs, agentConfigDiffCols); err != nil {
+				return err
+			}
+			return saveAgentConfigDiffs(ctx, cmd, c, agent, form, diffs)
+		},
+	}
+	addAgentSelectorFlags(cmd, &id, &fid, &name, &hostname)
+	cmd.Flags().BoolVar(&force, "force", false, "edit the agent even if its group has group-level properties")
 	return cmd
 }

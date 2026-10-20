@@ -5,7 +5,7 @@
 ## CR Type
 
 - [ ] **New resource**
-- [x] **New subcommand** - `iics agent configs get`, `iics agent configs set`, `iics agent rename`
+- [x] **New subcommand** - `iics agent configs get|set|edit`, `iics agent rename`
 - [ ] **Enhancement**
 - [ ] **Output change**
 - [ ] **Flag / config change**
@@ -53,6 +53,14 @@ changed from the CLI.
 - `set` refuses the agent's own properties (`agent:` Agent Core, Agent Manager,
   Tomcat), because the server ignores changes to them (see notes). `get` hides
   them unless `--include-hidden` or `--service agent` is given.
+- `iics agent configs edit` opens an interactive editor in the style of
+  `role edit`: services, then properties, then a property editor, then review
+  and apply. One-line values are edited in an input (YAML single quotes are
+  added back automatically, sensitive values masked). Multi-value properties
+  (lists of maps such as LDAP, database connection properties, additional
+  logging) open in an entry editor with edit, add, remove, edit-as-text
+  (`$EDITOR` via ctrl+e), reset and undo. The review lists entry-level
+  changes. Menu entry "Edit agent properties".
 - `iics agent rename --id|--fid|--name|--hostname --new-name <name>` renames an
   agent, for example from the host name the installer registers to a logical
   name such as `CAI-A03`. The name is trimmed, at most 100 characters, and must
@@ -77,6 +85,10 @@ internal/client/agentconfigfile.go  # change files (JSON/YAML map or list) and e
 internal/client/agentconfigfile_test.go
 cmd/agent_configs.go                # agent configs get / set
 cmd/agent_rename.go                 # agent rename
+internal/tui/agentconfigeditor.go   # interactive property editor
+internal/tui/agentconfigvalue.go    # quoting, list-of-maps parsing/writing, entry diff
+internal/tui/agentconfigeditor_test.go
+internal/menu/entries.go            # "Edit agent properties" menu entry
 ```
 
 ### Files to MODIFY
@@ -194,3 +206,15 @@ Form layout (`<form id="agentForm">`, about 1,000 fields, all submitted on save)
   and `agent list` found it; renaming back via `--hostname cletinfacld07`
   worked; renaming to the current name did nothing. The 14 overrides were
   unchanged and no service restarted (service update times unchanged).
+- The entry editor keeps the value as a YAML node tree and changes only the
+  edited scalars, so unchanged entries keep their text. All 8 list values on
+  CAI-A03 (current and default of LDAP, DB and log DB connection properties,
+  additional logging) round-trip byte for byte. Edited values are written
+  plain when YAML allows (`300000`, `true`) and quoted only when needed.
+- The editor was driven in a pseudo-terminal on tst CAI-A03: editing entry 2
+  and adding an entry to `db:connection-properties` showed the entry diff in
+  review, then Cancel saved nothing; changing
+  `OpsInsightsDataCollector:OpsInsights:scriptLogRetentionCount` by typing
+  `101` stored `'101'` (quotes added), verified, and was reset afterwards.
+- Table columns `NAME` (get) and `PROPERTY` (set diff) no longer use
+  `ShrinkWrap`, which the table renderer moves to the last position.
