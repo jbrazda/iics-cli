@@ -108,6 +108,23 @@ Exactly one of `--id` / `--name` is required; they are mutually exclusive.
 
 All [global flags](../../README.md#global-flags) apply.
 
+### Interactive mode
+
+With `--interactive` (`-i`), or without an agent flag in a terminal, the
+command lists the agents (name, host, ID; `/` filters) and then asks for the
+view:
+
+| View                                   | Same as                                  |
+| -------------------------------------- | ---------------------------------------- |
+| Services summary                       | `agent details --services`               |
+| Details with service status            | `agent details`                          |
+| Full details with configuration        | `agent details --full`                   |
+| Service properties with defaults       | `agent configs get`                      |
+
+With an agent flag, `-i` only asks for the view; `--services` or `--full`
+skip the view question. The main menu entry **Show agent details** runs
+`agent details -i`.
+
 ### Output
 
 In table mode the agent is printed as a vertical `PROPERTY` / `VALUE` listing.
@@ -140,17 +157,18 @@ service (engine) with its status and, optionally, its configuration properties.
 
 ### Flags
 
-| Flag         | Type   | Description                                                                                         |
-| ------------ | ------ | --------------------------------------------------------------------------------------------------- |
-| `--id`       | string | Agent ID                                                                                            |
-| `--fid`      | string | Agent federated ID                                                                                  |
-| `--name`     | string | Agent name                                                                                          |
-| `--hostname` | string | Agent host name                                                                                     |
-| `--full`     | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`)              |
-| `--services` | bool   | Show only the agent summary and one horizontal table of services (mutually exclusive with `--full`) |
+| Flag                  | Type   | Description                                                                                         |
+| --------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+| `--id`                | string | Agent ID                                                                                            |
+| `--fid`               | string | Agent federated ID                                                                                  |
+| `--name`              | string | Agent name                                                                                          |
+| `--hostname`          | string | Agent host name                                                                                     |
+| `--full`              | bool   | Include agent-level and per-service configuration properties (adds `onlyStatus=false`)              |
+| `--services`          | bool   | Show only the agent summary and one horizontal table of services (mutually exclusive with `--full`) |
+| `--interactive`, `-i` | bool   | Pick the agent (when no agent flag is given) and the view from lists                                |
 
-Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required; they are
-mutually exclusive. Only `--id` maps to the API directly; `--name` uses the
+One of `--id` / `--fid` / `--name` / `--hostname` is required, unless the
+command runs interactively; they are mutually exclusive. Only `--id` maps to the API directly; `--name` uses the
 by-name endpoint, and `--fid` / `--hostname` are resolved to an ID by scanning
 the agent list (with a runtime-environment fallback for `--fid`).
 
@@ -185,6 +203,9 @@ iics agent details --id <agent-id> --services
 iics agent details --hostname devinfacld01 --full
 
 iics agent details --name "My Agent" --output json
+
+# Pick the agent and the view from lists
+iics agent details -i
 ```
 
 ```powershell
@@ -351,6 +372,8 @@ confirmation.
 | `--add`         | string | `service:type:name=value` to add a custom property (`@file` reads the value). Repeatable |
 | `--remove`      | string | `service:type:name` of a custom property to remove. Repeatable                           |
 | `--add-missing` | bool   | Add properties from `--set` or `--from-file` that do not exist, as custom properties     |
+| `--reset-all`   | bool   | Reset every overridden standard property to its default, like the UI's **Reset All**     |
+| `--service`     | string | With `--reset-all`: only this service                                                    |
 | `--from-file`   | string | JSON or YAML change file (see below); only the properties in the file change             |
 | `--dry-run`     | bool   | Show the changes without applying them                                                   |
 | `--yes`, `-y`   | bool   | Apply without asking for confirmation                                                    |
@@ -362,6 +385,12 @@ Rules:
   quoting, for example `'4G'` or `'jdbc:postgresql://host:5432/activevos'`, as
   `get` shows them. Multi-line values (connection properties, logging) are
   easiest to pass with `@file`; the file content is used as is.
+- `--reset-all` works like the Administrator UI's **Reset All** button: every
+  overridden standard property of every service (or of `--service`) goes back
+  to its default. Custom properties are kept. Sensitive properties are left
+  unchanged (the UI disables Reset All for them) and reported; reset them one
+  by one with `--reset`. It can be combined with other changes, which apply
+  on top. Check the list with `--dry-run` first.
 - Setting a property to its current value changes nothing, so a default does
   not turn into an override. Use `--reset` to go back to the default.
 - A property can be changed only once per command.
@@ -507,12 +536,13 @@ menu entry **Edit agent properties** runs this command.
 Screens:
 
 1. **Services** - each service with its number of properties, overridden and
-   custom properties and pending changes, then **Review and apply** and
-   **Cancel**.
+   custom properties and pending changes, then **Review and apply**,
+   **↺ Reset all to defaults** and **Cancel**.
 2. **Properties** of a service - type, name and a value preview. `*` marks an
    overridden property, `+` a custom property, `✎` a pending change, `✗` a
    custom property to remove. `/` filters. **+ Add custom property** asks for
-   the type (from the service's types), name and value.
+   the type (from the service's types), name and value. **↺ Reset all
+   &lt;service&gt; properties to defaults** resets this service only.
 3. **Property editor**:
    - One-line values open in an input field. Values stored in YAML single
      quotes (`'10G'`) are edited without the quotes, which are added back.
@@ -526,11 +556,18 @@ Screens:
      `value`). Unchanged entries keep their exact text.
    - **Edit as text** edits the whole value as YAML; `ctrl+e` opens it in
      `$EDITOR`.
-   - **Reset to default** and **Undo changes to this property**.
+   - **Reset to default** (shown for overridden properties) sets the value back
+     to the default, like the reset icon in the UI; **Undo changes to this
+     property** drops pending edits.
    - Custom properties: **Edit value**, **Remove custom property** (or
      **Keep this property** to undo a removal).
 4. **Review** - all pending changes; list properties show entry changes
    (`~` changed, `+` added, `-` removed). **Apply** saves.
+
+Reset all (for all services or one) works like the UI's **Reset All**: it
+lists the overridden standard properties it will reset and asks first (the
+default answer is **< Back**). Custom properties are kept, sensitive ones are
+left unchanged, and nothing is saved until **Apply** in the review.
 
 After applying, the command prints the change table, saves and verifies like
 `agent configs set`, and lists the restart commands for the changed services.

@@ -799,3 +799,34 @@ func (c *Client) RenameAgent(ctx context.Context, agentID, newName string) (*Age
 	}
 	return agent, nil
 }
+
+// ResetAllChanges returns reset changes for every overridden standard
+// property, like the Administrator UI's Reset All button. service limits it
+// to one service (name, versioned key or display name); empty means all.
+// Custom properties, the agent's own (SystemService) properties and
+// sensitive properties are left alone; skipped counts the sensitive ones.
+func (f *AgentConfigForm) ResetAllChanges(service string) (changes []AgentConfigChange, skipped int, err error) {
+	found := service == ""
+	for _, p := range f.Properties {
+		if p.Custom || p.removed || p.Service == SystemService {
+			continue
+		}
+		if service != "" && !strings.EqualFold(service, p.Service) && !strings.EqualFold(service, p.serviceKey) &&
+			!strings.EqualFold(service, p.ServiceName) {
+			continue
+		}
+		found = true
+		if !p.Overridden {
+			continue
+		}
+		if p.Sensitive {
+			skipped++
+			continue
+		}
+		changes = append(changes, AgentConfigChange{Property: p.Key(), Reset: true})
+	}
+	if !found {
+		return nil, 0, fmt.Errorf("service %q not found on agent %s", service, f.AgentName)
+	}
+	return changes, skipped, nil
+}

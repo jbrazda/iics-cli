@@ -29,17 +29,18 @@ type agentConfigEditor struct {
 }
 
 const (
-	choiceBack    = "\x00back"
-	choiceAdd     = "\x00add"
-	choiceText    = "\x00text"
-	choiceReset   = "\x00reset"
-	choiceUndo    = "\x00undo"
-	choiceEdit    = "\x00edit"
-	choiceRemove  = "\x00remove"
-	choiceApply   = "\x00apply"
-	choiceCustom  = "\x00custom"
-	previewWidth  = 44
-	maxListHeight = 22
+	choiceBack     = "\x00back"
+	choiceAdd      = "\x00add"
+	choiceText     = "\x00text"
+	choiceReset    = "\x00reset"
+	choiceUndo     = "\x00undo"
+	choiceEdit     = "\x00edit"
+	choiceRemove   = "\x00remove"
+	choiceApply    = "\x00apply"
+	choiceCustom   = "\x00custom"
+	choiceResetAll = "\x00resetall"
+	previewWidth   = 44
+	maxListHeight  = 22
 )
 
 // EditAgentConfigs runs the interactive agent property editor and returns
@@ -63,6 +64,11 @@ func EditAgentConfigs(props []client.AgentConfigProperty, opts AgentConfigEditor
 		switch choice {
 		case choiceCancel:
 			return nil, ErrCanceled
+		case choiceResetAll:
+			if err := e.resetAll(""); err != nil {
+				return nil, err
+			}
+			continue
 		case choiceReview:
 			ok, err := e.review()
 			if err != nil {
@@ -183,6 +189,7 @@ func (e *agentConfigEditor) serviceOptions() []huh.Option[string] {
 	}
 	return append(opts,
 		huh.NewOption("> Review and apply", choiceReview),
+		huh.NewOption("↺ Reset all to defaults", choiceResetAll),
 		huh.NewOption("x Cancel", choiceCancel))
 }
 
@@ -206,6 +213,7 @@ func (e *agentConfigEditor) editService(service string) error {
 		if len(e.customTypes[service]) > 0 {
 			opts = append(opts, huh.NewOption("+ Add custom property", choiceCustom))
 		}
+		opts = append(opts, huh.NewOption("↺ Reset all "+e.props[idx[0]].ServiceName+" properties to defaults", choiceResetAll))
 		for _, i := range idx {
 			p := e.props[i]
 			v, over := e.value(i)
@@ -238,6 +246,12 @@ func (e *agentConfigEditor) editService(service string) error {
 			return err
 		}
 		last = choice
+		if choice == choiceResetAll {
+			if err := e.resetAll(service); err != nil {
+				return err
+			}
+			continue
+		}
 		if choice == choiceCustom {
 			if err := e.addCustom(service, e.props[idx[0]].ServiceName); err != nil {
 				return err
@@ -625,5 +639,78 @@ func (e *agentConfigEditor) addCustom(service, serviceName string) error {
 	p := client.AgentConfigProperty{Service: service, ServiceName: serviceName, Type: typ, Name: strings.TrimSpace(name), Custom: true}
 	e.props = append(e.props, p)
 	e.pending[p.Key()] = client.AgentConfigChange{Property: p.Key(), Value: value, Add: true}
+	return nil
+}
+
+// resetTargets returns the properties Reset all changes for service (all
+// services when empty): standard properties that are overridden or have a
+// pending edit. Sensitive ones are counted in skipped and left alone, like
+// the Administrator UI, which disables Reset All for them.
+func (e *agentConfigEditor) resetTargets(service string) (targets []int, skipped int) {
+	for i, p := range e.props {
+		if p.Custom || service != "" && p.Service != service {
+			continue
+		}
+		_, pending := e.pending[p.Key()]
+		if !p.Overridden && !pending {
+			continue
+		}
+		if p.Sensitive {
+			skipped++
+			continue
+		}
+		targets = append(targets, i)
+	}
+	return targets, skipped
+}
+
+// resetAll asks for confirmation and marks the targets for reset, like the
+// Administrator UI's Reset All button. Custom properties are kept.
+func (e *agentConfigEditor) resetAll(service string) error {
+	targets, skipped := e.resetTargets(service)
+	scope := "all services"
+	if service != "" {
+		for _, p := range e.props {
+			if p.Service == service {
+				scope = p.ServiceName
+				break
+			}
+		}
+	}
+	var b strings.Builder
+	if len(targets) == 0 {
+		fmt.Fprintf(&b, "No overridden properties in %s.", scope)
+	} else {
+		fmt.Fprintf(&b, "Reset %d propert%s in %s to their defaults:\n", len(targets), map[bool]string{true: "y", false: "ies"}[len(targets) == 1], scope)
+		for n, i := range targets {
+			if n == 15 {
+				fmt.Fprintf(&b, "  ... and %d more\n", len(targets)-n)
+				break
+			}
+			p := e.props[i]
+			fmt.Fprintf(&b, "  %s › %s › %s\n", p.ServiceName, p.Type, p.Name)
+		}
+		b.WriteString("Custom properties are kept. Pending edits of these properties are replaced.")
+	}
+	if skipped > 0 {
+		fmt.Fprintf(&b, "\n%d sensitive propert%s left unchanged; reset them one by one.", skipped, map[bool]string{true: "y", false: "ies"}[skipped == 1])
+	}
+	opts := []huh.Option[string]{huh.NewOption("< Back", choiceBack)}
+	if len(targets) > 0 {
+		opts = append([]huh.Option[string]{huh.NewOption(fmt.Sprintf("Reset %d propert%s", len(targets), map[bool]string{true: "y", false: "ies"}[len(targets) == 1]), choiceResetAll)}, opts...)
+	}
+	choice := choiceBack
+	sel := huh.NewSelect[string]().
+		Title(e.title + " - reset all").
+		Description(strings.TrimRight(b.String(), "\n")).
+		Options(opts...).
+		Value(&choice)
+	ok, err := back(huh.NewForm(huh.NewGroup(sel)))
+	if err != nil || !ok || choice != choiceResetAll {
+		return err
+	}
+	for _, i := range targets {
+		e.record(i, client.AgentConfigChange{Reset: true})
+	}
 	return nil
 }

@@ -107,6 +107,7 @@ func DefaultEntries() []Entry {
 		{Group: "Environments and agents", Label: "List runtime environments", Description: "Show runtime environments (Secure Agent groups)", Args: []string{"environment", "list"}},
 		{Group: "Environments and agents", Label: "Create runtime environment", Description: "Create a runtime environment and add agents", Args: []string{"environment", "create", "-i"}, Writes: true},
 		{Group: "Environments and agents", Label: "List agents", Description: "Show Secure Agents", Args: []string{"agent", "list"}},
+		{Group: "Environments and agents", Label: "Show agent details", Description: "Pick an agent, then show its services summary, details, full details with configuration, or service properties", Args: []string{"agent", "details", "-i"}},
 		{Group: "Environments and agents", Label: "Start agent service", Description: "Pick an agent and start a service", Args: []string{"agent", "start", "-i"}, Writes: true},
 		{Group: "Environments and agents", Label: "Stop agent service", Description: "Pick an agent and stop a service", Args: []string{"agent", "stop", "-i"}, Writes: true},
 		{Group: "Environments and agents", Label: "Restart agent service", Description: "Pick an agent and restart a service", Args: []string{"agent", "restart", "-i"}, Writes: true},

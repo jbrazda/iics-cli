@@ -352,3 +352,21 @@ func TestRenameAgent(t *testing.T) {
 		}
 	}
 }
+
+func TestResetAllChanges(t *testing.T) {
+	form, err := parseAgentConfigForm(agentPage("tok", "false", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	form.Set(2, "false") // process-engine:cluster:primary-node, now overridden
+	changes, skipped, err := form.ResetAllChanges("")
+	if err != nil || len(changes) != 1 || changes[0].Property != "process-engine:cluster:primary-node" || !changes[0].Reset || skipped != 1 {
+		t.Errorf("ResetAllChanges = %+v, %d, %v", changes, skipped, err)
+	}
+	if changes, _, _ = form.ResetAllChanges("OI Data Collector"); len(changes) != 0 {
+		t.Errorf("service filter: %+v", changes)
+	}
+	if _, _, err = form.ResetAllChanges("nope"); err == nil {
+		t.Error("expected an error for an unknown service")
+	}
+}

@@ -68,6 +68,18 @@ changed from the CLI.
   `--reset`) removes it, `--add-missing` adds missing properties from a change
   file, and `agent configs edit` has **+ Add custom property** and remove.
   Type labels from the UI (`Tomcat`, `DTM`) are accepted in property names.
+- Reset all, like the UI's **Reset All** button (`pnAgent.resetAllSystemConfigs`
+  resets every standard property; custom rows are kept; the UI disables it
+  while sensitive properties are set): `set --reset-all [--service <svc>]`
+  and, in `agent configs edit`, **↺ Reset all to defaults** on the service
+  list and **↺ Reset all &lt;service&gt; properties to defaults** per service,
+  with a confirmation listing the properties. Sensitive properties are left
+  unchanged and reported. Per-property **Reset to default** stays in the
+  property editor.
+- `iics agent details -i` (also without an agent flag in a terminal) picks the
+  agent from a list, then the view: services summary (`--services`),
+  details, full details (`--full`) or service properties (`agent configs
+  get`). Menu entry "Show agent details".
 - `iics agent rename --id|--fid|--name|--hostname --new-name <name>` renames an
   agent, for example from the host name the installer registers to a logical
   name such as `CAI-A03`. The name is trimmed, at most 100 characters, and must
@@ -248,3 +260,12 @@ Form layout (`<form id="agentForm">`, about 1,000 fields, all submitted on save)
   and `--remove`, each verified by reading back; then add and remove through
   `agent configs edit` in a pseudo-terminal. The agent has no custom
   properties afterwards, as before.
+- Reset all was checked on tst CAI-A03 as a dry run (`--reset-all --service
+  "Process Server"` lists the 14 overrides; CDI-G01-A01 lists
+  `INFA_MEMORY`) and in the editor through review, then canceled, so the
+  agent kept its overrides.
+- `agent details -i` was driven in a pseudo-terminal on tst: agent list,
+  view list, services summary and properties views.
+- The `NAME` column of `agent configs get` wraps names longer than 36
+  characters inside the cell: Process Server has names of up to 76
+  characters, which made the table fall back to the vertical layout.

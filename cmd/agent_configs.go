@@ -46,7 +46,13 @@ var agentPropertyCols = []output.Column{
 		}
 		return t
 	}},
-	{Header: "NAME", Field: "name", Width: 24, Priority: 1, Shrink: output.ShrinkNever},
+	// Long names (up to 76 characters on Process Server) wrap inside the
+	// cell; ShrinkWrap would move the column to the end.
+	{Header: "NAME", Field: "name", Width: 24, Priority: 1, Shrink: output.ShrinkNever, Func: func(v interface{}) string {
+		row, _ := v.(map[string]interface{})
+		s, _ := row["name"].(string)
+		return output.WrapCell(s, 36)
+	}},
 	{Header: "VALUE", Field: "value", Width: 30, Priority: 1, Func: wrapConfigField("value")},
 	{Header: "DEFAULT", Field: "defaultValue", Width: 30, Priority: 3, Func: wrapConfigField("defaultValue")},
 	{Header: "OVERRIDDEN", Field: "overridden", Width: 10, Priority: 2, Shrink: output.ShrinkNever, Func: func(v interface{}) string {
@@ -311,7 +317,8 @@ func newAgentConfigsSetCmd() *cobra.Command {
 		id, fid, name, hostname string
 		sets, adds              []string
 		resets, removes         []string
-		addMissing              bool
+		addMissing, resetAll    bool
+		resetService            string
 		fromFile                string
 		dryRun, yes, force      bool
 	)
@@ -353,6 +360,7 @@ from the group; the command refuses to change them unless --force is given.
   iics agent configs set --name CAI-A03 --set "process-engine:jvm:max-heap='4G'"
   iics agent configs set --name CAI-A03 --set "process-engine:db:connection-properties=@db-props.yaml"
   iics agent configs set --name CAI-A03 --reset process-engine:jvm:max-heap --yes
+  iics agent configs set --name CAI-A03 --reset-all --service "Process Server" --dry-run
   iics agent configs set --name CAI-A03 --from-file changes.yaml
   iics agent configs get --name CAI-A01 --service process-engine --overridden --export > pe.yaml
   iics agent configs set --name CAI-A02 --from-file pe.yaml --dry-run`,
@@ -364,8 +372,11 @@ from the group; the command refuses to change them unless --force is given.
 			if err != nil {
 				return err
 			}
-			if len(changes) == 0 {
-				return fmt.Errorf("nothing to change: use --set, --add, --reset, --remove or --from-file")
+			if len(changes) == 0 && !resetAll {
+				return fmt.Errorf("nothing to change: use --set, --add, --reset, --reset-all, --remove or --from-file")
+			}
+			if resetService != "" && !resetAll {
+				return fmt.Errorf("--service requires --reset-all")
 			}
 			c, err := getClient(cmd)
 			if err != nil {
@@ -384,6 +395,17 @@ from the group; the command refuses to change them unless --force is given.
 			form, err := c.GetAgentConfigForm(ctx, agent.ID)
 			if err != nil {
 				return err
+			}
+			if resetAll {
+				resets, skipped, rErr := form.ResetAllChanges(resetService)
+				if rErr != nil {
+					return rErr
+				}
+				if skipped > 0 {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Reset all: %d sensitive propert%s left unchanged; reset them one by one with --reset.\n",
+						skipped, map[bool]string{true: "y", false: "ies"}[skipped == 1])
+				}
+				changes = append(changes, resets...)
 			}
 			diffs, err := form.ApplyWith(changes, client.ApplyOptions{AddMissing: addMissing})
 			if err != nil {
@@ -418,6 +440,8 @@ from the group; the command refuses to change them unless --force is given.
 	cmd.Flags().StringArrayVar(&resets, "reset", nil, "reset a property to its default (removes a custom property): service:type:name; repeatable")
 	cmd.Flags().StringArrayVar(&adds, "add", nil, "add a custom property: service:type:name=value; repeatable")
 	cmd.Flags().StringArrayVar(&removes, "remove", nil, "remove a custom property: service:type:name; repeatable")
+	cmd.Flags().BoolVar(&resetAll, "reset-all", false, "reset every overridden standard property to its default, like the UI's Reset All (custom and sensitive properties are kept)")
+	cmd.Flags().StringVar(&resetService, "service", "", "with --reset-all: only this service (name, display name or versioned key)")
 	cmd.Flags().BoolVar(&addMissing, "add-missing", false, "add properties from --set or --from-file that do not exist as custom properties")
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON or YAML change file: service/type/name map (null resets) or list of {property, value, reset}")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "show the changes without applying them")

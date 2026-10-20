@@ -118,17 +118,17 @@ On a production profile:
 
 ## Entries
 
-| Group                   | Entries                                                                                                                                                                                                                 |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Delete profile ✎, Edit global settings                                                                            |
-| Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎                                                                 |
-| User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                                                                                                                                                                            |
-| Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎                                                                                                                                                               |
-| Privileges              | List privileges                                                                                                                                                                                                         |
-| Projects and folders    | List projects, List folders, List folders in a project, Edit project ✎, Edit folder ✎                                                                                                                                   |
-| Permissions             | Edit object permissions ✎                                                                                                                                                                                               |
-| Environments and agents | List runtime environments, Create runtime environment ✎, List agents, Start / Stop / Restart agent service ✎, Edit agent properties ✎, Show agent installer info, Download agent installer (`--interactive --progress`) |
-| Help                    | Show CLI help                                                                                                                                                                                                           |
+| Group                   | Entries                                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session                 | Switch profile, Set as default profile ✎, Login, List profiles, Add profile ✎, Edit active profile ✎, Delete profile ✎, Edit global settings                                                                                                |
+| Users                   | List users, Show user (search by user name, ID, or part of a name/email), Create user ✎, Edit user groups and roles ✎, Delete user ✎, Change password ✎                                                                                     |
+| User groups             | List, Show, Create ✎, Edit roles ✎, Delete ✎                                                                                                                                                                                                |
+| Roles                   | List, Show (with privileges), Create ✎, Edit privileges ✎                                                                                                                                                                                   |
+| Privileges              | List privileges                                                                                                                                                                                                                             |
+| Projects and folders    | List projects, List folders, List folders in a project, Edit project ✎, Edit folder ✎                                                                                                                                                       |
+| Permissions             | Edit object permissions ✎                                                                                                                                                                                                                   |
+| Environments and agents | List runtime environments, Create runtime environment ✎, List agents, Show agent details, Start / Stop / Restart agent service ✎, Edit agent properties ✎, Show agent installer info, Download agent installer (`--interactive --progress`) |
+| Help                    | Show CLI help                                                                                                                                                                                                                               |
 
 ## Accessible mode and small terminals
 

@@ -177,3 +177,30 @@ func TestAgentConfigEditorCustom(t *testing.T) {
 		t.Errorf("changes() = %+v", got)
 	}
 }
+
+func TestAgentConfigEditorResetTargets(t *testing.T) {
+	e := &agentConfigEditor{
+		props: []client.AgentConfigProperty{
+			{Service: "process-engine", Type: "jvm", Name: "max-heap", Value: "'10G'", DefaultValue: "'1536M'", Overridden: true},
+			{Service: "process-engine", Type: "cluster", Name: "enabled", Value: "false", DefaultValue: "false"},
+			{Service: "process-engine", Type: "server", Name: "key-store-password", Value: "x", Overridden: true, Sensitive: true},
+			{Service: "process-engine", Type: "jvm", Name: "custom1", Value: "1", Custom: true},
+			{Service: "OpsInsightsDataCollector", Type: "OpsInsights", Name: "maxBufferSize", Value: "512", DefaultValue: "512"},
+		},
+		pending: map[string]client.AgentConfigChange{},
+	}
+	e.record(4, client.AgentConfigChange{Value: "1024"}) // pending edit on a default property
+	targets, skipped := e.resetTargets("")
+	if len(targets) != 2 || targets[0] != 0 || targets[1] != 4 || skipped != 1 {
+		t.Errorf("resetTargets(all) = %v, %d", targets, skipped)
+	}
+	if targets, _ = e.resetTargets("process-engine"); len(targets) != 1 || targets[0] != 0 {
+		t.Errorf("resetTargets(process-engine) = %v", targets)
+	}
+	for _, i := range []int{0, 4} {
+		e.record(i, client.AgentConfigChange{Reset: true})
+	}
+	if ch := e.changes(); len(ch) != 1 || ch[0].Property != "process-engine:jvm:max-heap" || !ch[0].Reset {
+		t.Errorf("after reset all: %+v", ch)
+	}
+}

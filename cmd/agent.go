@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/jbrazda/iics-cli/internal/client"
+	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/filter"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -310,16 +312,25 @@ func newAgentDetailsCmd() *cobra.Command {
 		id, fid, name, hostname string
 		full                    bool
 		servicesOnly            bool
+		interactive             bool
 	)
 	cmd := &cobra.Command{
 		Use:   "details",
 		Short: "Get agent service engine details",
+		Long: `Get agent service engine details.
+
+With --interactive (-i), or without an agent flag in a terminal, pick the
+agent from a list, then the view: services summary (--services), details
+with service status, full details with configuration (--full), or the
+agent's service properties (agent configs get).`,
 		Example: `  iics agent details --id <agent-id>
   iics agent details --hostname devinfacld01 --full
   iics agent details --id <agent-id> --services
-  iics agent details --name "My Agent" --output json`,
+  iics agent details --name "My Agent" --output json
+  iics agent details -i`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if id == "" && fid == "" && name == "" && hostname == "" {
+			noAgent := id == "" && fid == "" && name == "" && hostname == ""
+			if noAgent && !interactive && !config.IsTerminal() {
 				return fmt.Errorf("one of --id, --fid, --name, or --hostname is required")
 			}
 			c, err := getClient(cmd)
@@ -327,9 +338,30 @@ func newAgentDetailsCmd() *cobra.Command {
 				return err
 			}
 			ctx := context.Background()
-			agentID, err := resolveAgentID(ctx, c, id, name, hostname, fid)
-			if err != nil {
+			var agentID string
+			if noAgent {
+				picked, pErr := pickAgent(ctx, c)
+				if pErr != nil || picked == nil {
+					return pErr
+				}
+				agentID = picked.ID
+				name = picked.Name
+			} else if agentID, err = resolveAgentID(ctx, c, id, name, hostname, fid); err != nil {
 				return err
+			}
+			if (interactive || noAgent) && !full && !servicesOnly {
+				view, vErr := pickAgentDetailsView(agentID, name)
+				if vErr != nil || view == agentViewNone {
+					return vErr
+				}
+				switch view {
+				case agentViewServices:
+					servicesOnly = true
+				case agentViewFull:
+					full = true
+				case agentViewProperties:
+					return showAgentProperties(ctx, cmd, c, agentID)
+				}
 			}
 			details, err := c.GetAgentDetails(ctx, agentID, full)
 			if err != nil {
@@ -400,6 +432,7 @@ func newAgentDetailsCmd() *cobra.Command {
 	cmd.Flags().StringVar(&hostname, "hostname", "", "agent host name")
 	cmd.Flags().BoolVar(&full, "full", false, "include agent and service configuration properties")
 	cmd.Flags().BoolVar(&servicesOnly, "services", false, "show the agent summary and a single services table (no per-service or config sections)")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "pick the agent (when no agent flag is given) and the view from lists")
 	cmd.MarkFlagsMutuallyExclusive("id", "fid", "name", "hostname")
 	cmd.MarkFlagsMutuallyExclusive("full", "services")
 	return cmd
@@ -444,4 +477,60 @@ func newAgentDeleteCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "skip confirmation prompt")
 	cmd.MarkFlagsMutuallyExclusive("id", "name", "hostname")
 	return cmd
+}
+
+// Views offered by `agent details -i`.
+const (
+	agentViewNone = iota
+	agentViewServices
+	agentViewDetails
+	agentViewFull
+	agentViewProperties
+)
+
+// agentView is one entry of the `agent details -i` view list.
+type agentView struct {
+	label string
+	view  int
+}
+
+// pickAgentDetailsView asks which agent details view to show. It returns
+// agentViewNone when the user cancels.
+func pickAgentDetailsView(agentID, agentName string) (int, error) {
+	views := []agentView{
+		{"Services summary (--services)", agentViewServices},
+		{"Details with service status", agentViewDetails},
+		{"Full details with configuration (--full)", agentViewFull},
+		{"Service properties with defaults (agent configs get)", agentViewProperties},
+	}
+	label := "Show agent " + agentID
+	if agentName != "" {
+		label = "Show agent " + agentName
+	}
+	idx, err := tui.PickOne(prompter, label, views, func(v agentView) string { return v.label })
+	if err != nil || idx < 0 {
+		return agentViewNone, err
+	}
+	return views[idx].view, nil
+}
+
+// showAgentProperties prints the agent's service properties like
+// `agent configs get`.
+func showAgentProperties(ctx context.Context, cmd *cobra.Command, c *client.Client, agentID string) error {
+	form, err := c.GetAgentConfigForm(ctx, agentID)
+	if err != nil {
+		return err
+	}
+	props, err := form.Filter(client.AgentConfigFilter{})
+	if err != nil {
+		return err
+	}
+	if outputFmt != "" && outputFmt != "table" {
+		f, err := getFormatter()
+		if err != nil {
+			return err
+		}
+		return f.Format(props, agentPropertyCols)
+	}
+	return printAgentConfigTables(cmd, form, props)
 }
