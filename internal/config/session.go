@@ -107,6 +107,12 @@ func (sc *SessionCache) Delete(profileName string) {
 	delete(sc.Sessions, profileName)
 }
 
+// Remaining returns how long the session stays valid; zero or negative
+// means it has expired.
+func (e *SessionEntry) Remaining() time.Duration {
+	return sessionTimeout - time.Since(e.CreatedAt)
+}
+
 // IsExpired returns true if the session has expired.
 func (e *SessionEntry) IsExpired() bool {
 	return time.Since(e.CreatedAt) >= sessionTimeout

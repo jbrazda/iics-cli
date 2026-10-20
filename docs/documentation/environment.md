@@ -15,13 +15,13 @@ iics rt <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                      |
-| ---------- | -------------------------------- |
-| `list`     | List runtime environments        |
-| `get`      | Get a single runtime environment |
-| `create`   | Create a runtime environment     |
-| `update`   | Update a runtime environment     |
-| `delete`   | Delete a runtime environment     |
+| Subcommand | Description                                  |
+| ---------- | -------------------------------------------- |
+| `list`     | List runtime environments                    |
+| `get`      | Get a single runtime environment             |
+| `create`   | Create a runtime environment                 |
+| `update`   | Update a runtime environment                 |
+| `delete`   | Delete a runtime environment                 |
 | `configs`  | Manage Secure Agent group service properties |
 
 ---
@@ -30,10 +30,10 @@ iics rt <subcommand> [flags]
 
 ### Flags
 
-| Flag       | Type         | Default | Description                                              |
-| ---------- | ------------ | ------- | ------------------------------------------------------- |
-| `--limit`  | int          | 200     | Max results                                             |
-| `--skip`   | int          | 0       | Results to skip                                         |
+| Flag       | Type         | Default | Description                                                   |
+| ---------- | ------------ | ------- | ------------------------------------------------------------- |
+| `--limit`  | int          | 200     | Max results                                                   |
+| `--skip`   | int          | 0       | Results to skip                                               |
 | `--filter` | string array |         | Client-side filter, e.g. `isShared==true`. Repeatable; AND-ed |
 
 `--filter` supports `==` and `!=` on the raw API field names. Note that boolean
@@ -45,13 +45,13 @@ All [global flags](../../README.md#global-flags) apply.
 ### Output columns
 
 | Column        | Description                          |
-| ------------- | ----------------------------------- |
-| `id`          | Runtime environment ID              |
-| `name`        | Runtime environment name            |
-| `federatedId` | Federated ID                        |
-| `isShared`    | Whether the environment is shared   |
+| ------------- | ------------------------------------ |
+| `id`          | Runtime environment ID               |
+| `name`        | Runtime environment name             |
+| `federatedId` | Federated ID                         |
+| `isShared`    | Whether the environment is shared    |
 | `agents`      | Number of Secure Agents in the group |
-| `updateTime`  | Last modification timestamp         |
+| `updateTime`  | Last modification timestamp          |
 
 ### Examples
 
@@ -77,9 +77,9 @@ iics environment list --filter isShared==true
 
 ### Flags
 
-| Flag     | Type   | Description             |
-| -------- | ------ | ----------------------- |
-| `--id`   | string | Runtime environment ID  |
+| Flag     | Type   | Description              |
+| -------- | ------ | ------------------------ |
+| `--id`   | string | Runtime environment ID   |
 | `--name` | string | Runtime environment name |
 
 Exactly one of `--id` / `--name` is required; they are mutually exclusive.
@@ -131,11 +131,11 @@ element) are added automatically. An explicit `@type` in the file is honored.
 
 ### Flags
 
-| Flag                  | Type   | Description                                            |
-| --------------------- | ------ | ----------------------------------------------------- |
-| `--from-file`         | string | JSON file with the runtime environment definition     |
-| `--description`       | string | Environment description (overrides the file value)    |
-| `--interactive`, `-i` | bool   | Prompt for the fields interactively                   |
+| Flag                  | Type   | Description                                        |
+| --------------------- | ------ | -------------------------------------------------- |
+| `--from-file`         | string | JSON file with the runtime environment definition  |
+| `--description`       | string | Environment description (overrides the file value) |
+| `--interactive`, `-i` | bool   | Prompt for the fields interactively                |
 
 The interactive wizard runs when `-i` is given, or when `--from-file` is omitted
 and stdin is a terminal. With both `--from-file` and `-i`, the file pre-fills the
@@ -143,12 +143,14 @@ prompts. Without a file and without a terminal, `--from-file` is required.
 
 ### Interactive prompts
 
-1. `Environment Name` (required).
-2. `Description` (optional).
-3. `Is shared` (y/N).
-4. Agent management menu - `Add agents` lists the currently unassigned Secure
-   Agents to pick from; `Remove agents` removes from the working selection;
-   `Done` creates the environment with the selected agents.
+1. **Runtime environment** - name (required; existing names are rejected),
+   description, and whether the environment is shared.
+2. **Agents** - a filterable checklist of unassigned Secure Agents (name, host,
+   active or inactive). Agents from `--from-file` are pre-checked. Selecting
+   agents is optional.
+3. **Review** - **Create environment**, **Back to editing** or **Cancel**.
+
+See [Interactive prompts](interactive.md) for keys and piped input.
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -194,10 +196,10 @@ Delete a runtime environment (Secure Agent group). Uses
 
 ### Flags
 
-| Flag           | Type   | Description |
-| -------------- | ------ | ----------- |
-| `--id`         | string | Runtime environment ID |
-| `--name`       | string | Runtime environment name |
+| Flag           | Type   | Description                  |
+| -------------- | ------ | ---------------------------- |
+| `--id`         | string | Runtime environment ID       |
+| `--name`       | string | Runtime environment name     |
 | `--yes` / `-y` | bool   | Skip the confirmation prompt |
 
 Exactly one of `--id` / `--name` is required; they are mutually exclusive.
@@ -224,15 +226,19 @@ Manage Secure Agent group service property overrides. Uses
 `GET` / `PUT /api/v2/runtimeEnvironment/<id>/configs`. The Secure Agent group ID
 is the runtime environment ID.
 
+To change the properties of a single agent instead of the whole group, use
+[agent configs](agent.md#agent-configs). Passing an agent ID to these group
+endpoints fails with `REPO_54014` "Access denied to perform operation on Agent".
+
 ### environment configs get
 
 Show the service property overrides for a group.
 
-| Flag        | Type   | Description |
-| ----------- | ------ | ----------- |
-| `--id`      | string | Secure Agent group (runtime environment) ID |
+| Flag        | Type   | Description                                   |
+| ----------- | ------ | --------------------------------------------- |
+| `--id`      | string | Secure Agent group (runtime environment) ID   |
 | `--name`    | string | Secure Agent group (runtime environment) name |
-| `--service` | string | Show only this service's properties |
+| `--service` | string | Show only this service's properties           |
 
 Exactly one of `--id` / `--name` is required.
 
@@ -250,12 +256,12 @@ iics environment configs get --name "My Group" --service Data_Integration_Server
 Replace the service property overrides for a group from a JSON file shaped as
 `{"<Service_Name>":[{ ...settings... }]}`.
 
-| Flag           | Type   | Description |
-| -------------- | ------ | ----------- |
-| `--id`         | string | Secure Agent group (runtime environment) ID |
+| Flag           | Type   | Description                                   |
+| -------------- | ------ | --------------------------------------------- |
+| `--id`         | string | Secure Agent group (runtime environment) ID   |
 | `--name`       | string | Secure Agent group (runtime environment) name |
-| `--from-file`  | string | JSON file with the overrides (required) |
-| `--yes` / `-y` | bool   | Skip the confirmation prompt |
+| `--from-file`  | string | JSON file with the overrides (required)       |
+| `--yes` / `-y` | bool   | Skip the confirmation prompt                  |
 
 Exactly one of `--id` / `--name` is required.
 
@@ -265,4 +271,5 @@ iics environment configs set --id <groupId> --from-file props.json --yes
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [agent](agent.md) - manage Secure Agents within runtime environments

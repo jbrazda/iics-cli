@@ -22,11 +22,11 @@ No command-specific flags. All [global flags](../../README.md#global-flags) appl
 
 ### Output columns
 
-| Column        | Description                          |
-| ------------- | ------------------------------------ |
-| `id`          | Privilege ID                         |
-| `name`        | Privilege name                       |
-| `service`     | Service the privilege applies to     |
+| Column        | Description                              |
+| ------------- | ---------------------------------------- |
+| `id`          | Privilege ID                             |
+| `name`        | Privilege name                           |
+| `service`     | Service the privilege applies to         |
 | `description` | Description of what the privilege grants |
 
 ### Examples

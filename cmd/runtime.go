@@ -275,8 +275,13 @@ shared flag, and member agents.`,
 			}
 
 			if useWizard {
-				if werr := runRuntimeCreateWizard(ctx, c, &rt); werr != nil {
+				ok, werr := runRuntimeCreateWizard(ctx, c, &rt)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 			}
 
@@ -359,14 +364,8 @@ func newRuntimeDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete runtime environment %s? [y/N]: ", envID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete runtime environment %s?", envID)) {
+				return nil
 			}
 			if err := c.DeleteRuntimeEnvironment(ctx, envID); err != nil {
 				return err

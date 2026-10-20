@@ -35,6 +35,24 @@ type Config struct {
 	Profiles       map[string]*Profile `yaml:"profiles"       mapstructure:"profiles"`
 	Style          StyleConfig         `yaml:"style,omitempty" mapstructure:"style"`
 	HTTPTimeout    int                 `yaml:"httpTimeout,omitempty" mapstructure:"httpTimeout"`
+	UI             UIConfig            `yaml:"ui,omitempty" mapstructure:"ui"`
+	// NewUser holds the global new-user defaults; profiles override them.
+	NewUser *NewUserConfig `yaml:"newUser,omitempty" mapstructure:"newUser"`
+}
+
+// GlobalNewUser returns the global new-user defaults; nil-safe.
+func (c *Config) GlobalNewUser() *NewUserConfig {
+	if c == nil {
+		return nil
+	}
+	return c.NewUser
+}
+
+// UIConfig holds interactive UI preferences.
+type UIConfig struct {
+	// Menu enables the interactive main menu for bare "iics" on a terminal.
+	// Defaults to true when unset.
+	Menu *bool `yaml:"menu,omitempty" mapstructure:"menu"`
 }
 
 // DefaultHTTPTimeoutSeconds is the per-HTTP-request timeout used when no
@@ -77,6 +95,26 @@ type Profile struct {
 	LoginURL   string `yaml:"loginUrl,omitempty" mapstructure:"loginUrl"`
 	BaseAPIURL string `yaml:"baseApiUrl,omitempty" mapstructure:"baseApiUrl"`
 	CaiURL     string `yaml:"caiUrl,omitempty" mapstructure:"caiUrl"`
+	// Production marks a production org. When unset, the profile name is
+	// used as a hint (see IsProductionProfile).
+	Production *bool `yaml:"production,omitempty" mapstructure:"production"`
+	// NewUser configures suggested user names and emails for new users.
+	NewUser *NewUserConfig `yaml:"newUser,omitempty" mapstructure:"newUser"`
+}
+
+// IsProductionProfile reports whether a profile is a production org: the
+// profile's explicit production setting when present, otherwise a name of
+// "prd", "prod" or "production", or one starting with "prd-" / "prod-".
+func IsProductionProfile(name string, p *Profile) bool {
+	if p != nil && p.Production != nil {
+		return *p.Production
+	}
+	n := strings.ToLower(strings.TrimSpace(name))
+	switch n {
+	case "prd", "prod", "production":
+		return true
+	}
+	return strings.HasPrefix(n, "prd-") || strings.HasPrefix(n, "prod-")
 }
 
 // DeriveCaiURL derives the CAI base URL from an IICS product baseApiUrl.
@@ -287,6 +325,15 @@ func (c *Config) Save(configPath string) error {
 	v.Set("profiles", c.Profiles)
 	if c.Style.Theme != "" || c.Style.NoColor || c.Style.HeaderColor != "" || c.Style.ResponsiveTables != nil {
 		v.Set("style", c.Style)
+	}
+	if c.HTTPTimeout > 0 {
+		v.Set("httpTimeout", c.HTTPTimeout)
+	}
+	if c.UI.Menu != nil {
+		v.Set("ui", c.UI)
+	}
+	if c.NewUser != nil && !c.NewUser.IsZero() {
+		v.Set("newUser", c.NewUser)
 	}
 
 	v.SetConfigFile(configPath)

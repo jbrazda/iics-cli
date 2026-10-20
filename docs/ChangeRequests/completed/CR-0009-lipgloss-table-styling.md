@@ -17,7 +17,7 @@
    disabled.
 
 3. **`NO_COLOR` env var is not respected.** The POSIX `NO_COLOR` convention
-   (https://no-color.org) is not checked anywhere in the CLI.
+   (<https://no-color.org>) is not checked anywhere in the CLI.
 
 4. **No user-configurable themes.** There is no way to choose between compact, minimal,
    or plain output styles without editing source code.
@@ -137,13 +137,13 @@ func getFormatter() (output.Formatter, error) {
 
 Add direct dependency:
 
-```
+```text
 github.com/charmbracelet/lipgloss v1.x
 ```
 
 Remove direct dependency (no other usages remain):
 
-```
+```text
 github.com/olekukonko/tablewriter
 ```
 

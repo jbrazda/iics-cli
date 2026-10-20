@@ -82,14 +82,8 @@ func newPackageExpandCmd() *cobra.Command {
 				if !clean {
 					return fmt.Errorf("target directory is not empty; use --clean to overwrite")
 				}
-				if !yes {
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "About to delete %d entries from %s. Continue? [y/N]: ", len(entries), target)
-					var confirm string
-					_, _ = fmt.Scanln(&confirm)
-					if confirm != "y" && confirm != "Y" {
-						_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-						return nil
-					}
+				if !yes && !confirmAction(cmd, fmt.Sprintf("About to delete %d entries from %s. Continue?", len(entries), target)) {
+					return nil
 				}
 				for _, e := range entries {
 					if err := os.RemoveAll(filepath.Join(target, e.Name())); err != nil {

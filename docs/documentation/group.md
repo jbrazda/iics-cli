@@ -12,13 +12,13 @@ iics ug <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                         |
-| ---------- | ---------------------------------- |
-| `list`     | List user groups                   |
-| `get`      | Get a single user group            |
-| `create`   | Create one or more user groups     |
-| `update`   | Update one or more user groups     |
-| `delete`   | Delete a user group                |
+| Subcommand | Description                    |
+| ---------- | ------------------------------ |
+| `list`     | List user groups               |
+| `get`      | Get a single user group        |
+| `create`   | Create one or more user groups |
+| `update`   | Update one or more user groups |
+| `delete`   | Delete a user group            |
 
 ## API constraints
 
@@ -39,12 +39,12 @@ The v3 `userGroups` resource is limited:
 
 ### Flags
 
-| Flag        | Short | Type   | Default | Description                                      |
-| ----------- | ----- | ------ | ------- | ------------------------------------------------ |
-| `--limit`   |       | int    | 200     | Max results                                      |
-| `--skip`    |       | int    | 0       | Results to skip                                  |
-| `--query`   | `-q`  | string |         | Server-side filter (e.g. `userGroupName=="Admins"`) |
-| `--fields`  |       | string | (note)  | Comma-separated list of fields to display        |
+| Flag       | Short | Type   | Default | Description                                         |
+| ---------- | ----- | ------ | ------- | --------------------------------------------------- |
+| `--limit`  |       | int    | 200     | Max results                                         |
+| `--skip`   |       | int    | 0       | Results to skip                                     |
+| `--query`  | `-q`  | string |         | Server-side filter (e.g. `userGroupName=="Admins"`) |
+| `--fields` |       | string | (note)  | Comma-separated list of fields to display           |
 
 Default fields (table): `id,userGroupName,updatedBy,updateTime,countMembers,countRoles`
 
@@ -72,10 +72,10 @@ prompted to pick one from a list.
 
 ### Flags
 
-| Flag     | Type   | Description         |
-| -------- | ------ | ------------------ |
-| `--id`   | string | User group ID       |
-| `--name` | string | User group name     |
+| Flag     | Type   | Description     |
+| -------- | ------ | --------------- |
+| `--id`   | string | User group ID   |
+| `--name` | string | User group name |
 
 ### Output
 
@@ -103,12 +103,16 @@ A JSON **array** creates groups in bulk and prints a per-group result table
 
 ### Flags
 
-| Flag                  | Type   | Description                                              |
-| --------------------- | ------ | ------------------------------------------------------- |
-| `--from-file`         | string | JSON file (object or array); omit to read piped stdin  |
-| `--interactive`, `-i` | bool   | Prompt for name, description, and roles                 |
+| Flag                  | Type   | Description                                           |
+| --------------------- | ------ | ----------------------------------------------------- |
+| `--from-file`         | string | JSON file (object or array); omit to read piped stdin |
+| `--interactive`, `-i` | bool   | Prompt for name, description, and roles               |
 
 The wizard runs with `-i`, or when no input source is present on a terminal.
+It asks for the group name (existing names are rejected) and description, then
+shows the roles as a filterable checklist (at least one role is required), and
+ends with a review: **Create group**, **Back to editing** or **Cancel**. See
+[Interactive prompts](interactive.md) for keys.
 
 ### JSON definition
 
@@ -154,12 +158,18 @@ the identifiers the add/remove endpoints use). A file produced by
 
 ### Flags
 
-| Flag                  | Type   | Description                                          |
-| --------------------- | ------ | -------------------------------------------------- |
-| `--id`                | string | User group ID                                       |
-| `--name`              | string | User group name                                     |
+| Flag                  | Type   | Description                                           |
+| --------------------- | ------ | ----------------------------------------------------- |
+| `--id`                | string | User group ID                                         |
+| `--name`              | string | User group name                                       |
 | `--from-file`         | string | JSON file (object or array); omit to read piped stdin |
-| `--interactive`, `-i` | bool   | Edit the role selection interactively               |
+| `--interactive`, `-i` | bool   | Edit the role selection interactively                 |
+
+The interactive editor shows the group's current roles pre-checked in a
+filterable checklist. Name and description are shown read-only because the
+API cannot change them. The review lists the changes (`+ Role: ...`,
+`- Role: ...`) before they are applied; with no changes only **Back to
+editing** and **Cancel** are offered.
 
 ### Examples
 
@@ -184,11 +194,11 @@ when neither is given on a terminal. Prompts for confirmation unless `--yes`.
 
 ### Flags
 
-| Flag    | Short | Type   | Description               |
-| ------- | ----- | ------ | ------------------------ |
-| `--id`  |       | string | User group ID             |
-| `--name`|       | string | User group name           |
-| `--yes` | `-y`  | bool   | Skip the confirmation     |
+| Flag     | Short | Type   | Description           |
+| -------- | ----- | ------ | --------------------- |
+| `--id`   |       | string | User group ID         |
+| `--name` |       | string | User group name       |
+| `--yes`  | `-y`  | bool   | Skip the confirmation |
 
 ### Examples
 
@@ -200,5 +210,6 @@ iics group delete            # interactive picker
 
 ## See also
 
+- [Interactive prompts](interactive.md) - keys, accessible mode and piped input for wizards and pickers
 - [user](user.md) - manage individual users
 - [role](role.md) - manage roles assignable to groups

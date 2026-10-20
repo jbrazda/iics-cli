@@ -169,28 +169,28 @@ It cannot manage users, connections, schedules, roles, or any other administrati
 
 `iics-cli` covers the full IICS REST API v3 surface:
 
-| Resource        | Operations                        |
-| --------------- | --------------------------------- |
-| `objects`       | list, dependencies                |
-| `lookup`        | resolve IDs, names, paths         |
-| `connection`    | list, get, create, update, delete |
-| `export`        | create, status, download          |
-| `import`        | upload, start, status, log        |
-| `schedule`      | list, get, create, update, delete |
-| `project`       | create, update, delete            |
-| `folder`        | create, update, delete            |
-| `user`          | list, get, create, update, delete |
-| `usergroup`     | list, get, create, update, delete |
-| `role`          | list, get, create, update, delete |
-| `privilege`     | list                              |
-| `runtime`       | list, get, create, update         |
-| `agent`         | list, start, stop                 |
-| `tag`           | assign, remove                    |
-| `permission`    | get, set, delete                  |
-| `securitylog`   | list                              |
-| `metering`      | get, download                     |
-| `sourcecontrol` | checkout, checkin, pull, commit   |
-| `state`         | fetch, load                       |
+| Resource        | Operations                                                         |
+| --------------- | ------------------------------------------------------------------ |
+| `objects`       | list, dependencies                                                 |
+| `lookup`        | resolve IDs, names, paths                                          |
+| `connection`    | list, get, create, update, delete                                  |
+| `export`        | create, status, download                                           |
+| `import`        | upload, start, status, log                                         |
+| `schedule`      | list, get, create, update, delete                                  |
+| `project`       | create, update, delete                                             |
+| `folder`        | create, update, delete                                             |
+| `user`          | list, get, create, update, delete                                  |
+| `usergroup`     | list, get, create, update, delete                                  |
+| `role`          | list, get, create, edit, add-privileges, remove-privileges, delete |
+| `privilege`     | list                                                               |
+| `runtime`       | list, get, create, update                                          |
+| `agent`         | list, start, stop                                                  |
+| `tag`           | assign, remove                                                     |
+| `permission`    | get, add, update, delete, set, check, edit                         |
+| `securitylog`   | list                                                               |
+| `metering`      | get, download                                                      |
+| `sourcecontrol` | checkout, checkin, pull, commit                                    |
+| `state`         | fetch, load                                                        |
 
 ---
 
@@ -213,13 +213,13 @@ a generic message with little context.
 `iics-cli` reports structured API errors to `stderr`, including the HTTP status code, the
 Informatica error code, and the full response body when `--debug` is set:
 
-```
+```text
 Error: API error 400: invalid artifact type 'PROCESS_OBJECT'
 ```
 
 With `--debug`:
 
-```
+```text
 Error: API error 400: invalid artifact type 'PROCESS_OBJECT'
   HTTP 400 Bad Request
   {

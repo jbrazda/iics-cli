@@ -25,5 +25,5 @@ document). No API change - the data is already in the details response.
 
 - `cmd/agent.go` - `agentServiceCols` var; `--services` flag on
   `newAgentDetailsCmd`; early return in the table branch that prints the summary
-  + the one services table; `MarkFlagsMutuallyExclusive("full", "services")`.
+  - the one services table; `MarkFlagsMutuallyExclusive("full", "services")`.
 - Docs: `docs/documentation/agent.md`.

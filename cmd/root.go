@@ -206,6 +206,7 @@ func init() {
 	rootCmd.AddCommand(newObjectsCmd())
 	rootCmd.AddCommand(newLookupCmd())
 	rootCmd.AddCommand(newConnectionCmd())
+	rootCmd.AddCommand(newConnectorCmd())
 	rootCmd.AddCommand(newExportCmd())
 	rootCmd.AddCommand(newImportCmd())
 	rootCmd.AddCommand(newScheduleCmd())
@@ -219,11 +220,14 @@ func init() {
 	rootCmd.AddCommand(newAgentCmd())
 	rootCmd.AddCommand(newTagCmd())
 	rootCmd.AddCommand(newPermissionCmd())
+	rootCmd.AddCommand(newMenuCmd())
+	rootCmd.RunE = rootRun
 	rootCmd.AddCommand(newSecuritylogCmd())
 	rootCmd.AddCommand(newMeteringCmd())
 	rootCmd.AddCommand(newSourcecontrolCmd())
 	rootCmd.AddCommand(newStateCmd())
 	rootCmd.AddCommand(newProfileCmd())
+	rootCmd.AddCommand(newConfigCmd())
 	rootCmd.AddCommand(newPackageCmd())
 	rootCmd.AddCommand(newActivitylogCmd())
 	rootCmd.AddCommand(newAuditlogCmd())
@@ -299,29 +303,14 @@ func getClient(cmd *cobra.Command) (*client.Client, error) {
 			if loadErr != nil {
 				return nil, err
 			}
-			newProfile, makeDefault, storeInKeyring, promptErr := config.PromptProfile(loadedCfg.Profiles[profileName], profileName)
+			res, promptErr := promptProfile(loadedCfg, profileName)
 			if promptErr != nil {
 				return nil, fmt.Errorf("profile setup: %w", promptErr)
 			}
-
-			// Keyring storage: save password in OS keychain and write sentinel to config.
-			if storeInKeyring {
-				if keyErr := config.SetKeychainPassword(profileName, newProfile.Password); keyErr != nil {
-					_, _ = fmt.Fprintf(os.Stderr,
-						"Warning: could not store password in keychain: %v\n"+
-							"  Storing password in config file instead.\n", keyErr)
-				} else {
-					newProfile.Password = config.KeyringSentinel
-				}
+			if res == nil {
+				return nil, err
 			}
-
-			if loadedCfg.Profiles == nil {
-				loadedCfg.Profiles = make(map[string]*config.Profile)
-			}
-			loadedCfg.Profiles[profileName] = newProfile
-			if makeDefault {
-				loadedCfg.DefaultProfile = profileName
-			}
+			storeProfile(loadedCfg, profileName, res, os.Stderr)
 			if saveErr := loadedCfg.Save(cfgFile); saveErr != nil {
 				return nil, fmt.Errorf("saving profile: %w", saveErr)
 			}

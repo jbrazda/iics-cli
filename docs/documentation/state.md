@@ -10,9 +10,9 @@ iics state <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand | Description                              |
-| ---------- | ---------------------------------------- |
-| `fetch`    | Fetch the current state of an object     |
+| Subcommand | Description                                  |
+| ---------- | -------------------------------------------- |
+| `fetch`    | Fetch the current state of an object         |
 | `load`     | Load a previously saved state into an object |
 
 ---
@@ -23,10 +23,10 @@ Retrieve the current state of an object as JSON. Output is written to a file or 
 
 ### Flags
 
-| Flag              | Short | Type   | Required | Description                             |
-| ----------------- | ----- | ------ | -------- | --------------------------------------- |
-| `--object-id`     |       | string | yes      | Object ID                               |
-| `--output-file`   | `-f`  | string |          | File path to save state JSON (default: stdout) |
+| Flag            | Short | Type   | Required | Description                                    |
+| --------------- | ----- | ------ | -------- | ---------------------------------------------- |
+| `--object-id`   |       | string | yes      | Object ID                                      |
+| `--output-file` | `-f`  | string |          | File path to save state JSON (default: stdout) |
 
 All [global flags](../../README.md#global-flags) apply.
 

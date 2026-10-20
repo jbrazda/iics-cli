@@ -35,8 +35,8 @@ generation entirely, so callers that do not want a report do not have to opt out
 
 ### New flag on `iics package create`
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
+| Flag                      | Type     | Default                                       | Description                                                                         |
+| ------------------------- | -------- | --------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `--build-manifest-report` | `string` | `target/iics/import/logs/release-manifest.md` | Path to the build manifest report file; append if it exists; leave empty to disable |
 
 ### Behavior

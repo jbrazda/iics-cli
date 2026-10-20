@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"testing"
 )
 
@@ -78,16 +77,18 @@ func TestGetUserNotFound(t *testing.T) {
 
 func TestGetUserByName(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if q := r.URL.Query().Get("q"); q != "userName==Alice@example.com" {
+			t.Errorf("expected q=userName==Alice@example.com, got %q", q)
+		}
 		users := []User{
 			{ID: "u1", UserName: "alice@example.com"},
-			{ID: "u2", UserName: "bob@example.com"},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(users)
 	})
 
 	c := newTestClient(handler)
-	user, err := c.GetUserByName(context.Background(), "alice@example.com")
+	user, err := c.GetUserByName(context.Background(), "Alice@example.com")
 	if err != nil {
 		t.Fatalf("GetUserByName() error: %v", err)
 	}
@@ -109,24 +110,51 @@ func TestGetUserByNameNotFound(t *testing.T) {
 	}
 }
 
+func TestFindUserByName(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("q") == "userName==taken@example.com" {
+			json.NewEncoder(w).Encode([]User{{ID: "u7", UserName: "taken@example.com"}})
+			return
+		}
+		json.NewEncoder(w).Encode([]User{})
+	})
+	c := newTestClient(handler)
+	u, err := c.FindUserByName(context.Background(), "taken@example.com")
+	if err != nil || u == nil || u.ID != "u7" {
+		t.Errorf("expected u7, got %+v, %v", u, err)
+	}
+	u, err = c.FindUserByName(context.Background(), "free@example.com")
+	if err != nil || u != nil {
+		t.Errorf("expected nil, nil for a free name, got %+v, %v", u, err)
+	}
+}
+
 func TestSearchUsers(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		users := []User{
 			{ID: "u1", UserName: "alice@example.com"},
-			{ID: "u2", UserName: "bob@example.com"},
-			{ID: "u3", UserName: "alice.smith@example.com"},
+			{ID: "u2", UserName: "bob@example.com", FirstName: "Bob", LastName: "Alison"},
+			{ID: "u3", UserName: "a.smith@example.com", FirstName: "Alice", LastName: "Smith"},
+			{ID: "u4", UserName: "carol", Email: "Carol.White@example.com"},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(users)
 	})
 
 	c := newTestClient(handler)
-	results, err := c.SearchUsers(context.Background(), "alice")
+	results, err := c.SearchUsers(context.Background(), "ALI")
 	if err != nil {
 		t.Fatalf("SearchUsers() error: %v", err)
 	}
-	if len(results) != 2 {
-		t.Errorf("expected 2 results for 'alice', got %d", len(results))
+	if len(results) != 3 {
+		t.Errorf("expected 3 results for 'ALI' (user name, last name, first name), got %d", len(results))
+	}
+	for q, want := range map[string]int{"alice smith": 1, "white@": 1, "zzz": 0} {
+		got, _ := c.SearchUsers(context.Background(), q)
+		if len(got) != want {
+			t.Errorf("SearchUsers(%q) = %d results, want %d", q, len(got), want)
+		}
 	}
 }
 
@@ -153,36 +181,6 @@ func TestCreateUser(t *testing.T) {
 	}
 	if user.ID != "new123" {
 		t.Errorf("expected ID new123, got %s", user.ID)
-	}
-}
-
-func TestUpdateUser(t *testing.T) {
-	// UpdateUser makes multiple requests: GET (current state), POST v2 (scalar update),
-	// optional PUT (group/role diff), GET (final state). The handler tracks call order.
-	callCount := 0
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		callCount++
-		switch {
-		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/v3/users"):
-			// GET list for GetUser (called twice: fetch current + fetch final)
-			json.NewEncoder(w).Encode([]User{{ID: "u123", OrgID: "org1", UserName: "test@example.com", Email: "old@example.com"}})
-		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/v2/user"):
-			// V2 scalar update
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]string{"id": "u123"})
-		default:
-			w.WriteHeader(http.StatusNoContent)
-		}
-	})
-
-	c := newTestClient(handler)
-	user, err := c.UpdateUser(context.Background(), "u123", &User{Email: "updated@example.com"})
-	if err != nil {
-		t.Fatalf("UpdateUser() error: %v", err)
-	}
-	if user.ID != "u123" {
-		t.Errorf("expected ID u123, got %s", user.ID)
 	}
 }
 

@@ -1,0 +1,16 @@
+{
+ "emails": {
+  "keep": ["admin"],
+  "names": {"first.last": "alexa.smit"},
+  "suffixes": [".dev", ".prod", ".qa", ".stg", ".tst"],
+  "other": "user{n}",
+  "domains": {"(?i)\\bexample-corp\\b": "acme-corpxx"}
+ },
+ "rules": [
+  {"pattern": "(?i)myhost[a-z]*?(\\d*)(?![a-z0-9])", "replace": "agent-\\1"},
+  {"pattern": "(?i)\\bexample-corp\\b", "replace": "acme"},
+  {"pattern": "ORGID1", "replace": "0ACME0"},
+  {"pattern": "(?i)Example Corporation", "replace": "Acme Insurance"}
+ ],
+ "forbid": ["example-corp", "myhost", "first.last", "orgid1", "example corporation"]
+}

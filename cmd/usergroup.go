@@ -290,8 +290,13 @@ input on a terminal) to be prompted for the name, description, and roles.`,
 					return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")
 				}
 				var g client.UserGroup
-				if werr := runGroupWizard(ctx, c, &g, true); werr != nil {
+				ok, werr := runGroupWizard(ctx, c, &g, true)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 				in.groups = []client.UserGroup{g}
 			}
@@ -372,8 +377,13 @@ group by its "id", or by "userGroupName" when no id is present.`,
 			case in.present:
 				applyGroupPatch(target, &in.groups[0])
 			case interactive || config.IsTerminal():
-				if werr := runGroupWizard(ctx, c, target, false); werr != nil {
+				ok, werr := runGroupWizard(ctx, c, target, false)
+				if werr != nil {
 					return werr
+				}
+				if !ok {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
 				}
 			default:
 				return fmt.Errorf("provide --from-file, pipe JSON to stdin, or use --interactive")
@@ -472,14 +482,8 @@ func newUsergroupDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete user group %s (%s)? [y/N]: ", group.UserGroupName, group.ID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete user group %s (%s)?", group.UserGroupName, group.ID)) {
+				return nil
 			}
 			if err := c.DeleteUserGroup(ctx, group.ID); err != nil {
 				return err

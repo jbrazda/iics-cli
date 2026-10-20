@@ -108,9 +108,9 @@ internal/output/    # output layer is correct as-is
 
 ### Query parameters
 
-| API parameter | CLI flag  | Description                                        |
-| ------------- | --------- | -------------------------------------------------- |
-| `batchSize`   | `--limit` | Number of entries per batch                        |
+| API parameter | CLI flag  | Description                                         |
+| ------------- | --------- | --------------------------------------------------- |
+| `batchSize`   | `--limit` | Number of entries per batch                         |
 | `batchId`     | `--skip`  | Batch number; 0 = most recent, 1 = next older batch |
 
 When neither parameter is supplied, the API returns the most recent 200 entries.
@@ -148,49 +148,49 @@ When neither parameter is supplied, the API returns the most recent 200 entries.
 package client
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"strconv"
+ "context"
+ "fmt"
+ "net/http"
+ "strconv"
 )
 
 // AuditLog represents a single audit log entry returned by GET /api/v2/auditlog.
 type AuditLog struct {
-	ID           string `json:"id,omitempty"`
-	Version      int    `json:"version,omitempty"`
-	OrgID        string `json:"orgId,omitempty"`
-	Username     string `json:"username,omitempty"`
-	EntryTime    string `json:"entryTime,omitempty"`
-	EntryTimeUTC string `json:"entryTimeUTC,omitempty"`
-	ObjectID     string `json:"objectId,omitempty"`
-	ObjectName   string `json:"objectName,omitempty"`
-	Category     string `json:"category,omitempty"`
-	Event        string `json:"event,omitempty"`
-	EventParam   string `json:"eventParam,omitempty"`
-	Message      string `json:"message,omitempty"`
+ ID           string `json:"id,omitempty"`
+ Version      int    `json:"version,omitempty"`
+ OrgID        string `json:"orgId,omitempty"`
+ Username     string `json:"username,omitempty"`
+ EntryTime    string `json:"entryTime,omitempty"`
+ EntryTimeUTC string `json:"entryTimeUTC,omitempty"`
+ ObjectID     string `json:"objectId,omitempty"`
+ ObjectName   string `json:"objectName,omitempty"`
+ Category     string `json:"category,omitempty"`
+ Event        string `json:"event,omitempty"`
+ EventParam   string `json:"eventParam,omitempty"`
+ Message      string `json:"message,omitempty"`
 }
 
 // AuditLogListOptions holds optional query parameters for listing audit logs.
 // Limit maps to the API batchSize parameter; Skip maps to the API batchId parameter.
 type AuditLogListOptions struct {
-	Limit int // 0 = not set; API returns most recent 200 when omitted
-	Skip  int // 0-based batch number; only sent when Limit > 0
+ Limit int // 0 = not set; API returns most recent 200 when omitted
+ Skip  int // 0-based batch number; only sent when Limit > 0
 }
 
 // ListAuditLogs retrieves audit log entries.
 // When opts.Limit is 0, no pagination parameters are sent and the API returns
 // the most recent 200 entries.
 func (c *Client) ListAuditLogs(ctx context.Context, opts AuditLogListOptions) ([]AuditLog, error) {
-	query := make(map[string]string)
-	if opts.Limit > 0 {
-		query["batchSize"] = strconv.Itoa(opts.Limit)
-		query["batchId"] = strconv.Itoa(opts.Skip)
-	}
-	var resp []AuditLog
-	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/auditlog", BaseAPIPathV2), query, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp, nil
+ query := make(map[string]string)
+ if opts.Limit > 0 {
+  query["batchSize"] = strconv.Itoa(opts.Limit)
+  query["batchId"] = strconv.Itoa(opts.Skip)
+ }
+ var resp []AuditLog
+ if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/auditlog", BaseAPIPathV2), query, nil, &resp); err != nil {
+  return nil, err
+ }
+ return resp, nil
 }
 ```
 
@@ -204,66 +204,66 @@ and update the column map in `cmd/auditlog.go` to match.
 package client
 
 import (
-	"context"
-	"encoding/json"
-	"net/http"
-	"testing"
+ "context"
+ "encoding/json"
+ "net/http"
+ "testing"
 )
 
 func TestListAuditLogs(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Errorf("expected GET, got %s", r.Method)
-		}
-		if r.URL.Path != "/api/v2/auditlog" {
-			t.Errorf("unexpected path: %s", r.URL.Path)
-		}
-		entries := []AuditLog{
-			{
-				ID:           "al1",
-				Username:     "admin@example.com",
-				Category:     "AUTH",
-				Event:        "LOGIN",
-				EntryTimeUTC: "2025-01-15T10:00:00.000Z",
-			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(entries)
-	})
+ handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+  if r.Method != http.MethodGet {
+   t.Errorf("expected GET, got %s", r.Method)
+  }
+  if r.URL.Path != "/api/v2/auditlog" {
+   t.Errorf("unexpected path: %s", r.URL.Path)
+  }
+  entries := []AuditLog{
+   {
+    ID:           "al1",
+    Username:     "admin@example.com",
+    Category:     "AUTH",
+    Event:        "LOGIN",
+    EntryTimeUTC: "2025-01-15T10:00:00.000Z",
+   },
+  }
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode(entries)
+ })
 
-	c := newTestClient(handler)
-	logs, err := c.ListAuditLogs(context.Background(), AuditLogListOptions{})
-	if err != nil {
-		t.Fatalf("ListAuditLogs() error: %v", err)
-	}
-	if len(logs) != 1 {
-		t.Fatalf("expected 1 entry, got %d", len(logs))
-	}
-	if logs[0].ID != "al1" {
-		t.Errorf("expected ID al1, got %s", logs[0].ID)
-	}
-	if logs[0].Category != "AUTH" {
-		t.Errorf("expected category AUTH, got %s", logs[0].Category)
-	}
+ c := newTestClient(handler)
+ logs, err := c.ListAuditLogs(context.Background(), AuditLogListOptions{})
+ if err != nil {
+  t.Fatalf("ListAuditLogs() error: %v", err)
+ }
+ if len(logs) != 1 {
+  t.Fatalf("expected 1 entry, got %d", len(logs))
+ }
+ if logs[0].ID != "al1" {
+  t.Errorf("expected ID al1, got %s", logs[0].ID)
+ }
+ if logs[0].Category != "AUTH" {
+  t.Errorf("expected category AUTH, got %s", logs[0].Category)
+ }
 }
 
 func TestListAuditLogsPaginated(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("batchSize") != "50" {
-			t.Errorf("expected batchSize=50, got %s", r.URL.Query().Get("batchSize"))
-		}
-		if r.URL.Query().Get("batchId") != "1" {
-			t.Errorf("expected batchId=1, got %s", r.URL.Query().Get("batchId"))
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]AuditLog{})
-	})
+ handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+  if r.URL.Query().Get("batchSize") != "50" {
+   t.Errorf("expected batchSize=50, got %s", r.URL.Query().Get("batchSize"))
+  }
+  if r.URL.Query().Get("batchId") != "1" {
+   t.Errorf("expected batchId=1, got %s", r.URL.Query().Get("batchId"))
+  }
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode([]AuditLog{})
+ })
 
-	c := newTestClient(handler)
-	_, err := c.ListAuditLogs(context.Background(), AuditLogListOptions{Limit: 50, Skip: 1})
-	if err != nil {
-		t.Fatalf("ListAuditLogs() error: %v", err)
-	}
+ c := newTestClient(handler)
+ _, err := c.ListAuditLogs(context.Background(), AuditLogListOptions{Limit: 50, Skip: 1})
+ if err != nil {
+  t.Fatalf("ListAuditLogs() error: %v", err)
+ }
 }
 ```
 
@@ -273,78 +273,78 @@ func TestListAuditLogsPaginated(t *testing.T) {
 package cmd
 
 import (
-	"context"
-	"strings"
+ "context"
+ "strings"
 
-	"github.com/jbrazda/iics-cli/internal/client"
-	"github.com/jbrazda/iics-cli/internal/output"
-	"github.com/spf13/cobra"
+ "github.com/jbrazda/iics-cli/internal/client"
+ "github.com/jbrazda/iics-cli/internal/output"
+ "github.com/spf13/cobra"
 )
 
 var auditLogColumnMap = map[string]output.Column{
-	"id":           {Header: "ID", Field: "id", Width: 24},
-	"username":     {Header: "USERNAME", Field: "username", Width: 30},
-	"category":     {Header: "CATEGORY", Field: "category", Width: 16},
-	"event":        {Header: "EVENT", Field: "event", Width: 16},
-	"entryTimeUTC": {Header: "TIME (UTC)", Field: "entryTimeUTC", Width: 24},
-	"entryTime":    {Header: "TIME (ET)", Field: "entryTime", Width: 24},
-	"objectId":     {Header: "OBJECT ID", Field: "objectId", Width: 24},
-	"objectName":   {Header: "OBJECT NAME", Field: "objectName", Width: 30},
-	"eventParam":   {Header: "EVENT PARAM", Field: "eventParam", Width: 40},
-	"message":      {Header: "MESSAGE", Field: "message", Width: 40},
-	"orgId":        {Header: "ORG ID", Field: "orgId", Width: 24},
-	"version":      {Header: "VERSION", Field: "version", Width: 8},
+ "id":           {Header: "ID", Field: "id", Width: 24},
+ "username":     {Header: "USERNAME", Field: "username", Width: 30},
+ "category":     {Header: "CATEGORY", Field: "category", Width: 16},
+ "event":        {Header: "EVENT", Field: "event", Width: 16},
+ "entryTimeUTC": {Header: "TIME (UTC)", Field: "entryTimeUTC", Width: 24},
+ "entryTime":    {Header: "TIME (ET)", Field: "entryTime", Width: 24},
+ "objectId":     {Header: "OBJECT ID", Field: "objectId", Width: 24},
+ "objectName":   {Header: "OBJECT NAME", Field: "objectName", Width: 30},
+ "eventParam":   {Header: "EVENT PARAM", Field: "eventParam", Width: 40},
+ "message":      {Header: "MESSAGE", Field: "message", Width: 40},
+ "orgId":        {Header: "ORG ID", Field: "orgId", Width: 24},
+ "version":      {Header: "VERSION", Field: "version", Width: 8},
 }
 
 const auditLogDefaultFields = "id,username,category,event,entryTimeUTC,objectName"
 
 func buildAuditLogColumns(fields string) []output.Column {
-	names := strings.Split(fields, ",")
-	cols := make([]output.Column, 0, len(names))
-	for _, name := range names {
-		name = strings.TrimSpace(name)
-		if col, ok := auditLogColumnMap[name]; ok {
-			cols = append(cols, col)
-		}
-	}
-	return cols
+ names := strings.Split(fields, ",")
+ cols := make([]output.Column, 0, len(names))
+ for _, name := range names {
+  name = strings.TrimSpace(name)
+  if col, ok := auditLogColumnMap[name]; ok {
+   cols = append(cols, col)
+  }
+ }
+ return cols
 }
 
 func newAuditlogCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "auditlog",
-		Short: "Retrieve audit log entries",
-	}
-	cmd.AddCommand(newAuditlogListCmd())
-	return cmd
+ cmd := &cobra.Command{
+  Use:   "auditlog",
+  Short: "Retrieve audit log entries",
+ }
+ cmd.AddCommand(newAuditlogListCmd())
+ return cmd
 }
 
 func newAuditlogListCmd() *cobra.Command {
-	var opts client.AuditLogListOptions
-	var fields string
-	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List audit log entries",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			c, err := getClient(cmd)
-			if err != nil {
-				return err
-			}
-			logs, err := c.ListAuditLogs(context.Background(), opts)
-			if err != nil {
-				return err
-			}
-			f, err := getFormatter()
-			if err != nil {
-				return err
-			}
-			return f.Format(logs, buildAuditLogColumns(fields))
-		},
-	}
-	cmd.Flags().IntVar(&opts.Limit, "limit", 0, "number of entries per page (maps to API batchSize; 0 = return most recent 200)")
-	cmd.Flags().IntVar(&opts.Skip, "skip", 0, "page number to retrieve, 0-based (maps to API batchId; only used when --limit > 0)")
-	cmd.Flags().StringVar(&fields, "fields", auditLogDefaultFields, "comma-separated list of fields to display (table/csv only)")
-	return cmd
+ var opts client.AuditLogListOptions
+ var fields string
+ cmd := &cobra.Command{
+  Use:   "list",
+  Short: "List audit log entries",
+  RunE: func(cmd *cobra.Command, args []string) error {
+   c, err := getClient(cmd)
+   if err != nil {
+    return err
+   }
+   logs, err := c.ListAuditLogs(context.Background(), opts)
+   if err != nil {
+    return err
+   }
+   f, err := getFormatter()
+   if err != nil {
+    return err
+   }
+   return f.Format(logs, buildAuditLogColumns(fields))
+  },
+ }
+ cmd.Flags().IntVar(&opts.Limit, "limit", 0, "number of entries per page (maps to API batchSize; 0 = return most recent 200)")
+ cmd.Flags().IntVar(&opts.Skip, "skip", 0, "page number to retrieve, 0-based (maps to API batchId; only used when --limit > 0)")
+ cmd.Flags().StringVar(&fields, "fields", auditLogDefaultFields, "comma-separated list of fields to display (table/csv only)")
+ return cmd
 }
 ```
 

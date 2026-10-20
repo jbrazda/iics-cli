@@ -209,14 +209,8 @@ func newScheduleDeleteCmd() *cobra.Command {
 				return fmt.Errorf("--id is required")
 			}
 
-			if !yes {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete schedule %s? [y/N]: ", id)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
-					return nil
-				}
+			if !yes && !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete schedule %s?", id)) {
+				return nil
 			}
 
 			c, err := getClient(cmd)

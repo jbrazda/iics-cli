@@ -17,7 +17,7 @@ without proper column separation.
 
 ## Observed output (`--report dev,qa,tst`)
 
-```
+```text
 PATH                                                                                       STATUS (dev)  STATUS (qa)  STATUS (tst)
 ─────────────────────────────────────────────────────────────────────────────────────────  ────────────  ───────────  ───────────
 Corvel_v1/Corvel-GW-SubmitClaimFeedService.AI_SERVICE_CONNECTOR                            found  found        found
@@ -27,7 +27,7 @@ Corvel_v1/GuideWire-CreateInvoice-v1.AI_SERVICE_CONNECTOR                       
 
 ## Expected output
 
-```
+```text
 PATH                                                                                       STATUS (dev)  STATUS (qa)  STATUS (tst)
 ─────────────────────────────────────────────────────────────────────────────────────────  ────────────  ───────────  ───────────
 Corvel_v1/Corvel-GW-SubmitClaimFeedService.AI_SERVICE_CONNECTOR                            found         found        found
@@ -49,7 +49,7 @@ l := utf8.RuneCountInString(extractField(row, col))
 `extractField` calls `col.Func(row)` when a `Func` is set. `makeProfileStatusFunc` and
 `targetStatusFunc` return ANSI-escaped strings such as:
 
-```
+```text
 \x1b[32;1mfound\x1b[0m    (visible width: 5, rune count: 15)
 \x1b[38;5;208mmissing\x1b[0m  (visible width: 7, rune count: 18)
 ```

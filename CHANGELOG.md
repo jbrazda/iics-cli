@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-20
+
+First production-ready release. The core functionality (profiles and
+sessions, asset export/import, release plans, publishing, and user, role,
+permission and agent administration) is stable and is used for production
+release management. From this release on, breaking changes to commands,
+flags and output fields are called out in this changelog.
+
+### Added
+
+- Interactive main menu: running `iics` without arguments in a terminal
+  opens a menu of tasks grouped by area that runs the matching command,
+  with a profile switcher and a **Delete profile** entry (CR-0044)
+- `agent configs get`, `set` and `edit` read and change the service
+  properties of a single Secure Agent, not only group defaults, through
+  the Administrator agent form. Supported:
+  - nested YAML/JSON change files and `--export`;
+  - custom properties (Custom Configuration Details), with `--add`,
+    `--remove` and `--add-missing`;
+  - `--reset` and `--reset-all` to return to defaults, like the web UI's
+    Reset All;
+  - `--dry-run` with a change table;
+  - an interactive editor with list-entry editing for multi-value
+    properties such as LDAP or database connection properties;
+  - a restart hint for services, such as Process Server, that need a
+    manual restart (CR-0049)
+- `agent rename` sets a logical agent name after installation (CR-0049)
+- `agent details -i` picks an agent, then a view: services summary,
+  details, full details or service properties (CR-0049)
+- `role edit` interactive privilege editor, and `role create --from-role`
+  to copy an existing role (CR-0040)
+- Interactive object permission (ACL) editor (CR-0042)
+- `user update-roles`, `user update-groups` and the interactive `user edit`
+  (CR-0043)
+- Configurable user name and email patterns for new users, with
+  per-profile overrides; the create wizard rejects existing user names
+  (CR-0045)
+- Paged profile wizard and `config edit` for global settings (CR-0046)
+- Connection management: `connection get --name`, `test`, `search`,
+  `objects` and `metadata`, partial updates with `update --partial`, and a
+  new `connector` command with `list` and `metadata` (CR-0047)
+- `project update` and `folder update` use PATCH and gain an interactive
+  mode; `project list` and `folder list` show created and updated details
+  (CR-0047)
+- Interactive agent installer download and installer info
+- Shared TUI prompts and wizards (filterable pickers, checklists, paged
+  forms with a review step) for user, group and environment wizards
+  (CR-0041)
+- `Esc` and `q` cancel prompts and wizards, and confirmations take a single
+  key (CR-0048)
+- README demo recording and `make demo` to record it again
+
+### Changed
+
+- The main package moved to `cmd/iics`, so `go install` and `make install`
+  now produce a binary named `iics` instead of `iics-cli`. Install from
+  source with `go install github.com/jbrazda/iics-cli/cmd/iics@latest`; the
+  previous `go install github.com/jbrazda/iics-cli@latest` path no longer
+  works. Release archives are unaffected.
+- `user update` is removed: the API cannot update user properties. Use
+  `user edit`, `user update-roles` or `user update-groups` (CR-0043)
+- `connection update` sends `POST` with the V2 `@type` discriminator, as
+  the API requires, instead of `PUT` (CR-0047)
+
+### Fixed
+
+- Main menu: global flags given when starting the menu (such as `--config`,
+  `--theme` or `--http-timeout`) are now passed on to the commands the menu
+  runs; previously they were dropped, so commands read the default config
+- Main menu clears the screen before each entry runs
+- Role commands aligned with the V3 Roles API
+- Permission commands aligned with the object permissions API
+- User edit keeps the last direct role and skips roles inherited from
+  groups
+- Project and folder names with spaces are encoded in update requests
+  (CR-0047)
+
 ## [0.5.6] - 2026-09-22
 
 ### Fixed

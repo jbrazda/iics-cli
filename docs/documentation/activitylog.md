@@ -180,6 +180,10 @@ iics activitylog get abc123
 
 # Full JSON including all nested objects
 iics activitylog get abc123 --output json
+
+# Table with additional row count fields
+iics activitylog get abc123 \
+  --fields id,objectName,state,runId,successTargetRows,failedTargetRows,errorMsg
 ```
 
 ```powershell
@@ -188,10 +192,9 @@ iics activitylog get abc123
 
 # Full JSON including all nested objects
 iics activitylog get abc123 --output json
-```
 
 # Table with additional row count fields
-iics activitylog get abc123 \
+iics activitylog get abc123 `
   --fields id,objectName,state,runId,successTargetRows,failedTargetRows,errorMsg
 ```
 

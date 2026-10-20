@@ -221,16 +221,16 @@ and print a detailed summary. Mirrors the `import run` pattern.
 
 ### Flags
 
-| Flag                 | Type                | Default   | Description                                                            | Required           |
-|----------------------|---------------------|-----------|------------------------------------------------------------------------|--------------------|
-| `--asset`            | string (repeatable) |           | Asset path(s) to publish                                               | one input required |
-| `--from-file`        | string              |           | File with asset paths (.txt/.csv/.json/.yaml); omit to read from stdin |                    |
-| `--cai-url`          | string              |           | CAI base URL override                                                  |                    |
-| `--name`             | string              |           | Optional job label                                                     |                    |
-| `--polling-interval` | int                 | 10        | Seconds between status polls                                           |                    |
-| `--max-wait-time`    | int                 | 300       | Maximum seconds to wait for completion                                 |                    |
-| `--detailed-polling` | bool                | false     | Print per-asset item detail table on each poll (requires `--verbose`)  |                    |
-| `--item-fields`      | string              | see below | Comma-separated item detail fields to display                          |                    |
+| Flag                 | Type                | Default   | Description                                                                              | Required           |
+| -------------------- | ------------------- | --------- | ---------------------------------------------------------------------------------------- | ------------------ |
+| `--asset`            | string (repeatable) |           | Asset path(s) to publish                                                                 | one input required |
+| `--from-file`        | string              |           | File with asset paths (.txt/.csv/.json/.yaml); omit to read from stdin                   |                    |
+| `--cai-url`          | string              |           | CAI base URL override                                                                    |                    |
+| `--name`             | string              |           | Optional job label                                                                       |                    |
+| `--polling-interval` | int                 | 10        | Seconds between status polls                                                             |                    |
+| `--max-wait-time`    | int                 | 300       | Maximum seconds to wait for completion                                                   |                    |
+| `--detailed-polling` | bool                | false     | Print per-asset item detail table on each poll (requires `--verbose`)                    |                    |
+| `--item-fields`      | string              | see below | Comma-separated item detail fields to display                                            |                    |
 | `--log-file`         | string              |           | Append a Markdown release report section; use `--log-file=PATH` to override default path |                    |
 
 ### Input format

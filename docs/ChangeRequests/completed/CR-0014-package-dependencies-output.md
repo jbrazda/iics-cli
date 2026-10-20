@@ -212,7 +212,7 @@ Columns: `id`, `path`, `type`, then for each profile in order: `status_<profile>
 Add a `slog.Debug` tick inside `validateTargetDependencies` every 50 items to show
 progress during long runs:
 
-```
+```text
 [DEBUG] validating dependencies progress profile=qa processed=50 total=279
 [DEBUG] validating dependencies progress profile=qa processed=100 total=279
 ```
@@ -221,7 +221,7 @@ progress during long runs:
 
 Log goroutine lifecycle and per-profile summary:
 
-```
+```text
 [INFO] report: starting validation profile=dev total=279
 [INFO] report: starting validation profile=qa total=279
 [INFO] report: profile complete profile=dev found=279 missing=0 elapsed=34.2s
@@ -351,12 +351,14 @@ var reportProfiles []string
 ```
 
 Register:
+
 ```go
 cmd.Flags().StringSliceVar(&reportProfiles, "report", nil,
     "compare dependencies across one or more target profiles (mutually exclusive with --target-profile)")
 ```
 
 Validation in `RunE`:
+
 ```go
 if targetProfile != "" && len(reportProfiles) > 0 {
     return fmt.Errorf("--target-profile and --report are mutually exclusive")

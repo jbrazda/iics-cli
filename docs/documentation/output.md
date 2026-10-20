@@ -5,9 +5,9 @@ See [README.md](../../README.md#configuration) for the full config file layout.
 
 ## Formats
 
-| Flag           | Values                          | Default |
-|-----------------|----------------------------------|---------|
-| `--output`, `-o` | `table`, `json`, `csv`, `yaml`  | `table` |
+| Flag             | Values                         | Default |
+| ---------------- | ------------------------------ | ------- |
+| `--output`, `-o` | `table`, `json`, `csv`, `yaml` | `table` |
 
 `json`, `csv`, and `yaml` always render every field in full - responsive width adaptation
 (below) applies only to `table` output.
@@ -44,13 +44,13 @@ When columns are dropped, a one-line hint is printed to **stderr** naming what w
 
 ### Disabling adaptation
 
-| Setting                          | Effect                                                        |
-|-----------------------------------|----------------------------------------------------------------|
-| `--wide`                         | Never drop, truncate, or wrap columns for this invocation      |
-| `style.responsiveTables: false`  | Same, set permanently in config                                 |
-| non-TTY output (piped/redirected) | Adaptation never applies - full, untruncated output             |
-| `--output csv\|json\|yaml`       | Not affected by adaptation - these formats always render in full |
-| `--theme markdown` / `--theme gh` | Always render in full, regardless of TTY                       |
+| Setting                           | Effect                                                           |
+| --------------------------------- | ---------------------------------------------------------------- |
+| `--wide`                          | Never drop, truncate, or wrap columns for this invocation        |
+| `style.responsiveTables: false`   | Same, set permanently in config                                  |
+| non-TTY output (piped/redirected) | Adaptation never applies - full, untruncated output              |
+| `--output csv\|json\|yaml`        | Not affected by adaptation - these formats always render in full |
+| `--theme markdown` / `--theme gh` | Always render in full, regardless of TTY                         |
 
 ### Width detection
 

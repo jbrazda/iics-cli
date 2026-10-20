@@ -19,10 +19,10 @@ A comprehensive Go CLI tool (`iics`) to interact with the Informatica Intelligen
 
 ```text
 iics_cli/
-├── main.go                          # Entry point: cmd.Execute()
 ├── go.mod / go.sum
 ├── Makefile
 ├── cmd/                             # Cobra command definitions (thin layer)
+│   ├── iics/main.go                 # Entry point: cmd.Execute()
 │   ├── root.go                      # Root cmd, global flags, config/client init
 │   ├── login.go / logout.go
 │   ├── objects.go                   # objects list, dependencies

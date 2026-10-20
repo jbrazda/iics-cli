@@ -56,10 +56,10 @@ iics package create \
 
 Flag details:
 
-| Flag                    | Short | Type   | Default | Description |
-|-------------------------|-------|--------|---------|-------------|
-| `--exclude-manifest-file` | -   | string | `""`    | Exclusion manifest path; same formats as `--manifest-file` |
-| `--exclude`             | `-e`  | string | `""`    | Go regex matched against `path/name.type`; matching assets are excluded |
+| Flag                      | Short | Type   | Default | Description                                                             |
+| ------------------------- | ----- | ------ | ------- | ----------------------------------------------------------------------- |
+| `--exclude-manifest-file` | -     | string | `""`    | Exclusion manifest path; same formats as `--manifest-file`              |
+| `--exclude`               | `-e`  | string | `""`    | Go regex matched against `path/name.type`; matching assets are excluded |
 
 The short alias `-e` is not currently used by `package create`. It mirrors the same flag on
 `package dependencies --exclude / -e` for consistency.

@@ -1,10 +1,10 @@
 # CR-0013: Consistent Log Format Across All Commands
 
-| Field     | Value                                                         |
-| --------- | ------------------------------------------------------------- |
-| ID        | CR-0013                                                       |
-| Status    | New                                                           |
-| Priority  | Medium                                                        |
+| Field     | Value                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| ID        | CR-0013                                                                                                             |
+| Status    | New                                                                                                                 |
+| Priority  | Medium                                                                                                              |
 | Component | `cmd/root.go`, `internal/client/client.go`, `cmd/publish.go`, `cmd/unpublish.go`, `cmd/export.go`, `cmd/import_.go` |
 
 ---
@@ -25,6 +25,7 @@ Three independent logging mechanisms produce inconsistent output format:
 Desired unified format: `[timestamp][LEVEL] msg key=value`
 
 Additionally:
+
 - Publish verbose output is overly chatty (5+ separate lines per run) with no key=value structure
 - Long-running commands lack elapsed-time measurements in verbose mode
 - Verbose progress in publish/export/import writes to stdout; in a piped scenario
@@ -36,7 +37,7 @@ Additionally:
 
 ### Observed behaviour
 
-```
+```text
 time="[2026-04-01 23:02:03.971]" level=INFO msg="resolving dependencies: phase 1 - scanning package objects" total=25 publishMode=true
 time="[2026-04-01 23:02:03.971]" level=INFO msg="resolving dependencies: phase 1 complete" packageObjects=6 externalGUIDs=0
 time="[2026-04-01 23:02:03.971]" level=INFO msg="validating dependencies against target org" profile=dev count=6
@@ -54,7 +55,7 @@ using `ReplaceAttr` alone.
 Replace `slog.NewTextHandler` with a minimal custom handler `cliHandler` in `cmd/root.go`
 that produces:
 
-```
+```text
 [2026-04-01 23:02:03.971][INFO] resolving dependencies: phase 1 - scanning package objects total=25 publishMode=true
 [2026-04-01 23:02:03.971][INFO] resolving dependencies: phase 1 complete packageObjects=6 externalGUIDs=0
 [2026-04-01 23:02:03.971][INFO] validating dependencies against target org profile=dev count=6
@@ -117,7 +118,7 @@ Remove the now-unused `ReplaceAttr` closure and `time.Now().Format` call from `i
 
 ### Observed behaviour
 
-```
+```text
 DEBUG < 200 OK
 Response Headers:
   Content-Type: application/json;charset=UTF-8
@@ -165,7 +166,7 @@ lines belonging to the same request/response pair. Every section header ("Reques
 
 ### Observed behaviour
 
-```
+```text
 [2026-04-01 23:02:04.979] Publishing 6 assets in 1 batch(es)...
 [2026-04-01 23:02:04.979] Submitting batch 1/1 (6 assets)...
 [2026-04-01 23:02:05.681] Batch 1/1 job ID: 1224192035368853504
@@ -184,7 +185,7 @@ calls. Slog writes to stderr and uses the new `[timestamp][LEVEL]` format automa
 
 Desired output after fix:
 
-```
+```text
 [2026-04-01 23:02:04.979][INFO] publishing assets count=6 batches=1
 [2026-04-01 23:02:05.681][INFO] batch submitted batch=1/1 job=1224192035368853504 assets=6
 [2026-04-01 23:02:15.718][INFO] publish progress processed=4 total=6 state=IN_PROGRESS elapsed=11s
@@ -192,6 +193,7 @@ Desired output after fix:
 ```
 
 Key changes:
+
 - Combine the "Submitting batch N/M (K assets)..." and "Batch N/M job ID: ..." lines into
   one `slog.Info("batch submitted", "batch", batchLabel, "job", jobID, "assets", len(batch))` call
 - Use key=value pairs instead of positional text
@@ -247,7 +249,7 @@ slog.Info("dependencies validated",
 
 Expected package.go verbose output after fix:
 
-```
+```text
 [2026-04-01 23:02:03.971][INFO] resolving dependencies phase=1 total=25 publishMode=true
 [2026-04-01 23:02:03.971][INFO] dependencies resolved packageObjects=6 externalGUIDs=0 elapsed=0ms
 [2026-04-01 23:02:03.971][INFO] validating dependencies against target org profile=dev count=6

@@ -167,7 +167,6 @@ Search terms:
 - `avrepository.xsd CurrentServerDateTime`
 - `getResponse CurrentServerDateTime import`
 
-
 Document findings in the **Research Findings** section below before implementation begins.
 
 ### R2 - Round-trip import test

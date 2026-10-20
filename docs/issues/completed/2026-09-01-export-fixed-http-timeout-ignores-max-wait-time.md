@@ -6,7 +6,7 @@
 
 `iics export run` fails immediately (before job polling ever starts) with:
 
-```
+```text
 Error: starting export: Post "https://use4.dm-us.informaticacloud.com/saas/public/core/v3/export?includeTagInformation=true": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
 ```
 
@@ -55,10 +55,10 @@ This timeout applies to **every** HTTP request made by the client (login, `Start
 
 ## Environment
 
-| Field                      | Value                                               |
-| -------------------------- | ---------------------------------------------------- |
-| Command                    | `iics export run`                                    |
-| Region                     | USE4                                                 |
+| Field   | Value             |
+| ------- | ----------------- |
+| Command | `iics export run` |
+| Region  | USE4              |
 
 ---
 

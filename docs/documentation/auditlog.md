@@ -25,11 +25,11 @@ iics auditlog <subcommand> [flags]
 
 ### Flags
 
-| Flag       | Type   | Default                                          | Description |
-| ---------- | ------ | ------------------------------------------------ | ----------- |
-| `--limit`  | int    | 0                                                | Entries per page (maps to API `batchSize`). When 0, the API returns the most recent 200 entries. |
-| `--skip`   | int    | 0                                                | Page number to retrieve, 0-based (maps to API `batchId`). Only used when `--limit > 0`. |
-| `--fields` | string | `id,username,category,event,entryTimeUTC,objectName` | Comma-separated list of fields to display (table and CSV output only). |
+| Flag       | Type   | Default                                              | Description                                                                                      |
+| ---------- | ------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `--limit`  | int    | 0                                                    | Entries per page (maps to API `batchSize`). When 0, the API returns the most recent 200 entries. |
+| `--skip`   | int    | 0                                                    | Page number to retrieve, 0-based (maps to API `batchId`). Only used when `--limit > 0`.          |
+| `--fields` | string | `id,username,category,event,entryTimeUTC,objectName` | Comma-separated list of fields to display (table and CSV output only).                           |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -37,20 +37,20 @@ All [global flags](../../README.md#global-flags) apply.
 
 All available fields (selectable via `--fields`):
 
-| Field (JSON tag) | Header      | Description                                         |
-| ---------------- | ----------- | --------------------------------------------------- |
-| `id`             | ID          | Audit log entry identifier (default)                |
-| `username`       | USERNAME    | User who performed the action (default)             |
-| `category`       | CATEGORY    | Audit category: AGENT, AUTH, CONNECTION, USER, etc. (default) |
+| Field (JSON tag) | Header      | Description                                                       |
+| ---------------- | ----------- | ----------------------------------------------------------------- |
+| `id`             | ID          | Audit log entry identifier (default)                              |
+| `username`       | USERNAME    | User who performed the action (default)                           |
+| `category`       | CATEGORY    | Audit category: AGENT, AUTH, CONNECTION, USER, etc. (default)     |
 | `event`          | EVENT       | Action type: CREATE, DELETE, UPDATE, RUN, PUBLISH, etc. (default) |
-| `entryTimeUTC`   | TIME (UTC)  | Timestamp of the action in UTC (default)            |
-| `objectName`     | OBJECT NAME | Name of the affected object (default)               |
-| `entryTime`      | TIME (ET)   | Timestamp in Eastern Time (optional)                |
-| `objectId`       | OBJECT ID   | Identifier of the affected object (optional)        |
-| `eventParam`     | EVENT PARAM | Related objects, max 1024 characters (optional)     |
-| `message`        | MESSAGE     | Additional context information (optional)           |
-| `orgId`          | ORG ID      | Organization identifier (optional)                  |
-| `version`        | VERSION     | Entry version number (optional)                     |
+| `entryTimeUTC`   | TIME (UTC)  | Timestamp of the action in UTC (default)                          |
+| `objectName`     | OBJECT NAME | Name of the affected object (default)                             |
+| `entryTime`      | TIME (ET)   | Timestamp in Eastern Time (optional)                              |
+| `objectId`       | OBJECT ID   | Identifier of the affected object (optional)                      |
+| `eventParam`     | EVENT PARAM | Related objects, max 1024 characters (optional)                   |
+| `message`        | MESSAGE     | Additional context information (optional)                         |
+| `orgId`          | ORG ID      | Organization identifier (optional)                                |
+| `version`        | VERSION     | Entry version number (optional)                                   |
 
 ### Pagination
 

@@ -2,6 +2,16 @@
 
 A comprehensive command-line interface for the [Informatica Intelligent Cloud Services (IICS)](https://www.informatica.com/products/cloud-integration.html) platform REST API v3. Manage assets, users, connections, export/import packages, and more - from your terminal or CI/CD pipelines.
 
+## Demo
+
+![iics demo: profiles, assets, agents, agent service properties, JSON output, the property editor and the main menu](docs/demo/iics-demo.gif)
+
+The demo shows profiles, asset listing, Secure Agents and their services, per-agent service
+properties with a dry-run change, JSON output for scripts, the interactive property editor and the
+main menu. Host names, user names and the organization name are masked. To replay it in a terminal,
+run `asciinema play docs/demo/iics-demo.cast`; to record it again, see
+[scripts/demo](scripts/demo/README.md).
+
 ## Features
 
 - **Full API v3 coverage** - objects, connections, schedules, export/import, users, roles, permissions, runtime environments, agents, tags, source control, and more
@@ -20,7 +30,7 @@ A comprehensive command-line interface for the [Informatica Intelligent Cloud Se
 Requires Go 1.25 or later.
 
 ```bash
-go install github.com/jbrazda/iics-cli@latest
+go install github.com/jbrazda/iics-cli/cmd/iics@latest
 ```
 
 ### From releases
@@ -36,6 +46,11 @@ make build
 ```
 
 ## Quick Start
+
+Run `iics` without arguments in a terminal to open the interactive
+[main menu](docs/documentation/menu.md): pick a task (edit a role, create a
+user, change permissions, ...), and the menu runs the matching command and
+returns. Scripts and pipes still get the plain CLI.
 
 ### 1. Set up a profile
 
@@ -110,12 +125,18 @@ iics logout
 
 ```yaml
 defaultProfile: dev
-httpTimeout: 120     # seconds; per-HTTP-request timeout (default 120)
+httpTimeout: 120 # seconds; per-HTTP-request timeout (default 120)
+newUser: # global defaults for "user create --interactive" (optional; iics config edit)
+  domain: "company.com"
+  userNamePattern: "{firstName}.{lastName}.{profileName}@{domain}"
+  emailPattern: "{firstName}.{lastName}@{domain}"
+ui:
+  menu: true # false = bare "iics" prints help instead of opening the menu
 style:
-  theme: default     # default | minimal | compact | plain | markdown | gh
-  noColor: false     # true = disable color permanently (same as --no-color)
-  headerColor: ""    # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex (empty = theme default)
-  responsiveTables: true  # false = never drop/truncate/wrap columns to fit (same as --wide)
+  theme: default # default | minimal | compact | plain | markdown | gh
+  noColor: false # true = disable color permanently (same as --no-color)
+  headerColor: "" # lipgloss color: "6"=cyan, "244"=gray, "#FF0000"=hex (empty = theme default)
+  responsiveTables: true # false = never drop/truncate/wrap columns to fit (same as --wide)
 profiles:
   dev:
     name: "Development Org"
@@ -125,23 +146,28 @@ profiles:
     loginUrl: "https://use4.dm-us.informaticacloud.com/saas/public/core/v3/login"
     baseApiUrl: "https://use4.dm-us.informaticacloud.com/saas"
     caiUrl: "https://use4-cai.dm-us.informaticacloud.com"
+    newUser: # overrides the global newUser for this profile (optional)
+      emailPattern: "{firstInitial}{lastName}@{domain}"
   prod:
     name: "Production Org"
+    production: true # menu marks it and asks before changes
     region: "EMEA"
     username: "admin@company.com"
-    password: "@keyring"   # real password stored in OS keychain
+    password: "@keyring" # real password stored in OS keychain
     loginUrl: "https://dm-em.informaticacloud.com/saas/public/core/v3/login"
     baseApiUrl: "https://dm-em.informaticacloud.com/saas"
     caiUrl: "https://dm-em-cai.informaticacloud.com"
 ```
 
 The `loginUrl`, `baseApiUrl`, and `caiUrl` fields are populated automatically after the first
-`iics login` - you do not need to set them manually.
+`iics login` - you do not need to set them manually. Profiles are edited with
+`iics profile add` / `iics profile edit`, global settings with `iics config edit`
+(see [config](docs/documentation/config.md)).
 
 The `style` section controls table output appearance. Available themes:
 
 | Theme      | Description                                                                                            |
-|------------|--------------------------------------------------------------------------------------------------------|
+| ---------- | ------------------------------------------------------------------------------------------------------ |
 | `default`  | Unicode rounded borders, cyan bold headers (TTY only)                                                  |
 | `minimal`  | No borders, colored bold headers with unicode underline                                                |
 | `compact`  | No borders, gray bold headers, 1-space column gap (TTY only)                                           |
@@ -170,43 +196,45 @@ order - before the essential columns are ever touched. If a hidden or truncated 
 help, a hint is printed to stderr naming what was hidden. This never applies to non-TTY output,
 `--output csv|json|yaml`, or the `markdown`/`gh` themes, which always render in full.
 
-| Flag/setting                  | Description                                                                 |
-|--------------------------------|-----------------------------------------------------------------------------|
-| `--width`                     | Terminal width to adapt to; 0 (default) auto-detects                       |
-| `--wide`                      | Never drop, truncate, or wrap columns, regardless of terminal width        |
-| `style.responsiveTables: false` | Config equivalent of `--wide`                                            |
-| `IICS_WIDTH`                  | Override the auto-detected width (same precedence as `--width`)            |
+| Flag/setting                    | Description                                                         |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `--width`                       | Terminal width to adapt to; 0 (default) auto-detects                |
+| `--wide`                        | Never drop, truncate, or wrap columns, regardless of terminal width |
+| `style.responsiveTables: false` | Config equivalent of `--wide`                                       |
+| `IICS_WIDTH`                    | Override the auto-detected width (same precedence as `--width`)     |
 
 Width resolution order: `--width` flag > `IICS_WIDTH` env > detected terminal size > `$COLUMNS`
 env > `80`.
 
 ### Environment variable overrides
 
-| Variable                    | Description                                                                              |
-|-----------------------------|------------------------------------------------------------------------------------------|
-| `IICS_PROFILE`              | Override default profile                                                                 |
-| `IICS_USERNAME`             | Override profile username                                                                |
-| `IICS_PASSWORD`             | Override profile password (takes precedence over keychain)                               |
-| `IICS_REGION`               | Override profile region                                                                  |
-| `IICS_LOGIN_URL`            | Override computed login URL                                                              |
-| `IICS_CAI_URL`              | Override profile `caiUrl`                                                                |
-| `IICS_OUTPUT`               | Override default output format                                                           |
-| `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                     |
-| `IICS_WIDTH`                 | Override auto-detected terminal width for responsive table output                        |
-| `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set) |
-| `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)            |
-| `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`) |
-| `IICS_USER_<TARGET>`        | CI target username fallback for `iics release plan` when profile is not configured       |
-| `IICS_PWD_<TARGET>`         | CI target password fallback for `iics release plan` when profile is not configured       |
-| `IICS_REGION_<TARGET>`      | Optional CI target region for `iics release plan`                                        |
-| `IICS_LOGIN_URL_<TARGET>`   | Optional CI target login URL for `iics release plan`                                     |
+| Variable                    | Description                                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `IICS_PROFILE`              | Override default profile                                                                                              |
+| `IICS_USERNAME`             | Override profile username                                                                                             |
+| `IICS_PASSWORD`             | Override profile password (takes precedence over keychain)                                                            |
+| `IICS_REGION`               | Override profile region                                                                                               |
+| `IICS_LOGIN_URL`            | Override computed login URL                                                                                           |
+| `IICS_CAI_URL`              | Override profile `caiUrl`                                                                                             |
+| `IICS_OUTPUT`               | Override default output format                                                                                        |
+| `IICS_THEME`                | Override table theme (same values as `--theme` flag)                                                                  |
+| `IICS_WIDTH`                | Override auto-detected terminal width for responsive table output                                                     |
+| `IICS_ACCESSIBLE`           | Set to `1` for screen-reader friendly line-by-line prompts ([interactive prompts](docs/documentation/interactive.md)) |
+| `IICS_NO_MENU`              | Set to `1` so bare `iics` prints help instead of opening the [menu](docs/documentation/menu.md)                       |
+| `IICS_HTTP_TIMEOUT`         | Override per-HTTP-request timeout in seconds (default `120`; `--http-timeout` flag wins if set)                       |
+| `IICS_VALID_DEPLOY_TARGETS` | Override valid target allowlist for `iics release` commands (comma-separated)                                         |
+| `IICS_TARGET_PROFILE_MAP`   | Override target to profile mapping for `iics release plan` (format `TARGET=profile,...`)                              |
+| `IICS_USER_<TARGET>`        | CI target username fallback for `iics release plan` when profile is not configured                                    |
+| `IICS_PWD_<TARGET>`         | CI target password fallback for `iics release plan` when profile is not configured                                    |
+| `IICS_REGION_<TARGET>`      | Optional CI target region for `iics release plan`                                                                     |
+| `IICS_LOGIN_URL_<TARGET>`   | Optional CI target login URL for `iics release plan`                                                                  |
 
 Environment variables take precedence over config file values.
 
 ### Supported regions
 
 | Region                                 | ssLogin Host                |
-|----------------------------------------|-----------------------------|
+| -------------------------------------- | --------------------------- |
 | US, USW1, USE2, USW3, USE4, USW5, USE6 | dm-us.informaticacloud.com  |
 | USW1-1, USW3-1                         | dm1-us.informaticacloud.com |
 | USW1-2                                 | dm2-us.informaticacloud.com |
@@ -225,7 +253,7 @@ file instead of the real password.
 Supported backends:
 
 | Platform | Backend                                            |
-|----------|----------------------------------------------------|
+| -------- | -------------------------------------------------- |
 | macOS    | macOS Keychain (`security` framework)              |
 | Linux    | D-Bus Secret Service (e.g. GNOME Keyring, KWallet) |
 | Windows  | Windows Credential Manager                         |
@@ -247,38 +275,41 @@ it easy to override credentials in CI pipelines without touching the config file
 
 ## Commands
 
-| Command                                              | Alias  | Subcommands                                                            | Description                                                        |
-|------------------------------------------------------|--------|------------------------------------------------------------------------|--------------------------------------------------------------------|
-| [activitylog](docs/documentation/activitylog.md)     |        | `list`, `get`                                                          | Query activity logs for completed jobs                             |
-| [agent](docs/documentation/agent.md)                 |        | `list`, `get`, `details`, `delete`, `start`, `stop`, `restart`, `installer-info`, `installer-download` | Manage Secure Agents              |
-| [auditlog](docs/documentation/auditlog.md)           |        | `list`                                                                 | Query organization audit log (V2 API)                              |
-| [completion](docs/documentation/completion.md)       |        | `bash`, `zsh`, `fish`, `powershell`                                    | Generate shell completion scripts                                  |
-| [connection](docs/documentation/connection.md)       | `conn` | `list`, `get`, `create`, `update`, `delete`                            | Manage connections                                                 |
-| [export](docs/documentation/export.md)               |        | `run`, `start`, `status`, `download`, `create`                         | Export asset packages                                              |
-| [folder](docs/documentation/folder.md)               |        | `create`, `update`, `delete`                                           | Manage folders                                                     |
-| [import](docs/documentation/import.md)               | `imp`  | `run`, `upload`, `start`, `status`, `download-log`                     | Import asset packages                                              |
-| [login](docs/documentation/login.md)                 |        |                                                                        | Authenticate and cache session                                     |
-| [logout](docs/documentation/logout.md)               |        |                                                                        | Invalidate session                                                 |
-| [lookup](docs/documentation/lookup.md)               |        |                                                                        | Resolve object IDs, names, and paths                               |
-| [metering](docs/documentation/metering.md)           |        | `get`, `download`                                                      | Query usage and metering data                                      |
-| [objects](docs/documentation/objects.md)             |        | `list`, `dependencies`                                                 | List/search assets, find dependencies                              |
-| [package](docs/documentation/package.md)             |        | `expand`, `create`, `dependencies`                                     | Extract, assemble, or inspect dependencies of IICS export packages |
-| [permission](docs/documentation/permission.md)       | `perm` | `get`, `set`, `delete`                                                 | Manage object-level permissions                                    |
-| [privilege](docs/documentation/privilege.md)         |        | `list`                                                                 | List available privileges                                          |
-| [profile](docs/documentation/profile.md)             |        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show` | Manage connection profiles                                         |
-| [project](docs/documentation/project.md)             |        | `create`, `update`, `delete`                                           | Manage projects                                                    |
-| [publish](docs/documentation/publish.md)             |        | `start`, `status`, `run`                                               | Publish CAI assets to the runtime                                  |
-| [release](docs/documentation/release.md)             |        | `manifest`, `validate`, `plan`                                         | Generate multi-format release manifests and per-environment plans  |
-| [role](docs/documentation/role.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage roles                                                       |
-| [environment](docs/documentation/environment.md)     | `runtime`, `rt`, `env` | `list`, `get`, `create`, `update`, `delete`, `configs`   | Manage runtime environments (Secure Agent groups)                  |
-| [schedule](docs/documentation/schedule.md)           |        | `list`, `get`, `create`, `update`, `delete`                            | Manage schedules                                                   |
-| [securitylog](docs/documentation/securitylog.md)     |        | `list`                                                                 | Query security audit log                                           |
-| [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc`   | `checkout`, `checkin`, `pull`, `commit`                                | Source control operations                                          |
-| [state](docs/documentation/state.md)                 |        | `fetch`, `load`                                                        | Fetch/load object state snapshots                                  |
-| [tag](docs/documentation/tag.md)                     |        | `assign`, `remove`                                                     | Assign/remove tags on objects                                      |
-| [unpublish](docs/documentation/unpublish.md)         |        | `start`, `status`, `run`                                               | Unpublish CAI assets from the runtime                              |
-| [user](docs/documentation/user.md)                   |        | `list`, `get`, `create`, `update`, `delete`                            | Manage users                                                       |
-| [group](docs/documentation/group.md)                 | `usergroup`, `ug` | `list`, `get`, `create`, `update`, `delete`                 | Manage user groups                                                 |
+| Command                                              | Alias                  | Subcommands                                                                                                                 | Description                                                        |
+| ---------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [activitylog](docs/documentation/activitylog.md)     |                        | `list`, `get`                                                                                                               | Query activity logs for completed jobs                             |
+| [agent](docs/documentation/agent.md)                 |                        | `list`, `get`, `details`, `delete`, `start`, `stop`, `restart`, `installer-info`, `installer-download`, `configs`, `rename` | Manage Secure Agents                                               |
+| [auditlog](docs/documentation/auditlog.md)           |                        | `list`                                                                                                                      | Query organization audit log (V2 API)                              |
+| [completion](docs/documentation/completion.md)       |                        | `bash`, `zsh`, `fish`, `powershell`                                                                                         | Generate shell completion scripts                                  |
+| [config](docs/documentation/config.md)               |                        | `edit`                                                                                                                      | Edit global settings (new user defaults, theme, timeout, menu)     |
+| [connection](docs/documentation/connection.md)       | `conn`                 | `list`, `get`, `create`, `update`, `delete`, `test`, `search`, `objects`, `metadata`                                        | Manage connections                                                 |
+| [connector](docs/documentation/connector.md)         |                        | `list`, `metadata`                                                                                                          | List connectors and their connection attributes                    |
+| [export](docs/documentation/export.md)               |                        | `run`, `start`, `status`, `download`, `create`                                                                              | Export asset packages                                              |
+| [folder](docs/documentation/folder.md)               |                        | `list`, `create`, `update`, `delete`                                                                                        | Manage folders                                                     |
+| [import](docs/documentation/import.md)               | `imp`                  | `run`, `upload`, `start`, `status`, `download-log`                                                                          | Import asset packages                                              |
+| [login](docs/documentation/login.md)                 |                        |                                                                                                                             | Authenticate and cache session                                     |
+| [logout](docs/documentation/logout.md)               |                        |                                                                                                                             | Invalidate session                                                 |
+| [lookup](docs/documentation/lookup.md)               |                        |                                                                                                                             | Resolve object IDs, names, and paths                               |
+| [metering](docs/documentation/metering.md)           |                        | `get`, `download`                                                                                                           | Query usage and metering data                                      |
+| [objects](docs/documentation/objects.md)             |                        | `list`, `dependencies`                                                                                                      | List/search assets, find dependencies                              |
+| [package](docs/documentation/package.md)             |                        | `expand`, `create`, `dependencies`                                                                                          | Extract, assemble, or inspect dependencies of IICS export packages |
+| [menu](docs/documentation/menu.md)                   | `tui`                  | -                                                                                                                           | Interactive main menu (bare `iics` in a terminal)                  |
+| [permission](docs/documentation/permission.md)       | `perm`                 | `get`, `add`, `update`, `delete`, `set`, `check`, `edit`                                                                    | Manage object-level permissions                                    |
+| [privilege](docs/documentation/privilege.md)         |                        | `list`                                                                                                                      | List available privileges                                          |
+| [profile](docs/documentation/profile.md)             |                        | `add`, `edit`, `list`, `delete`, `set-default`, `set-password`, `show`                                                      | Manage connection profiles                                         |
+| [project](docs/documentation/project.md)             |                        | `list`, `create`, `update`, `delete`                                                                                        | Manage projects                                                    |
+| [publish](docs/documentation/publish.md)             |                        | `start`, `status`, `run`                                                                                                    | Publish CAI assets to the runtime                                  |
+| [release](docs/documentation/release.md)             |                        | `manifest`, `validate`, `plan`                                                                                              | Generate multi-format release manifests and per-environment plans  |
+| [role](docs/documentation/role.md)                   |                        | `list`, `get`, `create`, `edit`, `add-privileges`, `remove-privileges`, `delete`                                            | Manage roles                                                       |
+| [environment](docs/documentation/environment.md)     | `runtime`, `rt`, `env` | `list`, `get`, `create`, `update`, `delete`, `configs`                                                                      | Manage runtime environments (Secure Agent groups)                  |
+| [schedule](docs/documentation/schedule.md)           |                        | `list`, `get`, `create`, `update`, `delete`                                                                                 | Manage schedules                                                   |
+| [securitylog](docs/documentation/securitylog.md)     |                        | `list`                                                                                                                      | Query security audit log                                           |
+| [sourcecontrol](docs/documentation/sourcecontrol.md) | `sc`                   | `checkout`, `checkin`, `pull`, `commit`                                                                                     | Source control operations                                          |
+| [state](docs/documentation/state.md)                 |                        | `fetch`, `load`                                                                                                             | Fetch/load object state snapshots                                  |
+| [tag](docs/documentation/tag.md)                     |                        | `assign`, `remove`                                                                                                          | Assign/remove tags on objects                                      |
+| [unpublish](docs/documentation/unpublish.md)         |                        | `start`, `status`, `run`                                                                                                    | Unpublish CAI assets from the runtime                              |
+| [user](docs/documentation/user.md)                   |                        | `list`, `get`, `create`, `edit`, `update-roles`, `update-groups`, `delete`                                                  | Manage users                                                       |
+| [group](docs/documentation/group.md)                 | `usergroup`, `ug`      | `list`, `get`, `create`, `update`, `delete`                                                                                 | Manage user groups                                                 |
 
 > **Keeping completions up to date:** After adding or changing any command or flag, regenerate
 > the shell completion scripts by running `make completions`. The pre-generated scripts live in
@@ -286,18 +317,18 @@ it easy to override credentials in CI pipelines without touching the config file
 
 ### Global flags
 
-| Flag         | Short | Description                                                                                |
-|--------------|-------|--------------------------------------------------------------------------------------------|
-| `--profile`  | `-p`  | Profile to use (overrides default)                                                         |
-| `--output`   | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`                                    |
-| `--verbose`  | `-v`  | Enable verbose output                                                                      |
-| `--no-color` |       | Disable colored output and force `plain` table theme                                       |
-| `--theme`    |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config) |
-| `--width`    |       | Terminal width to adapt table output to; 0 (default) auto-detects                          |
-| `--wide`     |       | Never drop, truncate, or wrap table columns to fit the terminal width                      |
-| `--config`   |       | Config file path (default `~/.iics/config.yaml`)                                           |
-| `--debug`    |       | Print full HTTP request/response trace to stderr                                           |
-| `--http-timeout` |   | Per-HTTP-request timeout in seconds (default `120`; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT` env var). Independent of `export`/`import` `--max-wait-time`, which only bounds job polling. |
+| Flag             | Short | Description                                                                                                                                                                                           |
+| ---------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--profile`      | `-p`  | Profile to use (overrides default)                                                                                                                                                                    |
+| `--output`       | `-o`  | Output format: `table` (default), `json`, `csv`, `yaml`                                                                                                                                               |
+| `--verbose`      | `-v`  | Enable verbose output                                                                                                                                                                                 |
+| `--no-color`     |       | Disable colored output and force `plain` table theme                                                                                                                                                  |
+| `--theme`        |       | Table theme: `default`, `minimal`, `compact`, `plain`, `markdown`, `gh` (overrides config)                                                                                                            |
+| `--width`        |       | Terminal width to adapt table output to; 0 (default) auto-detects                                                                                                                                     |
+| `--wide`         |       | Never drop, truncate, or wrap table columns to fit the terminal width                                                                                                                                 |
+| `--config`       |       | Config file path (default `~/.iics/config.yaml`)                                                                                                                                                      |
+| `--debug`        |       | Print full HTTP request/response trace to stderr                                                                                                                                                      |
+| `--http-timeout` |       | Per-HTTP-request timeout in seconds (default `120`; overrides config `httpTimeout` / `IICS_HTTP_TIMEOUT` env var). Independent of `export`/`import` `--max-wait-time`, which only bounds job polling. |
 
 ## Development
 

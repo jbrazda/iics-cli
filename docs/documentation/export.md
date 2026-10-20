@@ -10,13 +10,13 @@ iics export <subcommand> [flags]
 
 ## Subcommands
 
-| Subcommand  | Description                                              |
-| ----------- | -------------------------------------------------------- |
-| `run`       | Full pipeline: resolve IDs, start job, poll, download   |
-| `start`     | Resolve IDs and start job, return job ID only           |
-| `status`    | Check export job status                                  |
-| `download`  | Download completed export ZIP                            |
-| `create`    | Start export with explicit object IDs                   |
+| Subcommand | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `run`      | Full pipeline: resolve IDs, start job, poll, download |
+| `start`    | Resolve IDs and start job, return job ID only         |
+| `status`   | Check export job status                               |
+| `download` | Download completed export ZIP                         |
+| `create`   | Start export with explicit object IDs                 |
 
 ---
 
@@ -26,19 +26,19 @@ The recommended command for most use cases. Reads an artifacts list, resolves pa
 
 ### Flags
 
-| Flag                    | Short | Type   | Required | Default    | Description                                                        |
-| ----------------------- | ----- | ------ | -------- | ---------- | ------------------------------------------------------------------ |
-| `--artifacts-file`      |       | string |          | stdin      | File listing objects to export (txt/json/yaml/csv); omit for stdin |
-| `--export-file-path`    |       | string | yes      |            | Output ZIP file path                                               |
-| `-n, --name`            | `-n`  | string |          | timestamp  | Export job name                                                    |
-| `--include-tags`        |       | bool   |          | false      | Include tag data in the export                                     |
-| `--exclude-dependencies`|       | bool   |          | false      | Do not include dependent objects                                   |
-| `--polling-interval`    |       | int    |          | 10         | Seconds between status polls                                       |
-| `--max-wait-time`       |       | int    |          | 300        | Maximum seconds to wait for the job                                |
-| `--expand-status`       |       | bool   |          | false      | Print the per-object export status table                           |
-| `--print-file-contents` |       | bool   |          | false      | List ZIP file contents after download                              |
-| `--download-export-log` |       | string |          |            | Download export log to this path (default: `<zip>.log`)           |
-| `--log-file`            |       | string |          |            | Append a Markdown release report section; use `--log-file=PATH` to override default path |
+| Flag                     | Short | Type   | Required | Default   | Description                                                                              |
+| ------------------------ | ----- | ------ | -------- | --------- | ---------------------------------------------------------------------------------------- |
+| `--artifacts-file`       |       | string |          | stdin     | File listing objects to export (txt/json/yaml/csv); omit for stdin                       |
+| `--export-file-path`     |       | string | yes      |           | Output ZIP file path                                                                     |
+| `-n, --name`             | `-n`  | string |          | timestamp | Export job name                                                                          |
+| `--include-tags`         |       | bool   |          | false     | Include tag data in the export                                                           |
+| `--exclude-dependencies` |       | bool   |          | false     | Do not include dependent objects                                                         |
+| `--polling-interval`     |       | int    |          | 10        | Seconds between status polls                                                             |
+| `--max-wait-time`        |       | int    |          | 300       | Maximum seconds to wait for the job                                                      |
+| `--expand-status`        |       | bool   |          | false     | Print the per-object export status table                                                 |
+| `--print-file-contents`  |       | bool   |          | false     | List ZIP file contents after download                                                    |
+| `--download-export-log`  |       | string |          |           | Download export log to this path (default: `<zip>.log`)                                  |
+| `--log-file`             |       | string |          |           | Append a Markdown release report section; use `--log-file=PATH` to override default path |
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -195,12 +195,12 @@ All [global flags](../../README.md#global-flags) apply.
 
 ### Output columns
 
-| Column          | Description                                  |
-| --------------- | -------------------------------------------- |
-| `id`            | Job ID                                       |
-| `name`          | Job name                                     |
-| `status.state`  | Current state: `SUCCESSFUL`, `FAILED`, `IN_PROGRESS`, etc. |
-| `status.message`| Status detail message                        |
+| Column           | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `id`             | Job ID                                                     |
+| `name`           | Job name                                                   |
+| `status.state`   | Current state: `SUCCESSFUL`, `FAILED`, `IN_PROGRESS`, etc. |
+| `status.message` | Status detail message                                      |
 
 ### Examples
 
@@ -243,10 +243,10 @@ Download the ZIP package for a completed export job.
 
 ### Flags
 
-| Flag              | Short | Type   | Required | Default              | Description                |
-| ----------------- | ----- | ------ | -------- | -------------------- | -------------------------- |
-| `--id`            |       | string | yes      |                      | Export job ID              |
-| `--output-file`   | `-f`  | string |          | `export_<id>.zip`   | Output file path           |
+| Flag            | Short | Type   | Required | Default           | Description      |
+| --------------- | ----- | ------ | -------- | ----------------- | ---------------- |
+| `--id`          |       | string | yes      |                   | Export job ID    |
+| `--output-file` | `-f`  | string |          | `export_<id>.zip` | Output file path |
 
 All [global flags](../../README.md#global-flags) apply.
 

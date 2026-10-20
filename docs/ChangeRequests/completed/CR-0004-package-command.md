@@ -63,7 +63,7 @@ testdata/imports/ZZ_TEST_CLI_Unpacked  # root of the package
     └── Telematics.Connection.zip
 ```
 
-In order to be able to implement the expand and create sub-commands, we need to reverse-engineer and replicate replicate the functionality expand and package command of the IICS management Utility available on github https://github.com/InformaticaCloudApplicationIntegration/Tools/tree/master/IICS%20Asset%20Management%20CLI/v2.0.1
+In order to be able to implement the expand and create sub-commands, we need to reverse-engineer and replicate replicate the functionality expand and package command of the IICS management Utility available on github <https://github.com/InformaticaCloudApplicationIntegration/Tools/tree/master/IICS%20Asset%20Management%20CLI/v2.0.1>
 
 >Note: Informatic asset organization has only three layer
 
@@ -214,7 +214,7 @@ Flags:
    only include source directory contents
 4. Close the writer (flushes the ZIP central directory).
 5. Print a summary line to stdout: `Created <output> (N files)`.
-6. In `--verbose` mode print contents of content report cvs file contained in the package 
+6. In `--verbose` mode print contents of content report cvs file contained in the package
 7. Return any error encountered.
 
 ### Step 2 - Register (`cmd/root.go`)
@@ -266,7 +266,7 @@ Contents of the generated `ContentsofExportPackage_ZZ_TEST_CLI.csv`as a table
 
 ---
 
-## Example Original package Command Output 
+## Example Original package Command Output
 
 ```txt
  ~/bin/iics package -z ~/workspace/claude/iics-cli/testdata/imports/ZZ_TEST_CLI_packaged.zip -w ~/workspace/claude/iics-cli/testdata/imports/ZZ_TEST_CLI_Extracted -a 'Explore/ZZ_TEST_CLI.Project'
@@ -299,7 +299,6 @@ INFO[0000] Generated checksum for artifact               Artifact="{PROCESS Expl
 INFO[0000] Generated checksum for artifact               Artifact="{Folder Explore/ZZ_TEST_CLI/TaskFlows.Folder.json Explore/ZZ_TEST_CLI/.TaskFlows.Folder.json Explore/ZZ_TEST_CLI/TaskFlows.Folder }" Checksum="Explore/ZZ_TEST_CLI/TaskFlows.Folder.json=A59C4EE6EA1208D35414DD379C9282E76BB37DB623C842D8AE3A455C972A3330\n"
 INFO[0000] Generated checksum for artifact               Artifact="{Folder Explore/ZZ_TEST_CLI/Tasks.Folder.json Explore/ZZ_TEST_CLI/.Tasks.Folder.json Explore/ZZ_TEST_CLI/Tasks.Folder }"
 ```
-
 
 ## Implementation Notes
 

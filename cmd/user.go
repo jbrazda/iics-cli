@@ -15,6 +15,7 @@ import (
 	"github.com/jbrazda/iics-cli/internal/client"
 	"github.com/jbrazda/iics-cli/internal/config"
 	"github.com/jbrazda/iics-cli/internal/output"
+	"github.com/jbrazda/iics-cli/internal/tui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -28,7 +29,10 @@ func newUserCmd() *cobra.Command {
 	cmd.AddCommand(newUserListCmd())
 	cmd.AddCommand(newUserGetCmd())
 	cmd.AddCommand(newUserCreateCmd())
-	cmd.AddCommand(newUserUpdateCmd())
+	cmd.AddCommand(newUserEditCmd(""))
+	cmd.AddCommand(newUserEditCmd("update"))
+	cmd.AddCommand(newUserMembershipCmd(userRoleMembership))
+	cmd.AddCommand(newUserMembershipCmd(userGroupMembership))
 	cmd.AddCommand(newUserDeleteCmd())
 	cmd.AddCommand(newUserChangePasswordCmd())
 	cmd.AddCommand(newUserResetPasswordCmd())
@@ -255,7 +259,7 @@ func newUserGetCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get user details",
+		Short: "Get user details (searches interactively without --id/--username)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := getClient(cmd)
 			if err != nil {
@@ -268,33 +272,19 @@ func newUserGetCmd() *cobra.Command {
 				user, err = c.GetUser(context.Background(), id)
 			case userName != "":
 				user, err = c.GetUserByName(context.Background(), userName)
+			case isInteractiveTTY():
+				user, err = promptUserSearch(context.Background(), c)
+				if err == nil && user == nil {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+					return nil
+				}
 			default:
 				return fmt.Errorf("--id or --username is required")
 			}
 			if err != nil {
 				return err
 			}
-
-			f, err := output.ParseFormat(outputFmt)
-			if err != nil {
-				return err
-			}
-
-			cfg, _ := loadConfig()
-			style := resolveTableStyle(cfg)
-
-			switch f {
-			case output.FormatCSV:
-				cols := buildUserCSVColumns(csvFields)
-				csvFmt := output.New(output.FormatCSV, os.Stdout, style)
-				return csvFmt.Format([]*client.User{user}, cols)
-			case output.FormatTable:
-				return printUserSections(os.Stdout, user, style)
-			default:
-				// JSON / YAML: output the full struct
-				fmtr := output.New(f, os.Stdout, style)
-				return fmtr.Format(user, nil)
-			}
+			return printUser(user, csvFields)
 		},
 	}
 
@@ -346,14 +336,6 @@ func buildRoleMap(ctx context.Context, c *client.Client) (map[string]string, err
 		opts.Skip += opts.Limit
 	}
 	return m, nil
-}
-
-// truncate shortens s to at most max bytes, appending "..." if truncated.
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "..."
 }
 
 // detectInputFormat infers the file format from extension or content.
@@ -553,8 +535,9 @@ func resolveUserGroupsAndRoles(ctx context.Context, c *client.Client, users []cl
 	return nil
 }
 
-// runUserWizard interactively collects user fields. When existing is non-nil, current
-// values are shown as defaults. Returns the completed User.
+// runUserWizard interactively collects user fields in a paged form with a
+// review step. When existing is non-nil, its values are pre-filled and the
+// review shows the changes. Returns nil when the user cancels.
 func runUserWizard(ctx context.Context, c *client.Client, existing *client.User) (*client.User, error) {
 	if !config.IsTerminal() {
 		return nil, fmt.Errorf("--interactive requires an interactive terminal")
@@ -565,172 +548,42 @@ func runUserWizard(ctx context.Context, c *client.Client, existing *client.User)
 		*u = *existing
 	}
 
-	_, _ = fmt.Fprintln(os.Stderr)
-
-	// Authentication type
-	authIdx, err := promptSelect("Authentication type", []string{"Native", "SSO"})
+	groups, err := listAllUserGroups(ctx, c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetching groups: %w", err)
 	}
-	if authIdx < 0 {
-		return nil, fmt.Errorf("canceled")
-	}
-	authTypes := []string{"Native", "SSO"}
-	u.Authentication = authTypes[authIdx]
-
-	// Scalar fields
-	if u.FirstName, err = promptText("First Name", u.FirstName); err != nil {
-		return nil, err
-	}
-	if u.LastName, err = promptText("Last Name", u.LastName); err != nil {
-		return nil, err
-	}
-
-	// Username default: firstname.lastname@domain
-	if u.UserName == "" && u.FirstName != "" && u.LastName != "" {
-		_, p, _, _ := resolveProfile()
-		domain := ""
-		if p != nil && strings.Contains(p.Username, "@") {
-			domain = p.Username[strings.Index(p.Username, "@")+1:]
-		}
-		if domain != "" {
-			u.UserName = fmt.Sprintf("%s.%s@%s",
-				strings.ToLower(u.FirstName),
-				strings.ToLower(u.LastName),
-				domain)
-		}
-	}
-	if u.UserName, err = promptText("User Name", u.UserName); err != nil {
-		return nil, err
-	}
-	if u.UserName == "" {
-		return nil, fmt.Errorf("userName is required")
-	}
-
-	if u.Email, err = promptText("Email", u.Email); err != nil {
-		return nil, err
-	}
-	if u.Phone, err = promptText("Phone (optional)", u.Phone); err != nil {
-		return nil, err
-	}
-	if u.Title, err = promptText("Title (optional)", u.Title); err != nil {
-		return nil, err
-	}
-	if u.Description, err = promptText("Description (optional)", u.Description); err != nil {
-		return nil, err
-	}
-	if u.TimeZoneID, err = promptTimezone(u.TimeZoneID); err != nil {
-		return nil, err
-	}
-
-	// State is only settable on update, not create
-	if existing != nil {
-		stateDefault := 0
-		if u.State == "Disabled" {
-			stateDefault = 1
-		}
-		stateOptions := []string{"Active", "Disabled"}
-		var sIdx int
-		sIdx, err = promptSelect("State", stateOptions)
-		if err != nil {
-			return nil, err
-		}
-		if sIdx >= 0 {
-			u.State = stateOptions[sIdx]
-		} else if u.State == "" {
-			u.State = stateOptions[stateDefault]
-		}
-	}
-
-	// Force password change
-	forceChange, err := promptYesNo("Force password change on next login?", u.ForcePasswordChange)
+	roles, err := c.ListRoles(ctx, client.RoleListOptions{})
 	if err != nil {
+		return nil, fmt.Errorf("fetching roles: %w", err)
+	}
+
+	cfg, _ := loadConfig()
+	_, _, profileName, _ := resolveProfile()
+	var prof *config.Profile
+	if cfg != nil {
+		prof = cfg.Profiles[profileName]
+	}
+
+	ok, err := tui.RunUserWizard(tui.UserWizardInput{
+		User:        u,
+		Update:      existing != nil,
+		Groups:      groups,
+		Roles:       roles,
+		ProfileName: profileName,
+		Patterns:    config.NewUserPatterns(cfg.GlobalNewUser(), prof),
+		UserExists: func(name string) (string, error) {
+			existing, lerr := c.FindUserByName(ctx, name)
+			if lerr != nil || existing == nil {
+				return "", lerr
+			}
+			return existing.ID, nil
+		},
+		Out:        os.Stderr,
+		Accessible: prompter.Accessible,
+	})
+	if err != nil || !ok {
 		return nil, err
 	}
-	u.ForcePasswordChange = forceChange
-
-	// Groups
-	var allGroups []client.UserGroup
-	grpOpts := client.UserGroupListOptions{Limit: 200}
-	for {
-		batch, err := c.ListUserGroups(ctx, grpOpts)
-		if err != nil {
-			return nil, fmt.Errorf("fetching groups: %w", err)
-		}
-		allGroups = append(allGroups, batch...)
-		if len(batch) < grpOpts.Limit {
-			break
-		}
-		grpOpts.Skip += grpOpts.Limit
-	}
-	if len(allGroups) > 0 {
-		groupOpts := make([]string, len(allGroups))
-		groupDefaults := make([]int, 0)
-		currentGroupIDs := make(map[string]bool)
-		for _, g := range u.Groups {
-			currentGroupIDs[g.ID] = true
-		}
-		for i, g := range allGroups {
-			groupOpts[i] = fmt.Sprintf("%s - %s", g.UserGroupName, truncate(g.Description, 100))
-			if currentGroupIDs[g.ID] {
-				groupDefaults = append(groupDefaults, i)
-			}
-		}
-		selected, sErr := promptMultiSelect("Groups", groupOpts, groupDefaults)
-		if sErr != nil {
-			return nil, sErr
-		}
-		u.Groups = nil
-		for _, idx := range selected {
-			g := allGroups[idx]
-			u.Groups = append(u.Groups, client.UserGroupRef{
-				ID:            g.ID,
-				UserGroupName: g.UserGroupName,
-			})
-		}
-	}
-
-	// Roles
-	var allRoles []client.Role
-	roleOpts := client.RoleListOptions{Limit: 200}
-	for {
-		batch, err := c.ListRoles(ctx, roleOpts)
-		if err != nil {
-			return nil, fmt.Errorf("fetching roles: %w", err)
-		}
-		allRoles = append(allRoles, batch...)
-		if len(batch) < roleOpts.Limit {
-			break
-		}
-		roleOpts.Skip += roleOpts.Limit
-	}
-	if len(allRoles) > 0 {
-		roleOpts := make([]string, len(allRoles))
-		roleDefaults := make([]int, 0)
-		currentRoleIDs := make(map[string]bool)
-		for _, r := range u.Roles {
-			currentRoleIDs[r.ID] = true
-		}
-		for i, r := range allRoles {
-			roleOpts[i] = fmt.Sprintf("%s - %s", r.RoleName, truncate(r.Description, 100))
-			if currentRoleIDs[r.ID] {
-				roleDefaults = append(roleDefaults, i)
-			}
-		}
-		selected, sErr := promptMultiSelect("Roles", roleOpts, roleDefaults)
-		if sErr != nil {
-			return nil, sErr
-		}
-		u.Roles = nil
-		for _, idx := range selected {
-			r := allRoles[idx]
-			u.Roles = append(u.Roles, client.UserRole{
-				ID:       r.ID,
-				RoleName: r.RoleName,
-			})
-		}
-	}
-
 	return u, nil
 }
 
@@ -770,6 +623,10 @@ func newUserCreateCmd() *cobra.Command {
 				u, wErr := runUserWizard(ctx, c, nil)
 				if wErr != nil {
 					return wErr
+				}
+				if u == nil {
+					_, _ = fmt.Fprintln(os.Stderr, "Canceled.")
+					return nil
 				}
 				created, cErr := c.CreateUser(ctx, u)
 				if cErr != nil {
@@ -876,176 +733,78 @@ func newUserCreateCmd() *cobra.Command {
 }
 
 // ---------------------------------------------------------------------------
-// user update
+// user edit
 // ---------------------------------------------------------------------------
 
-func newUserUpdateCmd() *cobra.Command {
+// newUserEditCmd builds "user edit". With deprecatedUse set it builds the
+// hidden, deprecated alias of that name (formerly "user update").
+func newUserEditCmd(deprecatedUse string) *cobra.Command {
 	var (
 		id          string
 		userName    string
-		fromFile    string
 		interactive bool
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update",
-		Short: "Update one or more users",
+		Use:   "edit",
+		Short: "Edit a user's group and role assignments (interactive)",
+		Long: `Edit a user's user group and role assignments in an interactive form.
+
+The IICS API cannot update user properties (name, email, title, time zone),
+so only group and role assignments can be changed. The form shows the user's
+current assignments pre-checked and ends with a review before any change is
+applied. Requires a terminal; for scripts use "user update-roles" and
+"user update-groups".`,
+		Example: `  iics user edit --username jdoe@example.com
+  iics user edit            # search for the user first`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if !isInteractiveTTY() {
+				return fmt.Errorf("user edit requires a terminal; use 'iics user update-roles' or 'iics user update-groups' in scripts")
+			}
 			c, err := getClient(cmd)
 			if err != nil {
 				return err
 			}
 			ctx := context.Background()
 
-			// Interactive update
-			if interactive {
-				target, rErr := resolveUser(ctx, c, id, userName)
-				if rErr != nil {
-					return rErr
-				}
-				if target == nil {
-					return nil // user canceled
-				}
-				updated, wErr := runUserWizard(ctx, c, target)
-				if wErr != nil {
-					return wErr
-				}
-				result, uErr := c.UpdateUser(ctx, target.ID, updated)
-				if uErr != nil {
-					return uErr
-				}
-				cfg, _ := loadConfig()
-				return printUserSections(os.Stdout, result, resolveTableStyle(cfg))
-			}
-
-			if fromFile == "" {
-				return fmt.Errorf("--from-file or --interactive is required")
-			}
-
-			var data []byte
-			if fromFile == "-" {
-				data, err = io.ReadAll(os.Stdin)
-			} else {
-				data, err = os.ReadFile(fromFile)
-			}
-			if err != nil {
-				return fmt.Errorf("reading input: %w", err)
-			}
-
-			format := detectInputFormat(fromFile, data)
-			users, err := parseUsersFromBytes(data, format)
+			target, err := resolveUser(ctx, c, id, userName)
 			if err != nil {
 				return err
 			}
-			if err := resolveUserGroupsAndRoles(ctx, c, users); err != nil {
+			if target == nil {
+				return nil // canceled
+			}
+			updated, err := runUserWizard(ctx, c, target)
+			if err != nil {
 				return err
 			}
-
-			// Single user: resolve target by --id/--username or by userName in file
-			if len(users) == 1 {
-				targetID := id
-				if targetID == "" && users[0].ID != "" {
-					targetID = users[0].ID
-				}
-				if targetID == "" && users[0].UserName != "" {
-					target, lErr := c.GetUserByName(ctx, users[0].UserName)
-					if lErr != nil {
-						return lErr
-					}
-					targetID = target.ID
-				}
-				if targetID == "" {
-					return fmt.Errorf("cannot determine user ID; provide --id or include id/userName in the file")
-				}
-				result, uErr := c.UpdateUser(ctx, targetID, &users[0])
-				if uErr != nil {
-					return uErr
-				}
-				cfg, _ := loadConfig()
-				style := resolveTableStyle(cfg)
-				f, fErr := output.ParseFormat(outputFmt)
-				if fErr != nil {
-					return fErr
-				}
-				if f == output.FormatTable {
-					return printUserSections(os.Stdout, result, style)
-				}
-				fmtr := output.New(f, os.Stdout, style)
-				return fmtr.Format(result, nil)
+			if updated == nil {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Canceled.")
+				return nil
 			}
-
-			// Bulk update
-			results := make([]userCreateResult, 0, len(users))
-			for i := range users {
-				start := time.Now()
-				targetID := users[i].ID
-				if targetID == "" && users[i].UserName != "" {
-					target, lErr := c.GetUserByName(ctx, users[i].UserName)
-					if lErr != nil {
-						elapsed := time.Since(start).Round(time.Millisecond).String()
-						results = append(results, userCreateResult{
-							UserName: users[i].UserName,
-							Status:   "Error: " + lErr.Error(),
-							Elapsed:  elapsed,
-						})
-						_, _ = fmt.Fprintf(os.Stderr, "Error looking up %s: %v\n", users[i].UserName, lErr)
-						continue
-					}
-					targetID = target.ID
-				}
-				if targetID == "" {
-					results = append(results, userCreateResult{
-						UserName: users[i].UserName,
-						Status:   "Error: no id or userName to identify user",
-					})
-					continue
-				}
-
-				result, uErr := c.UpdateUser(ctx, targetID, &users[i])
-				elapsed := time.Since(start).Round(time.Millisecond).String()
-
-				res := userCreateResult{
-					UserName:  users[i].UserName,
-					FirstName: users[i].FirstName,
-					LastName:  users[i].LastName,
-					Email:     users[i].Email,
-					Elapsed:   elapsed,
-				}
-				if uErr != nil {
-					res.Status = "Error: " + uErr.Error()
-					_, _ = fmt.Fprintf(os.Stderr, "Error updating %s: %v\n", users[i].UserName, uErr)
-				} else {
-					res.ID = result.ID
-					res.State = result.State
-					res.Status = "Success"
-					if verbose {
-						slog.Info("user updated",
-							"userName", result.UserName,
-							"id", result.ID,
-							"elapsed", elapsed)
-					}
-				}
-				results = append(results, res)
+			if err = applyUserMembership(ctx, c, cmd.ErrOrStderr(), target, updated); err != nil {
+				return err
 			}
-
-			f, fErr := getFormatter()
-			if fErr != nil {
-				return fErr
+			result, err := c.GetUser(ctx, target.ID)
+			if err != nil {
+				return err
 			}
-			cols := []output.Column{
-				{Header: "ID", Field: "id", Width: 24},
-				{Header: "USERNAME", Field: "userName", Width: 30},
-				{Header: "STATE", Field: "state", Width: 10},
-				{Header: "STATUS", Field: "status", Width: 20},
-			}
-			return f.Format(results, cols)
+			return printUser(result, defaultCSVFields)
 		},
 	}
+	if deprecatedUse != "" {
+		cmd.Use = deprecatedUse
+		cmd.Deprecated = "use 'iics user edit' (interactive) or 'iics user update-roles' / 'update-groups' (scripts)"
+		cmd.Hidden = true
+	}
 
-	cmd.Flags().StringVar(&id, "id", "", "user ID of the user to update")
-	cmd.Flags().StringVar(&userName, "username", "", "user name of the user to update")
-	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON, YAML or CSV file with updated user(s); use - for stdin")
-	cmd.Flags().BoolVar(&interactive, "interactive", false, "interactively edit user fields")
+	cmd.Flags().StringVar(&id, "id", "", "user ID")
+	cmd.Flags().StringVar(&userName, "username", "", "user name (exact match)")
+	cmd.MarkFlagsMutuallyExclusive("id", "username")
+	// Kept so older invocations ("--interactive") still parse; edit is always
+	// interactive.
+	cmd.Flags().BoolVar(&interactive, "interactive", false, "no longer needed; always interactive")
+	_ = cmd.Flags().MarkHidden("interactive")
 	return cmd
 }
 
@@ -1079,13 +838,7 @@ func newUserDeleteCmd() *cobra.Command {
 			}
 
 			if !yes {
-				_, _ = fmt.Fprintf(os.Stderr,
-					"Are you sure you want to delete user %s (%s)? [y/N]: ",
-					target.UserName, target.ID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm)
-				if confirm != "y" && confirm != "Y" {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Canceled.")
+				if !confirmAction(cmd, fmt.Sprintf("Are you sure you want to delete user %s (%s)?", target.UserName, target.ID)) {
 					return nil
 				}
 			}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
@@ -20,6 +19,8 @@ const (
 	// Note: IICS v3 uses "INFA-SESSION-ID" while v2 used "icSessionId".
 	sessionHeaderV3 = "INFA-SESSION-ID"
 	sessionHeaderV2 = "icSessionId"
+	// sessionHeaderFRS is the session header of the internal FRS repository API.
+	sessionHeaderFRS = "IDS-SESSION-ID"
 	// baseAPIPathV2 is the base path for v2 API endpoints.
 	BaseAPIPathV2 = "api/v2"
 	// baseAPIPathV3 is the base path for v3 API endpoints.
@@ -151,6 +152,9 @@ func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Re
 	} else {
 		req.Header.Set(sessionHeaderV3, sessionID)
 	}
+	if strings.HasPrefix(req.URL.Path, "/"+frsAPIPath+"/") {
+		req.Header.Set(sessionHeaderFRS, sessionID)
+	}
 	if req.Header.Get("Accept") == "" {
 		req.Header.Set("Accept", "application/json")
 	}
@@ -246,7 +250,7 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	_, _ = fmt.Fprintf(w, "%s[DEBUG] Request Headers:\n", now)
 	for k, vs := range req.Header {
 		for _, v := range vs {
-			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) {
+			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) || strings.EqualFold(k, sessionHeaderFRS) || strings.EqualFold(k, "Cookie") {
 				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
 			} else {
 				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
@@ -261,6 +265,9 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	_, _ = fmt.Fprintf(w, "%s[DEBUG] Response Headers:\n", now)
 	for k, vs := range resp.Header {
 		for _, v := range vs {
+			if strings.EqualFold(k, "Set-Cookie") {
+				v = "***"
+			}
 			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
 		}
 	}
@@ -273,6 +280,11 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 
 // doJSON is a convenience method that sends a JSON request and decodes the response.
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
+	return c.doJSONWithHeaders(ctx, method, path, nil, reqBody, respBody)
+}
+
+// doJSONWithHeaders is like doJSON but sets extra request headers.
+func (c *Client) doJSONWithHeaders(ctx context.Context, method, path string, headers map[string]string, reqBody, respBody interface{}) error {
 	if err := c.ensureSession(ctx); err != nil {
 		return err
 	}
@@ -292,6 +304,9 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := c.do(ctx, req)
@@ -315,61 +330,6 @@ func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, respB
 
 	if respBody != nil && len(respData) > 0 {
 		if err := json.Unmarshal(respData, respBody); err != nil {
-			return fmt.Errorf("parsing response: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// doXML sends an XML-encoded request and optionally decodes an XML response.
-// Used for legacy V2 endpoints that require application/xml (e.g. user update).
-func (c *Client) doXML(ctx context.Context, method, path string, reqBody, respBody interface{}) error {
-	if err := c.ensureSession(ctx); err != nil {
-		return err
-	}
-
-	var body io.Reader
-	var reqData []byte
-	if reqBody != nil {
-		var err error
-		reqData, err = xml.Marshal(reqBody)
-		if err != nil {
-			return fmt.Errorf("marshaling request: %w", err)
-		}
-		reqData = append([]byte(xml.Header), reqData...)
-		body = bytes.NewReader(reqData)
-	}
-
-	url := c.apiURL(path)
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/xml")
-	req.Header.Set("Accept", "application/xml")
-
-	resp, err := c.do(ctx, req)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading response: %w", err)
-	}
-
-	if c.debug {
-		debugPrintHTTP(req, reqData, resp, respData)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return newAPIError(resp, respData)
-	}
-
-	if respBody != nil && len(respData) > 0 {
-		if err := xml.Unmarshal(respData, respBody); err != nil {
 			return fmt.Errorf("parsing response: %w", err)
 		}
 	}

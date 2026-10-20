@@ -121,7 +121,7 @@ iics login --profile prod
 
 On success the command prints the authenticated user, org info, base API URL, and derived CAI URL:
 
-```
+```text
 Logging in as jane.smith@company.com...
 Logged in successfully.
   User:    Jane Smith

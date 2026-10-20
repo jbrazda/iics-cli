@@ -1,3 +1,6 @@
+// Command iics is the command-line interface for Informatica Intelligent Cloud
+// Services (IICS). It sets the build version and runs the root command from
+// package cmd.
 package main
 
 import (

@@ -10,10 +10,10 @@ iics lookup [flags]
 
 ## Flags
 
-| Flag     | Type   | Required | Description                                                  |
-| -------- | ------ | -------- | ------------------------------------------------------------ |
-| `--id`   | string | *        | Object ID to look up                                         |
-| `--path` | string | *        | Object path (requires `--type`)                              |
+| Flag     | Type   | Required | Description                                                                     |
+| -------- | ------ | -------- | ------------------------------------------------------------------------------- |
+| `--id`   | string | *        | Object ID to look up                                                            |
+| `--path` | string | *        | Object path (requires `--type`)                                                 |
 | `--type` | string | *        | Object type: `PROJECT`, `FOLDER`, `DTEMPLATE`, `MTT`, `DSS`, `CONNECTION`, etc. |
 
 \* Provide exactly one of `--id` or `--path`+`--type`.

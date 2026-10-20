@@ -171,5 +171,6 @@ Tag: `sample_tag` <!-- enter single-word tag here, e.g. sprint-42 -->
 - [x] Connectors and Connections (CAI assets that require manual intervention after deployment)
 
 > **Note:**  Connectors and connections are typically not included in the default package configurations and require manual intervention after deployment (e.g. setting up credentials or environment-specific parameters). This connector Package is only built and staged for deployment but must be deployed manually to allow for review and control over when and how connectors are deployed based on the target environment and deployment strategy.
-```
+
+```text
 

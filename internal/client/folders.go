@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // Folder represents an IICS folder as returned by the v3 API.
@@ -44,18 +45,30 @@ func (c *Client) CreateFolder(ctx context.Context, name, description, projectID,
 
 // UpdateFolder updates name and/or description of an existing folder using PATCH.
 //   - When projectName and folderName are both set, uses the name-based URL path.
-//   - When projectID is set, uses project ID + folder ID path.
-//   - Otherwise uses the default /folders/<folderID> path.
+//   - Otherwise uses /folders/<folderID>. Folder IDs are unique in the org, so
+//     this works for folders in any project. projectID is accepted for
+//     compatibility but not used: the documented
+//     /projects/<projectID>/folders/<folderID> path returns 404 (verified
+//     2026-10-19).
+//
+// IDs and names cannot be mixed in one URI. The API may return an empty body
+// on success, in which case the returned Folder is empty.
 func (c *Client) UpdateFolder(ctx context.Context, folderID, name, description, projectID, projectName, folderName string) (*Folder, error) {
+	byName := projectName != "" || folderName != ""
+	if byName && (folderID != "" || projectID != "") {
+		return nil, fmt.Errorf("use either --id/--project-id or --project-name/--folder-name, not both")
+	}
+	if name == "" && description == "" {
+		return nil, fmt.Errorf("nothing to update: provide --name and/or --description")
+	}
+
 	var path string
 	switch {
-	case projectName != "" && folderName != "":
-		path = fmt.Sprintf("%s/projects/name/%s/folders/name/%s", BaseAPIPathV3, projectName, folderName)
-	case projectID != "":
-		if folderID == "" {
-			return nil, fmt.Errorf("--id is required when --project-id is set")
+	case byName:
+		if projectName == "" || folderName == "" {
+			return nil, fmt.Errorf("--project-name and --folder-name must be used together")
 		}
-		path = fmt.Sprintf("%s/projects/%s/folders/%s", BaseAPIPathV3, projectID, folderID)
+		path = fmt.Sprintf("%s/projects/name/%s/folders/name/%s", BaseAPIPathV3, url.PathEscape(projectName), url.PathEscape(folderName))
 	default:
 		if folderID == "" {
 			return nil, fmt.Errorf("--id is required")
@@ -85,7 +98,7 @@ func folderBasePath(projectID, projectName string) (string, error) {
 		return fmt.Sprintf("%s/projects/%s/folders", BaseAPIPathV3, projectID), nil
 	}
 	if projectName != "" {
-		return fmt.Sprintf("%s/projects/name/%s/folders", BaseAPIPathV3, projectName), nil
+		return fmt.Sprintf("%s/projects/name/%s/folders", BaseAPIPathV3, url.PathEscape(projectName)), nil
 	}
 	return fmt.Sprintf("%s/folders", BaseAPIPathV3), nil
 }

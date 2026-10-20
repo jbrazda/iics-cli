@@ -9,10 +9,10 @@ See the following files
 - docs/ChangeRequests/completed/CR-0022-relase-manifest-creds.md
 
 - we need to add support for build descriptor (csv,json,yaml,txt) as an input file to drive package selection
-   - should we add support to release plan command to also output yaml and json or just keep it csv?
-   - the package manifest can be passed in as stdin input or --manifest-file (short -f) parameter
-   - stdin to package create should auto-detect format and apply the file list selection accordingly
-   - the .txt file content should have backward compatible mode for txt files used by the official IIC CLI v2
+  - should we add support to release plan command to also output yaml and json or just keep it csv?
+  - the package manifest can be passed in as stdin input or --manifest-file (short -f) parameter
+  - stdin to package create should auto-detect format and apply the file list selection accordingly
+  - the .txt file content should have backward compatible mode for txt files used by the official IIC CLI v2
 - the package create command should include all assets listed in the package manifest if the package manifest contains path or location  pointing only to ProjectName.Project or ProjectName/FolderName.Folder it must include all assets within the folder
 - Package Create Command must generate the `xexportPackage.chksum` checksum file calculated after content of the package is is determined, Only include checksums of the files actually included in the final package x
 - Package must contain the ContentsofExportPackage_[package_name].csv ( the package_name name should default to filename part of the --target parameter and be possible to override using to --name  parameter). this file should contain a matching structure to export file format (objectPath,objectName,objectType,id), listing the actual file assets included in the package

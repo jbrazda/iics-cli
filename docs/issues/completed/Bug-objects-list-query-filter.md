@@ -84,11 +84,11 @@ cmd/objects.go                  - flag definitions, --query example string
 
 ### API query parameters
 
-| Parameter | Type | Notes |
-| --------- | ---- | ----- |
+| Parameter | Type   | Notes                                                       |
+| --------- | ------ | ----------------------------------------------------------- |
 | `q`       | String | Only filter parameter. Multiple conditions separated by `;` |
-| `limit`   | Int  | Max 200 per page |
-| `skip`    | Int  | Pagination offset |
+| `limit`   | Int    | Max 200 per page                                            |
+| `skip`    | Int    | Pagination offset                                           |
 
 ### Supported `q` filter fields and operators
 
@@ -107,7 +107,7 @@ cmd/objects.go                  - flag definitions, --query example string
 
 **Sample API request (correct separator):**
 
-```
+```text
 GET /public/core/v3/objects?q=location=='Default/Sales';type=='MTT'&limit=200
 ```
 

@@ -1,0 +1,3 @@
+# Templates are fragments: GitHub supplies the title.
+config:
+  MD041: false

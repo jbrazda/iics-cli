@@ -17,7 +17,7 @@ HTTP method or URL for retrieving a single user by ID.
 
 ## Observed Behavior
 
-```
+```text
 $ ./iics user get --id '9IB4JZitmQDhj2cLTgWS64'
 Error: IICS API error (HTTP 405):
 HTTP 405 Method Not Allowed
@@ -44,7 +44,7 @@ depending on `--output`).
 
 `GetUser()` in `internal/client/users.go:76-82` issues:
 
-```
+```text
 GET /public/core/v3/users/{id}
 ```
 
