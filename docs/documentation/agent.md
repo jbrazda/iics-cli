@@ -20,6 +20,8 @@ iics agent <subcommand> [flags]
 | `stop`               | Stop an agent service                                          |
 | `installer-info`     | Get Secure Agent installer download information                |
 | `installer-download` | Download the Secure Agent installer (optional checksum verify) |
+| `configs get`        | Show an agent's service properties (experimental)              |
+| `configs set`        | Change or reset an agent's service properties (experimental)   |
 
 ---
 
@@ -189,6 +191,151 @@ iics agent details --id <agent-id>
 iics agent details --id <agent-id> --services
 
 iics agent details --hostname devinfacld01 --full
+```
+
+---
+
+## agent configs
+
+Show and change the service properties of **one agent**, for example the
+Process Server cluster settings (`primary-node`, `load-balance-url`), its
+database URLs and connection properties, or JVM heap sizes. The Secure Agent
+group equivalent is [environment configs](environment.md#environment-configs).
+
+> **Experimental.** The public REST API only configures properties for a whole
+> Secure Agent group. Agent-level properties are read and saved through the
+> Administrator UI form `/runtime/app/agent.do`, which is undocumented and may
+> change without notice.
+
+How it works:
+
+- The CLI session is sent as the `USER_SESSION` cookie. The form's CSRF check
+  compares the `XSRF_TOKEN` cookie with the `csrfToken` field, so the CLI sends
+  a random token in both.
+- `set` reads the whole form, changes only the requested properties and submits
+  every field back, as the UI's Save button does. It then reads the form again
+  and fails if a change was not stored.
+- The agent applies the new properties by redeploying the affected service.
+  Process Server (`REPLACE_VERSION`) starts a new version next to the running
+  one and switches over when it is ready. Check progress with
+  `iics agent details --services`.
+
+### Property names
+
+Properties are named `service:type:name`:
+
+| Part      | Values                                                                                                                           |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `service` | Service name without its version (`process-engine`, `OpsInsightsDataCollector`), the display name (`Process Server`), or `agent` |
+| `type`    | Property type, for example `server`, `cluster`, `jvm`, `db`, `logging`, or `AGENTCORE_CFG` for `agent` properties                |
+| `name`    | Property name, for example `primary-node`                                                                                        |
+
+Matching is case-insensitive. Use `type/subType` (for example
+`AGENTCORE_LOG4J/DEBUG`) when a name exists for both the `INFO` and `DEBUG`
+subtypes. `agent configs get` shows the names to use.
+
+`agent` stands for the agent's own Agent Core, Agent Manager and Tomcat
+properties. They are shown by `get` but cannot be changed by `set`: the server
+accepts the form but ignores changes to them.
+
+### agent configs get
+
+Show an agent's properties with their defaults and whether they are overridden.
+
+| Flag           | Type   | Description                                                                          |
+| -------------- | ------ | ------------------------------------------------------------------------------------ |
+| `--id`         | string | Agent ID                                                                             |
+| `--fid`        | string | Agent federated ID                                                                   |
+| `--name`       | string | Agent name                                                                           |
+| `--hostname`   | string | Agent host name                                                                      |
+| `--service`    | string | Only this service: name, display name, or `agent`                                    |
+| `--type`       | string | Only this property type, optionally `type/subType`                                   |
+| `--search`     | string | Regular expression on the property name (case-insensitive)                           |
+| `--overridden` | bool   | Only properties whose value is overridden (differs from the default)                 |
+
+Exactly one of `--id` / `--fid` / `--name` / `--hostname` is required.
+
+Table columns: `SERVICE`, `TYPE` (with `/subType` for `agent` properties),
+`NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. `--output json` / `yaml` / `csv`
+list the properties with `service`, `serviceName`, `type`, `subType`, `name`,
+`value`, `defaultValue`, `overridden` and `sensitive`.
+
+```bash
+iics agent configs get --name CAI-A03 --overridden
+iics agent configs get --name CAI-A03 --service "Process Server" --type cluster
+iics agent configs get --hostname myhost --service process-engine --search '^db|url' -o json
+iics agent configs get --name CAI-A03 --service agent --type TOMCAT_JRE
+```
+
+### agent configs set
+
+Change or reset properties of one agent. The changes are shown as a
+`PROPERTY` / `CURRENT` / `NEW` table (values that are not overridden are
+marked `(default)`, sensitive values are shown as `***`) and applied after
+confirmation.
+
+| Flag          | Type   | Description                                                                                 |
+| ------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `--id`        | string | Agent ID                                                                                    |
+| `--fid`       | string | Agent federated ID                                                                          |
+| `--name`      | string | Agent name                                                                                  |
+| `--hostname`  | string | Agent host name                                                                             |
+| `--set`       | string | `service:type:name=value`; a value `@file` reads the value from a file. Repeatable          |
+| `--reset`     | string | `service:type:name` to reset to the default. Repeatable                                     |
+| `--from-file` | string | JSON list of changes (see below)                                                            |
+| `--dry-run`   | bool   | Show the changes without applying them                                                      |
+| `--yes`, `-y` | bool   | Apply without asking for confirmation                                                       |
+| `--force`     | bool   | Change the agent even if its Secure Agent group has group-level properties                  |
+
+Rules:
+
+- Values are stored exactly as given. Process Server values keep their YAML
+  quoting, for example `'4G'` or `'jdbc:postgresql://host:5432/activevos'`, as
+  `get` shows them. Multi-line values (connection properties, logging) are
+  easiest to pass with `@file`; the file content is used as is.
+- Setting a property to its current value changes nothing, so a default does
+  not turn into an override. Use `--reset` to go back to the default.
+- A property can be changed only once per command.
+- If the agent's Secure Agent group has group-level properties, the group's
+  settings replace the agent's when the agent is added to or restarted in the
+  group, so `set` stops with an error. Remove the group-level properties first
+  (`iics environment configs`), or use `--force`.
+- Errors reported by the form, such as an invalid value, are returned as the
+  command error and nothing is changed.
+
+`--from-file` format:
+
+```json
+[
+  { "property": "process-engine:cluster:primary-node", "value": "false" },
+  { "property": "process-engine:jvm:max-heap", "value": "'4G'" },
+  { "property": "process-engine:jvm:min-heap", "reset": true }
+]
+```
+
+```bash
+# Preview a change
+iics agent configs set --name CAI-A03 --set "process-engine:cluster:primary-node=false" --dry-run
+
+# Make the agent the cluster primary node
+iics agent configs set --name CAI-A03 --set "process-engine:cluster:primary-node=true"
+
+# Point Process Server at another database, connection properties from a file
+iics agent configs set --name CAI-A03 \
+  --set "process-engine:db:url='jdbc:postgresql://dbhost:5432/activevos'" \
+  --set "process-engine:db:connection-properties=@db-props.yaml" --yes
+
+# Back to the default heap size
+iics agent configs set --name CAI-A03 --reset process-engine:jvm:max-heap --yes
+
+# Several changes from a file
+iics agent configs set --hostname myhost --from-file changes.json
+```
+
+```powershell
+iics agent configs set --name CAI-A03 --set "process-engine:cluster:primary-node=false" --dry-run
+
+iics agent configs set --name CAI-A03 --set "process-engine:jvm:max-heap='4G'" --yes
 ```
 
 ---

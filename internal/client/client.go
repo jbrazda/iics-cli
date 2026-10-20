@@ -250,7 +250,7 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	_, _ = fmt.Fprintf(w, "%s[DEBUG] Request Headers:\n", now)
 	for k, vs := range req.Header {
 		for _, v := range vs {
-			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) || strings.EqualFold(k, sessionHeaderFRS) {
+			if strings.EqualFold(k, sessionHeaderV3) || strings.EqualFold(k, sessionHeaderV2) || strings.EqualFold(k, sessionHeaderFRS) || strings.EqualFold(k, "Cookie") {
 				_, _ = fmt.Fprintf(w, "  %s: ***\n", k)
 			} else {
 				_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
@@ -265,6 +265,9 @@ func debugPrintHTTP(req *http.Request, reqData []byte, resp *http.Response, resp
 	_, _ = fmt.Fprintf(w, "%s[DEBUG] Response Headers:\n", now)
 	for k, vs := range resp.Header {
 		for _, v := range vs {
+			if strings.EqualFold(k, "Set-Cookie") {
+				v = "***"
+			}
 			_, _ = fmt.Fprintf(w, "  %s: %s\n", k, v)
 		}
 	}

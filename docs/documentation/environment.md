@@ -226,6 +226,10 @@ Manage Secure Agent group service property overrides. Uses
 `GET` / `PUT /api/v2/runtimeEnvironment/<id>/configs`. The Secure Agent group ID
 is the runtime environment ID.
 
+To change the properties of a single agent instead of the whole group, use
+[agent configs](agent.md#agent-configs). Passing an agent ID to these group
+endpoints fails with `REPO_54014` "Access denied to perform operation on Agent".
+
 ### environment configs get
 
 Show the service property overrides for a group.
