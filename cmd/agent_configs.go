@@ -127,11 +127,14 @@ func newAgentConfigsGetCmd() *cobra.Command {
 			if export {
 				return writeAgentConfigExport(cmd, props)
 			}
-			f, err := getFormatter()
-			if err != nil {
-				return err
+			if outputFmt != "" && outputFmt != "table" {
+				f, err := getFormatter()
+				if err != nil {
+					return err
+				}
+				return f.Format(props, agentPropertyCols)
 			}
-			return f.Format(props, agentPropertyCols)
+			return printAgentConfigTables(cmd, form, props)
 		},
 	}
 	addAgentSelectorFlags(cmd, &id, &fid, &name, &hostname)
@@ -142,6 +145,33 @@ func newAgentConfigsGetCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&flt.IncludeHidden, "include-hidden", false, "also show the agent's own Agent Core, Agent Manager and Tomcat properties, which the UI hides and which cannot be changed")
 	cmd.Flags().BoolVar(&export, "export", false, "write the properties as a change file for 'agent configs set --from-file' (YAML, or JSON with -o json)")
 	return cmd
+}
+
+// printAgentConfigTables prints props as one table per service, like
+// `agent details --full`: a "Service: <display name> (<service>)" header,
+// then TYPE, NAME, VALUE, DEFAULT and OVERRIDDEN columns.
+func printAgentConfigTables(cmd *cobra.Command, form *client.AgentConfigForm, props []client.AgentConfigProperty) error {
+	w := cmd.OutOrStdout()
+	_, _ = fmt.Fprintf(w, "Agent: %s (%s)\n", form.AgentName, form.AgentID)
+	if len(props) == 0 {
+		_, _ = fmt.Fprintln(w, "\nNo properties match.")
+		return nil
+	}
+	cfg, _ := loadConfig()
+	tf := output.New(output.FormatTable, w, resolveTableStyle(cfg))
+	for start := 0; start < len(props); {
+		end := start + 1
+		for end < len(props) && props[end].Service == props[start].Service {
+			end++
+		}
+		p := props[start]
+		_, _ = fmt.Fprintf(w, "\nService: %s (%s)\n\n", p.ServiceName, p.Service)
+		if err := tf.Format(props[start:end], agentPropertyCols[1:]); err != nil {
+			return err
+		}
+		start = end
+	}
+	return nil
 }
 
 // writeAgentConfigExport writes props in the --from-file change format.

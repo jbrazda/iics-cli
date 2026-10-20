@@ -274,10 +274,26 @@ quotes are written as `"'4G'"` and multi-line values as YAML block scalars, so
 the file reads back unchanged. `agent` properties are left out because they
 cannot be set.
 
-Table columns: `SERVICE`, `TYPE` (with `/subType` for `agent` properties),
-`NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. `--output json` / `yaml` / `csv`
-list the properties with `service`, `serviceName`, `type`, `subType`, `name`,
-`value`, `defaultValue`, `overridden` and `sensitive`.
+Table mode prints the layout of `agent details --full`: an `Agent: <name>
+(<id>)` line, then for each service a `Service: <display name> (<service>)`
+header and a table with columns `TYPE` (with `/subType` for `agent`
+properties), `NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. Long values are wrapped.
+
+`--output csv` prints one flat table with an extra `SERVICE` column.
+`--output json` / `yaml` list the properties with `service`, `serviceName`,
+`type`, `subType`, `name`, `value`, `defaultValue`, `overridden` and
+`sensitive`.
+
+```text
+Agent: CAI-A03 (01D23X0800000000008G)
+
+Service: Process Server (process-engine)
+
+  TYPE      NAME           VALUE     DEFAULT   OVERRIDDEN
+  cluster   enabled        true      false     yes
+  cluster   primary-node   false     true      yes
+  jvm       max-heap       '10G'     '1536M'   yes
+```
 
 ```bash
 iics agent configs get --name CAI-A03 --overridden
