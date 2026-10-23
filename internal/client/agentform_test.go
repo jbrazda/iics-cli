@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -158,6 +159,126 @@ func TestAgentConfigFormApply(t *testing.T) {
 	}
 	if over := body["engineConfigOverriden"]; over[0] != "true" || over[2] != "false" {
 		t.Errorf("engineConfigOverriden = %q", over)
+	}
+}
+
+func TestAgentConfigFormEncodePacked(t *testing.T) {
+	page := strings.Replace(agentPage("tok", "false", ""), `<input type="hidden" name="csrfToken"`,
+		`<input id="configFormJson" type="hidden" name="configFormJson" value=""/><input type="hidden" name="csrfToken"`, 1)
+	form, err := parseAgentConfigForm(page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = form.Apply([]AgentConfigChange{{Property: "process-engine:cluster:primary-node", Value: "false"}}); err != nil {
+		t.Fatal(err)
+	}
+	body, err := url.ParseQuery(form.encode())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"sysConfigValue", "engineConfigValue", "engineConfigSensitive", "sysConfigSubTypeSel"} {
+		if _, ok := body[n]; ok {
+			t.Errorf("%s sent as a form parameter", n)
+		}
+	}
+	if body.Get("name") != "CAI-A03" || body.Get("actionMethod") != "update" || body.Get("csrfToken") != "tok" {
+		t.Errorf("name=%q actionMethod=%q csrfToken=%q", body.Get("name"), body.Get("actionMethod"), body.Get("csrfToken"))
+	}
+	var packed map[string][]string
+	if err := json.Unmarshal([]byte(body.Get("configFormJson")), &packed); err != nil {
+		t.Fatalf("configFormJson: %v", err)
+	}
+	if v := packed["engineConfigValue"]; len(v) != 3 || v[0] != "false" || v[1] != "- key: testOnBorrow\n  value: true\n" {
+		t.Errorf("engineConfigValue = %q", v)
+	}
+	if v := packed["engineConfigOverriden"]; len(v) != 3 || v[0] != "true" {
+		t.Errorf("engineConfigOverriden = %q", v)
+	}
+	if v := packed["engineConfigSensitive"]; len(v) != 1 || v[0] != "OpsInsightsDataCollector25OpsInsightssecretKey" {
+		t.Errorf("engineConfigSensitive = %q (only checked boxes)", v)
+	}
+	if v := packed["sysConfigSubTypeSel"]; len(v) != 1 || v[0] != "INFO" {
+		t.Errorf("sysConfigSubTypeSel = %q", v)
+	}
+	if _, ok := packed["customConfigName"]; ok {
+		t.Error("disabled customConfigName packed")
+	}
+}
+
+func TestSameValue(t *testing.T) {
+	for _, tc := range []struct {
+		a, b string
+		want bool
+	}{
+		{"a\r\n  b\r\n", "a\n  b", true},
+		{"\na  \n  b\t\n\n", "a\n  b\n", true},
+		{"a\n  b", "a\n    b", false}, // indentation counts
+		{"a b", "a  b", false},
+		{"'1G'", "'2G'", false},
+	} {
+		if got := SameValue(tc.a, tc.b); got != tc.want {
+			t.Errorf("SameValue(%q, %q) = %t, want %t", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+
+// whitespaceOverridePage flags the db connection properties as overridden
+// although the value differs from the default only in whitespace.
+func whitespaceOverridePage() string {
+	page := agentPage("tok", "false", "")
+	page = strings.Replace(page, "- key: testOnBorrow\n  value: true\n</textarea>", "- key: testOnBorrow  \r\n  value: true\r\n\r\n</textarea>", 1)
+	return strings.Replace(page, `<input id="o2" type="hidden" name="engineConfigOverriden" value="false"/>`,
+		`<input id="o2" type="hidden" name="engineConfigOverriden" value="true"/>`, 1)
+}
+
+func TestWhitespaceOnlyOverride(t *testing.T) {
+	form, err := parseAgentConfigForm(whitespaceOverridePage())
+	if err != nil {
+		t.Fatal(err)
+	}
+	i, err := form.Find(PropertySelector{Service: "process-engine", Type: "db", Name: "connection-properties"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if form.Properties[i].Overridden {
+		t.Error("whitespace-only difference reported as overridden")
+	}
+	props, err := form.Filter(AgentConfigFilter{Service: "process-engine", Overridden: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(props) != 0 {
+		t.Errorf("--overridden lists %d properties, want 0", len(props))
+	}
+
+	diffs, err := form.Apply([]AgentConfigChange{
+		{Property: "process-engine:db:connection-properties", Value: "- key: testOnBorrow\n  value: true"},
+		{Property: "process-engine:cluster:primary-node", Reset: true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Errorf("got diffs for whitespace-only changes and a no-op reset: %+v", diffs)
+	}
+}
+
+func TestSetToDefaultResets(t *testing.T) {
+	form, err := parseAgentConfigForm(agentPage("tok", "false", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = form.Apply([]AgentConfigChange{{Property: "process-engine:cluster:primary-node", Value: "false"}}); err != nil {
+		t.Fatal(err)
+	}
+	// primary-node is now overridden with false; setting the default back
+	// resets it.
+	diffs, err := form.Apply([]AgentConfigChange{{Property: "process-engine:cluster:primary-node", Value: "true\n"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 1 || diffs[0].NewValue != "true" || diffs[0].NewOverridden {
+		t.Errorf("diffs = %+v, want a reset to the default", diffs)
 	}
 }
 

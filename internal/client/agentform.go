@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -115,6 +116,20 @@ var (
 // sent with CRLF, as browsers do.
 func normalizeNewlines(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, "\r\n", "\n"), "\r", "\n")
+}
+
+// SameValue reports whether a and b differ only in line endings, trailing
+// whitespace on a line, or leading and trailing blank lines. Indentation
+// counts, as it is significant in YAML values.
+func SameValue(a, b string) bool {
+	norm := func(s string) string {
+		lines := strings.Split(normalizeNewlines(s), "\n")
+		for i, l := range lines {
+			lines[i] = strings.TrimRight(l, " \t")
+		}
+		return strings.Trim(strings.Join(lines, "\n"), "\n")
+	}
+	return a == b || norm(a) == norm(b)
 }
 
 func parseAttrs(s string) map[string]string {
@@ -312,6 +327,12 @@ func parseAgentConfigForm(page string) (*AgentConfigForm, error) {
 		if p.Custom && p.ServiceName == "" {
 			p.ServiceName = form.serviceNames[p.serviceKey]
 		}
+		// The server flags a value as overridden when it differs from the
+		// default only in line endings or whitespace, for example after a
+		// save with CRLF line breaks. Such values are the default.
+		if !p.Custom && p.Overridden && !p.Sensitive && SameValue(p.Value, p.DefaultValue) {
+			p.Overridden = false
+		}
 	}
 	return form, nil
 }
@@ -413,10 +434,75 @@ func (f *AgentConfigForm) Reset(i int) {
 	f.fields[p.overIdx].value = "false"
 }
 
+// configFormJSONField is the hidden field that carries the property rows.
+// The UI (pnAgent.packConfigFormParams) bundles the fields named in
+// configFormParamNames into it as {"name": ["value", ...]} and does not send
+// them as form parameters, because the flat form exceeds Tomcat's
+// maxParameterCount and the server answers HTTP 500.
+const configFormJSONField = "configFormJson"
+
+var configFormParamNames = []string{"sysConfigType", "sysConfigSubType", "sysConfigName", "sysConfigValue",
+	"sysConfigOverriden", "sysConfigDefault", "sysConfigSubTypeSel", "customConfigEngine", "customConfigType",
+	"customConfigSubType", "customConfigName", "customConfigValue", "customConfigTypeEngine",
+	"customConfigSensitive", "engineCustomConfigIdInput", "engineConfigKey", "engineConfigValue",
+	"engineConfigSensitive", "engineConfigDefault", "engineConfigOverriden", "isSensitiveConfig"}
+
+// packConfigFields moves the property row fields into the configFormJson
+// field, as the UI does. Forms without that field are returned unchanged.
+func packConfigFields(fields []formField) []formField {
+	jsonIdx := -1
+	for i, fld := range fields {
+		if fld.name == configFormJSONField {
+			jsonIdx = i
+			break
+		}
+	}
+	if jsonIdx < 0 {
+		return fields
+	}
+	packed := map[string]bool{}
+	for _, n := range configFormParamNames {
+		packed[n] = true
+	}
+	values := map[string][]string{}
+	out := make([]formField, 0, len(fields))
+	for _, fld := range fields {
+		if packed[fld.name] {
+			values[fld.name] = append(values[fld.name], normalizeNewlines(fld.value))
+			continue
+		}
+		out = append(out, fld)
+	}
+	// Keys in the UI's order; names without fields are left out.
+	var b strings.Builder
+	b.WriteByte('{')
+	for _, n := range configFormParamNames {
+		v, ok := values[n]
+		if !ok {
+			continue
+		}
+		if b.Len() > 1 {
+			b.WriteByte(',')
+		}
+		k, _ := json.Marshal(n)
+		a, _ := json.Marshal(v)
+		b.Write(k)
+		b.WriteByte(':')
+		b.Write(a)
+	}
+	b.WriteByte('}')
+	for i := range out {
+		if out[i].name == configFormJSONField {
+			out[i].value = b.String()
+		}
+	}
+	return out
+}
+
 // encode builds the form body for actionMethod=update, keeping field order.
 func (f *AgentConfigForm) encode() string {
 	var b strings.Builder
-	for i, fld := range f.submitFields() {
+	for i, fld := range packConfigFields(f.submitFields()) {
 		v := fld.value
 		switch fld.name {
 		case "actionMethod":
@@ -693,7 +779,7 @@ func (f *AgentConfigForm) ApplyWith(changes []AgentConfigChange, opts ApplyOptio
 				p.removed = true
 				diffs = append(diffs, AgentConfigDiff{Property: p.Key(), ServiceName: p.ServiceName, OldValue: old.Value,
 					Sensitive: p.Sensitive, Custom: true, Change: "remove"})
-			case value != old.Value:
+			case !SameValue(value, old.Value):
 				p.Value = value
 				if p.rowStart >= 0 {
 					f.fields[p.valueIdx].value = value
@@ -707,9 +793,13 @@ func (f *AgentConfigForm) ApplyWith(changes []AgentConfigChange, opts ApplyOptio
 			return nil, fmt.Errorf("%s is a standard property and cannot be removed; use reset", p.Key())
 		}
 		switch value := normalizeNewlines(ch.Value); {
-		case ch.Reset:
-			f.Reset(i)
-		case value != old.Value:
+		case ch.Reset || !p.Sensitive && SameValue(value, p.DefaultValue):
+			// A value equal to the default is reported as not overridden
+			// when read back, so it is stored as the default.
+			if old.Overridden {
+				f.Reset(i)
+			}
+		case !SameValue(value, old.Value):
 			f.Set(i, value)
 		}
 		if p.Value == old.Value && p.Overridden == old.Overridden {
@@ -749,7 +839,7 @@ func (c *Client) VerifyAgentConfigDiffs(ctx context.Context, agentID string, dif
 			continue
 		}
 		p := form.Properties[i]
-		if p.Overridden != d.NewOverridden || !d.Sensitive && p.Value != d.NewValue {
+		if p.Overridden != d.NewOverridden || !d.Sensitive && !SameValue(p.Value, d.NewValue) {
 			failed = append(failed, fmt.Sprintf("%s (now %q, overridden %t)", d.Property, p.Value, p.Overridden))
 		}
 	}

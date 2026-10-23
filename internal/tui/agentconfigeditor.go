@@ -128,7 +128,7 @@ func (e *agentConfigEditor) record(i int, ch client.AgentConfigChange) {
 		e.pending[p.Key()] = client.AgentConfigChange{Property: p.Key(), Remove: true}
 		return
 	}
-	if ch.Reset && !p.Overridden && p.Value == p.DefaultValue || !ch.Reset && ch.Value == p.Value {
+	if ch.Reset && !p.Overridden || !ch.Reset && client.SameValue(ch.Value, p.Value) {
 		delete(e.pending, p.Key())
 		return
 	}

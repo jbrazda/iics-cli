@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `agent configs set`, `agent configs edit` and `agent rename` failed with
+  HTTP 500 after an Administrator UI change. The agent form's property rows
+  are now sent in the `configFormJson` field, as the UI sends them.
+- `agent configs` no longer reports values that differ from the default only
+  in line endings or whitespace as overridden. Setting such a value, or
+  resetting a property that is not overridden, is no longer shown as a
+  change.
+
 ## [0.6.0] - 2026-10-20
 
 First production-ready release. The core functionality (profiles and

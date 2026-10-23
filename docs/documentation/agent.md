@@ -328,6 +328,11 @@ Table mode prints the layout of `agent details --full`: an `Agent: <name>
 header and a table with columns `TYPE` (with `/subType` for `agent`
 properties), `NAME`, `VALUE`, `DEFAULT`, `OVERRIDDEN`. Long values are wrapped.
 
+A value that differs from its default only in line endings, trailing
+whitespace on a line, or leading and trailing blank lines is shown as not
+overridden, even when the server flags it as overridden. Indentation counts,
+as it is significant in YAML values.
+
 `--output csv` prints one flat table with an extra `SERVICE` column.
 `--output json` / `yaml` list the properties with `service`, `serviceName`,
 `type`, `subType`, `name`, `value`, `defaultValue`, `overridden`,
@@ -393,6 +398,11 @@ Rules:
   on top. Check the list with `--dry-run` first.
 - Setting a property to its current value changes nothing, so a default does
   not turn into an override. Use `--reset` to go back to the default.
+  Values are compared ignoring line endings, trailing whitespace on a line,
+  and leading and trailing blank lines, so a YAML file with an extra trailing
+  newline is not a change.
+- Setting a property to its default value resets it, and resetting a
+  property that is not overridden changes nothing.
 - A property can be changed only once per command.
 - If the agent's Secure Agent group has group-level properties, the group's
   settings replace the agent's when the agent is added to or restarted in the
