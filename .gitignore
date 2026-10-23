@@ -44,8 +44,9 @@ dist/
 # Debug binaries
 __debug_bin*
 
-# Claude Code runtime artifacts
-.claude/
+# Claude Code runtime artifacts; the project skills are versioned
+.claude/*
+!.claude/skills/
 
 target/
 # Demo recording masking rules (they name the values they hide)

@@ -85,6 +85,8 @@ golangci-lint run ./...
 
 ## Commit Style
 
+- Commit with the `commit` skill and release with the `release` skill
+  (`.claude/skills/`); they carry the full checklists below.
 - Do **not** include `Co-Authored-By: Claude ...` trailers in commit messages.
 - **Before every commit**, run the following and fix all reported issues:
 
@@ -146,7 +148,9 @@ Commit the updated files in `completions/` together with the code change.
 
 ## Markdown Rules
 
-- Generate Markdown that follows the [Markdown Lint Rules](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md)
+- Generate Markdown that follows the [Markdown Lint Rules](https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md).
+  `.markdownlint-cli2.yaml` holds the project rules; a global hook formats and
+  lints every Markdown file Claude writes (prettier, then markdownlint-cli2).
 - Do **not** use em dashes (`-`) in generated Markdown; use a regular hyphen (`-`) instead
 
 See [docs/CLAUDE.md](docs/CLAUDE.md) for complete code templates for all four files.
