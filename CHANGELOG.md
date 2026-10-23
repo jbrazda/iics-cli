@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in line endings or whitespace as overridden. Setting such a value, or
   resetting a property that is not overridden, is no longer shown as a
   change.
+- `agent restart --blocking` and `agent start --blocking` timed out while
+  Process Server was still starting. `--max-wait-time` now defaults to 1200
+  seconds (20 minutes) for `start` and `restart` (`stop` keeps 300), poll
+  lines label subStates (`-1 - Initializing`, `2 - Starting`,
+  `0 - Operational`), and a timeout reports the last state seen.
 
 ## [0.6.0] - 2026-10-20
 

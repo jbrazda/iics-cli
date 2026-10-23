@@ -690,7 +690,7 @@ Start or stop a service on a Secure Agent. Uses
 | `--interactive`, `-i` | bool   | false   | Select the agent and service interactively                                               |
 | `--blocking`          | bool   | false   | Poll the service status until it has started/stopped, printing each poll                 |
 | `--poll-interval`     | int    | 10      | Seconds between status polls (with `--blocking`)                                         |
-| `--max-wait-time`     | int    | 300     | Maximum seconds to wait (with `--blocking`)                                              |
+| `--max-wait-time`     | int    | 1200    | Maximum seconds to wait (with `--blocking`); `stop` defaults to 300                      |
 
 Exactly one of `--id` / `--name` / `--hostname` is required, unless
 `--interactive` is used. `--interactive` lists the Secure Agents to choose from,
@@ -704,8 +704,26 @@ asks for confirmation, and (unless `--blocking` was passed explicitly) asks
 
 With `--blocking` the command returns only once the service is fully started
 (`RUNNING` with `subState 0`) or stopped (gone from the listing), or
-`--max-wait-time` elapses (non-zero exit). A service in `ERROR` also fails the
-wait.
+`--max-wait-time` elapses (non-zero exit, with the last state seen). A service
+in `ERROR` also fails the wait. The default wait is 20 minutes for `start` and
+5 minutes for `stop`, because services such as Process Server can take well
+over five minutes to become operational.
+
+Each poll prints the status, desired status and subState. Known subStates are
+labeled:
+
+| subState | Label          | Meaning                                                                                                    |
+| -------- | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `-1`     | `Initializing` | The service has been deployed and is initializing                                                          |
+| `2`      | `Starting`     | The service is still starting; the Administrator UI shows a warning state, but the wait continues          |
+| `0`      | `Operational`  | The service is fully started                                                                               |
+
+```text
+[2026-10-23 09:55:20.451] Process Server: RUNNING (desired RUNNING, subState -1 - Initializing)
+[2026-10-23 09:56:24.102] Process Server: RUNNING (desired RUNNING, subState 2 - Starting)
+[2026-10-23 10:01:44.530] Process Server: RUNNING (desired RUNNING, subState 0 - Operational)
+[2026-10-23 10:01:44.530] Service "Process Server" started.
+```
 
 All [global flags](../../README.md#global-flags) apply.
 
@@ -741,8 +759,9 @@ Same as `agent start` / `agent stop`
 The wait for the **stop** to complete is always performed. The wait for the
 **start** to complete happens with `--blocking`, or after answering yes to the
 interactive `Wait for service "<name>" to start` prompt. `--max-wait-time`
-bounds the whole operation (stop wait + start wait combined). "Fully started"
-means the engine reports `RUNNING` with `subState 0`.
+bounds the whole operation (stop wait + start wait combined) and defaults to
+1200 seconds (20 minutes). "Fully started" means the engine reports `RUNNING`
+with `subState 0`; see [subState labels](#agent-start--agent-stop).
 
 ### Examples
 

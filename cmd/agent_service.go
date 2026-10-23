@@ -24,7 +24,14 @@ type agentServiceFlags struct {
 	maxWaitTime        int
 }
 
-func (f *agentServiceFlags) bind(cmd *cobra.Command, past string) {
+// Default --max-wait-time values. Process Server can take well over five
+// minutes to become operational after a start.
+const (
+	defaultStopWaitSec  = 300
+	defaultStartWaitSec = 1200
+)
+
+func (f *agentServiceFlags) bind(cmd *cobra.Command, past string, maxWaitSec int) {
 	cmd.Flags().StringVar(&f.id, "id", "", "agent ID")
 	cmd.Flags().StringVar(&f.name, "name", "", "agent name")
 	cmd.Flags().StringVar(&f.hostname, "hostname", "", "agent host name")
@@ -32,7 +39,7 @@ func (f *agentServiceFlags) bind(cmd *cobra.Command, past string) {
 	cmd.Flags().BoolVarP(&f.interactive, "interactive", "i", false, "select the agent and service interactively")
 	cmd.Flags().BoolVar(&f.blocking, "blocking", false, fmt.Sprintf("poll the service status until it has %s", past))
 	cmd.Flags().IntVar(&f.pollInterval, "poll-interval", 10, "seconds between status polls (with --blocking)")
-	cmd.Flags().IntVar(&f.maxWaitTime, "max-wait-time", 300, "maximum seconds to wait (with --blocking)")
+	cmd.Flags().IntVar(&f.maxWaitTime, "max-wait-time", maxWaitSec, "maximum seconds to wait (with --blocking)")
 	cmd.MarkFlagsMutuallyExclusive("id", "name", "hostname")
 }
 
@@ -149,7 +156,11 @@ func newAgentServiceCmd(use, short string, action client.AgentServiceAction, pas
 			return nil
 		},
 	}
-	f.bind(cmd, past)
+	maxWait := defaultStopWaitSec
+	if action == client.AgentServiceStart {
+		maxWait = defaultStartWaitSec
+	}
+	f.bind(cmd, past, maxWait)
 	return cmd
 }
 
@@ -163,7 +174,9 @@ func newAgentRestartCmd() *cobra.Command {
 The service is stopped and the command always waits for it to leave the agent's
 service listing, then it is started again. With --blocking (or after the
 interactive prompt) it also waits for the service to come back up (RUNNING with
-subState 0). --max-wait-time bounds the whole operation.`,
+subState 0). --max-wait-time bounds the whole operation; the default of 20
+minutes allows for services such as Process Server that take well over five
+minutes to start.`,
 		Example: `  iics agent restart --id <agent-id> --service "Data Integration Server"
   iics agent restart -i`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -223,7 +236,7 @@ subState 0). --max-wait-time bounds the whole operation.`,
 			return nil
 		},
 	}
-	f.bind(cmd, "restarted")
+	f.bind(cmd, "restarted", defaultStartWaitSec)
 	return cmd
 }
 
@@ -304,6 +317,20 @@ func serviceStates(d *client.AgentDetails, svc string) []client.AgentEngineStatu
 	return out
 }
 
+// subStateLabel describes an engine subState in the poll log. "2" is shown as
+// a warning in the Administrator UI, but the service is still starting.
+func subStateLabel(sub string) string {
+	switch sub {
+	case "0":
+		return "Operational"
+	case "-1":
+		return "Initializing"
+	case "2":
+		return "Starting"
+	}
+	return ""
+}
+
 func servicePending(status string) bool {
 	switch strings.ToUpper(status) {
 	case "NEED_RUNNING", "NEED_STOP", "DEPLOYING", "STARTING", "STOPPING":
@@ -328,8 +355,8 @@ func serviceReached(verb string, states []client.AgentEngineStatus) (bool, error
 				return false, nil
 			}
 			if strings.EqualFold(s.Status, "RUNNING") {
-				// subState "0" means the engine is fully operational; "-1"
-				// (and other values) mean it is still initializing.
+				// subState "0" means the engine is fully operational; "-1",
+				// "2" and other values mean it is still initializing.
 				if s.SubState == "0" {
 					operational = true
 				} else {
@@ -372,8 +399,15 @@ func waitForAgentService(ctx context.Context, c *client.Client, agentID, svc, ve
 		if len(states) == 0 {
 			_, _ = fmt.Fprintf(w, "%s%s: (not reported)\n", ts(), svc)
 		}
+		var last []string
 		for _, s := range states {
-			_, _ = fmt.Fprintf(w, "%s%s: %s (desired %s, subState %s)\n", ts(), svc, s.Status, s.DesiredStatus, s.SubState)
+			sub := s.SubState
+			if l := subStateLabel(sub); l != "" {
+				sub += " - " + l
+			}
+			line := fmt.Sprintf("%s (desired %s, subState %s)", s.Status, s.DesiredStatus, sub)
+			last = append(last, line)
+			_, _ = fmt.Fprintf(w, "%s%s: %s\n", ts(), svc, line)
 		}
 
 		done, rerr := serviceReached(verb, states)
@@ -385,7 +419,11 @@ func waitForAgentService(ctx context.Context, c *client.Client, agentID, svc, ve
 			return nil
 		}
 		if time.Now().After(deadline) {
-			return fmt.Errorf("timed out waiting for service %q to %s", svc, verb)
+			if len(last) == 0 {
+				last = []string{"not reported"}
+			}
+			return fmt.Errorf("timed out waiting for service %q to %s; last state: %s (raise --max-wait-time to wait longer)",
+				svc, verb, strings.Join(last, "; "))
 		}
 	}
 }
