@@ -264,12 +264,15 @@ var agentEngineConfigCols = []output.Column{
 	{Header: "NAME", Field: "name", Width: 30},
 	{Header: "VALUE", Field: "value", Width: 40, Func: wrapConfigField("value")},
 	{Header: "DEFAULT", Field: "defaultValue", Width: 40, Func: wrapConfigField("defaultValue")},
-	{Header: "CUSTOMIZED", Field: "customized", Width: 10, Func: func(v interface{}) string {
+	{Header: "OVERRIDDEN", Field: "overridden", Width: 10, Func: func(v interface{}) string {
 		row, _ := v.(map[string]interface{})
 		if b, _ := row["customized"].(bool); b {
+			return "custom"
+		}
+		if b, _ := row["overridden"].(bool); b {
 			return "yes"
 		}
-		return "no"
+		return ""
 	}},
 }
 

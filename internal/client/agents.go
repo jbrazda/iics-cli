@@ -50,7 +50,20 @@ type AgentEngineConfig struct {
 	Value        string `json:"value,omitempty"`
 	Platform     string `json:"platform,omitempty"`
 	DefaultValue string `json:"defaultValue,omitempty"`
-	Customized   bool   `json:"customized,omitempty"`
+	// Customized is set by the API for custom properties (Custom
+	// Configuration Details), not for overridden standard properties.
+	Customized bool `json:"customized,omitempty"`
+	// Overridden is computed: the value differs from the default, ignoring
+	// line endings and whitespace (see SameValue). The API has no such flag.
+	Overridden bool `json:"overridden"`
+}
+
+// markOverridden sets Overridden on standard properties whose value differs
+// from the default, as agent configs get reports them.
+func markOverridden(cfgs []AgentEngineConfig) {
+	for i := range cfgs {
+		cfgs[i].Overridden = !cfgs[i].Customized && !SameValue(cfgs[i].Value, cfgs[i].DefaultValue)
+	}
 }
 
 // AgentEngineStatus represents the status of a service (engine) running on the agent.
@@ -143,6 +156,10 @@ func (c *Client) GetAgentDetails(ctx context.Context, id string, full bool) (*Ag
 	}
 	if err := c.doJSONWithQuery(ctx, http.MethodGet, fmt.Sprintf("%s/agent/details/%s", BaseAPIPathV2, id), query, nil, &resp); err != nil {
 		return nil, err
+	}
+	markOverridden(resp.AgentConfigs)
+	for i := range resp.AgentEngines {
+		markOverridden(resp.AgentEngines[i].AgentEngineConfigs)
 	}
 	return &resp, nil
 }

@@ -100,6 +100,33 @@ func TestGetAgentDetailsNested(t *testing.T) {
 	if len(d.AgentConfigs) != 1 || !d.AgentConfigs[0].Customized {
 		t.Errorf("agent configs not parsed: %+v", d.AgentConfigs)
 	}
+	if !e.AgentEngineConfigs[0].Overridden {
+		t.Error("host-name differs from its default but is not overridden")
+	}
+	if d.AgentConfigs[0].Overridden {
+		t.Error("custom property reported as overridden")
+	}
+}
+
+func TestGetAgentDetailsOverridden(t *testing.T) {
+	const body = `{"id":"a1","agentEngines":[{"agentEngineStatus":{"appDisplayName":"Process Server"},
+	  "agentEngineConfigs":[
+	    {"type":"connectors","name":"https-maxThreads","value":"601","defaultValue":"600","customized":false},
+	    {"type":"connectors","name":"http-maxThreads","value":"600","defaultValue":"600","customized":false},
+	    {"type":"db","name":"connection-properties","value":"- key: a  \r\n  value: b\r\n","defaultValue":"- key: a\n  value: b","customized":false}]}]}`
+	c := newTestClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	d, err := c.GetAgentDetails(context.Background(), "a1", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []bool{true, false, false}
+	for i, cfg := range d.AgentEngines[0].AgentEngineConfigs {
+		if cfg.Overridden != want[i] {
+			t.Errorf("%s overridden = %t, want %t", cfg.Name, cfg.Overridden, want[i])
+		}
+	}
 }
 
 func TestSetAgentServiceState(t *testing.T) {

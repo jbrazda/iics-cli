@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   seconds (20 minutes) for `start` and `restart` (`stop` keeps 300), poll
   lines label subStates (`-1 - Initializing`, `2 - Starting`,
   `0 - Operational`), and a timeout reports the last state seen.
+- `agent details --full` showed every property as not customized, because the
+  API's `customized` flag only marks custom properties. The `CUSTOMIZED`
+  column is replaced by `OVERRIDDEN` (`custom`, `yes` or empty), computed from
+  value and default as in `agent configs get`, and JSON/YAML output adds an
+  `overridden` field.
 
 ## [0.6.0] - 2026-10-20
 

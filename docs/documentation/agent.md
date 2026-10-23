@@ -185,13 +185,20 @@ Table mode prints, in order:
    a vertical status listing, and (with `--full`) a configuration table.
 
 Configuration tables have columns `TYPE`, `NAME`, `VALUE`, `DEFAULT`,
-`CUSTOMIZED`. Long `VALUE` / `DEFAULT` cells are wrapped onto multiple lines.
+`OVERRIDDEN`. Long `VALUE` / `DEFAULT` cells are wrapped onto multiple lines.
+`OVERRIDDEN` follows [`agent configs get`](#agent-configs-get): `custom` for a
+custom property (Custom Configuration Details), `yes` for a property whose
+value differs from its default (ignoring line endings and whitespace), empty
+otherwise. The API's own `customized` flag marks custom properties only, so it
+is not used for overrides.
 
 With `--services`, only the `Agent:` summary and a single `Services (N):` table
 are printed, one row per service with columns `SERVICE`, `APP NAME`, `VERSION`,
 `STATUS`, `DESIRED`, `SUBSTATE`, `REPLACE`, `UPDATED`.
 
-`--output json` / `yaml` render the full nested details document.
+`--output json` / `yaml` render the full nested details document. Each
+configuration property also has a computed `overridden` field, next to the
+API's `customized` field.
 
 ### Examples
 
