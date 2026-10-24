@@ -10,10 +10,12 @@ release and runs CI on it. How it lands on `main`:
 
 - **Fast-forward (default):** push `dev` to `main`. Every commit is kept,
   `main` and `dev` stay identical, and GitHub marks the PR as merged because
-  its commits are now on `main`. Needs your bypass of the `main` ruleset while
-  it requires pull requests.
+  its commits are now on `main`. The `main` ruleset requires linear history
+  and the CI checks, so the push needs no bypass as long as `dev` has no
+  merge commits and CI passed on its head commit.
 - **Squash (when the user asks for one commit):** `gh pr merge --squash`, then
-  merge `main` back into `dev`.
+  reset `dev` to `main`. Merging `main` back into `dev` instead adds a merge
+  commit, and the next fast-forward then needs the admin bypass.
 
 Stop and report on any failure. Ask before every step that pushes.
 
@@ -28,7 +30,17 @@ git merge-base --is-ancestor origin/main dev   # fast-forward possible
 
 If `dev` is behind `origin/dev`, stop. If `main` is not an ancestor of `dev`
 (a squash release or a commit made on `main`), a fast-forward is impossible:
-report it and offer squash, or `git merge origin/main` into `dev` first.
+report it and offer squash, or `git rebase origin/main` on `dev` first (that
+rewrites `dev`, so it needs `git push --force-with-lease origin dev`; ask).
+
+Check for merge commits the linear-history rule would reject:
+
+```bash
+git log --merges --oneline origin/main..dev   # must print nothing
+```
+
+If it prints any, report them: the fast-forward then only goes through with
+the user's admin bypass. Ask whether to push anyway or squash instead.
 
 ## 2. Checks
 
@@ -89,9 +101,14 @@ Squash, only when asked:
 ```bash
 gh pr merge <n> --squash --subject "Release vX.Y.Z (#<n>)"
 git fetch origin
-git merge --no-edit origin/main      # on dev
-git push origin dev
+git diff --quiet dev origin/main     # must succeed: the squash holds all of dev
+git reset --hard origin/main         # on dev
+git push --force-with-lease origin dev
 ```
+
+The force push rewrites `dev` (only `main` is protected by the ruleset), so
+ask before it. If `git diff --quiet` fails, `dev` has commits the squash does
+not hold: stop and report them.
 
 ## 8. Tag
 
