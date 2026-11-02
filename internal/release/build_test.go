@@ -38,12 +38,17 @@ func newBuildPlanTestServer(t *testing.T) (*httptest.Server, *int) {
 		var req client.LookupRequest
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		var resp client.LookupResponse
+		var notFound []client.LookupObject
 		for _, o := range req.Objects {
 			if !strings.Contains(o.Path, "Existing") {
-				writeLookupNotFound(w)
-				return
+				notFound = append(notFound, o)
+				continue
 			}
 			resp.Objects = append(resp.Objects, client.LookupResult{ID: "id-" + o.Path, Path: o.Path, Type: o.Type})
+		}
+		if len(notFound) > 0 {
+			writeLookupNotFound(w, notFound)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
@@ -164,12 +169,12 @@ func TestBuildPlanFullMode(t *testing.T) {
 		t.Fatalf("expected publish file at %s: %v", publishPath, statErr)
 	}
 
-	// The missing-transitive filter checks 3 assets (2 missing) and bisects the
-	// failed batch: [A,Missing,Existing] -> [A] + [Missing,Existing] ->
-	// [Missing] + [Existing], 5 calls. The package annotation then checks the
-	// 2 remaining missing assets: [A,Missing] -> [A] + [Missing], 3 calls.
-	if *lookupCalls != 8 {
-		t.Errorf("lookupCalls = %d, want 8 (5 + 3 bisection calls)", *lookupCalls)
+	// The missing-transitive filter checks 3 assets (2 missing): the failed
+	// call names A and Missing, then Existing is looked up again (2 calls).
+	// The package annotation checks the 2 remaining missing assets: the failed
+	// call names both and nothing is left to retry (1 call).
+	if *lookupCalls != 3 {
+		t.Errorf("lookupCalls = %d, want 3 (2 + 1)", *lookupCalls)
 	}
 }
 

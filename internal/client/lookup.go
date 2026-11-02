@@ -45,7 +45,8 @@ func BuildLookupMatchKey(path, objectType string) string {
 func (c *Client) Lookup(ctx context.Context, objects []LookupObject) (*LookupResponse, error) {
 	req := LookupRequest{Objects: objects}
 	var resp LookupResponse
-	if err := c.doJSON(ctx, http.MethodPost, BaseAPIPathV3+"/lookup", req, &resp); err != nil {
+	// Lookup only reads, so it is safe to resend after a dropped connection.
+	if err := c.doJSON(withReadOnly(ctx), http.MethodPost, BaseAPIPathV3+"/lookup", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

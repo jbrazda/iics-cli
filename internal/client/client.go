@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -166,7 +170,8 @@ func (c *Client) doWithSession(ctx context.Context, req *http.Request) (*http.Re
 }
 
 // do executes an HTTP request with session header injection.
-// On 401 response, it re-authenticates and retries once.
+// On 401 response, it re-authenticates and retries once. On 429 it waits
+// (rateLimitWait or rateLimitBackoff) and retries up to maxRateLimitRetries times.
 func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	// Ensure we have a session
 	c.mu.RLock()
@@ -190,7 +195,7 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	}
 
-	resp, err := c.doWithSession(ctx, req)
+	resp, err := c.sendWithRetry(ctx, req, bodyBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -199,18 +204,154 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 	if resp.StatusCode == http.StatusUnauthorized {
 		_ = resp.Body.Close()
 
-		if _, err := c.Login(ctx); err != nil {
-			return nil, &SessionExpiredError{Wrapped: fmt.Errorf("%w; run 'iics login' to re-authenticate", err)}
+		if _, loginErr := c.Login(ctx); loginErr != nil {
+			return nil, &SessionExpiredError{Wrapped: fmt.Errorf("%w; run 'iics login' to re-authenticate", loginErr)}
 		}
 
 		// Rebuild the request with fresh body
 		if bodyBytes != nil {
 			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
-		return c.doWithSession(ctx, req)
+		resp, err = c.sendWithRetry(ctx, req, bodyBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// On 429, wait as the response says, or back off exponentially when it
+	// gives no wait time, and retry.
+	for attempt := 1; resp.StatusCode == http.StatusTooManyRequests && attempt <= maxRateLimitRetries; attempt++ {
+		wait, ok := rateLimitWait(resp.Header, time.Now())
+		if !ok {
+			wait = rateLimitBackoff(attempt)
+		}
+		_ = resp.Body.Close()
+		slog.Warn("API rate limit reached, retrying",
+			"url", req.URL.Path, "wait", wait, "attempt", attempt, "maxAttempts", maxRateLimitRetries)
+		if sleepErr := sleepCtx(ctx, wait); sleepErr != nil {
+			return nil, sleepErr
+		}
+		if bodyBytes != nil {
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		resp, err = c.sendWithRetry(ctx, req, bodyBytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, nil
+}
+
+// sendWithRetry sends req and, for read-only requests, retries up to
+// maxNetworkRetries times when the connection drops (EOF or connection
+// reset), which IICS does now and then during long runs of calls. Requests
+// that change data are never resent: the server may already have processed
+// them.
+func (c *Client) sendWithRetry(ctx context.Context, req *http.Request, bodyBytes []byte) (*http.Response, error) {
+	resp, err := c.doWithSession(ctx, req)
+	for attempt := 1; err != nil && attempt <= maxNetworkRetries && isRetryableNetworkError(err) && isReadOnlyRequest(ctx, req); attempt++ {
+		wait := time.Duration(attempt) * networkRetryWait
+		slog.Warn("API connection dropped, retrying",
+			"url", req.URL.Path, "error", err, "wait", wait, "attempt", attempt, "maxAttempts", maxNetworkRetries)
+		if sleepErr := sleepCtx(ctx, wait); sleepErr != nil {
+			return nil, sleepErr
+		}
+		if bodyBytes != nil {
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		resp, err = c.doWithSession(ctx, req)
+	}
+	return resp, err
+}
+
+// isRetryableNetworkError reports whether err is a dropped connection.
+func isRetryableNetworkError(err error) bool {
+	return errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNRESET)
+}
+
+type readOnlyKey struct{}
+
+// withReadOnly marks requests made with ctx as read-only, so a POST that
+// only reads (such as Lookup) can be resent after a dropped connection.
+func withReadOnly(ctx context.Context) context.Context {
+	return context.WithValue(ctx, readOnlyKey{}, true)
+}
+
+func isReadOnlyRequest(ctx context.Context, req *http.Request) bool {
+	if req.Method == http.MethodGet || req.Method == http.MethodHead {
+		return true
+	}
+	readOnly, _ := ctx.Value(readOnlyKey{}).(bool)
+	return readOnly
+}
+
+const (
+	// maxNetworkRetries is how many times a read-only request is resent
+	// after a dropped connection.
+	maxNetworkRetries = 2
+	// networkRetryWait is the wait before the first resend; it grows by
+	// the same amount on each retry (1s, 2s).
+	networkRetryWait = time.Second
+	// maxRateLimitRetries is how many times a 429 response is retried.
+	maxRateLimitRetries = 3
+	// maxRateLimitWait caps the wait a 429 response can ask for.
+	maxRateLimitWait = 60 * time.Second
+	// rateLimitBackoffBase is the first backoff wait for a 429 response
+	// without a wait header; it doubles on each retry (2s, 4s, 8s).
+	rateLimitBackoffBase = 2 * time.Second
+)
+
+// rateLimitBackoff returns the wait before retry attempt (1-based) of a 429
+// response without a wait header: exponential backoff plus up to 25% jitter,
+// so parallel clients do not retry in step.
+func rateLimitBackoff(attempt int) time.Duration {
+	wait := rateLimitBackoffBase << (attempt - 1)
+	jitter := time.Duration(rand.Int64N(int64(wait/4) + 1))
+	return min(wait+jitter, maxRateLimitWait)
+}
+
+// rateLimitWait returns how long to wait before retrying a 429 response,
+// read from Retry-After (seconds or HTTP date) or ratelimit-reset (seconds).
+// It returns false when neither header is present or parsable; Informatica
+// does not document either header for the v3 API, and the caller then backs
+// off exponentially (rateLimitBackoff).
+func rateLimitWait(h http.Header, now time.Time) (time.Duration, bool) {
+	var wait time.Duration
+	switch {
+	case h.Get("Retry-After") != "":
+		v := strings.TrimSpace(h.Get("Retry-After"))
+		if secs, err := strconv.Atoi(v); err == nil && secs >= 0 {
+			wait = time.Duration(secs) * time.Second
+		} else if t, err := http.ParseTime(v); err == nil {
+			wait = max(t.Sub(now), 0)
+		} else {
+			return 0, false
+		}
+	case h.Get("Ratelimit-Reset") != "":
+		secs, err := strconv.Atoi(strings.TrimSpace(h.Get("Ratelimit-Reset")))
+		if err != nil || secs < 0 {
+			return 0, false
+		}
+		wait = time.Duration(secs) * time.Second
+	default:
+		return 0, false
+	}
+	return min(wait, maxRateLimitWait), true
+}
+
+// sleepCtx waits for d or until ctx is done. Tests replace it to skip waits.
+var sleepCtx = func(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }
 
 // ensureSession guarantees the client has a valid session before a URL is built.

@@ -203,11 +203,26 @@ Excludes always apply to the publish file regardless of whether
 | All others   | `Lookup` with `{Path, Type}`                                                      | `V3API_LookupError_012` error code in response body |
 
 Non-Connection assets are sent to the Lookup API in batches of up to 200. The Lookup API fails a
-whole batch with `V3API_LookupError_012` when any item in it is missing, so a failed batch is split
-in half and each half is retried until the missing assets are isolated. When everything exists this
-takes one call per batch. Any other error (network, auth, HTTP 500) marks the affected assets
-`unknown` with a warning, never `missing`. Each target logs one Info line with the found, missing
-and unknown counts and the number of Lookup calls.
+whole batch with `V3API_LookupError_012` when any item in it is missing, and its message lists
+every missing object. Those assets are marked `missing` and the rest of the batch is looked up
+again, so a batch usually takes one or two calls. When the message cannot be matched to the batch
+(for example two assets with the same path and different types), the batch is split in half and
+each half is retried until the missing assets are isolated.
+
+When a lookup is rate limited (HTTP 429), the client retries up to 3 times. It waits as long as
+the `Retry-After` or `ratelimit-reset` header says (capped at 60 seconds); Informatica does not
+document either header for the v3 API, so without one it backs off 2, 4 and 8 seconds plus a little
+random jitter. An asset whose lookup is still rate limited after the retries is marked `missing`
+with an `APIRateLimitError` warning, so it stays in the package and the deploy does not break if it
+really is missing.
+
+When the connection drops during a lookup (`EOF` or connection reset), the request is resent up
+to 2 times after 1 and 2 seconds. Only read-only requests (GET, and the Lookup POST) are resent.
+
+Any other error (network, auth, HTTP 500), or a dropped connection that persists, marks the
+affected assets `unknown` with a warning. Each
+target logs one Info line with the found, missing, unknown and rate-limited counts and the number
+of Lookup calls.
 
 ### Flags
 

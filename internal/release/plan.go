@@ -622,10 +622,13 @@ const lookupErrorNotFound = `"V3API_LookupError_012"`
 // assets go through the Lookup API in chunks of lookupChunkSize.
 //
 // The Lookup API fails the entire batch with V3API_LookupError_012 when any
-// item is missing, so a failed batch is split in half and each half retried
-// (bisection). One call is enough when everything exists, and m missing
-// assets cost about m*log2(n) extra calls. A single-item batch that fails
-// with 012 is "missing". Any other error is "unknown" with a warning.
+// item is missing. Its message lists the missing objects, so those are marked
+// missing and the rest is looked up again: usually two calls per chunk. When
+// the message cannot be matched to the batch, the batch is split in half and
+// each half retried (bisection). A single-item batch that fails with 012 is
+// "missing". A lookup still rate limited (HTTP 429) after the client's
+// retries is "missing" with an APIRateLimitError warning, so the asset stays
+// in the package. Any other error is "unknown" with a warning.
 func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, target string, assets []Asset) map[string]AssetValidation {
 	out := make(map[string]AssetValidation, len(assets))
 	v := &lookupValidator{tc: tc, out: out}
@@ -647,6 +650,9 @@ func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, target 
 	counts := map[string]int{}
 	for _, val := range out {
 		counts[val.Status]++
+		if strings.HasPrefix(val.Warning, rateLimitWarning) {
+			counts["rateLimited"]++
+		}
 	}
 	slog.Info("release plan: target asset validation",
 		"target", target,
@@ -654,6 +660,7 @@ func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, target 
 		"found", counts["found"],
 		"missing", counts["missing"],
 		"unknown", counts["unknown"],
+		"rateLimited", counts["rateLimited"],
 		"lookupCalls", v.calls,
 	)
 	return out
@@ -684,14 +691,21 @@ func (v *lookupValidator) resolve(ctx context.Context, batch []Asset) {
 				v.out[batch[0].Location] = AssetValidation{Status: "missing"}
 				return
 			}
+			if missing, rest := splitByNotFoundPaths(batch, err); len(missing) > 0 {
+				for _, a := range missing {
+					v.out[a.Location] = AssetValidation{Status: "missing"}
+				}
+				v.resolve(ctx, rest)
+				return
+			}
 			mid := len(batch) / 2
 			v.resolve(ctx, batch[:mid])
 			v.resolve(ctx, batch[mid:])
 			return
 		}
-		warning := err.Error()
+		val := lookupErrorValidation(err)
 		for _, a := range batch {
-			v.out[a.Location] = AssetValidation{Status: "unknown", Warning: warning}
+			v.out[a.Location] = val
 		}
 		return
 	}
@@ -727,6 +741,53 @@ func (v *lookupValidator) resolve(ctx context.Context, batch []Asset) {
 	}
 }
 
+// lookupNotFoundItem matches one "[type: X, location: Y]" entry in the
+// V3API_LookupError_012 message.
+var lookupNotFoundItem = regexp.MustCompile(`\[type: [^,\]]*, location: ([^\]]*)\]`)
+
+// splitByNotFoundPaths uses the V3API_LookupError_012 message, which lists
+// every object of the batch that was not found, to split batch into missing
+// assets and the rest. The message reports some types under another name
+// (DTEMPLATE as MAPPING), so assets are matched by path only, and an asset
+// whose path appears more than once in the batch is left in rest. The caller
+// looks up rest again, so a wrong or unparsable message costs a call but
+// never a wrong status: with no matches it returns no missing assets and the
+// caller falls back to bisection.
+func splitByNotFoundPaths(batch []Asset, err error) (missing, rest []Asset) {
+	var apiErr *client.APIError
+	if !errors.As(err, &apiErr) {
+		return nil, batch
+	}
+	var body struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(apiErr.ResponseBody, &body) != nil {
+		return nil, batch
+	}
+	notFound := map[string]bool{}
+	for _, m := range lookupNotFoundItem.FindAllStringSubmatch(body.Error.Message, -1) {
+		notFound[client.NormalizeLocationPath(m[1])] = true
+	}
+	if len(notFound) == 0 {
+		return nil, batch
+	}
+	pathCount := make(map[string]int, len(batch))
+	for _, a := range batch {
+		pathCount[client.NormalizeLocationPath(a.Path)]++
+	}
+	for _, a := range batch {
+		p := client.NormalizeLocationPath(a.Path)
+		if notFound[p] && pathCount[p] == 1 {
+			missing = append(missing, a)
+		} else {
+			rest = append(rest, a)
+		}
+	}
+	return missing, rest
+}
+
 func isLookupNotFoundError(err error) bool {
 	var apiErr *client.APIError
 	return errors.As(err, &apiErr) &&
@@ -744,6 +805,22 @@ func validateConnectionExists(ctx context.Context, tc *client.Client, a Asset) A
 	}
 	if isMissingConnectionError(err) {
 		return AssetValidation{Status: "missing"}
+	}
+	return lookupErrorValidation(err)
+}
+
+// rateLimitWarning prefixes the warning of assets whose lookup was still
+// rate limited (HTTP 429) after the client's retries.
+const rateLimitWarning = "APIRateLimitError"
+
+// lookupErrorValidation maps a lookup error other than "not found" to a
+// status. A rate-limited asset is reported missing, so it stays in the
+// package and a deploy does not break if it really is missing. Any other
+// error is unknown.
+func lookupErrorValidation(err error) AssetValidation {
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) && apiErr.IsTooManyRequests() {
+		return AssetValidation{Status: "missing", Warning: rateLimitWarning + ": " + err.Error()}
 	}
 	return AssetValidation{Status: "unknown", Warning: err.Error()}
 }
