@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -282,7 +283,7 @@ func FilterMissingTransitiveForTarget(ctx context.Context, targetProfileName str
 	if err != nil {
 		return nil, err
 	}
-	validations := validateAssetsExistInTarget(ctx, tc, assets)
+	validations := validateAssetsExistInTarget(ctx, tc, targetProfileName, assets)
 	return FilterMissingTransitiveWithValidations(assets, validations), nil
 }
 
@@ -307,7 +308,7 @@ func ValidateAssetsForTarget(ctx context.Context, targetProfileName string, asse
 	if err != nil {
 		return nil, err
 	}
-	validations := validateAssetsExistInTarget(ctx, tc, assets)
+	validations := validateAssetsExistInTarget(ctx, tc, targetProfileName, assets)
 	out := make([]AssetValidation, len(assets))
 	for i, a := range assets {
 		if v, ok := validations[a.Location]; ok {
@@ -321,7 +322,7 @@ func ValidateAssetsForTarget(ctx context.Context, targetProfileName string, asse
 
 // ValidateAssetsForTargets computes an existence validation matrix for every
 // (target, asset) pair, batching each target's non-Connection assets into a
-// single Lookup call rather than one call per asset. The result (keyed by
+// few chunked Lookup calls rather than one call per asset. The result (keyed by
 // target, then by asset Location) can be reused across the status table
 // render and BuildPlan's package/publish annotation instead of re-querying
 // the same assets twice.
@@ -332,7 +333,7 @@ func ValidateAssetsForTargets(ctx context.Context, targets []string, assets []As
 		if err != nil {
 			return nil, fmt.Errorf("profile %q: %w", target, err)
 		}
-		out[target] = validateAssetsExistInTarget(ctx, tc, assets)
+		out[target] = validateAssetsExistInTarget(ctx, tc, target, assets)
 	}
 	return out, nil
 }
@@ -608,59 +609,128 @@ func resolveTargetClient(targetProfileName string, opts TargetResolutionOptions)
 	return client.NewClient(loginURL, profile.Username, profile.Password, clientOptions...), resolvedProfileName, nil
 }
 
-// validateAssetsExistInTarget checks existence of every asset against tc,
-// batching everything except Connection-typed assets (which have no bulk
-// lookup API) into a single Lookup call instead of one round trip per asset.
-// A lookup failure is recorded as an "unknown" status against the affected
-// assets rather than aborting the whole pass, matching the previous
-// per-asset error handling.
-func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, assets []Asset) map[string]AssetValidation {
+// lookupChunkSize caps how many objects go into one Lookup request so very
+// large plans do not produce oversized request bodies.
+const lookupChunkSize = 200
+
+// lookupErrorNotFound is the error code the V3 Lookup API returns for the
+// whole batch when any one item is not found or has an unresolvable path.
+const lookupErrorNotFound = `"V3API_LookupError_012"`
+
+// validateAssetsExistInTarget checks existence of every asset against tc.
+// Connection assets are checked one by one with the Connection API. All other
+// assets go through the Lookup API in chunks of lookupChunkSize.
+//
+// The Lookup API fails the entire batch with V3API_LookupError_012 when any
+// item is missing, so a failed batch is split in half and each half retried
+// (bisection). One call is enough when everything exists, and m missing
+// assets cost about m*log2(n) extra calls. A single-item batch that fails
+// with 012 is "missing". Any other error is "unknown" with a warning.
+func validateAssetsExistInTarget(ctx context.Context, tc *client.Client, target string, assets []Asset) map[string]AssetValidation {
 	out := make(map[string]AssetValidation, len(assets))
+	v := &lookupValidator{tc: tc, out: out}
 
 	var lookupAssets []Asset
-	var lookupObjs []client.LookupObject
 	for _, a := range assets {
 		if a.Type == "Connection" {
 			out[a.Location] = validateConnectionExists(ctx, tc, a)
 			continue
 		}
 		lookupAssets = append(lookupAssets, a)
-		lookupObjs = append(lookupObjs, client.LookupObject{Path: a.Path, Type: a.Type})
 	}
 
-	if len(lookupObjs) == 0 {
-		return out
+	for start := 0; start < len(lookupAssets); start += lookupChunkSize {
+		end := min(start+lookupChunkSize, len(lookupAssets))
+		v.resolve(ctx, lookupAssets[start:end])
 	}
 
-	resp, err := tc.Lookup(ctx, lookupObjs)
+	counts := map[string]int{}
+	for _, val := range out {
+		counts[val.Status]++
+	}
+	slog.Info("release plan: target asset validation",
+		"target", target,
+		"assets", len(assets),
+		"found", counts["found"],
+		"missing", counts["missing"],
+		"unknown", counts["unknown"],
+		"lookupCalls", v.calls,
+	)
+	return out
+}
+
+type lookupValidator struct {
+	tc    *client.Client
+	out   map[string]AssetValidation
+	calls int
+}
+
+// resolve looks up batch and records a status for every asset in it,
+// bisecting on V3API_LookupError_012.
+func (v *lookupValidator) resolve(ctx context.Context, batch []Asset) {
+	if len(batch) == 0 {
+		return
+	}
+	objs := make([]client.LookupObject, len(batch))
+	for i, a := range batch {
+		objs[i] = client.LookupObject{Path: a.Path, Type: a.Type}
+	}
+
+	v.calls++
+	resp, err := v.tc.Lookup(ctx, objs)
 	if err != nil {
-		var apiErr *client.APIError
-		if errors.As(err, &apiErr) &&
-			bytes.Contains(apiErr.ResponseBody, []byte(`"V3API_LookupError_012"`)) {
-			for _, a := range lookupAssets {
-				out[a.Location] = AssetValidation{Status: "missing"}
+		if isLookupNotFoundError(err) {
+			if len(batch) == 1 {
+				v.out[batch[0].Location] = AssetValidation{Status: "missing"}
+				return
 			}
-			return out
+			mid := len(batch) / 2
+			v.resolve(ctx, batch[:mid])
+			v.resolve(ctx, batch[mid:])
+			return
 		}
 		warning := err.Error()
-		for _, a := range lookupAssets {
-			out[a.Location] = AssetValidation{Status: "unknown", Warning: warning}
+		for _, a := range batch {
+			v.out[a.Location] = AssetValidation{Status: "unknown", Warning: warning}
 		}
-		return out
+		return
+	}
+
+	// Some types (e.g. AgentGroup) come back with a different path format
+	// than the one sent, so a single-item lookup that returns any object
+	// counts as found.
+	if len(batch) == 1 {
+		status := "missing"
+		if len(resp.Objects) > 0 {
+			status = "found"
+		}
+		v.out[batch[0].Location] = AssetValidation{Status: status}
+		return
 	}
 
 	found := make(map[string]bool, len(resp.Objects))
 	for _, obj := range resp.Objects {
 		found[client.BuildLookupMatchKey(obj.Path, obj.Type)] = true
 	}
-	for _, a := range lookupAssets {
+	var unmatched []Asset
+	for _, a := range batch {
 		if found[client.BuildLookupMatchKey(a.Path, a.Type)] {
-			out[a.Location] = AssetValidation{Status: "found"}
+			v.out[a.Location] = AssetValidation{Status: "found"}
 		} else {
-			out[a.Location] = AssetValidation{Status: "missing"}
+			unmatched = append(unmatched, a)
 		}
 	}
-	return out
+	// Assets the batch response did not match by path+type are rechecked
+	// one by one, where any returned object counts as found.
+	for _, a := range unmatched {
+		v.resolve(ctx, []Asset{a})
+	}
+}
+
+func isLookupNotFoundError(err error) bool {
+	var apiErr *client.APIError
+	return errors.As(err, &apiErr) &&
+		bytes.Contains(apiErr.ResponseBody, []byte(lookupErrorNotFound))
 }
 
 func validateConnectionExists(ctx context.Context, tc *client.Client, a Asset) AssetValidation {

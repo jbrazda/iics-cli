@@ -195,12 +195,19 @@ Excludes always apply to the publish file regardless of whether
   target-specific column (`STATUS (tst)`, `STATUS (prod)`, etc.) in each per-environment package
   file.
 
-#### `assetExistsInTarget` lookup logic
+#### Target lookup logic
 
 | Asset type   | API call                                                                          | Treated as absent when                              |
 |--------------|-----------------------------------------------------------------------------------|-----------------------------------------------------|
 | `Connection` | `GetConnectionByName` using the last path segment                                 | 404 or `APP_13436` (no object named connection)     |
 | All others   | `Lookup` with `{Path, Type}`                                                      | `V3API_LookupError_012` error code in response body |
+
+Non-Connection assets are sent to the Lookup API in batches of up to 200. The Lookup API fails a
+whole batch with `V3API_LookupError_012` when any item in it is missing, so a failed batch is split
+in half and each half is retried until the missing assets are isolated. When everything exists this
+takes one call per batch. Any other error (network, auth, HTTP 500) marks the affected assets
+`unknown` with a warning, never `missing`. Each target logs one Info line with the found, missing
+and unknown counts and the number of Lookup calls.
 
 ### Flags
 

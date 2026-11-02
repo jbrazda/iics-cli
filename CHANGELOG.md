@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- fix(release-plan): batch lookup error V3API_LookupError_012 no longer marks
+  all assets missing. Since 0.5.5, `release plan` reported every
+  non-Connection asset as `missing` in a target when any one asset was
+  missing there, which also kept transitive dependencies that already exist
+  in the target. A failed batch is now split in half and retried until the
+  missing assets are found, with batches capped at 200 assets.
+
 ## [0.6.1] - 2026-10-23
 
 ### Fixed
